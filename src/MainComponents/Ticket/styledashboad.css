@@ -1,0 +1,59 @@
+.App {
+    text-align: initial;
+}
+
+body {
+    margin: 0;
+    font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #212529;
+    text-align: left;
+    /* background-color: #ffffff; */
+}
+
+.leftFont {
+    position: absolute;
+    left: 14px;
+    top: 14px;
+    font-size: 14px;
+}
+.small-box .icon>i.fas.leftFontOp2 {
+    right: 110px !important;
+    font-size: 30px !important;
+}
+.small-box:hover .icon>i.fas.leftFontOp2 {
+    font-size: 35px !important;
+}
+.circleShapeContainer {
+    text-align: center;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+.circleShape {
+    height: 50px;
+    width: 50px;
+    text-align: center;
+    color: #fff;
+    font-size: 22px;
+    line-height: 50px;
+    border-radius: 50%;
+    margin: 0 auto 15px;
+}
+.rowHeight .card-body.vCenter{
+    min-height: 290px;
+    width: 100%;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+    -ms-flex-align: center;
+    -webkit-align-items: center;
+    -webkit-box-align: center;
+    align-items: center;
+}
+.rowHeight .card-body.vCenter .row{
+    width:100%;
+}
+.canvasBox{min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;}

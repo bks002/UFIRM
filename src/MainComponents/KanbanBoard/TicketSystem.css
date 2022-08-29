@@ -1,0 +1,141 @@
+.multiselect-container{
+    width: 350px !important;
+}
+/* CSS used here will be applied attachment  view */
+.artist-collection-photo {
+    float: left;
+    margin: 10px;
+    cursor: pointer;
+    width: 80px;
+    height: 80px;
+    position:relative;
+  }
+  .artist-collection-photo div
+  {position:absolute; top:0; right:0;}
+  
+  
+  /* CSS used here will be applied toggle button */
+
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 134px;
+    height: 34px;
+  }
+  
+  .switch input {display:none;}
+  
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ca2222;
+    -webkit-transition: .4s;
+    transition: .4s;
+  }
+  
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    -webkit-transition: .4s;
+    transition: .4s;
+  }
+  
+  input:checked + .slider {
+    background-color: #2ab934;
+  }
+  
+  input:focus + .slider {
+    box-shadow: 0 0 1px #2196F3;
+  }
+  
+  input:checked + .slider:before {
+    -webkit-transform: translateX(100px);
+    -ms-transform: translateX(100px);
+    transform: translateX(100px);
+  }
+  
+  /*------ ADDED CSS ---------*/
+  .on
+  {
+    display: none;
+  }
+  
+  .on, .off
+  {
+    color: white;
+    position: absolute;
+    transform: translate(-50%,-50%);
+    top: 50%;
+    left: 50%;    
+  }
+  
+  input:checked+ .slider .on
+  {display: block;}
+  
+  input:checked + .slider .off
+  {display: none;}
+  
+  /*--------- END --------*/
+  
+  /* Rounded sliders */
+  .slider.round {
+    /* border-radius: 34px; */
+  }
+  
+  .slider.round:before {
+    /* border-radius: 50%; */
+  }
+
+
+    /* set ticket details modal max width */
+
+    @media (min-width: 992px) {
+      #modal-lg-ticketDetail > .modal-dialog {
+        max-width: 84%;
+      }
+    }
+
+
+    .timeline>div>.timeline-item>.time{
+      color: black !important;
+      float: right;
+      font-size: 14px !important;
+      padding: 10px;
+  }
+  
+
+/* --------------Ticket header color value----------------- */
+.OPEN{
+  background-color: #e46c5f !important;
+  color: #ffffff !important;
+}
+.INPROGRESS{
+  background-color: #20639B !important;
+  color: #ffffff !important;
+}
+.RESOLVED{
+  background-color: #3CAEA3 !important;
+  color: #ffffff !important;
+}
+.CLOSED{
+  background-color: #7AC968 !important;
+  color: #ffffff !important;
+}
+
+.css-79elbk {
+  position: relative;
+  width: 100%;
+}
+
+.css-42igfv {
+  margin: 52px auto;
+}

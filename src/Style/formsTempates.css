@@ -1,0 +1,96 @@
+﻿     
+        @-webkit-keyframes placeHolderShimmer {
+            0% {
+                background-position: -468px 0;
+            }
+
+            100% {
+                background-position: 468px 0;
+            }
+        }
+
+        @keyframes placeHolderShimmer {
+            0% {
+                background-position: -468px 0;
+            }
+
+            100% {
+                background-position: 468px 0;
+            }
+        }
+
+        .animated-background {
+            -webkit-animation-duration: 1s;
+            animation-duration: 1s;
+            -webkit-animation-fill-mode: forwards;
+            animation-fill-mode: forwards;
+            -webkit-animation-iteration-count: infinite;
+            animation-iteration-count: infinite;
+            -webkit-animation-name: placeHolderShimmer;
+            animation-name: placeHolderShimmer;
+            -webkit-animation-timing-function: linear;
+            animation-timing-function: linear;
+            background: #f6f7f8;
+            background: #eeeeee;
+            background: -webkit-gradient(linear, left top, right top, color-stop(8%, #eeeeee), color-stop(18%, #dddddd), color-stop(33%, #eeeeee));
+            background: -webkit-linear-gradient(left, #eeeeee 8%, #dddddd 18%, #eeeeee 33%);
+            background: linear-gradient(to right, #eeeeee 8%, #dddddd 18%, #eeeeee 33%);
+            -webkit-background-size: 800px 104px;
+            background-size: 800px 104px;
+            height: 96px;
+            width: 24%;
+            position: relative;
+        }
+
+        .prod-tile_content {
+            width: 24%;
+            float: left;
+            margin: 5px 0.5%;
+            border: 1px solid #ddd;
+            padding: 3px;
+            position: relative;
+            overflow: hidden;
+            /* cursor: pointer; */
+            text-decoration: none;
+            display: inline-block;
+        }
+    
+ .node-tile_content {
+        width: 24%;
+        float: left;
+        margin: 5px 0.5%;
+        border: 1px solid #ddd;
+        padding: 3px;
+        position: relative;
+        overflow: hidden;
+        /* cursor: pointer; */
+        text-decoration: none;
+        display: inline-block;
+    }
+
+/*style for product search page*/
+.prd-srch-temp-img
+{
+    width:100px; margin-left:25px; height:80px;
+}
+.prd-srch-temp-title{
+width:80%;height:20px;
+}
+.prd-srch-temp-pagging{
+float:left; margin-left:5px; width:20px; height:20px;
+}
+.prd-srch-temp-dtl-l1 {
+width:100%; margin-bottom:4px; height:10px;
+}
+
+.prd-srch-temp-dtl-l2 {
+width:100%;  height:10px;
+}
+
+
+    
+
+
+
+
+/*End*/
