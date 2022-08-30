@@ -4,6 +4,7 @@ class DataProvider {
      getUserAssignedproperty() {
          let url = '';
          url = `Property/UserAssignedProperty`;
+     
          return srv.get(url);;
     }
     getUserRoles() {
