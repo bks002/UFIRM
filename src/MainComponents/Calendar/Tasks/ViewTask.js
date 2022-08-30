@@ -196,7 +196,7 @@ export default class ViewTask extends Component {
                     {this.state.QuesData.map((element, index) => (
                       <div className="col-md-12" style={{ marginTop: "20px" }}>
                         <div style={{ display: "flex" }}>
-                          <div className="col-md-10">
+                          <div className="col-md-7">
                             <input
                               id="txtName"
                               type="text"
@@ -207,6 +207,21 @@ export default class ViewTask extends Component {
                             />
                           </div>
                           <div className="col-md-2">
+                          <input
+                              id="txtName"
+                              type="text"
+                              name="Remark"
+                              placeholder="Remark"
+                              className="form-control"
+                            />
+                          </div>
+                          <div className="col-md-2">
+                            <select className="form-control">
+                              <option value="Yes">Yes</option>
+                              <option value="No">No</option>
+                            </select>
+                          </div>
+                          <div className="col-md-1">
                             <button
                               class="btn btn-sm btn-danger"
                               onClick={() => this.removeQuesFields(element.QuesId)}

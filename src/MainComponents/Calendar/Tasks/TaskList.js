@@ -142,10 +142,10 @@ export default class TaskList extends Component {
               TaskSubCategoryId: element.TaskSubCategoryId,
               Name: element.Name,
               Description: element.Description,
-              DateFrom: element.DateFrom,
-              DateTo: element.DateTo,
-              TimeFrom: element.TimeFrom,
-              TimeTo: element.TimeTo,
+              DateFrom: element.DateFrom.split('T')[0],
+              DateTo: element.DateTo.split('T')[0],
+              TimeFrom: element.TimeFrom.split('T')[1],
+              TimeTo: element.TimeTo.split('T')[1],
               Remarks: element.Remarks,
               Occurence: element.Occurence,
               CategoryName: element.CategoryName,
@@ -370,7 +370,7 @@ export default class TaskList extends Component {
                       <DataTable
                         data={this.state.data}
                         columns={this.state.columns}
-                        hideGridSearchAndSize={false}
+                        hideGridSearchAndSize={true}
                         globalSearch={true}
                         isDefaultPagination={true}
                       />

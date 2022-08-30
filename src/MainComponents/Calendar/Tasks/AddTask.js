@@ -30,15 +30,23 @@ export default class AddTask extends Component {
       startDate: new Date(),
       endDate: new Date(),
       createdOn:moment().format(),
-      startTime: moment().add(moment().minute() > 30 && 1, 'hours').minutes(moment().minute() <= 30 ? 30 : 0).toDate(),
-      endTime: moment().add(moment().minute() > 30 && 1, 'hours').minutes(moment().minute() <= 30 ? 30 : 0).add(30, 'm').toDate(),
+      // startTime: moment().add(moment().minute() > 30 && 1, 'hours').minutes(moment().minute() <= 30 ? 30 : 0).toDate(),
+      // endTime: moment().add(moment().minute() > 30 && 1, 'hours').minutes(moment().minute() <= 30 ? 30 : 0).add(30, 'm').toDate(),
+      startTime:new Date(),
+      endTime:new Date(),
       selectedCategory:'',
       selectedSubCategory:'',
       subCategory:[]
     }
+    this.onDateChange = this.onDateChange.bind(this);
     this.ApiProvider = new ApiProvider();
   }
 
+  onDateChange(date) {
+    this.setState({
+      endDate: date
+    })
+  }
   getModel = (type) => {
     var model = [];
     switch (type) {
@@ -68,8 +76,8 @@ export default class AddTask extends Component {
             "Description": "Desc",
             "DateFrom": this.state.startDate,
             "DateTo": this.state.endDate,
-            "TimeFrom": this.state.startTime,
-            "TimeTo": this.state.endTime,
+            "TimeFrom": this.state.startTime.toString(),
+            "TimeTo": this.state.endTime.toString(),
             "Remarks": "remarks",
             "Occurence": "W",
             "CreatedBy": 1,
@@ -110,6 +118,7 @@ export default class AddTask extends Component {
   }
 
   manageTask = (model, type) => {
+    console.log(model);
     this.ApiProvider.manageTask(model, type).then(
         resp => {
             if (resp.ok && resp.status == 200) {
@@ -151,10 +160,11 @@ export default class AddTask extends Component {
       this.getSubCategory();
     }
   }
-
+  
   render() {
-    // console.log(this.state.subCategory)
-    // console.log(this.state.selectedCategory)
+    console.log("StartTime:",this.state.startTime);
+    console.log("EndTime:",this.state.endTime);
+
     return (
       <div>
         <Modal
@@ -257,6 +267,7 @@ export default class AddTask extends Component {
                       <ReactDatePicker
                         className='form-control'
                         selected={this.state.endDate}
+                        onChange={ this.onDateChange }
                         dateFormat="dd/MM/yyyy"
                         peekNextmonth
                         showMonthDropdown
@@ -292,7 +303,7 @@ export default class AddTask extends Component {
                             timeIntervals={30}
                             timeCaption="Time"
                             dateFormat="h:mm a"
-                            disabled={this.state.check}
+                            // disabled={this.state.check}
                         />
                     </div>
                     <div className="col-3 mt-2">
@@ -306,7 +317,7 @@ export default class AddTask extends Component {
                             timeIntervals={30}
                             timeCaption="Time"
                             dateFormat="h:mm a"
-                            disabled={this.state.check}
+                            // disabled={this.state.check}
                             minTime={moment(this.state.startTime).add(30, 'm').toDate()}
                             maxTime={setHours(setMinutes(this.state.startTime, 45), 23)}
                         />
