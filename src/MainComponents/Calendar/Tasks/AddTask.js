@@ -26,6 +26,7 @@ export default class AddTask extends Component {
       subCategoryId:'', 
       assignTo:'',
       remindme:'',
+      repeat:'',
       check: true,
       startDate: new Date(),
       endDate: new Date(),
@@ -76,8 +77,8 @@ export default class AddTask extends Component {
             "Description": "Desc",
             "DateFrom": this.state.startDate,
             "DateTo": this.state.endDate,
-            "TimeFrom": this.state.startTime.toString(),
-            "TimeTo": this.state.endTime.toString(),
+            "TimeFrom": this.state.startTime.toString().split(' GMT')[0],
+            "TimeTo": this.state.endTime.toString().split(' GMT')[0],
             "Remarks": "remarks",
             "Occurence": "W",
             "CreatedBy": 1,
@@ -162,9 +163,6 @@ export default class AddTask extends Component {
   }
   
   render() {
-    console.log("StartTime:",this.state.startTime);
-    console.log("EndTime:",this.state.endTime);
-
     return (
       <div>
         <Modal
@@ -255,6 +253,7 @@ export default class AddTask extends Component {
                         className='form-control'
                         selected={this.state.startDate}
                         dateFormat="dd/MM/yyyy"
+                        disabled
                         peekNextmonth
                         showMonthDropdown
                         showYearDropdown
@@ -357,11 +356,11 @@ export default class AddTask extends Component {
                             onChange={(e) => {
                                 this.setState({ repeat: e.target.value, RepeateEndBy: this.state.endDate })
                             }}>
-                            <option>Do not repeat</option>
-                            <option>Daily</option>
-                            <option>Weekly</option>
-                            <option>Monthly</option>
-                            <option>Yearly</option>
+                            <option value='N'>Do not repeat</option>
+                            <option value='D'>Daily</option>
+                            <option value='W'>Weekly</option>
+                            <option value='M'>Monthly</option>
+                            <option value='Y'>Yearly</option>
                             {/* <option>Custom</option> */}
                         </select>
                     </div>

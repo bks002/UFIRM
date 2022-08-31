@@ -68,9 +68,9 @@ export default class TaskList extends Component {
           Header: "Action",
           Cell: data =>{
            return <div style={{'display':'flex'}}>
-              <button class="btn btn-sm btn-primary" onClick={this.AddQuestion.bind(this,data.cell.row.original)} title="Add" style={{'marginRight':'5px'}}><i className="fa fa-plus"></i></button>
-              <button class="btn btn-sm btn-info" onClick={this.ViewTask.bind(this,data.cell.row.original)} title="View" style={{'marginRight':'5px'}}><i className="fa fa-eye"></i></button>
-              <button class="btn btn-sm btn-danger" onClick={this.AddQuestion.bind(this,data.cell.row.original)} title="View"><i className="fa fa-trash"></i></button>
+              <button className="btn btn-sm btn-primary" onClick={this.AddQuestion.bind(this,data.cell.row.original)} title="Add" style={{'marginRight':'5px'}}><i className="fa fa-plus"></i></button>
+              <button className="btn btn-sm btn-info" onClick={this.ViewTask.bind(this,data.cell.row.original)} title="View" style={{'marginRight':'5px'}}><i className="fa fa-eye"></i></button>
+              <button className="btn btn-sm btn-danger" onClick={this.AddQuestion.bind(this,data.cell.row.original)} title="View"><i className="fa fa-trash"></i></button>
             </div>
           },
         },

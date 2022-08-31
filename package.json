@@ -2,7 +2,6 @@
   "name": "redux-saga-example",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://amit-vinove.github.io/UFIRM",
   "dependencies": {
     "@emotion/react": "^11.10.0",
     "@lourenci/react-kanban": "^2.1.0",
@@ -50,8 +49,6 @@
     "react-trello": "^2.2.10"
   },
   "scripts": {
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",

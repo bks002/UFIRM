@@ -163,7 +163,7 @@ export default class AddQuestion extends Component {
                       <div style={{'display':'flex'}}>
                       <div className="col-md-10">
                       <input
-                        id="txtName"
+                        id="txtName" autoFocus
                         placeholder="Enter Question Name"
                         type="text"
                         name="QuestionName"
