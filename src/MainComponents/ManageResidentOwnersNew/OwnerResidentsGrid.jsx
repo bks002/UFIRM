@@ -240,6 +240,17 @@ class OwnerResidentsGrid extends Component {
                                                 </li> : null
                                         }
                                         {
+                                            this.props.residentTypeId === 2 && (
+                                                <li className="nav-item">
+                                                    <Button id="btnAddTenant"
+                                                        Action={this.enableAddOwnerTenant.bind(this, "AddTenant")}
+                                                        ClassName="btn btn-primary"
+                                                        Text="Add"
+                                                    />
+                                                </li>
+                                            )
+                                        }
+                                        {/* {
                                             // if Owner Residing -> hide add tenant from here.. //&& this.props.isOwnerRegistered
                                             this.props.occupancyStatus !== 'Owner Residing' && this.props.isOwnerRegistered ?
                                                 this.state.isActiveInactiveClass === 1 && this.props.residentTypeId === 2
@@ -253,7 +264,7 @@ class OwnerResidentsGrid extends Component {
                                                     </li>
                                                     : null
                                                 : null
-                                        }
+                                        } */}
                                         {
                                             this.props.occupancyStatus !== 'Owner Residing' ?
                                                 this.state.isActiveInactiveClass === 1 && this.props.residentTypeId === 2
