@@ -12,7 +12,7 @@ class DropdownList extends React.Component {
         return (
             <select onChange={this.onChange.bind(this)} id={this.props.Id} className={this.props.ClassName}
                 style={{ width: '100%' }} data-select2-id="1" aria-hidden="true">
-                <option value={0} >Select</option>
+                <option value={0} >Select {this.props.Name}</option>
                 {this.props.Options.map((item, idx) => (
                     <option id={idx} value={item.Value} key={idx} >{item.Name}</option>
                 ))}

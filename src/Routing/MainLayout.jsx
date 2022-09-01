@@ -90,6 +90,8 @@ class MainLayout extends React.Component {
                             if (rData.length == 1) {
                                 this.onPropertyChanged(rData[0].Value);
                             }
+
+                
                         });
                     });
                 }
@@ -201,7 +203,7 @@ class MainLayout extends React.Component {
                                                 <p className="text-sm">The subject goes here</p>
                                                 <p className="text-sm text-muted"><i className="far fa-clock mr-1"></i> 4 Hours Ago</p>
                                             </div>
-                                        </div>
+                                        </div>00
                                     </a>
                                     <div className="dropdown-divider"></div>
                                     <a href="#" className="dropdown-item dropdown-footer">See All Messages</a>

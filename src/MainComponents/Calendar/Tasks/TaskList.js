@@ -279,6 +279,7 @@ export default class TaskList extends Component {
                     <ul className="nav tableFilterContainer">
                       <li className="nav-item">
                         <DropdownList
+                          Name="Category"
                           Id="ddlTicketsystemCategory"
                           Options={this.state.CategoryData}
                           onSelected={this.onCategorySelected.bind(this)}
