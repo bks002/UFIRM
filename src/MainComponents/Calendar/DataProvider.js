@@ -40,6 +40,7 @@ class DataProvider {
     manageTask(model, type) {
         // 
         let url = '';
+        console.log(model);
         switch (type) {
             case 'C':
                 url = `CreateTask`;
@@ -54,7 +55,7 @@ class DataProvider {
                 return srv.CallPostService(url);
                 break;
             case 'R':
-                url = `TaskDetails`;
+                url = `TaskDetails?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}`;
                 return srv.getSubCategory(url);
                 break;
             default:

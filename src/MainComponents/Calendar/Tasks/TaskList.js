@@ -14,7 +14,6 @@ import ViewTask from "./ViewTask";
 const $ = window.$;
 
 export default class TaskList extends Component {
-  
   constructor(props) {
     super(props);
     this.state = {
@@ -66,18 +65,41 @@ export default class TaskList extends Component {
         // },
         {
           Header: "Action",
-          Cell: data =>{
-           return <div style={{'display':'flex'}}>
-              <button className="btn btn-sm btn-primary" onClick={this.AddQuestion.bind(this,data.cell.row.original)} title="Add" style={{'marginRight':'5px'}}><i className="fa fa-plus"></i></button>
-              <button className="btn btn-sm btn-info" onClick={this.ViewTask.bind(this,data.cell.row.original)} title="View" style={{'marginRight':'5px'}}><i className="fa fa-eye"></i></button>
-              <button className="btn btn-sm btn-danger" onClick={this.AddQuestion.bind(this,data.cell.row.original)} title="View"><i className="fa fa-trash"></i></button>
-            </div>
+          Cell: (data) => {
+            return (
+              <div style={{ display: "flex" }}>
+                <button
+                  className="btn btn-sm btn-primary"
+                  onClick={this.AddQuestion.bind(this, data.cell.row.original)}
+                  title="Add"
+                  style={{ marginRight: "5px" }}
+                >
+                  <i className="fa fa-plus"></i>
+                </button>
+                <button
+                  className="btn btn-sm btn-info"
+                  onClick={this.ViewTask.bind(this, data.cell.row.original)}
+                  title="View"
+                  style={{ marginRight: "5px" }}
+                >
+                  <i className="fa fa-eye"></i>
+                </button>
+                <button
+                  className="btn btn-sm btn-danger"
+                  onClick={this.AddQuestion.bind(this, data.cell.row.original)}
+                  title="View"
+                >
+                  <i className="fa fa-trash"></i>
+                </button>
+              </div>
+            );
           },
         },
       ],
       data: [],
       CategoryData: [],
       selectedCategoryId: "",
+      selectedSubCategoryId: "",
       usersList: [],
       userIds: "",
       loading: false,
@@ -85,21 +107,23 @@ export default class TaskList extends Component {
       PageMode: "Home",
       showQuesModal: false,
       showTaskModal: false,
-      actionVisible:false,
-      taskId:'',
-      taskName:'',
-      rowData:{}
+      actionVisible: false,
+      taskId: "",
+      taskName: "",
+      rowData: {},
+      subCategory: [],
     };
     this.ApiProvider = new ApiProvider();
   }
 
-
-  getModel = (type) => {
+  getModel = (type,categoryId,subCategoryId) => {
     var model = [];
     switch (type) {
       case "R":
         model.push({
           CmdType: type,
+          CategoryId: categoryId,
+          SubCategoryId: subCategoryId,
         });
         break;
       default:
@@ -142,10 +166,10 @@ export default class TaskList extends Component {
               TaskSubCategoryId: element.TaskSubCategoryId,
               Name: element.Name,
               Description: element.Description,
-              DateFrom: element.DateFrom.split('T')[0],
-              DateTo: element.DateTo.split('T')[0],
-              TimeFrom: element.TimeFrom.split('T')[1],
-              TimeTo: element.TimeTo.split('T')[1],
+              DateFrom: element.DateFrom.split("T")[0],
+              DateTo: element.DateTo.split("T")[0],
+              TimeFrom: element.TimeFrom.split("T")[1],
+              TimeTo: element.TimeTo.split("T")[1],
               Remarks: element.Remarks,
               Occurence: element.Occurence,
               CategoryName: element.CategoryName,
@@ -164,15 +188,49 @@ export default class TaskList extends Component {
     });
   };
 
+  manageSubCategory = (model, type,categoryId) => {
+    this.ApiProvider.manageSubCategory(model, type,categoryId).then(
+      resp => {
+        if (resp.ok && resp.status == 200) {
+          return resp.json().then(rData => {
+            let subCatData = [];
+            rData.forEach(element => {
+              subCatData.push({
+                SubCategoryId: element.SubCategoryId,
+                CategoryId: element.CategoryId,
+                SubCategoryName: element.SubCategoryName
+              });
+            });
+            switch (type) {
+              case 'R':
+                this.setState({ subCategory: subCatData });
+                break;
+              default:
+            }
+          });
+        }
+      }
+    );
+  }
+
   getCategory() {
     var type = "R";
     var model = this.getModel(type);
     this.manageCategory(model, type);
   }
 
+  getSubCategory() {
+    var type='R'
+    var model = this.getModel(type);
+    var categoryId = this.state.selectedCategoryId ? this.state.selectedCategoryId : 0;
+    this.manageSubCategory(model, type,categoryId);
+  }
+
   getTasks() {
     var type = "R";
-    var model = this.getModel(type);
+    const categoryId = this.state.selectedCategoryId ? this.state.selectedCategoryId : 0;
+    const subCategoryId = this.state.selectedSubCategoryId ? this.state.selectedSubCategoryId : 0;
+    var model = this.getModel(type,categoryId,subCategoryId);
     this.manageTask(model, type);
   }
 
@@ -184,15 +242,15 @@ export default class TaskList extends Component {
         taskName: rowData.Name,
       });
     }
-  }
+  };
 
   findItem(id) {
     return this.state.data.find((item) => {
-        if (item.TaskId == id) {
-            return item;
-        }
+      if (item.TaskId == id) {
+        return item;
+      }
     });
-}
+  }
 
   DateRangeConfig(startDate, endDate) {
     let _this = this;
@@ -219,11 +277,20 @@ export default class TaskList extends Component {
     this.setState({ PageMode: "Add", showAddModal: true });
   };
 
+  Filter=()=>{
+    console.log(this.state.selectedCategoryId,this.state.selectedSubCategoryId);
+    this.getTasks();
+  }
+
   AddQuestion = (data) => {
-    this.setState({ PageMode: "AddQuestion", showQuesModal: true, rowData:data });
+    this.setState({
+      PageMode: "AddQuestion",
+      showQuesModal: true,
+      rowData: data,
+    });
   };
   ViewTask = (data) => {
-    this.setState({ PageMode: "ViewTask", showTaskModal: true, rowData:data });
+    this.setState({ PageMode: "ViewTask", showTaskModal: true, rowData: data });
   };
 
   closeModal = () => {
@@ -231,8 +298,8 @@ export default class TaskList extends Component {
       {
         PageMode: "Home",
         showAddModal: false,
-        showQuesModal:false,
-        showTaskModal:false
+        showQuesModal: false,
+        showTaskModal: false,
       },
       () => {
         const startDate = moment().clone().startOf("month");
@@ -246,8 +313,15 @@ export default class TaskList extends Component {
     );
   };
 
+  selectedCategory = (value) => this.setState({ selectedCategoryId: value });
+
   // closeModal = () => this.setState({ PageMode: 'Home', showAddModal: false });
 
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.selectedCategoryId !== this.state.selectedCategoryId) {
+      this.getSubCategory();
+    }
+  }
   onCategorySelected = (val) => {};
 
   TaskStatusConfig() {
@@ -278,27 +352,41 @@ export default class TaskList extends Component {
                   <div className="card-header d-flex p-0">
                     <ul className="nav tableFilterContainer">
                       <li className="nav-item">
-                        <DropdownList
-                          Name="Category"
-                          Id="ddlTicketsystemCategory"
-                          Options={this.state.CategoryData}
-                          onSelected={this.onCategorySelected.bind(this)}
-                        />
+                        <select
+                          id="dllCategory"
+                          className="form-control"
+                          onChange={(e) =>
+                            this.setState({
+                              selectedCategoryId: e.target.value,
+                            })
+                          }
+                        >
+                          <option value={0}>Select Category</option>
+                          {this.state.CategoryData
+                            ? this.state.CategoryData.map((e, key) => {
+                                return (
+                                  <option key={key} value={e.Id}>
+                                    {e.Name}
+                                  </option>
+                                );
+                              })
+                            : null}
+                        </select>
                       </li>
                       <li className="nav-item">
                         <select
                           className="form-control"
-                          value={this.state.selectedCategoryId}
+                          onChange={(e) => this.setState({
+                            selectedSubCategoryId: e.target.value
+                        })}
                         >
                           <option value="">Sub Category</option>
-                          {this.state.CategoryData &&
-                            this.state.CategoryData.map((e, key) => {
-                              return (
-                                <option key={key} value={e.name}>
-                                  {e.name}
-                                </option>
-                              );
-                            })}
+                          {
+                          this.state.subCategory && this.state.subCategory.map((e, key) => {
+                            return <option key={key} value={e.SubCategoryId}>{e.SubCategoryName}
+                            </option>
+                          }) 
+                        }
                         </select>
                       </li>
                       <li className="nav-item">
@@ -340,6 +428,14 @@ export default class TaskList extends Component {
                             </div>
                           </div>
                         </div>
+                      </li>
+                      <li>
+                      <Button
+                              id="btnNewTask"
+                              Action={this.Filter.bind(this)}
+                              ClassName="btn btn-primary btn-sm"
+                              Text="Filter"
+                            />
                       </li>
                     </ul>
                     <ul className="nav ml-auto tableFilterContainer">
@@ -391,12 +487,18 @@ export default class TaskList extends Component {
           />
         )}
         {this.state.PageMode === "AddQuestion" && (
-          <AddQuestion  showQuesModal={this.state.showQuesModal}
-          closeModal={this.closeModal} rowData={this.state.rowData}/>
+          <AddQuestion
+            showQuesModal={this.state.showQuesModal}
+            closeModal={this.closeModal}
+            rowData={this.state.rowData}
+          />
         )}
         {this.state.PageMode === "ViewTask" && (
-          <ViewTask  showTaskModal={this.state.showTaskModal}
-          closeModal={this.closeModal} rowData={this.state.rowData}/>
+          <ViewTask
+            showTaskModal={this.state.showTaskModal}
+            closeModal={this.closeModal}
+            rowData={this.state.rowData}
+          />
         )}
       </div>
     );
