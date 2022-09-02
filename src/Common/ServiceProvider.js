@@ -40,10 +40,9 @@ class ServiceProvider {
         return jsonresponse;
     }
 
-    getSubCategory(url) {
+    getComplaint(url) {
         // debugger
         let jsonresponse = null;
-        console.log(url);
         jsonresponse = fetch(urls.complaintUrl + url,
             {
                 method: "GET",

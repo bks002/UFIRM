@@ -31,7 +31,7 @@ class DataProvider {
         switch (type) {
             case 'R':
                 url = `GetCategory?categoryId=${categoryId}`;
-                return srv.getSubCategory(url);
+                return srv.getComplaint(url);
                 break;
             default:
         }
@@ -40,7 +40,6 @@ class DataProvider {
     manageTask(model, type) {
         // 
         let url = '';
-        console.log(model);
         switch (type) {
             case 'C':
                 url = `CreateTask`;
@@ -51,12 +50,24 @@ class DataProvider {
                 return srv.CallPostService(url, model[0]);
                 break;
             case 'D':
-                url = `Calendar/Category/Delete/${model[0].CatId}/${model[0].CmdType}`;
-                return srv.CallPostService(url);
+                url = `DeleteTask?taskID=${model[0].TaskId}`;
+                return srv.CallDeleteNewService(url,model[0]);
                 break;
             case 'R':
                 url = `TaskDetails?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}`;
-                return srv.getSubCategory(url);
+                return srv.getComplaint(url);
+                break;
+            default:
+        }
+    }
+
+    manageAssets(model, type) {
+        // 
+        let url = '';
+        switch (type) {
+            case 'R':
+                url = `GetAssets`;
+                return srv.getComplaint(url);
                 break;
             default:
         }
@@ -80,7 +91,7 @@ class DataProvider {
                 break;
             case 'R':
                 url=`QuestionsOfTask?taskID=${model[0].Id}`;
-                return srv.getSubCategory(url);
+                return srv.getComplaint(url);
                 break;
             default:
         }

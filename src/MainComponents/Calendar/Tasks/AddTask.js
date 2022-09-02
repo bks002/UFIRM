@@ -37,7 +37,10 @@ export default class AddTask extends Component {
       endTime:new Date(),
       selectedCategory:'',
       selectedSubCategory:'',
-      subCategory:[]
+      subCategory:[],
+      assets:[],
+      assetId:'',
+      QRCode:''
     }
     this.onDateChange = this.onDateChange.bind(this);
     this.ApiProvider = new ApiProvider();
@@ -86,6 +89,8 @@ export default class AddTask extends Component {
             "AssignTo": 1,
             "RemindMe": this.state.remindme,
             "Location": this.state.location,
+            "AssetsID":parseInt(this.state.assetId),
+            "QRCode":this.state.QRCode,
           });
           break;
       default:
@@ -139,11 +144,41 @@ export default class AddTask extends Component {
         });
 }
 
+  manageAssets = (model, type) => {
+    this.ApiProvider.manageAssets(model, type).then(
+      resp => {
+        if (resp.ok && resp.status == 200) {
+          return resp.json().then(rData => {
+            let assetsData = [];
+            rData.forEach(element => {
+              assetsData.push({
+                assetId: element.Id,
+                assetName: element.Name,
+              });
+            });
+            switch (type) {
+              case 'R':
+                this.setState({ assets: assetsData });
+                break;
+              default:
+            }
+          });
+        }
+      }
+    );
+  }
+
   getSubCategory() {
     var type='R'
     var model = this.getModel(type);
     var categoryId = this.state.selectedCategory ? this.state.selectedCategory : 0;
     this.manageSubCategory(model, type,categoryId);
+  }
+
+  getAssets(){
+    var type='R'
+    var model = this.getModel(type);
+    this.manageAssets(model, type);
   }
 
   handleSave=()=>{
@@ -160,6 +195,10 @@ export default class AddTask extends Component {
     if (prevState.selectedCategory !== this.state.selectedCategory) {
       this.getSubCategory();
     }
+  }
+
+  componentDidMount(){
+    this.getAssets()
   }
   
   render() {
@@ -185,7 +224,7 @@ export default class AddTask extends Component {
                     </button>
                   </div>
                 </div>
-                <div className='card-body' style={{ height: "500px", overflowY: "scroll" }}>
+                <div className='card-body' style={{ height: "600px", overflowY: "scroll" }}>
                   <div className='row'>
                     <div className='col-6'>
                       <label>Name</label>
@@ -280,7 +319,9 @@ export default class AddTask extends Component {
                       <br />
                       <label className="switch">
                           <input type="checkbox"
-                              checked={this.state.check} />
+                              // checked={this.state.check} 
+                              onChange={(e) => { this.setState({ check: e.target.checked }) }}
+                              />
                           <div className="slider round">
                               <span className="on">Yes</span>
                               <span className="off">No</span>
@@ -363,6 +404,36 @@ export default class AddTask extends Component {
                             <option value='Y'>Yearly</option>
                             {/* <option>Custom</option> */}
                         </select>
+                    </div>
+
+                  </div>
+
+                  <div className='row mt-2'>
+                    <div className='col-6'>
+                      <label>Assets</label>
+                      <select
+                        iid="ddlAssignee"
+                        className='form-control'
+                        onChange={(e) => { this.setState({ assetId: e.target.value }) }}
+                      >
+                        <option value={0}>Select Assets</option>
+                        {
+                          this.state.assets && this.state.assets.map((e, key) => {
+                            return <option key={key} value={e.assetId}>{e.assetName}
+                            </option>
+                          }) 
+                        }
+                      </select>
+                    </div>
+                    <div className='col-6'>
+                        <label>QR Code</label>
+                      <input
+                        id="txtLocation"
+                        placeholder='QR Code'
+                        type="text"
+                        className='form-control'
+                        onChange={(e) => { this.setState({ QRCode: e.target.value }) }}
+                      />
                     </div>
 
                   </div>

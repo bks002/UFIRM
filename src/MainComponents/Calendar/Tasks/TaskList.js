@@ -10,6 +10,9 @@ import ApiProvider from "../DataProvider";
 import AddTask from "./AddTask";
 import AddQuestion from "./AddQuestion";
 import ViewTask from "./ViewTask";
+import * as appCommon from "../../../Common/AppCommon.js";
+import swal from "sweetalert";
+import { DELETE_CONFIRMATION_MSG } from '../../../Contants/Common';
 
 const $ = window.$;
 
@@ -86,7 +89,7 @@ export default class TaskList extends Component {
                 </button>
                 <button
                   className="btn btn-sm btn-danger"
-                  onClick={this.AddQuestion.bind(this, data.cell.row.original)}
+                  onClick={this.DeleteTask.bind(this, data.cell.row.original)}
                   title="View"
                 >
                   <i className="fa fa-trash"></i>
@@ -112,11 +115,13 @@ export default class TaskList extends Component {
       taskName: "",
       rowData: {},
       subCategory: [],
+      filtered: false,
+      occurance:''
     };
     this.ApiProvider = new ApiProvider();
   }
 
-  getModel = (type,categoryId,subCategoryId) => {
+  getModel = (type, categoryId, subCategoryId) => {
     var model = [];
     switch (type) {
       case "R":
@@ -124,6 +129,20 @@ export default class TaskList extends Component {
           CmdType: type,
           CategoryId: categoryId,
           SubCategoryId: subCategoryId,
+        });
+        break;
+      default:
+    }
+    return model;
+  };
+
+  getDeleteTaskModel = (type, taskId) => {
+    var model = [];
+    switch (type) {
+      case "D":
+        model.push({
+          CmdType: type,
+          TaskId: taskId,
         });
         break;
       default:
@@ -157,29 +176,64 @@ export default class TaskList extends Component {
     this.ApiProvider.manageTask(model, type).then((resp) => {
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
-          let taskData = [];
+          switch (type) {
+            case "R":
+              let taskData = [];
+              rData.forEach((element) => {
+                taskData.push({
+                  Id: element.Id,
+                  TaskId: element.TaskId,
+                  TaskCategoryId: element.TaskCategoryId,
+                  TaskSubCategoryId: element.TaskSubCategoryId,
+                  Name: element.Name,
+                  Description: element.Description,
+                  DateFrom: element.DateFrom.split("T")[0],
+                  DateTo: element.DateTo.split("T")[0],
+                  TimeFrom: element.TimeFrom.split("T")[1],
+                  TimeTo: element.TimeTo.split("T")[1],
+                  Remarks: element.Remarks,
+                  Occurence: element.Occurence,
+                  CategoryName: element.CategoryName,
+                  SubCategoryName: element.SubCategoryName,
+                  EntryType: element.EntryType,
+                });
+              });
+              this.setState({ data: taskData });
+              break;
+              case "D":
+                if (rData === "Deleted !") {
+                  appCommon.showtextalert(
+                    "Task Deleted Successfully!",
+                    "",
+                    "success"
+                  );
+                } else {
+                  appCommon.showtextalert("Someting went wrong !", "", "error");
+                }
+                this.getTasks();
+                break;
+            default:
+          }
+        });
+      }
+    });
+  };
+
+  manageSubCategory = (model, type, categoryId) => {
+    this.ApiProvider.manageSubCategory(model, type, categoryId).then((resp) => {
+      if (resp.ok && resp.status == 200) {
+        return resp.json().then((rData) => {
+          let subCatData = [];
           rData.forEach((element) => {
-            taskData.push({
-              Id: element.Id,
-              TaskId: element.TaskId,
-              TaskCategoryId: element.TaskCategoryId,
-              TaskSubCategoryId: element.TaskSubCategoryId,
-              Name: element.Name,
-              Description: element.Description,
-              DateFrom: element.DateFrom.split("T")[0],
-              DateTo: element.DateTo.split("T")[0],
-              TimeFrom: element.TimeFrom.split("T")[1],
-              TimeTo: element.TimeTo.split("T")[1],
-              Remarks: element.Remarks,
-              Occurence: element.Occurence,
-              CategoryName: element.CategoryName,
+            subCatData.push({
+              SubCategoryId: element.SubCategoryId,
+              CategoryId: element.CategoryId,
               SubCategoryName: element.SubCategoryName,
-              EntryType: element.EntryType,
             });
           });
           switch (type) {
             case "R":
-              this.setState({ data: taskData });
+              this.setState({ subCategory: subCatData });
               break;
             default:
           }
@@ -188,31 +242,6 @@ export default class TaskList extends Component {
     });
   };
 
-  manageSubCategory = (model, type,categoryId) => {
-    this.ApiProvider.manageSubCategory(model, type,categoryId).then(
-      resp => {
-        if (resp.ok && resp.status == 200) {
-          return resp.json().then(rData => {
-            let subCatData = [];
-            rData.forEach(element => {
-              subCatData.push({
-                SubCategoryId: element.SubCategoryId,
-                CategoryId: element.CategoryId,
-                SubCategoryName: element.SubCategoryName
-              });
-            });
-            switch (type) {
-              case 'R':
-                this.setState({ subCategory: subCatData });
-                break;
-              default:
-            }
-          });
-        }
-      }
-    );
-  }
-
   getCategory() {
     var type = "R";
     var model = this.getModel(type);
@@ -220,17 +249,23 @@ export default class TaskList extends Component {
   }
 
   getSubCategory() {
-    var type='R'
+    var type = "R";
     var model = this.getModel(type);
-    var categoryId = this.state.selectedCategoryId ? this.state.selectedCategoryId : 0;
-    this.manageSubCategory(model, type,categoryId);
+    var categoryId = this.state.selectedCategoryId
+      ? this.state.selectedCategoryId
+      : 0;
+    this.manageSubCategory(model, type, categoryId);
   }
 
   getTasks() {
     var type = "R";
-    const categoryId = this.state.selectedCategoryId ? this.state.selectedCategoryId : 0;
-    const subCategoryId = this.state.selectedSubCategoryId ? this.state.selectedSubCategoryId : 0;
-    var model = this.getModel(type,categoryId,subCategoryId);
+    var categoryId = this.state.selectedCategoryId
+      ? this.state.selectedCategoryId
+      : 0;
+    var subCategoryId = this.state.selectedSubCategoryId
+      ? this.state.selectedSubCategoryId
+      : 0;
+    var model = this.getModel(type, categoryId, subCategoryId);
     this.manageTask(model, type);
   }
 
@@ -270,17 +305,30 @@ export default class TaskList extends Component {
 
     this.getCategory();
     this.getTasks();
-    this.TaskStatusConfig();
+    // this.TaskStatusConfig();
   }
 
   AddNew = () => {
     this.setState({ PageMode: "Add", showAddModal: true });
   };
 
-  Filter=()=>{
-    console.log(this.state.selectedCategoryId,this.state.selectedSubCategoryId);
+  Filter = () => {
+    if (this.state.selectedCategoryId > 0) {
+      this.setState({ filtered: true });
+      this.getTasks();
+    } else {
+      appCommon.showtextalert("", "Please Select Category", "warning");
+    }
+  };
+
+  Reset = () => {
+    this.setState({
+      filtered: false,
+      selectedCategoryId: 0,
+      selectedSubCategoryId: 0,
+    });
     this.getTasks();
-  }
+  };
 
   AddQuestion = (data) => {
     this.setState({
@@ -292,6 +340,34 @@ export default class TaskList extends Component {
   ViewTask = (data) => {
     this.setState({ PageMode: "ViewTask", showTaskModal: true, rowData: data });
   };
+
+  DeleteTask = (data) => {
+    console.log(data);
+    let myhtml = document.createElement("div");
+    myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
+    alert: swal({
+      buttons: {
+        ok: "Yes",
+        cancel: "No",
+      },
+      content: myhtml,
+      icon: "warning",
+      closeOnClickOutside: false,
+      dangerMode: true,
+    }).then((value) => {
+      switch (value) {
+        case "ok":
+            var type = "D";
+            var model = this.getDeleteTaskModel(type, data.TaskId);
+            this.manageTask(model, type);
+          break;
+        case "cancel":
+          break;
+        default:
+          break;
+      }
+    });
+  }
 
   closeModal = () => {
     this.setState(
@@ -308,7 +384,7 @@ export default class TaskList extends Component {
 
         this.getCategory();
         this.getTasks();
-        this.TaskStatusConfig();
+        // this.TaskStatusConfig();
       }
     );
   };
@@ -321,23 +397,29 @@ export default class TaskList extends Component {
     if (prevState.selectedCategoryId !== this.state.selectedCategoryId) {
       this.getSubCategory();
     }
+    if (
+      prevState.selectedCategoryId !== this.state.selectedCategoryId &&
+      prevState.selectedSubCategoryId !== this.state.selectedSubCategoryId
+    ) {
+      this.getTasks();
+    }
   }
   onCategorySelected = (val) => {};
 
-  TaskStatusConfig() {
-    let _this = this;
-    $("#ticketMutliSelect").multiselect({
-      onSelectAll: function () {
-        // _this.filterOnChange();
-      },
-      onDeselectAll: function () {
-        // _this.filterOnChange();
-      },
-      onChange: function (option, checked, select) {
-        // _this.filterOnChange();
-      },
-    });
-  }
+  // TaskStatusConfig() {
+  //   let _this = this;
+  //   $("#ticketMutliSelect").multiselect({
+  //     onSelectAll: function () {
+  //       // _this.filterOnChange();
+  //     },
+  //     onDeselectAll: function () {
+  //       // _this.filterOnChange();
+  //     },
+  //     onChange: function (option, checked, select) {
+  //       // _this.filterOnChange();
+  //     },
+  //   });
+  // }
   render() {
     return (
       <div>
@@ -360,6 +442,7 @@ export default class TaskList extends Component {
                               selectedCategoryId: e.target.value,
                             })
                           }
+                          value={this.state.selectedCategoryId}
                         >
                           <option value={0}>Select Category</option>
                           {this.state.CategoryData
@@ -376,25 +459,40 @@ export default class TaskList extends Component {
                       <li className="nav-item">
                         <select
                           className="form-control"
-                          onChange={(e) => this.setState({
-                            selectedSubCategoryId: e.target.value
-                        })}
+                          onChange={(e) =>
+                            this.setState({
+                              selectedSubCategoryId: e.target.value,
+                            })
+                          }
+                          value={this.state.selectedSubCategoryId}
                         >
-                          <option value="">Sub Category</option>
-                          {
-                          this.state.subCategory && this.state.subCategory.map((e, key) => {
-                            return <option key={key} value={e.SubCategoryId}>{e.SubCategoryName}
-                            </option>
-                          }) 
-                        }
+                          <option value={0}>Sub Category</option>
+                          {this.state.subCategory &&
+                            this.state.subCategory.map((e, key) => {
+                              return (
+                                <option key={key} value={e.SubCategoryId}>
+                                  {e.SubCategoryName}
+                                </option>
+                              );
+                            })}
                         </select>
                       </li>
-                      <li className="nav-item">
+                      <li>
+                        <select className="form-control" onChange={(e)=>this.setState({
+                          occurance:e.target.value
+                        })}>
+                          <option value="N">Repeat</option>
+                          <option value="D">Daily</option>
+                          <option value="W">Weekly</option>
+                          <option value="M">Monthly</option>
+                          <option value="Y">Yearly</option>
+                        </select>
+                      </li>
+                      {/* <li className="nav-item">
                         <div className="input-group-prepend">
                           <select
                             className="form-control-sm pr-0 input-group-text"
                             data-placeholder="Status"
-                            id="ticketMutliSelect"
                             multiple="multiple"
                           >
                             <option value="Scheduled">Scheduled</option>
@@ -404,13 +502,13 @@ export default class TaskList extends Component {
                             <option value="Over Due">Over Due</option>
                           </select>
                         </div>
-                      </li>
-                      <li className="nav-item">
+                      </li> */}
+                      {/* <li className="nav-item">
                         <MultiSelectDropdown
                           id="assigneeUser"
                           option={this.state.usersList}
                         />
-                      </li>
+                      </li> */}
                       <li className="nav-item">
                         <div className="input-group input-group-sm">
                           <div className="form-group">
@@ -429,23 +527,35 @@ export default class TaskList extends Component {
                           </div>
                         </div>
                       </li>
-                      <li>
-                      <Button
-                              id="btnNewTask"
-                              Action={this.Filter.bind(this)}
-                              ClassName="btn btn-primary btn-sm"
-                              Text="Filter"
-                            />
-                      </li>
+                      {!this.state.filtered && (
+                        <li>
+                          <Button
+                            id="btnNewTask"
+                            Action={this.Filter.bind(this)}
+                            ClassName="btn btn-primary"
+                            Text="Filter"
+                          />
+                        </li>
+                      )}
+                      {this.state.filtered && (
+                        <li>
+                          <Button
+                            id="btnNewTask"
+                            Action={this.Reset.bind(this)}
+                            ClassName="btn btn-danger"
+                            Text="Reset"
+                          />
+                        </li>
+                      )}
                     </ul>
                     <ul className="nav ml-auto tableFilterContainer">
                       <li className="nav-item">
-                        <div className="input-group input-group-sm">
+                        <div className="input-group">
                           <div className="input-group-prepend">
                             <Button
                               id="btnNewTask"
                               Action={this.AddNew.bind(this)}
-                              ClassName="btn btn-success btn-sm"
+                              ClassName="btn btn-success"
                               Icon={
                                 <i
                                   className="fa fa-plus"
