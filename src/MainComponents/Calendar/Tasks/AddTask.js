@@ -42,11 +42,18 @@ export default class AddTask extends Component {
       assetId:'',
       QRCode:''
     }
-    this.onDateChange = this.onDateChange.bind(this);
+    this.onStartDateChange = this.onStartDateChange.bind(this);
+    this.onEndDateChange = this.onEndDateChange.bind(this);
     this.ApiProvider = new ApiProvider();
   }
 
-  onDateChange(date) {
+  onStartDateChange(date) {
+    this.setState({
+      startDate:date
+    })
+  }
+
+  onEndDateChange(date) {
     this.setState({
       endDate: date
     })
@@ -124,7 +131,6 @@ export default class AddTask extends Component {
   }
 
   manageTask = (model, type) => {
-    console.log(model);
     this.ApiProvider.manageTask(model, type).then(
         resp => {
             if (resp.ok && resp.status == 200) {
@@ -291,8 +297,8 @@ export default class AddTask extends Component {
                       <ReactDatePicker
                         className='form-control'
                         selected={this.state.startDate}
+                        onChange={ this.onStartDateChange} 
                         dateFormat="dd/MM/yyyy"
-                        disabled
                         peekNextmonth
                         showMonthDropdown
                         showYearDropdown
@@ -305,7 +311,7 @@ export default class AddTask extends Component {
                       <ReactDatePicker
                         className='form-control'
                         selected={this.state.endDate}
-                        onChange={ this.onDateChange }
+                        onChange={ this.onEndDateChange }
                         dateFormat="dd/MM/yyyy"
                         peekNextmonth
                         showMonthDropdown
