@@ -8,7 +8,7 @@ class APIUrlProvider {
     constructor() {
 
 
-         this.MainUrl = "https://admin-api.urest.in/api/" 
+        this.MainUrl = "https://admin-api.urest.in/api/" 
         // this.MainUrl = "https://localhost:44313/api/"
         this.complaintUrl  = "https://urest.in/complaint/"
 

@@ -25,6 +25,7 @@ export default class AddTask extends Component {
       categoryId:'',
       subCategoryId:'', 
       assignTo:'',
+      assign:[],
       remindme:'',
       repeat:'',
       check: true,
@@ -93,7 +94,7 @@ export default class AddTask extends Component {
             "Occurence": "W",
             "CreatedBy": 1,
             "CreatedOn": this.state.createdOn,
-            "AssignTo": 1,
+            "AssignTo": parseInt(this.state.assignTo),
             "RemindMe": this.state.remindme,
             "Location": this.state.location,
             "AssetsID":parseInt(this.state.assetId),
@@ -148,7 +149,9 @@ export default class AddTask extends Component {
                 });
             }
         });
-}
+  }
+
+
 
   manageAssets = (model, type) => {
     this.ApiProvider.manageAssets(model, type).then(
@@ -174,6 +177,30 @@ export default class AddTask extends Component {
     );
   }
 
+  manageAssign = (model, type) => {
+    this.ApiProvider.manageAssign(model, type).then(
+      resp => {
+        if (resp.ok && resp.status == 200) {
+          return resp.json().then(rData => {
+            let assignData = [];
+            rData.forEach(element => {
+              assignData.push({
+                assignId: element.Id,
+                assignName: element.Name,
+              });
+            });
+            switch (type) {
+              case 'R':
+                this.setState({ assign: assignData });
+                break;
+              default:
+            }
+          });
+        }
+      }
+    );
+  }
+
   getSubCategory() {
     var type='R'
     var model = this.getModel(type);
@@ -185,6 +212,12 @@ export default class AddTask extends Component {
     var type='R'
     var model = this.getModel(type);
     this.manageAssets(model, type);
+  }
+
+  getAssign(){
+    var type='R'
+    var model = this.getModel(type);
+    this.manageAssign(model, type);
   }
 
   handleSave=()=>{
@@ -205,6 +238,7 @@ export default class AddTask extends Component {
 
   componentDidMount(){
     this.getAssets()
+    this.getAssign()
   }
   
   render() {
@@ -390,8 +424,17 @@ export default class AddTask extends Component {
                       <select
                         iid="ddlAssignee"
                         className='form-control'
+                        onChange={(e) => this.setState({
+                           assignTo: e.target.value
+                      })}
                       >
-                        <option value={0}>Select Assignee</option>
+                      <option value={0}>Select Assignee</option>
+                        {
+                          this.state.assign && this.state.assign.map((e, key) => {
+                            return <option key={key} value={e.assignId}>{e.assignName}
+                            </option>
+                          }) 
+                        }
                       </select>
                     </div>
                     <div className='col-3'>

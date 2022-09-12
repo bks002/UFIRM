@@ -73,6 +73,18 @@ class DataProvider {
         }
     }
 
+    manageAssign(model, type) {
+        // 
+        let url = '';
+        switch (type) {
+            case 'R':
+                url = `AssignToList`;
+                return srv.getComplaint(url);
+                break;
+            default:
+        }
+    }
+
     manageQues(model, type) {
         // 
         let url = '';
