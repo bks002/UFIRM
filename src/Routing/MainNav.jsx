@@ -42,6 +42,7 @@ import PropertyEmployees from '../pages/PropertyEmployees'
 import PendingApprovalPage from '../pages/PendingApprovalPage'
 import KanbanBoardPage from '../pages/KanbanBoardPage'
 import EventCalendarPage from '../pages/EventCalendarPage'
+import TaskEventCalendarPage from '../pages/TaskEventCalendarPage.jsx';
 import PropertyOwnerPage from '../pages/PropertyOwnerPage.jsx';
 import PropertyTenatsPage from '../pages/PropertyTenatsPage.jsx';
 import RwaMemberPage from '../pages/RwaMemberPage';
@@ -712,6 +713,12 @@ class MainNav extends React.Component {
                                                             <p>Tasks Audit</p>
                                                         </Link>
                                                     </li>
+                                                    <li className="nav-item">
+                                                        <Link to="/Account/App/TaskEventsCalender" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p>Tasks Events</p>
+                                                        </Link>
+                                                    </li>
                                                 </ul>
                                             </li>
                                             : null
@@ -845,6 +852,9 @@ class MainNav extends React.Component {
                         </Route>
                         <Route path="/Account/App/PlannerTaskAudit">
                             <PlannerTaskAuditPage/>
+                        </Route>
+                        <Route path="/Account/App/TaskEventsCalender">
+                            <TaskEventCalendarPage />
                         </Route>
                     </Switch>
                     <footer className="main-footer">
