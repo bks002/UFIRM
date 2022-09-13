@@ -12,7 +12,7 @@ import AddQuestion from "./AddQuestion";
 import ViewTask from "./ViewTask";
 import * as appCommon from "../../../Common/AppCommon.js";
 import swal from "sweetalert";
-import { DELETE_CONFIRMATION_MSG } from '../../../Contants/Common';
+import { DELETE_CONFIRMATION_MSG } from "../../../Contants/Common";
 
 const $ = window.$;
 
@@ -36,6 +36,10 @@ export default class TaskList extends Component {
         {
           Header: "Task Name",
           accessor: "Name",
+        },
+        {
+          Header: "Assigned To",
+          accessor: "AssignedTo",
         },
         {
           Header: "Start Date",
@@ -116,7 +120,9 @@ export default class TaskList extends Component {
       rowData: {},
       subCategory: [],
       filtered: false,
-      occurance:''
+      occurance: "",
+      assignTo: "",
+      assign: [],
     };
     this.ApiProvider = new ApiProvider();
   }
@@ -143,6 +149,19 @@ export default class TaskList extends Component {
         model.push({
           CmdType: type,
           TaskId: taskId,
+        });
+        break;
+      default:
+    }
+    return model;
+  };
+
+  getAssignModel = (type) => {
+    var model = [];
+    switch (type) {
+      case "R":
+        model.push({
+          CmdType: type,
         });
         break;
       default:
@@ -196,22 +215,23 @@ export default class TaskList extends Component {
                   CategoryName: element.CategoryName,
                   SubCategoryName: element.SubCategoryName,
                   EntryType: element.EntryType,
+                  AssignedTo: element.AssignedTo,
                 });
               });
               this.setState({ data: taskData });
               break;
-              case "D":
-                if (rData === "Deleted !") {
-                  appCommon.showtextalert(
-                    "Task Deleted Successfully!",
-                    "",
-                    "success"
-                  );
-                } else {
-                  appCommon.showtextalert("Someting went wrong !", "", "error");
-                }
-                this.getTasks();
-                break;
+            case "D":
+              if (rData === "Deleted !") {
+                appCommon.showtextalert(
+                  "Task Deleted Successfully!",
+                  "",
+                  "success"
+                );
+              } else {
+                appCommon.showtextalert("Someting went wrong !", "", "error");
+              }
+              this.getTasks();
+              break;
             default:
           }
         });
@@ -234,6 +254,28 @@ export default class TaskList extends Component {
           switch (type) {
             case "R":
               this.setState({ subCategory: subCatData });
+              break;
+            default:
+          }
+        });
+      }
+    });
+  };
+
+  manageAssign = (model, type) => {
+    this.ApiProvider.manageAssign(model, type).then((resp) => {
+      if (resp.ok && resp.status == 200) {
+        return resp.json().then((rData) => {
+          let assignData = [];
+          rData.forEach((element) => {
+            assignData.push({
+              assignId: element.Id,
+              assignName: element.Name,
+            });
+          });
+          switch (type) {
+            case "R":
+              this.setState({ assign: assignData });
               break;
             default:
           }
@@ -267,6 +309,11 @@ export default class TaskList extends Component {
       : 0;
     var model = this.getModel(type, categoryId, subCategoryId);
     this.manageTask(model, type);
+  }
+  getAssign() {
+    var type = "R";
+    var model = this.getAssignModel(type);
+    this.manageAssign(model, type);
   }
 
   onAddQuestion = (data) => {
@@ -305,6 +352,7 @@ export default class TaskList extends Component {
 
     this.getCategory();
     this.getTasks();
+    this.getAssign()
     // this.TaskStatusConfig();
   }
 
@@ -357,9 +405,9 @@ export default class TaskList extends Component {
     }).then((value) => {
       switch (value) {
         case "ok":
-            var type = "D";
-            var model = this.getDeleteTaskModel(type, data.TaskId);
-            this.manageTask(model, type);
+          var type = "D";
+          var model = this.getDeleteTaskModel(type, data.TaskId);
+          this.manageTask(model, type);
           break;
         case "cancel":
           break;
@@ -367,7 +415,7 @@ export default class TaskList extends Component {
           break;
       }
     });
-  }
+  };
 
   closeModal = () => {
     this.setState(
@@ -478,14 +526,40 @@ export default class TaskList extends Component {
                         </select>
                       </li>
                       <li>
-                        <select className="form-control" onChange={(e)=>this.setState({
-                          occurance:e.target.value
-                        })}>
+                        <select
+                          className="form-control"
+                          onChange={(e) =>
+                            this.setState({
+                              occurance: e.target.value,
+                            })
+                          }
+                        >
                           <option value="N">Repeat</option>
                           <option value="D">Daily</option>
                           <option value="W">Weekly</option>
                           <option value="M">Monthly</option>
                           <option value="Y">Yearly</option>
+                        </select>
+                      </li>
+
+                      <li>
+                        <select
+                          className="form-control"
+                          onChange={(e) =>
+                            this.setState({
+                              assignTo: e.target.value,
+                            })
+                          }
+                        >
+                          <option value={0}>Assigned To</option>
+                          {this.state.assign &&
+                            this.state.assign.map((e, key) => {
+                              return (
+                                <option key={key} value={e.assignId}>
+                                  {e.assignName}
+                                </option>
+                              );
+                            })}
                         </select>
                       </li>
                       {/* <li className="nav-item">

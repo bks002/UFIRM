@@ -429,12 +429,12 @@ export default class AddTask extends Component {
                       })}
                       >
                       <option value={0}>Select Assignee</option>
-                        {
+                       {
                           this.state.assign && this.state.assign.map((e, key) => {
                             return <option key={key} value={e.assignId}>{e.assignName}
                             </option>
                           }) 
-                        }
+                        } 
                       </select>
                     </div>
                     <div className='col-3'>

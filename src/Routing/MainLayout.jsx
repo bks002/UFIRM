@@ -125,7 +125,7 @@ class MainLayout extends React.Component {
         promiseWrapper(this.props.actions.updateproperty, { CompanyId: value }).then((data) => {
             // this.setState({ customerData: data.departmentModel, });
         });
-        currentpropertyid = value;
+        currentpropertyid = value
     }
     onUpdateUserRole = (value) => {
         promiseWrapper(this.props.actions.updateuserrole, { UserRole: value }).then((data) => {

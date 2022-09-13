@@ -1,7 +1,7 @@
 import React from 'react';
 import { Provider } from 'react-redux';
 import { store, history } from './redux/store';
-import MainLayout from './Routing/MainLayout.jsx';
+import MainLayout from './Routing/MainNav';
 //import './App.css';//
 
 function App() {
