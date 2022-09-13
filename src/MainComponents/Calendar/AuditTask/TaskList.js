@@ -142,6 +142,23 @@ export default class TaskList extends Component {
     return model;
   };
 
+  getTaskModel = (type, categoryId, subCategoryId,assignToId,occurance) => {
+    var model = [];
+    switch (type) {
+      case "R":
+        model.push({
+          CmdType: type,
+          CategoryId: categoryId,
+          SubCategoryId: subCategoryId,
+          AssignedToId:assignToId,
+          Occurrence:occurance
+        });
+        break;
+      default:
+    }
+    return model;
+  };
+
   getDeleteTaskModel = (type, taskId) => {
     var model = [];
     switch (type) {
@@ -307,7 +324,11 @@ export default class TaskList extends Component {
     var subCategoryId = this.state.selectedSubCategoryId
       ? this.state.selectedSubCategoryId
       : 0;
-    var model = this.getModel(type, categoryId, subCategoryId);
+    var assignToId = this.state.assignTo
+    ? this.state.assignTo
+    : 0;
+    var occurance = this.state.occurance ? this.state.occurance : 0;
+    var model = this.getTaskModel(type, categoryId, subCategoryId,assignToId,occurance);
     this.manageTask(model, type);
   }
   getAssign() {
@@ -361,11 +382,11 @@ export default class TaskList extends Component {
   };
 
   Filter = () => {
-    if (this.state.selectedCategoryId > 0) {
+    if (this.state.selectedCategoryId > 0 ||this.state.assignTo > 0 || this.state.occurance > 0) {
       this.setState({ filtered: true });
       this.getTasks();
     } else {
-      appCommon.showtextalert("", "Please Select Category", "warning");
+      appCommon.showtextalert("", "Please Select Any Filter Attribute", "warning");
     }
   };
 
@@ -374,6 +395,8 @@ export default class TaskList extends Component {
       filtered: false,
       selectedCategoryId: 0,
       selectedSubCategoryId: 0,
+      occurance:0,
+      assignTo:0,
     });
     this.getTasks();
   };
@@ -533,12 +556,13 @@ export default class TaskList extends Component {
                               occurance: e.target.value,
                             })
                           }
+                          value={this.state.occurance}
                         >
-                          <option value="N">Repeat</option>
-                          <option value="D">Daily</option>
-                          <option value="W">Weekly</option>
-                          <option value="M">Monthly</option>
-                          <option value="Y">Yearly</option>
+                          <option value="0">Repeat</option>
+                          <option value="2">Daily</option>
+                          <option value="1">Weekly</option>
+                          <option value="3">Monthly</option>
+                          <option value="4">Yearly</option>
                         </select>
                       </li>
 
@@ -550,6 +574,7 @@ export default class TaskList extends Component {
                               assignTo: e.target.value,
                             })
                           }
+                          value={this.state.assignTo}
                         >
                           <option value={0}>Assigned To</option>
                           {this.state.assign &&

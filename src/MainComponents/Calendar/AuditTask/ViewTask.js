@@ -188,7 +188,18 @@ export default class ViewTask extends Component {
                         type="text"
                         className="form-control"
                       />
-                    </div>
+                    </div> 
+                    <br/>
+                    <div className="col-6">
+                      <label>Assigned To</label>
+                      <input
+                        id="txtName"
+                        value={this.props.rowData.AssignedTo}
+                        disabled
+                        type="text"
+                        className="form-control"
+                      />
+                    </div> 
                     <br />
                     <div className="col-md-12" style={{ marginTop: "20px" }}>
                       <label>Task Questionnaire</label>

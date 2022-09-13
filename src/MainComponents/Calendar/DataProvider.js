@@ -54,7 +54,7 @@ class DataProvider {
                 return srv.CallDeleteNewService(url,model[0]);
                 break;
             case 'R':
-                url = `TaskDetails?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}`;
+                url = `TaskDetails?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedToId}&occurrence=${model[0].Occurrence}`;
                 return srv.getComplaint(url);
                 break;
             default:
