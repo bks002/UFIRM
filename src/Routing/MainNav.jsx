@@ -50,6 +50,7 @@ import CalendarSubCategoryPage from '../pages/CalendarSubCategoryPage';
 import EventApproval from '../pages/EventApproval.jsx';
 import PlannerTaskPage from '../pages/PlannerTaskPage.jsx';
 import LoginPage from '../MainComponents/LoginPage.jsx';
+import PlannerTaskAuditPage from '../pages/PlannerTaskAuditPage.jsx';
 
 
 var currentpropertyid = 0;
@@ -705,6 +706,12 @@ class MainNav extends React.Component {
                                                             <p>Tasks</p>
                                                         </Link>
                                                     </li>
+                                                    <li className="nav-item">
+                                                        <Link to="/Account/App/PlannerTaskAudit" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p>Tasks Audit</p>
+                                                        </Link>
+                                                    </li>
                                                 </ul>
                                             </li>
                                             : null
@@ -835,6 +842,9 @@ class MainNav extends React.Component {
                         </Route>
                         <Route path="/Account/App/PlannerTask">
                             <PlannerTaskPage />
+                        </Route>
+                        <Route path="/Account/App/PlannerTaskAudit">
+                            <PlannerTaskAuditPage/>
                         </Route>
                     </Switch>
                     <footer className="main-footer">

@@ -49,6 +49,8 @@ import CalendarCategoryPage from '../pages/CalendarCategoryPage';
 import CalendarSubCategoryPage from '../pages/CalendarSubCategoryPage';
 import EventApproval from '../pages/EventApproval.jsx';
 import PlannerTaskPage from '../pages/PlannerTaskPage.jsx';
+import PlannerTaskAuditPage from '../pages/PlannerTaskAuditPage';
+
 
 var currentpropertyid = 0;
 class MainLayout extends React.Component {
@@ -833,6 +835,9 @@ class MainLayout extends React.Component {
                         </Route>
                         <Route path="/Account/App/PlannerTask">
                             <PlannerTaskPage />
+                        </Route>
+                        <Route path="/Account/App/PlannerTaskAudit">
+                            <PlannerTaskAuditPage />
                         </Route>
                     </Switch>
                     <footer className="main-footer">

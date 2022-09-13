@@ -38,10 +38,6 @@ export default class TaskList extends Component {
           accessor: "Name",
         },
         {
-          Header: "Assigned To",
-          accessor: "AssignedTo",
-        },
-        {
           Header: "Start Date",
           accessor: "DateFrom",
         },
@@ -542,26 +538,7 @@ export default class TaskList extends Component {
                         </select>
                       </li>
 
-                      <li>
-                        <select
-                          className="form-control"
-                          onChange={(e) =>
-                            this.setState({
-                              assignTo: e.target.value,
-                            })
-                          }
-                        >
-                          <option value={0}>Assigned To</option>
-                          {this.state.assign &&
-                            this.state.assign.map((e, key) => {
-                              return (
-                                <option key={key} value={e.assignId}>
-                                  {e.assignName}
-                                </option>
-                              );
-                            })}
-                        </select>
-                      </li>
+            
                       {/* <li className="nav-item">
                         <div className="input-group-prepend">
                           <select
