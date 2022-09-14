@@ -270,7 +270,7 @@ class TaskEventCalendar extends Component {
     //this.setState({ events: events });
   };
   manageEvents = (model, type) => {
-    this.ApiProviderr.manageTask(model, type).then((resp) => {
+    this.ApiProviderr.manageTaskEvents(model, type).then((resp) => {
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
           switch (type) {
@@ -503,11 +503,11 @@ class TaskEventCalendar extends Component {
                     localizer={localizer}
                     events={this.state.events}
                     startAccessor="start"
-                    endAccessor="end"
+                    endAccessor="start"
                     style={{ height: 600 }}
                     step={30}
                     showMultiDayTimes
-                    selectable
+                  
                     // popup
                     // onSelectEvent={this.handleEventSelect}
                     // onSelectSlot={this.handleSelect}

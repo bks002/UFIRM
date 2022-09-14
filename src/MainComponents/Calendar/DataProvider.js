@@ -61,6 +61,18 @@ class DataProvider {
         }
     }
 
+    manageTaskEvents(model, type) {
+        // 
+        let url = '';
+        switch (type) {
+            case 'R':
+                url = `TaskDetailsEvent`;
+                return srv.getComplaint(url);
+                break;
+            default:
+        }
+    }
+
     manageAssets(model, type) {
         // 
         let url = '';
