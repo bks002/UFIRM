@@ -114,7 +114,7 @@ class DataProvider {
                 return srv.CallDeleteNewService(url,model[0]);
                 break;
             case 'R':
-                url=`QuestionsOfTask?taskID=${model[0].Id}`;
+                url=`QuestionsDetailsOfTask?taskID=${model[0].Id}`;
                 return srv.getComplaint(url);
                 break;
             default:
