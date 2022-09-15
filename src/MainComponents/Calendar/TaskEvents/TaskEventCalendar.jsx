@@ -18,6 +18,8 @@ import { connect } from "react-redux";
 import departmentAction from "../../../redux/department/action";
 import { bindActionCreators } from "redux";
 
+import ViewTaskEvent from "./ViewTaskEvent";
+
 // let allViews = Object.keys(Views).map(k => Views[k])
 
 import EventDetailsModel from "./EventDetailsModel";
@@ -44,6 +46,7 @@ class TaskEventCalendar extends Component {
       endDate: null,
       categoryList: [],
       assigneeList: [],
+      showTaskEventModal: false,
       showDetailsModal: false,
       EventDetailsModelInstance: null,
       filterEventType: "E",
@@ -56,6 +59,7 @@ class TaskEventCalendar extends Component {
       detailspageHtmlFormatDesc: "",
       taskStatusList: [],
       filterEventStatus: "",
+      eventData:{},
     };
     this.ApiProviderr = new ApiProvider();
     this.comdbprovider = new CommonDataProvider();
@@ -188,9 +192,7 @@ class TaskEventCalendar extends Component {
       case "DT":
         model.push({
           CmdType: type,
-          PropertyId: parseInt(this.props.PropertyId),
           EventId: parseInt(EventId),
-          SubEventId: parseInt(SubEventId),
         });
         break;
       default:
@@ -265,7 +267,6 @@ class TaskEventCalendar extends Component {
   getEvents = () => {
     var type = "R";
     var model = this.getModel(type);
-    console.log(model);
     this.manageEvents(model, type);
     //this.setState({ events: events });
   };
@@ -276,7 +277,6 @@ class TaskEventCalendar extends Component {
           switch (type) {
             case "R":
               let eventData = [];
-              console.log(rData);
               rData.forEach((x) => {
                 x.start = new Date(x.DateFrom.split("T")[0]+"T"+x.TimeFrom.split("T")[1]);
                 x.end = new Date(x.DateTo.split("T")[0]+"T"+x.TimeTo.split("T")[1]);
@@ -284,12 +284,10 @@ class TaskEventCalendar extends Component {
                 x.eventNumber = x.TaskId
                 eventData.push(x);
               });
-              console.log(eventData);
               this.setState({ events: eventData });
               break;
             case "E":
               let newData = [];
-              console.log(rData);
               rData.forEach((x) => {
                 if (x.allday) {
                   // x.start = new Date(Date.parse(x.start))
@@ -400,9 +398,17 @@ class TaskEventCalendar extends Component {
   };
 
   handleEventSelect = (event) => {
-    var type = "DT";
-    var model = this.getModel(type, event.id, event.subEventId);
-    this.manageEvents(model, type);
+    console.log(event);
+    this.setState({ PageMode: "ViewTask",showTaskEventModal: true, eventData:event });
+  };
+
+  closeModal = () => {
+    this.setState(
+      {
+        PageMode: "Home",
+        showEventTaskModal: false,
+      }
+    );
   };
 
   // filter code
@@ -508,8 +514,8 @@ class TaskEventCalendar extends Component {
                     step={30}
                     showMultiDayTimes
                   
-                    // popup
-                    // onSelectEvent={this.handleEventSelect}
+                    popup
+                    onSelectEvent={this.handleEventSelect}
                     // onSelectSlot={this.handleSelect}
                     eventPropGetter={this.eventStyleGetter}
                     components={{
@@ -536,18 +542,14 @@ class TaskEventCalendar extends Component {
           />
         )}
 
-        {this.state.showDetailsModal && (
-          <DetailsEvent
-            showDetailsModal={this.state.showDetailsModal}
-            closeModal={this.closeDetailEventmodal}
-            categoryList={this.state.categoryList}
-            assigneeList={this.state.assigneeList}
-            EventDetailsModelInstance={this.state.EventDetailsModelInstance}
-            propertyId={this.props.PropertyId}
-            getEvents={this.getEvents}
-            detailspageHtmlFormatDesc={this.state.detailspageHtmlFormatDesc}
+        {this.state.PageMode === "ViewTask" && (
+          <ViewTaskEvent
+            showTaskModal={this.state.showTaskEventModal}
+            closeModal={this.closeModal}
+            rowData={this.state.eventData}
           />
         )}
+
       </div>
     );
   }

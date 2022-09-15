@@ -66,6 +66,8 @@ export default class ViewTask extends Component {
               let quesData = rData.map((element) => ({
                 QuesId: element.QuestID,
                 QuesName: element.QuestionName,
+                Action:element.Action,
+                Remark:element.Remarks
               }));
               this.setState({ QuesData: quesData });
               break;
@@ -147,7 +149,7 @@ export default class ViewTask extends Component {
           visible={this.props.showTaskModal}
           effect="fadeInRight"
           onClickAway={this.props.closeModal}
-          width="800"
+          width="1000"
         >
           <div className="row">
             <div className="col-12">
@@ -201,8 +203,19 @@ export default class ViewTask extends Component {
                       />
                     </div> 
                     <br />
-                    <div className="col-md-12" style={{ marginTop: "20px" }}>
+                    
+                    <div className="col-md-12">
+                      <div className="row">
+                      <div className="col-md-7" style={{ marginTop: "20px" }}>
                       <label>Task Questionnaire</label>
+                      </div>
+                      <div className="col-md-3" style={{ marginTop: "20px" }}>
+                      <label>Remark</label>
+                      </div>
+                      <div className="col-md-2" style={{ marginTop: "20px" }}>
+                      <label>Status</label>
+                      </div>
+                      </div>
                     </div>
                     {this.state.QuesData.map((element, index) => (
                       <div className="col-md-12" style={{ marginTop: "20px" }}>
@@ -217,29 +230,25 @@ export default class ViewTask extends Component {
                               disabled
                             />
                           </div>
-                          <div className="col-md-2">
+                          {
+                            element.Action === "No" ?(
+                          <div className="col-md-3">
                           <input
                               id="txtName"
                               type="text"
                               name="Remark"
-                              placeholder="Remark"
+                              value={element.Remark}
+                              disabled
                               className="form-control"
                             />
                           </div>
+                            ) : (<div className="col-md-3"></div>)
+                          }
+                          
                           <div className="col-md-2">
-                            <select className="form-control">
-                              <option value="Yes">Yes</option>
-                              <option value="No">No</option>
+                            <select className="form-control" disabled>
+                              <option value={element.Action}>{element.Action}</option>
                             </select>
-                          </div>
-                          <div className="col-md-1">
-                            <button
-                              class="btn btn-sm btn-danger"
-                              onClick={() => this.removeQuesFields(element.QuesId)}
-                              title="Delete"
-                            >
-                              <i className="fa fa-trash"></i>
-                            </button>
                           </div>
                         </div>
                       </div>
