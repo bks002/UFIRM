@@ -100,6 +100,7 @@ class DataProvider {
     manageQues(model, type) {
         // 
         let url = '';
+        console.log(model)
         switch (type) {
             case 'C':
                 url = `/CreateQuestionnaire`;
@@ -117,6 +118,14 @@ class DataProvider {
                 url=`QuestionsDetailsOfTask?taskID=${model[0].Id}`;
                 return srv.getComplaint(url);
                 break;
+            case 'AB': //Amenites Bookings
+                url=`AmenitiesBookings?PropertyID=${model[0].PropertyId}&UserID=${model[0].UserID}}`;
+                return srv.getComplaint(url);
+                break;
+            case 'ABA': //Amenites Bookings Approve
+                url=`AmenitiesBookingApprove?Id=${model[0].Id}`;
+                return srv.getComplaint(url);
+                break;
             default:
         }
     }
@@ -125,6 +134,7 @@ class DataProvider {
         let url = `Calendar/Assignee/${PropertyId}`;
         return srv.get(url);
     }
+
     manageEvents(model, type) {
         let url = '';
         switch (type) {

@@ -6,3 +6,4 @@ export const CHANGEPASSWORD = 'Changed Password Successfully';
 export const BLOCK_CONFIRMATION_MSG = 'Are you sure you want to block this item?';
 export const UNBLOCK_CONFIRMATION_MSG = 'Are you sure you want to unblock this item?';
 export const COMTHING_WENTWRONG = 'Something went wrong!!';
+export const APPROVE_CONFIRMATION_MSG = 'Are you sure you want to Approve this item?';

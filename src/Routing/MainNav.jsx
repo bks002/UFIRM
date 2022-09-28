@@ -31,6 +31,7 @@ import { connect } from 'react-redux';
 import { promiseWrapper } from '../utility/common';
 import { bindActionCreators } from 'redux';
 import AmenitiesAssignmentPage from '../pages/AmenitiesAssignmentPage';
+import AmenitiesBookingPage from '../pages/AmenitiesBookingPage';
 import AmenitiesMasterPage from '../pages/AmenitiesMasterPage';
 import ManageResidentOwnersPage from '../pages/ManageResidentOwnersPage';
 import ManageFlatPage from '../pages/ManageFlatPage';
@@ -656,6 +657,12 @@ class MainNav extends React.Component {
                                                             <p >Amenities Assignment</p>
                                                         </Link>
                                                     </li>
+                                                    <li className="nav-item">
+                                                        <Link to="/Account/App/AmenitiesBooking" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p >Amenities Booking</p>
+                                                        </Link>
+                                                    </li>
                                                 </ul>
                                             </li>
                                             : null
@@ -804,6 +811,9 @@ class MainNav extends React.Component {
                         </Route>
                         <Route path="/Account/App/AmenitiesAssignment">
                             <AmenitiesAssignmentPage />
+                        </Route>
+                        <Route path="/Account/App/AmenitiesBooking">
+                            <AmenitiesBookingPage />
                         </Route>
                         <Route path="/Account/App/ManageResidentOwners">
                             <ManageResidentOwnersPage />

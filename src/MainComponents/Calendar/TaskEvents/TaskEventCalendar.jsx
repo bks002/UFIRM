@@ -281,7 +281,7 @@ class TaskEventCalendar extends Component {
                 x.start = new Date(x.DateFrom.split("T")[0]+"T"+x.TimeFrom.split("T")[1]);
                 x.end = new Date(x.DateTo.split("T")[0]+"T"+x.TimeTo.split("T")[1]);
                 x.title = x.Name;
-                x.eventNumber = x.TaskId
+                x.eventNumber =  x.TaskId>70? x.TaskId>85? '0/0' : '3/5':'2/7';    
                 eventData.push(x);
               });
               this.setState({ events: eventData });
