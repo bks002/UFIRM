@@ -71,10 +71,10 @@ class TaskEventCalendar extends Component {
   eventStyle({ event }) {
     // console.log(event); //Deleted,Completed,Pending Approval,Overdue,Scheduled
     let text;
-    switch (event.status) {
-      case "Completed":
+    switch (event.TaskStatus) {
+      case "R":
         text = (
-          <span style={{ color: "black" }}>
+          <span style={{ color: "white"}}>
             <i
               className="fa fa-check"
               title="Completed"
@@ -84,9 +84,9 @@ class TaskEventCalendar extends Component {
           </span>
         );
         break;
-      case "Overdue":
+      case "O":
         text = (
-          <span style={{ color: "black" }}>
+          <span style={{ color: "white" }}>
             <i
               className="fa fa-exclamation-triangle"
               title="Overdue"
@@ -96,24 +96,12 @@ class TaskEventCalendar extends Component {
           </span>
         );
         break;
-      case "Scheduled":
+      case "G":
         text = (
-          <span style={{ color: "black" }}>
+          <span style={{ color: "white" }}>
             <i
               className="fa fa-clock"
               title="Scheduled"
-              style={{ fontSize: 12, marginRight: "4px" }}
-            ></i>
-            {`${event.eventNumber}- ${event.title}`}
-          </span>
-        );
-        break;
-      case "Deleted":
-        text = (
-          <span style={{ color: "black" }}>
-            <i
-              className="fa fa-trash"
-              title="Deleted"
               style={{ fontSize: 12, marginRight: "4px" }}
             ></i>
             {`${event.eventNumber}- ${event.title}`}
@@ -132,10 +120,35 @@ class TaskEventCalendar extends Component {
   }
 
   eventStyleGetter = (event, start, end, isSelected) => {
-    // console.log(event);
-    return {
-      style: { backgroundColor: event.categoryColor },
-    };
+    console.log(event)
+    if (event.TaskStatus == "R") {
+      return {
+        style: {
+          backgroundColor: "Red",
+        },
+      };
+    }
+    else if (event.TaskStatus == "O") {
+      return {
+        style: {
+          backgroundColor: "Orange",
+        },
+      };
+    }
+    else if (event.TaskStatus == "G") {
+      return {
+        style: {
+          backgroundColor: "Green",
+        },
+      };
+    }
+    else {
+      return {
+        style: {
+          backgroundColor: event.categoryColor,
+        },
+      };
+    }
   };
 
   closemodal = () => {
@@ -510,7 +523,7 @@ class TaskEventCalendar extends Component {
                     events={this.state.events}
                     startAccessor="start"
                     endAccessor="start"
-                    style={{ height: 600 }}
+                    style={{ height: 650 }}
                     step={30}
                     showMultiDayTimes
                   

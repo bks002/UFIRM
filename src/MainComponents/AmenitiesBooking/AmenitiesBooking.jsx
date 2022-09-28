@@ -101,7 +101,6 @@ class AmenitiesBooking extends React.Component {
     const endDate = moment().clone().endOf("month");
     this.DateRangeConfig(startDate, endDate);
     this.getAmenitiesBookings();
-    // this.DateRangeConfig(startDate, endDate);
 
   }
 
