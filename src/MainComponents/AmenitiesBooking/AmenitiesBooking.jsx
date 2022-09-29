@@ -40,9 +40,10 @@ class AmenitiesBooking extends React.Component {
       AmenityId: "0",
       AmenityListData: [],
       AmenitiesBookings: [],
+      AmenitiesBookingsUsers:[],
       AmenityBookingId: "",
       pageSize: 10,
-      UserId:'',
+      UserId:"0",
       pageNumber: 1,
       gridHeader: [
         { sTitle: "Id", titleValue: "Id", orderable: false, visible: true },
@@ -71,16 +72,26 @@ class AmenitiesBooking extends React.Component {
     var propertyId = 4;
     var type = "AB";
     var userId = this.state.UserId;
-    var model = this.getModel(type, propertyId,userId);
+    var DateFrom = this.state.DateFrom;
+    var DateTo = this.state.DateTo;
+    var model = this.getModel(type, propertyId,userId,DateFrom,DateTo);
     this.loadBooking(model, type);
   }
   async loadBooking(model, type) {
-    //
     await this.dataprovider.manageQues(model, type).then((resp) => {
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
-            console.log(rData);
+          let users =[]
+          let uniqueUsers = []
+          rData.forEach((item) => {
+            users.push({
+              Id: item.UserId,
+              Username : item.UserName,
+            })
+          })
+          uniqueUsers = users.filter((v, i, a) => a.findIndex(t => (t.Id === v.Id)) === i)
           this.setState({ AmenitiesBookings: rData });
+          this.setState({ AmenitiesBookingsUsers: uniqueUsers });
         });
       }
     });
@@ -247,7 +258,7 @@ class AmenitiesBooking extends React.Component {
     });
   }
 
-  getModel = (type, propertyId,userId) => {
+  getModel = (type, propertyId,userId,DateFrom,DateTo) => {
     var model = [];
     switch (type) {
       case "R":
@@ -280,9 +291,8 @@ class AmenitiesBooking extends React.Component {
           AmenitiesId: 0,
           PropertyId: propertyId,
           UserId: userId,
-          AmenitiesName: "",
-          TimeSlot: "",
-          NosOfPersons: 0,
+          DateFrom: DateFrom,
+          DateTo: DateTo,
         });
       default:
     }
@@ -373,11 +383,11 @@ class AmenitiesBooking extends React.Component {
                           value={this.state.UserId}
                       >
                         <option value={0}>Select User</option>
-                        {this.state.AmenitiesBookings
-                            ? this.state.AmenitiesBookings.map((e, key) => {
+                        {this.state.AmenitiesBookingsUsers
+                            ? this.state.AmenitiesBookingsUsers.map((e, key) => {
                                 return (
-                                  <option key={key} value={e.UserId}>
-                                    {e.UserName}
+                                  <option key={key} value={e.Id}>
+                                    {e.Username}
                                   </option>
                                 );
                               })

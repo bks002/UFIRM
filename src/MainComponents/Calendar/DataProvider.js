@@ -119,7 +119,7 @@ class DataProvider {
                 return srv.getComplaint(url);
                 break;
             case 'AB': //Amenites Bookings
-                url=`AmenitiesBookings?PropertyID=${model[0].PropertyId}&UserID=${model[0].UserID}}`;
+                url=`AmenitiesBookings?PropertyID=${model[0].PropertyId}&UserID=${model[0].UserId}&DateFr=${model[0].DateFrom}&DateTo=${model[0].DateTo}`;
                 return srv.getComplaint(url);
                 break;
             case 'ABA': //Amenites Bookings Approve
