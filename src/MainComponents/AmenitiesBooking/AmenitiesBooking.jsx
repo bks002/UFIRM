@@ -353,7 +353,7 @@ class AmenitiesBooking extends React.Component {
     });
     this.getAmenitiesBookings();
   };
-
+ 
   //End
   render() {
     // let _this = this;
