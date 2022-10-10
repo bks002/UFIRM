@@ -5,6 +5,7 @@ import DataGrid from '../../ReactComponents/DataGrid/DataGrid';
 import InputBox from '../../ReactComponents/InputBox/InputBox';
 import DropdownList from '../../ReactComponents/SelectBox/DropdownList';
 import ApiProvider from './DataProvider';
+import * as appCommon from '../../Common/AppCommon.js';
 
 export default class SubCategory extends Component {
   constructor(props) {
@@ -23,6 +24,7 @@ export default class SubCategory extends Component {
       subCategoryName: '',
       selectedCategoryId: '',
       subCategoryId: '',
+      categoryData: [],
     };
 
     this.ApiProvider = new ApiProvider();
@@ -34,19 +36,51 @@ export default class SubCategory extends Component {
 
   handleSave = () => {
     var type = 'C';
+    var model = this.getModel(type);
+    this.saveSubCategory(model, type);
 
     if (this.state.PageMode == 'Edit')
       type = 'U';
     var model = this.getModel(type);
+
+  }
+
+  saveSubCategory = (model, type) => {
+    console.log(model);
+    this.ApiProvider.manageSubCategory(model, type).then(
+        resp => {
+            if (resp.ok && resp.status == 200) {
+                return resp.json().then(rData => {
+                    switch (type) {
+                        case 'C':
+                          this.handleCancel();
+                          break;
+                        default:
+                    }
+                });
+            }
+        });
   }
 
   handleCancel = () => {
-
-  }
+    this.setState({
+        PageMode: 'Home',
+        subCategoryName: '',
+        selectedCategoryId: '',
+        subCategoryId: '',
+        catColor: "#FFA500",
+    }, () => this.getSubCategory());
+  };
 
   getModel = (type) => {
     var model = [];
     switch(type) {
+      case 'C':
+        model.push({
+          "categoryId": parseInt(this.state.selectedCategoryId),
+          "subCategoryName": this.state.subCategoryName,     
+        });
+        break;
       case 'R':
         model.push({
           "CmdType": type
@@ -55,6 +89,29 @@ export default class SubCategory extends Component {
       default:
     };
     return model;
+  }
+
+  manageCategory = (model, type,catId) => {
+    this.ApiProvider.manageCategory(model, type,catId).then(
+      resp => {
+        if (resp.ok && resp.status == 200) {
+          return resp.json().then(rData => {
+            switch(type) {
+              case 'R':
+                let catData = rData.map(element => ({
+                  Value: element.catId,
+                  Name: element.name,
+                  Description: element.description,
+                  Color: element.color
+                }));
+                this.setState({ categoryData: catData });
+                break;
+              default:
+            }
+          })
+        }
+      }
+    )
   }
 
   manageSubCategory = (model, type,catId) => {
@@ -85,11 +142,19 @@ export default class SubCategory extends Component {
     var catId =0
     this.manageSubCategory(model, type,catId);
   }
+ 
+  getCategory() {
+    var type = 'R';
+    var model = this.getModel(type);
+    var catId =0
+    this.manageCategory(model, type,catId);
+  }
 
   onCategoryChanged = value => this.setState({ selectedCategoryId: parseInt(value) });
 
   componentDidMount() {
     this.getSubCategory();
+    this.getCategory();
   }
 
   render() {
@@ -135,22 +200,45 @@ export default class SubCategory extends Component {
                   <div className='col-sm-6'>
                     <div className='form-group'>
                       <label htmlFor='ddlCategoryName'>Category Name</label>
-                      <DropdownList
+                      {/* <DropdownList
                         Id="ddlCategoryName"
                         Options={this.state.categoryData}
                         onSelected={this.onCategoryChanged.bind(this)}
-                      />
+                      /> */}
+
+                    <select
+                        id="dllCategory"
+                        className='form-control'
+                        onChange={(e) => this.setState({
+                          selectedCategoryId: e.target.value
+                      })}
+                      >
+                          console.log(this.state.categoryData);
+                        <option value={0}>Select Category</option>
+                        {
+                          this.state.categoryData ? this.state.categoryData.map((e, key) => {
+                            return <option key={key} value={e.Value}>{e.Name}
+                            </option>
+                          }) : null
+                        }
+                      </select>
+
+
+
                     </div>
                   </div>
                   <div className='col-sm-6'>
                     <div className='form-group'>
                       <label htmlFor='txtSubCategoryName'>Sub Category Name</label>
-                      <InputBox
-                        Id="txtSubCategoryName"
-                        Value={this.state.subCategoryName}
-                        PlaceHolder="Sub Category Name"
-                        Class="form-control"
-                      />
+                    <input
+                        id="txtSubCategoryName"
+                        placeholder="Enter Sub Category Name"
+                        type="text"
+                        className="form-control"
+                        value={this.state.subCategoryName}
+                        onChange={(e) => { this.setState({ subCategoryName: e.target.value }) }}
+                    />
+
                     </div>
                   </div>
                 </div>

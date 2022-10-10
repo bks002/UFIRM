@@ -29,6 +29,10 @@ class DataProvider {
         // 
         let url = '';
         switch (type) {
+            case 'C':
+                url = `CreateSubCategory`;
+                return srv.CallPostNewService(url, model[0]);
+                break;
             case 'R':
                 url = `GetCategory?categoryId=${categoryId}`;
                 return srv.getComplaint(url);

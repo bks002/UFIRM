@@ -5,9 +5,13 @@ class DataProvider {
         // 
         let url = '';
         switch (type) {
-            case 'C':
+            case 'C0':
                 url = `Property/NoticeBoard/Save`;
                 return srv.CallPostService(url, model[0]);
+                break;
+            case 'C':
+                url = `NoticeBoardSave`;
+                return srv.CallPostNewService(url, model[0]);
                 break;
             case 'D':
                 url = `Property/NoticeBoard/Delete/${model[0].NoticeBoardId}/${model[0].StatementType}`;

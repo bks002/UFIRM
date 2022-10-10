@@ -47,6 +47,7 @@ class AmenitiesBooking extends React.Component {
       pageNumber: 1,
       gridHeader: [
         { sTitle: "Id", titleValue: "Id", orderable: false, visible: true },
+        { sTitle: "Mobile No.", titleValue: "MobileNo" },
         { sTitle: "Amenity Name", titleValue: "AmenitiesName" },
         { sTitle: "Time Slot", titleValue: "TimeSlot" },
         { sTitle: "Persons", titleValue: "NosOfPersons" },

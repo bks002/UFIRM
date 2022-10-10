@@ -207,6 +207,7 @@ class NoticeBoard extends Component {
                     "PropertyDetailsId": this.state.PropertyDetailsId,
                     "PropertyTowerId": this.state.PropertyTowerId,
                     "PropertyRWAMemberId": this.state.PropertyRWAMemberId,
+                    "UserId": this.state.UserId,
                 });
                 break;
             case 'D':
@@ -220,6 +221,27 @@ class NoticeBoard extends Component {
         return model;
     }
 
+    createNoticeBoard = (model, type) => {
+        this.ApiProviderr.manageNoticeBoard(model, type).then((resp) => {
+          if (resp.ok && resp.status == 200) {
+            return resp.json().then((rData) => {
+              switch (type) {
+                case "C":
+                    console.log(rData);
+                    if (rData > 0) {
+                        appCommon.showtextalert("Notice Saved Successfully!", "", "success");
+                    }
+                    else {
+                        appCommon.showtextalert("Notice Subject Already Existed !", "", "error");
+                    }
+                    this.handleCancel();
+                    break;
+                default:
+              }
+            });
+          }
+        });
+      };
 
     manageNoticeBoard = (model, type) => {
         this.ApiProviderr.manageNoticeBoard(model, type).then(
@@ -228,7 +250,7 @@ class NoticeBoard extends Component {
                     return resp.json().then(rData => {
                         switch (type) {
                             case 'C':
-                                console.log(rData);
+                            console.log(rData);
                                 if (rData > 0) {
                                     appCommon.showtextalert("Notice Saved Successfully!", "", "success");
                                 }
@@ -380,14 +402,14 @@ class NoticeBoard extends Component {
             var model = this.getModel(this.props.PropertyId, type);
             switch (parseInt(this.state.Notify)) {
                 case 1:
-                    this.manageNoticeBoard(model, type);
+                    this.createNoticeBoard(model, type);
                     break;
                 case 2:
                     if (this.state.PropertyTowerId === '') {
                         appCommon.showtextalert("Please Select Block", "", "error");
                     }
                     else {
-                        this.manageNoticeBoard(model, type);
+                        this.createNoticeBoard(model, type);
                     }
                     break;
                 case 3:
@@ -395,18 +417,18 @@ class NoticeBoard extends Component {
                         appCommon.showtextalert("Please Select Appartment", "", "error");
                     }
                     else {
-                        this.manageNoticeBoard(model, type);
+                        this.createNoticeBoard(model, type);
                     }
                     break;
                 case 4:
-                    this.manageNoticeBoard(model, type);
+                    this.createNoticeBoard(model, type);
                     break;
                 case 5:
                     if (this.state.PropertyRWAMemberId === '') {
                         appCommon.showtextalert("Please Select Roles", "", "error");
                     }
                     else {
-                        this.manageNoticeBoard(model, type);
+                        this.createNoticeBoard(model, type);
                     }
                     break;
                 default:
