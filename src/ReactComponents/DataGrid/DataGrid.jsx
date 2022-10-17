@@ -53,6 +53,9 @@ export default class DataGrid extends React.Component {
     onGridEdit(fId) {
         this.props.onEditMethod(fId);
     }
+    onGridManage(fId) {
+        this.props.onGridApprove(fId);
+    }
 
     onGridDelete(fId) {
         // alert('Delete' + id);
@@ -229,6 +232,10 @@ export default class DataGrid extends React.Component {
                             case 'Manage':
                                 btnhtml += '<button class="btn btn-sm btn-info" title="Manage" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-tasks"></i></button>';
                                 break;
+                                case 'Edit&Manage':
+                                btnhtml += '<button class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pen-alt"></i></button>';
+                                    btnhtml += '<button class="btn btn-sm btn-info" title="Manage" data-toggle="modal" data-target="#ticketCrudModal" style="margin-left:10px"><i class="fa fa-tasks"></i></button>';
+                                    break;
                             default:
                                 break;
                         }

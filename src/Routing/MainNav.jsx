@@ -53,6 +53,8 @@ import EventApproval from '../pages/EventApproval.jsx';
 import PlannerTaskPage from '../pages/PlannerTaskPage.jsx';
 import LoginPage from '../MainComponents/LoginPage.jsx';
 import PlannerTaskAuditPage from '../pages/PlannerTaskAuditPage.jsx';
+import KYCPage from '../pages/KYCPage.jsx';
+
 
 
 var currentpropertyid = 0;
@@ -663,6 +665,12 @@ class MainNav extends React.Component {
                                                             <p >Amenities Booking</p>
                                                         </Link>
                                                     </li>
+                                                    <li className="nav-item">
+                                                        <Link to="/Account/App/KYC" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p >KYC</p>
+                                                        </Link>
+                                                    </li>
                                                 </ul>
                                             </li>
                                             : null
@@ -814,6 +822,9 @@ class MainNav extends React.Component {
                         </Route>
                         <Route path="/Account/App/AmenitiesBooking">
                             <AmenitiesBookingPage />
+                        </Route>
+                        <Route path="/Account/App/KYC">
+                            <KYCPage />
                         </Route>
                         <Route path="/Account/App/ManageResidentOwners">
                             <ManageResidentOwnersPage />

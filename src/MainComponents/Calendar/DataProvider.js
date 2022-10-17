@@ -219,5 +219,25 @@ class DataProvider {
         }
     }
 
+    manageKYC(model, type) {
+        // 
+        let url = '';
+        switch (type) {
+            case 'U':
+                url = `Calendar/Category/Save`;
+                return srv.CallPostService(url, model[0]);
+                break;
+            case 'D':
+                url = `Calendar/Category/Delete/${model[0].CatId}/${model[0].CmdType}`;
+                return srv.CallPostService(url);
+                break;
+            case 'R':
+                url = `KycDetailsList/${model[0].CmdType}`;
+                return srv.get(url);
+                break;
+            default:
+        }
+    }
+
 }
 export default DataProvider;
