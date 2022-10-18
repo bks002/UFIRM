@@ -45,6 +45,7 @@ class KYC extends React.Component {
       MobileNo: "",
       Image: "",
       IdImage:"",
+      ApproveStatus:"",
       gridHeader: [
         { sTitle: "Id", titleValue: "Id", orderable: false, visible: true },
         { sTitle: "Name.", titleValue: "EmployeeName" },
@@ -53,11 +54,11 @@ class KYC extends React.Component {
         {
           sTitle: "Action",
           titleValue: "Action",
-          Action: "Edit&Manage",
+          Action: "Edit",
           Index: "0",
           orderable: false,
         },
-        // { sTitle: "Status", titleValue: "ApproveStatus" },
+        { sTitle: "Status", titleValue: "ApproveStatus" },
       ],
       filtered: false,
     };
@@ -90,6 +91,11 @@ class KYC extends React.Component {
           IdImage: this.state.IdImage,
         });
         break;
+        case "AP":
+        model.push({
+          Id: parseInt(this.state.Id),
+        });
+        break;
       default:
     }
     return model;
@@ -113,7 +119,7 @@ class KYC extends React.Component {
               case "AP":
                 if (rData === "Approved Successfully !") {
                   appCommon.showtextalert(
-                    "KYC Details Updated Successfully!",
+                    "KYC Details Approved Successfully!",
                     "",
                     "success"
                   );
@@ -162,35 +168,11 @@ class KYC extends React.Component {
         Gender: rowData.Gender,
         Image: rowData.Image,
         IdImage: rowData.IdImage,
+        ApproveStatus: rowData.ApproveStatus,
       });
     }
   }
 
-  onGridApprove = (Id) => {
-    let myhtml = document.createElement("div");
-    myhtml.innerHTML = APPROVE_CONFIRMATION_MSG + "</hr>";
-    alert: swal({
-      buttons: {
-        ok: "Yes",
-        cancel: "No",
-      },
-      content: myhtml,
-      icon: "warning",
-      closeOnClickOutside: false,
-      dangerMode: true,
-    }).then((value) => {
-      switch (value) {
-        case "ok":
-          var model = [{ Id: parseInt(Id) }];
-          this.manageKYC(model, "AP");
-          break;
-        case "cancel":
-          break;
-        default:
-          break;
-      }
-    });
-  };
 
   findItem(id) {
     return this.state.KYCData.find((item) => {
@@ -219,6 +201,12 @@ class KYC extends React.Component {
     this.setState({ PageMode: "Home" });
   };
 
+  handleApprove=()=>{
+    let type = "AP";
+    let model = this.getModel(type);
+    this.manageKYC(model, type);
+  }
+
   //End
   render() {
     // let _this = this;
@@ -240,9 +228,6 @@ class KYC extends React.Component {
                     // IsPagination={true}
                     ColumnCollection={this.state.gridHeader}
                     onEditMethod={this.ongridedit.bind(this)}
-
-                    // onManageMethod={this.onGridApprove.bind(this)}
-                    onGridManage={this.onGridApprove.bind(this)}
                     DefaultPagination={false}
                     IsSarching="true"
                     GridData={this.state.KYCData}
@@ -311,6 +296,18 @@ class KYC extends React.Component {
                         <option value="Male">Male</option>
                         <option value="Female">Female</option>
                       </select>
+                    </div>
+                  </div><br/>
+                  <div className="row">
+                    <div className="col-sm-2">
+                      <label>Approve Status :</label> <br/>
+                      {this.state.ApproveStatus == "Not Approved" ?
+                      <Button
+                    Id="btnSave"
+                    Text="Approve"
+                    Action={this.handleApprove}
+                    ClassName="btn btn-primary"
+                  /> : <h5>Approved</h5> }
                     </div>
                   </div>
                 </div>

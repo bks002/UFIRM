@@ -15,6 +15,11 @@ class DataProvider {
             case 'R':
                 url = `KycDetailsList`;
                 return srv.getComplaint(url);
+                break; 
+                case 'AP':
+                    console.log(model);
+                url = `KYCApprove?Id=${model[0].Id}`;
+                return srv.CallPostNewService(url, model[0]);
                 break;       
             default:
         }
