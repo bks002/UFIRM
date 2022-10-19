@@ -54,7 +54,7 @@ class KYC extends React.Component {
         {
           sTitle: "Action",
           titleValue: "Action",
-          Action: "Edit",
+          Action: "Edit&Approve",
           Index: "0",
           orderable: false,
         },
