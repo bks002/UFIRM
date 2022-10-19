@@ -546,6 +546,12 @@ class MainNav extends React.Component {
                                                             <p>Department </p>
                                                         </Link>
                                                     </li>
+                                                    <li className="nav-item">
+                                                        <Link to="/Account/App/KYC" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p >KYC</p>
+                                                        </Link>
+                                                    </li>
 
 
                                                 </ul>
@@ -663,12 +669,6 @@ class MainNav extends React.Component {
                                                         <Link to="/Account/App/AmenitiesBooking" className="nav-link">
                                                             <i className=" fas fa-caret-right nav-icon"></i>
                                                             <p >Amenities Booking</p>
-                                                        </Link>
-                                                    </li>
-                                                    <li className="nav-item">
-                                                        <Link to="/Account/App/KYC" className="nav-link">
-                                                            <i className=" fas fa-caret-right nav-icon"></i>
-                                                            <p >KYC</p>
                                                         </Link>
                                                     </li>
                                                 </ul>

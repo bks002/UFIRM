@@ -28,7 +28,6 @@ import DataProvider from "../Calendar/DataProvider";
 
 const $ = window.$;
 const documentBL = new DocumentBL();
-
 class KYC extends React.Component {
   constructor(props) {
     super(props);
@@ -38,14 +37,18 @@ class KYC extends React.Component {
       pageSize: 10,
       pageNumber: 1,
       Id: "",
-      EmployeeId:"",
+      EmployeeId: "",
       EmployeeName: "",
       Gender: "",
-      JobProfile:"",
+      JobProfile: "",
       MobileNo: "",
       Image: "",
-      IdImage:"",
-      ApproveStatus:"",
+      IdImage: "",
+      ApproveStatus: "",
+      uploadDocs: [{ docsId: "" }],
+      documentVal: '',
+      currentSelectedFile: null,
+
       gridHeader: [
         { sTitle: "Id", titleValue: "Id", orderable: false, visible: true },
         { sTitle: "Name.", titleValue: "EmployeeName" },
@@ -82,7 +85,7 @@ class KYC extends React.Component {
       case "U":
         model.push({
           Id: parseInt(this.state.Id),
-          EmployeeId:this.state.EmployeeId,
+          EmployeeId: this.state.EmployeeId,
           EmployeeName: this.state.EmployeeName,
           JobProfile: this.state.JobProfile,
           MobileNo: this.state.MobileNo,
@@ -91,7 +94,7 @@ class KYC extends React.Component {
           IdImage: this.state.IdImage,
         });
         break;
-        case "AP":
+      case "AP":
         model.push({
           Id: parseInt(this.state.Id),
         });
@@ -116,15 +119,15 @@ class KYC extends React.Component {
                 this.handleCancel();
               }
               break;
-              case "AP":
-                if (rData === "Approved Successfully !") {
-                  appCommon.showtextalert(
-                    "KYC Details Approved Successfully!",
-                    "",
-                    "success"
-                  );
-                }
-                break;
+            case "AP":
+              if (rData === "Approved Successfully !") {
+                appCommon.showtextalert(
+                  "KYC Details Approved Successfully!",
+                  "",
+                  "success"
+                );
+              }
+              break;
             case "D":
               if (rData === 1) {
                 appCommon.showtextalert(
@@ -173,7 +176,6 @@ class KYC extends React.Component {
     }
   }
 
-
   findItem(id) {
     return this.state.KYCData.find((item) => {
       if (item.Id == id) {
@@ -181,6 +183,23 @@ class KYC extends React.Component {
       }
     });
   }
+
+      // Document change
+      onFileChange(event) {
+        let _validFileExtensions = ["jpg", "jpeg", "png"];
+        if (event.target.files[0]) {
+            let extension = event.target.files[0].name.substring(event.target.files[0].name.lastIndexOf('.') + 1);
+            let isvalidFiletype = _validFileExtensions.some(x => x === extension.toLowerCase());
+            if (isvalidFiletype) {
+                this.setState({ documentVal: event.target.value, currentSelectedFile: event.target.files[0] })
+            }
+            else {
+                this.setState({ documentVal: '', currentSelectedFile: null })
+                let temp_validFileExtensions = _validFileExtensions.join(',');
+                appCommon.showtextalert(`${event.target.files[0].name.filename} Invalid file type, Please Select only ${temp_validFileExtensions} `, "", "error");
+            }
+        }
+    };
 
   handleSave = () => {
     if (ValidateControls()) {
@@ -201,11 +220,11 @@ class KYC extends React.Component {
     this.setState({ PageMode: "Home" });
   };
 
-  handleApprove=()=>{
+  handleApprove = () => {
     let type = "AP";
     let model = this.getModel(type);
     this.manageKYC(model, type);
-  }
+  };
 
   //End
   render() {
@@ -291,23 +310,59 @@ class KYC extends React.Component {
                   <div className="row">
                     <div className="col-sm-2">
                       <label>Gender</label>
-                      <select className="form-control" value={this.state.Gender} onChange={(e)=>this.setState({Gender:e.target.value})}>
+                      <select
+                        className="form-control"
+                        value={this.state.Gender}
+                        onChange={(e) =>
+                          this.setState({ Gender: e.target.value })
+                        }
+                      >
                         <option>Select</option>
                         <option value="Male">Male</option>
                         <option value="Female">Female</option>
                       </select>
                     </div>
-                  </div><br/>
+                  </div>
+                  <br />
                   <div className="row">
                     <div className="col-sm-2">
-                      <label>Approve Status :</label> <br/>
-                      {this.state.ApproveStatus == "Not Approved" ?
-                      <Button
-                    Id="btnSave"
-                    Text="Approve"
-                    Action={this.handleApprove}
-                    ClassName="btn btn-primary"
-                  /> : <h5>Approved</h5> }
+                      <label>Approve Status :</label> <br />
+                      {this.state.ApproveStatus == "Not Approved" ? (
+                        <Button
+                          Id="btnSave"
+                          Text="Approve"
+                          Action={this.handleApprove}
+                          ClassName="btn btn-primary"
+                        />
+                      ) : (
+                        <h5>Approved</h5>
+                      )}
+                    </div>
+                  </div>{" "}
+                  <br />
+                  <div className="row">
+                    <div className="col-sm-2">
+                      <label>Image Upload</label>
+                      <DocumentUploader
+                        Class={"form-control"}
+                        Id={"kycImageUploader"}
+                        type={"file"}
+                        value={this.state.documentVal}
+                        onChange={this.onFileChange.bind(this)}
+                      />
+                    </div>
+                  </div>
+                  <br />
+                  <div className="row">
+                    <div className="col-sm-2">
+                      <label>File Upload</label>
+                      <DocumentUploader
+                        Class={"form-control"}
+                        Id={"kycfileUploader"}
+                        type={"file"}
+                        value={this.state.documentVal}
+                        onChange={this.onFileChange.bind(this)}
+                      />
                     </div>
                   </div>
                 </div>
