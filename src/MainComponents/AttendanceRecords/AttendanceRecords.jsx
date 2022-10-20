@@ -29,19 +29,12 @@ import DataProvider from "../Calendar/DataProvider";
 const $ = window.$;
 const documentBL = new DocumentBL();
 
-const toBase64 = file => new Promise((resolve, reject) => {
-  const reader = new FileReader();
-  reader.readAsDataURL(file);
-  reader.onload = () => resolve(reader.result.split(','));
-  // reader.onload = () => resolve(reader.result.split(',')[1]);
-  reader.onerror = error => reject(error);
-});
-class KYC extends React.Component {
+class AttendanceRecords extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       PageMode: "Home",
-      KYCData: [],
+      AttendanceData: [],
       pageSize: 10,
       pageNumber: 1,
       Id: "",
@@ -53,23 +46,15 @@ class KYC extends React.Component {
       Image: "",
       IdImage: "",
       ApproveStatus: "",
-      uploadDocs: [{ docsId: "" }],
       documentVal: '',
       currentSelectedFile: null,
 
       gridHeader: [
-        { sTitle: "Id", titleValue: "Id", orderable: false, visible: true },
-        { sTitle: "Name.", titleValue: "EmployeeName" },
-        { sTitle: "Profile", titleValue: "JobProfile" },
-        { sTitle: "MobileNo", titleValue: "MobileNo" },
-        {
-          sTitle: "Action",
-          titleValue: "Action",
-          Action: "Edit&Approve",
-          Index: "0",
-          orderable: false,
-        },
-        { sTitle: "Status", titleValue: "ApproveStatus" },
+        { sTitle: "EmployeeId", titleValue: "EmployeeId", orderable: false, visible: true },
+        { sTitle: "EmployeeName", titleValue: "EmployeeName" },
+        { sTitle: "PunchTime", titleValue: "PunchTime" },
+        { sTitle: "PunchType", titleValue: "PunchType" },
+        { sTitle: "GateNo", titleValue: "GateNo" },
       ],
       filtered: false,
     };
@@ -79,7 +64,7 @@ class KYC extends React.Component {
   }
 
   componentDidMount() {
-    this.getKYCData();
+    this.getAttendanceData();
   }
 
   getModel = (type) => {
@@ -112,8 +97,8 @@ class KYC extends React.Component {
     return model;
   };
 
-  manageKYC = (model, type) => {
-    this.ApiProviderr.manageKyc(model, type).then((resp) => {
+  manageAttendance = (model, type) => {
+    this.ApiProviderr.manageAttendance(model, type).then((resp) => {
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
           switch (type) {
@@ -149,7 +134,7 @@ class KYC extends React.Component {
               this.getKYCData();
               break;
             case "R":
-              this.setState({ KYCData: rData });
+              this.setState({ AttendanceData: rData });
               break;
             default:
           }
@@ -158,10 +143,10 @@ class KYC extends React.Component {
     });
   };
 
-  getKYCData() {
+  getAttendanceData() {
     var type = "R";
     var model = this.getModel(type);
-    this.manageKYC(model, type);
+    this.manageAttendance(model, type);
   }
 
   ongridedit(Id) {
@@ -192,22 +177,6 @@ class KYC extends React.Component {
     });
   }
 
-      // Document change
-      onFileChange(event) {
-        let _validFileExtensions = ["jpg", "jpeg", "png"];
-        if (event.target.files[0]) {
-            let extension = event.target.files[0].name.substring(event.target.files[0].name.lastIndexOf('.') + 1);
-            let isvalidFiletype = _validFileExtensions.some(x => x === extension.toLowerCase());
-            if (isvalidFiletype) {
-                this.setState({ documentVal: event.target.value, currentSelectedFile: event.target.files[0] })
-            }
-            else {
-                this.setState({ documentVal: '', currentSelectedFile: null })
-                let temp_validFileExtensions = _validFileExtensions.join(',');
-                appCommon.showtextalert(`${event.target.files[0].name.filename} Invalid file type, Please Select only ${temp_validFileExtensions} `, "", "error");
-            }
-        }
-    };
 
   handleSave = () => {
     if (ValidateControls()) {
@@ -221,18 +190,18 @@ class KYC extends React.Component {
     }
   };
 
-  handleCancel = () => {
-    var type = "R";
-    this.getModel(type);
-    this.getKYCData();
-    this.setState({ PageMode: "Home" });
-  };
+  // handleCancel = () => {
+  //   var type = "R";
+  //   this.getModel(type);
+  //   this.getKYCData();
+  //   this.setState({ PageMode: "Home" });
+  // };
 
-  handleApprove = () => {
-    let type = "AP";
-    let model = this.getModel(type);
-    this.manageKYC(model, type);
-  };
+  // handleApprove = () => {
+  //   let type = "AP";
+  //   let model = this.getModel(type);
+  //   this.manageKYC(model, type);
+  // };
 
   //End
   render() {
@@ -257,7 +226,7 @@ class KYC extends React.Component {
                     onEditMethod={this.ongridedit.bind(this)}
                     DefaultPagination={false}
                     IsSarching="true"
-                    GridData={this.state.KYCData}
+                    GridData={this.state.AttendanceData}
                     pageSize="500"
                   />
                 </div>
@@ -265,7 +234,7 @@ class KYC extends React.Component {
             </div>
           </div>
         )}
-        {(this.state.PageMode == "Add" || this.state.PageMode == "Edit") && (
+        {/* {(this.state.PageMode == "Add" || this.state.PageMode == "Edit") && (
           <div>
             <div>
               <div className="modal-content">
@@ -406,7 +375,7 @@ class KYC extends React.Component {
             />
             <ToastContainer />
           </div>
-        )}
+        )} */}
       </div>
     );
   }
@@ -422,4 +391,4 @@ function mapDispatchToProps(dispatch) {
   const actions = bindActionCreators(departmentAction, dispatch);
   return { actions };
 }
-export default connect(mapStoreToprops, mapDispatchToProps)(KYC);
+export default connect(mapStoreToprops, mapDispatchToProps)(AttendanceRecords);

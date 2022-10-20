@@ -54,6 +54,7 @@ import PlannerTaskPage from '../pages/PlannerTaskPage.jsx';
 import LoginPage from '../MainComponents/LoginPage.jsx';
 import PlannerTaskAuditPage from '../pages/PlannerTaskAuditPage.jsx';
 import KYCPage from '../pages/KYCPage.jsx';
+import AttendanceRecordsPage from '../pages/AttendanceRecordsPage.jsx';
 
 
 
@@ -552,6 +553,12 @@ class MainNav extends React.Component {
                                                             <p >KYC</p>
                                                         </Link>
                                                     </li>
+                                                    <li className="nav-item">
+                                                        <Link to="/Account/App/AttendanceRecords" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p >Attendance Records</p>
+                                                        </Link>
+                                                    </li>
 
 
                                                 </ul>
@@ -825,6 +832,9 @@ class MainNav extends React.Component {
                         </Route>
                         <Route path="/Account/App/KYC">
                             <KYCPage />
+                        </Route>
+                        <Route path="/Account/App/AttendanceRecords">
+                            <AttendanceRecordsPage />
                         </Route>
                         <Route path="/Account/App/ManageResidentOwners">
                             <ManageResidentOwnersPage />
