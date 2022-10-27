@@ -51,8 +51,10 @@ class KYC extends React.Component {
       JobProfile: "",
       MobileNo: "",
       Image: "",
+      ImageData: [],
       IdImage: "",
       ApproveStatus: "",
+      FileType:"",
       uploadDocs: [{ docsId: "" }],
       documentVal: '',
       currentSelectedFile: null,
@@ -91,7 +93,7 @@ class KYC extends React.Component {
         });
         break;
       case "U":
-        model.push({
+          model.push({
           Id: parseInt(this.state.Id),
           EmployeeId: this.state.EmployeeId,
           EmployeeName: this.state.EmployeeName,
@@ -99,6 +101,7 @@ class KYC extends React.Component {
           MobileNo: this.state.MobileNo,
           Gender: this.state.Gender,
           Image: this.state.Image,
+          ImageData:this.state.ImageData,
           IdImage: this.state.IdImage,
         });
         break;
@@ -118,7 +121,7 @@ class KYC extends React.Component {
         return resp.json().then((rData) => {
           switch (type) {
             case "U":
-              if (rData === "Approved Successfully !") {
+              if (rData === "Updated Successfully !") {
                 appCommon.showtextalert(
                   "KYC Details Updated Successfully!",
                   "",
@@ -178,6 +181,8 @@ class KYC extends React.Component {
         MobileNo: rowData.MobileNo,
         Gender: rowData.Gender,
         Image: rowData.Image,
+        ImageData: rowData.ImageData,
+        ImageExt:rowData.ImageExt,
         IdImage: rowData.IdImage,
         ApproveStatus: rowData.ApproveStatus,
       });
@@ -194,11 +199,12 @@ class KYC extends React.Component {
 
       // Document change
       onFileChange(event) {
-        let _validFileExtensions = ["jpg", "jpeg", "png"];
+        let _validFileExtensions = ["jpg", "jpeg", "png","pdf"];
         if (event.target.files[0]) {
             let extension = event.target.files[0].name.substring(event.target.files[0].name.lastIndexOf('.') + 1);
             let isvalidFiletype = _validFileExtensions.some(x => x === extension.toLowerCase());
             if (isvalidFiletype) {
+                // this.state.ImageData= event.target.files[0];
                 this.setState({ documentVal: event.target.value, currentSelectedFile: event.target.files[0] })
             }
             else {
@@ -209,17 +215,64 @@ class KYC extends React.Component {
         }
     };
 
-  handleSave = () => {
+setKYC=()=>{
+  const formData = new FormData();
+  //formData.append('imageFile', this.state.pictures != null ? this.state.pictures[0] : null);
+  formData.append('Id', parseInt(this.state.Id));
+  formData.append('EmployeeId', this.state.EmployeeId);
+  formData.append('EmployeeName', this.state.EmployeeName);
+  formData.append('JobProfile', this.state.JobProfile);
+  formData.append('MobileNo', this.state.MobileNo);
+  formData.append('Gender', this.state.Gender);
+  formData.append('Image', this.state.Image);
+  formData.append('ImageData', this.state.ImageData);
+
+  console.log(this.state.ImageData);
+
+  if (ValidateControls()) {
+      if (this.state.PageMode === "Edit") {
+        this.ApiProviderr.saveKYC(formData);
+    }
+  }
+
+}
+
+  // handleSave = () => {
+  //   if (ValidateControls()) {
+  //     if (this.state.PageMode === "Edit") {
+  //       if (this.state.PageMode === "Edit") {
+  //         this.setKYC();
+  //         // let type = "U";
+  //         // let model = this.getModel(type);
+  //         // this.manageKYC(model, type);
+
+  //       }
+  //     }
+  //   }
+  // };
+
+  handleSave = async () => {
     if (ValidateControls()) {
       if (this.state.PageMode === "Edit") {
-        if (this.state.PageMode === "Edit") {
-          let type = "U";
-          let model = this.getModel(type);
-          this.manageKYC(model, type);
+        let upFile = this.state.currentSelectedFile
+        let res = null;
+        if(upFile){
+          let fileD = await toBase64(upFile)
+          var imgbytes = upFile.size;
+          var imgkbytes = Math.round(parseInt(imgbytes)/1024)
+          let extension = upFile.name.substring(upFile.name.lastIndexOf('.')+1)
+          res = {
+            filename:upFile.name,
+            filepath:fileD[1],
+            sizeinKb : imgkbytes,
+            fileType:fileD[0],
+            extension:extension.toLowerCase()
+          }
         }
       }
     }
   };
+
 
   handleCancel = () => {
     var type = "R";
@@ -348,7 +401,7 @@ class KYC extends React.Component {
                     </div>
                   </div>{" "}
                   <br />
-                  <div className="row">
+                  {/* <div className="row">
                     <div className="col-sm-2">
                       <label>Image Upload</label>
                       <DocumentUploader
@@ -358,6 +411,25 @@ class KYC extends React.Component {
                         value={this.state.documentVal}
                         onChange={this.onFileChange.bind(this)}
                       />
+                    </div>
+                  </div> */}
+                  <div className="row">
+                    <div className="col-sm-2">
+                      <label>File Type</label>
+                      <select
+                        className="form-control"
+                        value={this.state.FileType}
+                        onChange={(e) =>
+                          this.setState({ FileType: e.target.value })
+                        }
+                      >
+                        <option>Select</option>
+                        <option value="Aadhar">Aadhar</option>
+                        <option value="Pan">Pan</option>
+                        <option value="VoterId">VoterId</option>
+                        <option value="DrivingLicense">Driving License</option>
+                        <option value="Profile">Profile Image</option>
+                      </select>
                     </div>
                   </div>
                   <br />

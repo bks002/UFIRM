@@ -121,7 +121,7 @@ class PropertyMemberNew extends React.Component {
             });
             formData.append('document', JSON.stringify(this.state.gridData));
 
-
+            console.log("t1");    
             this.ApiProviderr.savePropertyMemeber(formData)
                 .then(res => {
                     if (res.data <= 0) {

@@ -91,6 +91,7 @@ class ApiService {
             if (axios.isCancel()) {
               console.log('First request canceled');
             }
+            //console.log(error);
             if (error && error.stack.indexOf('Network Error') >= 0) {
               console.log('Error: ', error);
             }

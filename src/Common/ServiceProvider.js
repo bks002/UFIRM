@@ -171,6 +171,16 @@ class ServiceProvider {
         });
     }
 
+    CallPostFormDataNew(url, formData) {
+        console.log(formData)
+        return axios.post(urls.complaintUrl + url, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+                Authorization: 'Bearer ' + appCommonJs.getapitoken()
+            }
+        });
+    }
+
     CallPostService(url, Pdata) {
         //
         let resp;

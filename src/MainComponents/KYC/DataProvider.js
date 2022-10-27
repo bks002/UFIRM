@@ -34,5 +34,11 @@ class DataProvider {
         return srv.CallPostFormData(url, formdata);
    }
     
+   saveKYC(formdata) {
+    let url = '';
+    url = `KYCUpate`;
+    console.log(url);
+    return srv.CallPostFormDataNew(url, formdata);
+}
 }
 export default DataProvider;

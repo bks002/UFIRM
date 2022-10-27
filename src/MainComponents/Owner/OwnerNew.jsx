@@ -170,6 +170,7 @@ class OwnerNew extends React.Component {
             });
             formData.append('document', JSON.stringify(this.state.gridData));
             formData.append('parking', JSON.stringify(this.state.gridParkingData));
+            console.log("t2");
             axios.post(url + `Property/PropertyOwner/Save`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
