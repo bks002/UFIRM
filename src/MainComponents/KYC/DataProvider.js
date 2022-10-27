@@ -3,7 +3,6 @@ let srv = new ServiceProvider();
 class DataProvider {
     manageKyc(model,type) {
         let url = '';
-        console.log(model);
         switch (type) {
             case 'U':
                 url = `KYCUpate`;
@@ -38,8 +37,10 @@ class DataProvider {
    saveKYC(formdata) {
     let url = '';
     url = `KYCUpate`;
+    //url = `Property/KYCUpate`;
     console.log(url);
-    return srv.CallPostFormDataNew(url, formdata);
+    return srv.CallPostNewService(url, formdata);
+    //return srv.CallPostFormDataNew(url, formdata);
 }
 }
 export default DataProvider;

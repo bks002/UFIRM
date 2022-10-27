@@ -163,6 +163,8 @@ class ServiceProvider {
     }
 
     CallPostFormData(url, formData) {
+        console.log("track api");
+
         return axios.post(urls.MainUrl + url, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
@@ -172,8 +174,7 @@ class ServiceProvider {
     }
 
     CallPostFormDataNew(url, formData) {
-        console.log(formData)
-        return axios.post(urls.complaintUrl + url, formData, {
+        return axios.post(urls.MainUrl + url, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
                 Authorization: 'Bearer ' + appCommonJs.getapitoken()

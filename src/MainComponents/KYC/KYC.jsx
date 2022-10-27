@@ -33,9 +33,9 @@ const toBase64 = file => new Promise((resolve, reject) => {
   const reader = new FileReader();
   reader.readAsDataURL(file);
   reader.onload = () => resolve(reader.result.split(','));
-  // reader.onload = () => resolve(reader.result.split(',')[1]);
   reader.onerror = error => reject(error);
 });
+
 class KYC extends React.Component {
   constructor(props) {
     super(props);
@@ -48,13 +48,14 @@ class KYC extends React.Component {
       EmployeeId: "",
       EmployeeName: "",
       Gender: "",
+      DocType: "",
       JobProfile: "",
       MobileNo: "",
       Image: "",
+      ImageExt: "",
       ImageData: [],
       IdImage: "",
       ApproveStatus: "",
-      FileType:"",
       uploadDocs: [{ docsId: "" }],
       documentVal: '',
       currentSelectedFile: null,
@@ -84,7 +85,7 @@ class KYC extends React.Component {
     this.getKYCData();
   }
 
-  getModel = (type,res) => {
+  getModel = (type) => {
     var model = [];
     switch (type) {
       case "R":
@@ -93,18 +94,17 @@ class KYC extends React.Component {
         });
         break;
       case "U":
-          model.push({
+        model.push({
           Id: parseInt(this.state.Id),
           EmployeeId: this.state.EmployeeId,
           EmployeeName: this.state.EmployeeName,
           JobProfile: this.state.JobProfile,
           MobileNo: this.state.MobileNo,
           Gender: this.state.Gender,
-          Image: res.filename,
-          ImageExt: res.extension,
-          ImageData: res,
+          IdDoc: this.state.DocType,  
+          Image: this.state.Image,
+          ImageExt: this.state.ImageExt,
           IdImage: this.state.IdImage,
-          ApproveStatus: this.state.ApproveStatus,
         });
         break;
       case "AP":
@@ -182,9 +182,9 @@ class KYC extends React.Component {
         JobProfile: rowData.JobProfile,
         MobileNo: rowData.MobileNo,
         Gender: rowData.Gender,
+        DocType: rowData.IdDoc,
         Image: rowData.Image,
-        ImageData: rowData.ImageData,
-        ImageExt:rowData.ImageExt,
+        ImageExt: rowData.ImageExt,
         IdImage: rowData.IdImage,
         ApproveStatus: rowData.ApproveStatus,
       });
@@ -199,92 +199,78 @@ class KYC extends React.Component {
     });
   }
 
-      // Document change
-      onFileChange(event) {
-        let _validFileExtensions = ["jpg", "jpeg", "png","pdf"];
-        if (event.target.files[0]) {
-            let extension = event.target.files[0].name.substring(event.target.files[0].name.lastIndexOf('.') + 1);
-            let isvalidFiletype = _validFileExtensions.some(x => x === extension.toLowerCase());
-            if (isvalidFiletype) {
-                // this.state.ImageData= event.target.files[0];
-                this.setState({ documentVal: event.target.value, currentSelectedFile: event.target.files[0] })
-            }
-            else {
-                this.setState({ documentVal: '', currentSelectedFile: null })
-                let temp_validFileExtensions = _validFileExtensions.join(',');
-                appCommon.showtextalert(`${event.target.files[0].name.filename} Invalid file type, Please Select only ${temp_validFileExtensions} `, "", "error");
-            }
-        }
-    };
+  // Document change
+  onFileChange(event) {
+    let _validFileExtensions = ["jpg", "jpeg", "png", "pdf"];
+    if (event.target.files[0]) {
+      let extension = event.target.files[0].name.substring(event.target.files[0].name.lastIndexOf('.') + 1);
+      let isvalidFiletype = _validFileExtensions.some(x => x === extension.toLowerCase());
+      if (isvalidFiletype) {
 
-setKYC=()=>{
-  const formData = new FormData();
-  //formData.append('imageFile', this.state.pictures != null ? this.state.pictures[0] : null);
-  formData.append('Id', parseInt(this.state.Id));
-  formData.append('EmployeeId', this.state.EmployeeId);
-  formData.append('EmployeeName', this.state.EmployeeName);
-  formData.append('JobProfile', this.state.JobProfile);
-  formData.append('MobileNo', this.state.MobileNo);
-  formData.append('Gender', this.state.Gender);
-  formData.append('Image', this.state.Image);
-  formData.append('ImageData', this.state.ImageData);
+        this.state.ImageData = event.target.files[0];
 
-  console.log(this.state.ImageData);
-
-  if (ValidateControls()) {
-      if (this.state.PageMode === "Edit") {
-        this.ApiProviderr.saveKYC(formData);
-    }
-  }
-
-}
-
-  // handleSave = () => {
-  //   if (ValidateControls()) {
-  //     if (this.state.PageMode === "Edit") {
-  //       if (this.state.PageMode === "Edit") {
-  //         this.setKYC();
-  //         // let type = "U";
-  //         // let model = this.getModel(type);
-  //         // this.manageKYC(model, type);
-
-  //       }
-  //     }
-  //   }
-  // };
-
-  handleSave = async () => {
-    if (ValidateControls()) {
-      if (this.state.PageMode === "Edit") {
-        let upFile = this.state.currentSelectedFile
-        let res = null;
-        if(upFile){
-          let fileD = await toBase64(upFile)
-          var imgbytes = upFile.size;
-          var imgkbytes = Math.round(parseInt(imgbytes)/1024)
-          let extension = upFile.name.substring(upFile.name.lastIndexOf('.')+1)
-          res = {
-            filename:upFile.name,
-            filepath:fileD[1],
-            sizeinKb : imgkbytes,
-            fileType:fileD[0],
-            extension:extension.toLowerCase()
-          }
-          let type = "U";
-          let model = this.getModel(type,res);
-          this.manageKYC(model, type);
-        }
       }
-
+      else {
+        this.setState({ documentVal: '', currentSelectedFile: null })
+        let temp_validFileExtensions = _validFileExtensions.join(',');
+        appCommon.showtextalert(`${event.target.files[0].name.filename} Invalid file type, Please Select only ${temp_validFileExtensions} `, "", "error");
+      }
     }
   };
 
+  handleSave = async () => {
+    let UpFile = this.state.ImageData;
+    let res = null;
+    console.log(228);
+    console.log(UpFile.length);
+    console.log(this.state.ImageData.File);
+    if (UpFile) {
+      if (UpFile!=""){
+      let fileD = await toBase64(UpFile);
+      var imgbytes = UpFile.size; // Size returned in bytes.        
+      var imgkbytes = Math.round(parseInt(imgbytes) / 1024); // Size returned in KB.    
+      let extension = UpFile.name.substring(UpFile.name.lastIndexOf('.') + 1);
+      res = {
+        filename: UpFile.name,
+        filepath: fileD[1],
+        sizeinKb: imgkbytes,
+        fileType: fileD[0],
+        extension: extension.toLowerCase()
+      }
+      this.state.Image = fileD[1];
+      this.state.ImageExt = extension;
+    };
+  };
+
+    console.log(this.state.Image);
+    console.log(this.state.ImageExt);
+
+
+    if (ValidateControls()) {
+      if (this.state.PageMode === "Edit") {
+        if (this.state.PageMode === "Edit") {
+
+          let type = "U";
+          let model = this.getModel(type);
+          this.manageKYC(model, type);
+        }
+      }
+    }
+
+    this.state.ImageData="";
+    this.state.Image="";
+    this.state.ImageExt="";
+  };
 
   handleCancel = () => {
     var type = "R";
     this.getModel(type);
     this.getKYCData();
     this.setState({ PageMode: "Home" });
+    this.state.ImageData="";
+    this.state.Image="";
+    this.state.ImageExt="";
+
   };
 
   handleApprove = () => {
@@ -419,22 +405,23 @@ setKYC=()=>{
                       />
                     </div>
                   </div> */}
+                  <br />
                   <div className="row">
                     <div className="col-sm-2">
-                      <label>File Type</label>
+                      <label>Identification Document</label>
                       <select
                         className="form-control"
-                        value={this.state.FileType}
+                        value={this.state.DocType}
                         onChange={(e) =>
-                          this.setState({ FileType: e.target.value })
+                          this.setState({ DocType: e.target.value })
                         }
                       >
                         <option>Select</option>
-                        <option value="Aadhar">Aadhar</option>
-                        <option value="Pan">Pan</option>
-                        <option value="VoterId">VoterId</option>
-                        <option value="DrivingLicense">Driving License</option>
-                        <option value="Profile">Profile Image</option>
+                        <option value="Self Image">Self Image</option>
+                        <option value="Adhaar Card">Adhaar Card</option>
+                        <option value="PAN">PAN</option>
+                        <option value="Voter ID">Voter ID</option>
+                        <option value="DL">DL</option>
                       </select>
                     </div>
                   </div>
@@ -446,7 +433,7 @@ setKYC=()=>{
                         Class={"form-control"}
                         Id={"kycfileUploader"}
                         type={"file"}
-                        value={this.state.documentVal}
+                        value={this.state.ImageData}
                         onChange={this.onFileChange.bind(this)}
                       />
                     </div>
