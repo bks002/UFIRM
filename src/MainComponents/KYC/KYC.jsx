@@ -84,7 +84,7 @@ class KYC extends React.Component {
     this.getKYCData();
   }
 
-  getModel = (type) => {
+  getModel = (type,res) => {
     var model = [];
     switch (type) {
       case "R":
@@ -100,9 +100,11 @@ class KYC extends React.Component {
           JobProfile: this.state.JobProfile,
           MobileNo: this.state.MobileNo,
           Gender: this.state.Gender,
-          Image: this.state.Image,
-          ImageData:this.state.ImageData,
+          Image: res.filename,
+          ImageExt: res.extension,
+          ImageData: res,
           IdImage: this.state.IdImage,
+          ApproveStatus: this.state.ApproveStatus,
         });
         break;
       case "AP":
@@ -268,8 +270,12 @@ setKYC=()=>{
             fileType:fileD[0],
             extension:extension.toLowerCase()
           }
+          let type = "U";
+          let model = this.getModel(type,res);
+          this.manageKYC(model, type);
         }
       }
+
     }
   };
 

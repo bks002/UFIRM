@@ -3,6 +3,7 @@ let srv = new ServiceProvider();
 class DataProvider {
     manageKyc(model,type) {
         let url = '';
+        console.log(model);
         switch (type) {
             case 'U':
                 url = `KYCUpate`;
