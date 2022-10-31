@@ -10,8 +10,8 @@ class APIUrlProvider {
 
         this.MainUrl = "https://admin-api.urest.in/api/" 
         //this.MainUrl = "https://localhost:62058/api/"
-        //this.complaintUrl  = "https://urest.in/complaint/"
-        this.complaintUrl  = "http://localhost:62929/"
+        this.complaintUrl  = "https://urest.in/complaint/"
+        //this.complaintUrl  = "http://localhost:62929/"
 
     }
 }
