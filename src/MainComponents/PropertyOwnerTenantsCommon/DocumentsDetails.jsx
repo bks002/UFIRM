@@ -131,10 +131,19 @@ class DocumentsDetails extends Component {
         );
     }
 
+    openInNewTab = url => {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      };
+
     onViewDocument(gridId) {
-        // debugger
+        debugger
         let data = this.props.documentDtDetails.find(x => x.id === gridId);
-        if (data !== null) {
+        let fileExt = data.editDocUrl.substring(data.editDocUrl.lastIndexOf('.') + 1);
+        if (fileExt === 'pdf') {
+            this.openInNewTab(data.editDocUrl);
+        }
+        else{
+        // if (data !== null) {
             if (data.rowType === 'View') {
                 this.setState({
                     showImagefilename: data.filename,
@@ -144,28 +153,28 @@ class DocumentsDetails extends Component {
                 },
                     () => {
                         let ext = data.editDocUrl.substring(data.editDocUrl.lastIndexOf('.') + 1);
-                        if (ext === "pdf") {
-                            $('#modal-lg-pdf-documentPreview').modal('show')
-                        }
-                        else {
+                        // if (ext === "pdf") {
+                        //     $('#modal-lg-pdf-documentPreview').modal('show')
+                        // }
+                        // else {
                             $('#modal-lg-documentImgPreview').modal('show')
-                        }
+                        // }
                     })
             }
             else {
                 this.setState({
-                    showImagefilename: data.filedata.filename,
-                    showImagefiletype: data.filedata.fileType,
-                    showImagefile: data.filedata.filepath,
-                    extension: data.filedata.extension
+                    showImagefilename: data.filename,
+                    showImagefiletype: null,
+                    showImagefile: data.editDocUrl,
+                    extension: ''
                 },
                     () => {
-                        if (this.state.extension === "pdf") {
-                            $('#modal-lg-pdf-documentPreview').modal('show')
-                        }
-                        else {
+                        // if (this.state.extension === "pdf") {
+                        //     $('#modal-lg-pdf-documentPreview').modal('show')
+                        // }
+                        // else {
                             $('#modal-lg-documentImgPreview').modal('show')
-                        }
+                        // }
                     })
             }
         }
@@ -198,13 +207,13 @@ class DocumentsDetails extends Component {
                     showImagefile={this.state.showImagefile}
                     extension={this.state.extension}
                 />
-                <ShowPdfModal
+                {/* <ShowPdfModal
                     Id="modal-lg-pdf-documentPreview"
                     titile={this.state.showImagefilename}
                     showImagefiletype={this.state.showImagefiletype}
                     showImagefile={this.state.showImagefile}
                     extension={this.state.extension}
-                />
+                /> */}
                 <div className="card card-primary">
                     <div className="card-header">
                         <h3 className="card-title">Document Details</h3>

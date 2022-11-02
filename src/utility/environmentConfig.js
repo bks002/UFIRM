@@ -21,11 +21,11 @@ else {
 /* URL Prefixes */
 const apiUrlPrefixes = {
 
-  // [environments.DEV]: 'https://admin-api.urest.in/api/',
-  // [environments.TEST]: 'https://admin-api.urest.in//api/'
+  [environments.DEV]: 'https://admin-api.urest.in/api/',
+  [environments.TEST]: 'https://admin-api.urest.in//api/'
 
-  [environments.DEV]: 'https://localhost:44313/api/',
-  [environments.TEST]: 'https://localhost:44313/api/'
+  //[environments.DEV]: 'https://localhost:62058/api/',
+  //[environments.TEST]: 'https://localhost:62058/api/'
 };
 
 const currentApiUrlPrefix = apiUrlPrefixes[currentEnvironment];
