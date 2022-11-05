@@ -681,7 +681,7 @@ class TicketDetails extends Component {
                                                 ID="ddlComplainCategory"
                                                 onclose={true}
                                                 isMulti={false}
-                                                value={this.props.TicketDetailModelInstance ? this.props.TicketDetailModelInstance.category : null}
+                                                value={this.props.TicketDetailModelInstance ? this.props.TicketDetailModelInstance.category :this.props.CategoryDataCreateAndEditTicket[0]}
                                                 onChange={this.OnComplainCategoryChange.bind(this)}
                                                 options={this.props.CategoryDataCreateAndEditTicket}
                                                 // disabled={this.props.EditTicktDetails.CardLaneId.split('_')[1] === 'CLOSED' ? true : false}
@@ -719,7 +719,8 @@ class TicketDetails extends Component {
                                                         ID="ddlAssignee"
                                                         onclose={true}
                                                         isMulti={false}
-                                                        value={this.props.TicketDetailModelInstance ? this.props.TicketDetailModelInstance.assignee : null}
+                                                        // value={this.props.TicketDetailModelInstance ? this.props.TicketDetailModelInstance.assignee : null}
+                                                        value={this.state.assigneeList[0]}
                                                         onChange={this.OnComplainAssigneeChange.bind(this)}
                                                         options={this.state.assigneeList}
                                                         // disabled={this.props.EditTicktDetails.CardLaneId.split('_')[1] === 'CLOSED' ? true : false}
@@ -738,7 +739,8 @@ class TicketDetails extends Component {
                                                     <label htmlFor="ddlEscalationMatrixCategory">Reporter</label>
                                                     <SelectBox
                                                         ID="ddlComplainBy"
-                                                        Value={this.props.TicketDetailModelInstance ? this.props.TicketDetailModelInstance.complainById : 0}
+                                                        // Value={this.props.TicketDetailModelInstance ? this.props.TicketDetailModelInstance.complainById : 0}
+                                                        Value={this.state.complainByList[1] ? this.state.complainByList[1].Id :this.state.complainByList[0].Id}
                                                         onSelected={this.onSelected.bind(this, "ComplainBy")}
                                                         Options={this.state.complainByList}
                                                         ClassName="form-control "
