@@ -742,7 +742,7 @@ class KanbanBoard extends Component {
                         this.loadTemmemberCategoryWiseData("TAM", "null", this.props.PropertyId);
                     }
                 })
-        }
+        } 
     }
 
     addNew() {

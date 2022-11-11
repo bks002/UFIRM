@@ -25,6 +25,7 @@ import departmentAction from "../../redux/department/action";
 import { promiseWrapper } from "../../utility/common";
 import { bindActionCreators } from "redux";
 import DataProvider from "../../MainComponents/Calendar/DataProvider";
+import { Link } from "react-router-dom/cjs/react-router-dom.min.js";
 
 const $ = window.$;
 const documentBL = new DocumentBL();
@@ -40,10 +41,10 @@ class AmenitiesBooking extends React.Component {
       AmenityId: "0",
       AmenityListData: [],
       AmenitiesBookings: [],
-      AmenitiesBookingsUsers:[],
+      AmenitiesBookingsUsers: [],
       AmenityBookingId: "",
       pageSize: 10,
-      UserId:"0",
+      UserId: "0",
       pageNumber: 1,
       gridHeader: [
         { sTitle: "Id", titleValue: "Id", orderable: false, visible: true },
@@ -62,7 +63,6 @@ class AmenitiesBooking extends React.Component {
       ],
       GridData: [],
       filtered: false,
-
     };
     this.ApiProviderr = new ApiProvider();
     this.comdbprovider = new CommonDataProvider();
@@ -75,22 +75,24 @@ class AmenitiesBooking extends React.Component {
     var userId = this.state.UserId;
     var DateFrom = this.state.DateFrom;
     var DateTo = this.state.DateTo;
-    var model = this.getModel(type, propertyId,userId,DateFrom,DateTo);
+    var model = this.getModel(type, propertyId, userId, DateFrom, DateTo);
     this.loadBooking(model, type);
   }
   async loadBooking(model, type) {
     await this.dataprovider.manageQues(model, type).then((resp) => {
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
-          let users =[]
-          let uniqueUsers = []
+          let users = [];
+          let uniqueUsers = [];
           rData.forEach((item) => {
             users.push({
               Id: item.UserId,
-              Username : item.UserName,
-            })
-          })
-          uniqueUsers = users.filter((v, i, a) => a.findIndex(t => (t.Id === v.Id)) === i)
+              Username: item.UserName,
+            });
+          });
+          uniqueUsers = users.filter(
+            (v, i, a) => a.findIndex((t) => t.Id === v.Id) === i
+          );
           this.setState({ AmenitiesBookings: rData });
           this.setState({ AmenitiesBookingsUsers: uniqueUsers });
         });
@@ -98,7 +100,7 @@ class AmenitiesBooking extends React.Component {
     });
   }
 
-    DateRangeConfig(startDate, endDate) {
+  DateRangeConfig(startDate, endDate) {
     let _this = this;
     $("#dataRange").daterangepicker({
       locale: {
@@ -113,7 +115,6 @@ class AmenitiesBooking extends React.Component {
     const endDate = moment().clone().endOf("month");
     this.DateRangeConfig(startDate, endDate);
     this.getAmenitiesBookings();
-
   }
 
   // componentDidMount() {
@@ -259,7 +260,7 @@ class AmenitiesBooking extends React.Component {
     });
   }
 
-  getModel = (type, propertyId,userId,DateFrom,DateTo) => {
+  getModel = (type, propertyId, userId, DateFrom, DateTo) => {
     var model = [];
     switch (type) {
       case "R":
@@ -354,7 +355,12 @@ class AmenitiesBooking extends React.Component {
     });
     this.getAmenitiesBookings();
   };
- 
+  Navigate = () => {
+    this.setState({ PageMode: 'Navigate' }, () => {
+        CreateValidator();
+    });
+}
+
   //End
   render() {
     // let _this = this;
@@ -376,23 +382,23 @@ class AmenitiesBooking extends React.Component {
                       <select
                         id="dllCategory"
                         className="form-control"
-                          onChange={(e) =>
-                            this.setState({
-                              UserId: e.target.value,
-                            })
-                          }
-                          value={this.state.UserId}
+                        onChange={(e) =>
+                          this.setState({
+                            UserId: e.target.value,
+                          })
+                        }
+                        value={this.state.UserId}
                       >
                         <option value={0}>Select User</option>
                         {this.state.AmenitiesBookingsUsers
-                            ? this.state.AmenitiesBookingsUsers.map((e, key) => {
-                                return (
-                                  <option key={key} value={e.Id}>
-                                    {e.Username}
-                                  </option>
-                                );
-                              })
-                            : null}
+                          ? this.state.AmenitiesBookingsUsers.map((e, key) => {
+                              return (
+                                <option key={key} value={e.Id}>
+                                  {e.Username}
+                                </option>
+                              );
+                            })
+                          : null}
                       </select>
                     </li>
                     <li className="nav-item">
@@ -414,25 +420,37 @@ class AmenitiesBooking extends React.Component {
                       </div>
                     </li>
                     {!this.state.filtered && (
-                        <li>
+                      <li>
+                        <Button
+                          id="btnNewTask"
+                          Action={this.Filter.bind(this)}
+                          ClassName="btn btn-primary"
+                          Text="Filter"
+                        />
+                      </li>
+                    )}
+                    {this.state.filtered && (
+                      <li>
+                        <Button
+                          id="btnNewTask"
+                          Action={this.Reset.bind(this)}
+                          ClassName="btn btn-danger"
+                          Text="Reset"
+                        />
+                      </li>
+                    )}
+                    <li>
+                      <div className="input-group input-group-sm">
+                        <div className="input-group-prepend">
                           <Button
-                            id="btnNewTask"
-                            Action={this.Filter.bind(this)}
-                            ClassName="btn btn-primary"
-                            Text="Filter"
+                            id="btnaddCalendarCategory"
+                            Action={this.Navigate.bind(this)}
+                            ClassName="btn btn-success"
+                            Text="Aminity booking / Event calender"
                           />
-                        </li>
-                      )}
-                      {this.state.filtered && (
-                        <li>
-                          <Button
-                            id="btnNewTask"
-                            Action={this.Reset.bind(this)}
-                            ClassName="btn btn-danger"
-                            Text="Reset"
-                          />
-                        </li>
-                      )}
+                        </div>
+                      </div>
+                    </li>
                   </ul>
                 </div>
                 <div className="card-body pt-2">
@@ -519,6 +537,49 @@ class AmenitiesBooking extends React.Component {
               pauseOnHover
             />
             <ToastContainer />
+          </div>
+        )}
+        {this.state.PageMode == "Navigate" && (
+          <div>
+            <div>
+              <div className="modal-content">
+                <div className="modal-body">
+                  <div className="row">
+                    <div class="col-sm-6">
+                      <div class="form-group">
+                        <label for="ddlPropertyList">Navigate to </label>
+                        <Link to="/Account/App/AmenitiesBooking" className="nav-link">
+                        <Button
+                            id="btnaddCalendarCategory"
+                            ClassName="btn btn-success ml-2"
+                            Text="Amenities Booking"
+                          />
+                        </Link>
+                      </div>
+                      <div class="form-group">
+                        <label for="ddlPropertyList">Navigate to </label>
+                        <Link to="/Account/App/EventCalendar" className="nav-link">
+                        <Button
+                            id="btnaddCalendarCategory"
+                            ClassName="btn btn-success ml-2"
+                            Text="Events Booking"
+                          />
+                        </Link>
+
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <Button
+                    Id="btnCancel"
+                    Text="Close"
+                    Action={this.handleCancel}
+                    ClassName="btn btn-secondary"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
