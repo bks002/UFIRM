@@ -5,6 +5,12 @@ class DataProvider {
     manageFacilityMember(model, type) {
         let url = '';
         switch (type) {
+            case 'C':
+                //url = `Facility/FacilityMember/Save`;
+                //return srv.CallPostService(url, model[0]);
+                url = `FacilityMemberSave`;
+                return srv.CallPostNewService(url, model[0]);
+                break;
             case 'U':
                 url = `Facility/FacilityMember/Save`;
                 return srv.CallPostService(url, model[0]);

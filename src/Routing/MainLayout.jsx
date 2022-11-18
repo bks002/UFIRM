@@ -35,6 +35,7 @@ import AmenitiesMasterPage from '../pages/AmenitiesMasterPage';
 import ManageResidentOwnersPage from '../pages/ManageResidentOwnersPage';
 import ManageFlatPage from '../pages/ManageFlatPage';
 import DocumentTypeMasterPage from '../pages/DocumentTypeMasterPage'
+import AssetsMasterPage from '../pages/AssetsMasterPage'
 import EscalationGroupPage from '../pages/EscalationGroupPage';
 import EscalationMatrixPage from '../pages/EscalationMatrixPage'
 import NoticeBoardPage from '../pages/NoticeBoardPage'
@@ -802,6 +803,9 @@ class MainLayout extends React.Component {
                         </Route>
                         <Route path="/Account/App/DocumentType">
                             <DocumentTypeMasterPage />
+                        </Route>
+                        <Route path="/Account/App/AssetsMaster">
+                            <AssetsMasterPage />
                         </Route>
                         <Route path="/Account/App/EscalationGroup">
                             <EscalationGroupPage />

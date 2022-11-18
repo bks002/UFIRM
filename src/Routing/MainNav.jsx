@@ -36,6 +36,7 @@ import AmenitiesMasterPage from '../pages/AmenitiesMasterPage';
 import ManageResidentOwnersPage from '../pages/ManageResidentOwnersPage';
 import ManageFlatPage from '../pages/ManageFlatPage';
 import DocumentTypeMasterPage from '../pages/DocumentTypeMasterPage'
+import AssetsMasterPage from '../pages/AssetsMasterPage'
 import EscalationGroupPage from '../pages/EscalationGroupPage';
 import EscalationMatrixPage from '../pages/EscalationMatrixPage'
 import NoticeBoardPage from '../pages/NoticeBoardPage'
@@ -521,6 +522,14 @@ class MainNav extends React.Component {
                                                         </Link>
                                                     </li>
                                                 </ul>
+                                                <ul className="nav nav-treeview">
+                                                    <li className="nav-item">
+                                                        <Link to="/Account/App/AssetsMaster" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p>Assets Master</p>
+                                                        </Link>
+                                                    </li>
+                                                </ul>
                                             </li>
                                             : null
                                     }
@@ -866,6 +875,9 @@ class MainNav extends React.Component {
                         </Route>
                         <Route path="/Account/App/DocumentType">
                             <DocumentTypeMasterPage />
+                        </Route>
+                        <Route path="/Account/App/AssetsMaster">
+                            <AssetsMasterPage />
                         </Route>
                         <Route path="/Account/App/EscalationGroup">
                             <EscalationGroupPage />

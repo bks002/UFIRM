@@ -4,7 +4,7 @@ import Common from "./ServiceCommon.js";
 //import "babel-polyfill";
 import AppUrlProvider from "./ApiUrlProvider.js";
 import * as appCommonJs from "../Common/AppCommon.js";
-import axios from 'axios';
+import axios, { post } from 'axios';
 // Global Declaration
 let urls = new AppUrlProvider();
 
@@ -177,6 +177,7 @@ class ServiceProvider {
         return axios.post(urls.MainUrl + url, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
+                'Access-Control-Allow-Origin': 'true',
                 Authorization: 'Bearer ' + appCommonJs.getapitoken()
             }
         });
@@ -202,6 +203,23 @@ class ServiceProvider {
         let resp;
         resp = fetch(urls.complaintUrl + url, {
             method: "POST",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                // Authorization: 'Bearer ' + appCommonJs.getapitoken()
+            },
+            
+            body: JSON.stringify(Pdata)
+        });
+        console.log(resp);
+        return resp;
+    }
+
+    CallGetNewService(url, Pdata) {
+        //
+        let resp;
+        resp = fetch(urls.complaintUrl + url, {
+            method: "GET",
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
@@ -250,7 +268,6 @@ class ServiceProvider {
         })
         return resp;
     }
-
 
     async CallPostAsyncService(url, Pdata) {
         let resp;
