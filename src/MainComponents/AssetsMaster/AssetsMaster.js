@@ -91,7 +91,7 @@ class AssetsMaster extends Component {
             this.setState({ Id: rowData.Id });
             this.setState({ Name: rowData.Name });
             this.setState({ Description: rowData.Description });
-            this.setState({ QrCode: rowData.QRCode });
+            this.setState({ QRCode: rowData.QRCode });
         });
 
     }
@@ -177,7 +177,7 @@ class AssetsMaster extends Component {
             });
     }
     handleCancel = () => {
-        this.setState({ DocumentTypeId: 0, DocumentType: '', LanguageId: 0, Description: '' }, () => {
+        this.setState({ Id: 0,Name:'', Description: '',QRCode:'' }, () => {
             this.setState({ PageMode: 'Home' });
             this.loadHomagePageData();
         });
@@ -258,7 +258,7 @@ class AssetsMaster extends Component {
                                             <div className="form-group">
                                                 <label for="txtQRCodeL">QRCode</label>
                                                 <InputBox Id="txtQRCode"
-                                                    Value={this.state.QrCode}
+                                                    Value={this.state.QRCode}
                                                     onChange={this.updatetextmodel.bind(this, "QRCode")}
                                                     PlaceHolder="QRCode"
                                                     Class="form-control form-control-sm"
