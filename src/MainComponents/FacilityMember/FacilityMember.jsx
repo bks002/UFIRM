@@ -28,6 +28,13 @@ import { bindActionCreators } from 'redux';
 const $ = window.$;
 const documentBL = new DocumentBL();
 
+const toBase64 = file => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result.split(','));
+    reader.onerror = error => reject(error);
+  });
+
 class FacilityMember extends React.Component {
     constructor(props) {
         super(props);
@@ -45,6 +52,7 @@ class FacilityMember extends React.Component {
             PropertyDetailsIds: [],
             pageSize: 10,
             pageNumber: 1,
+            Image:"",
             gridFacilityMemberHeader: [
                 { sTitle: 'Id', titleValue: 'facilityMemberId', "orderable": false, },//"visible": true 
                 { sTitle: 'Image', titleValue: 'Image', ImagePath: 'profileImageUrl', Index: '0' },
@@ -62,8 +70,7 @@ class FacilityMember extends React.Component {
             gridDocumentHeader: [
                 { sTitle: 'Id', titleValue: 'facilityMemberDocumentId', "orderable": false, },
                 { sTitle: 'Document Type', titleValue: 'documentTypeName', "orderable": false, },
-                { sTitle: 'Document Number', titleValue: 'documentName', "orderable": false, },
-                { sTitle: 'Document Url', titleValue: 'documentUrl', "orderable": false, bVisible: false },
+                { sTitle: 'Document Name', titleValue: 'documentName', "orderable": false, },
                 { sTitle: 'Action', titleValue: 'Action', Action: "DownloadNDelete", Index: '0', urlIndex: '3', "orderable": false }
             ],
             gridDocumentData: [],
@@ -72,7 +79,8 @@ class FacilityMember extends React.Component {
             //Document file
             DocumentType: [], documentType: [], documentTypeId: "0", documentName: "",
             selectedFile: undefined, selectedFileName: undefined, imageSrc: undefined, value: '',
-            Showimguploader: false, isServiceStaff: 'Staff', FacilityTypeId: 2
+            Showimguploader: false, isServiceStaff: 'Staff', FacilityTypeId: 2,
+            documentVal: '', currentSelectedFile: null , ImageData:[] ,FileData:[],File:"",FileExt : "",
         };
         this.onDrop = this.onDrop.bind(this);
         this.removeImage = this.removeImage.bind(this);
@@ -515,7 +523,9 @@ class FacilityMember extends React.Component {
           case 'C':
             model.push({
               "propertyId": parseInt(this.props.PropertyId),
-              //"imageFile": this.state.Pictures != null ? this.state.Pictures[0] : null,     
+              "imageFile": this.state.Image, 
+              "imageExt":this.state.ImageExt,  
+              "imageFileName":this.state.ImageFileName,  
               "name":this.state.Name,
               "mobileNumber":this.state.Contact,
               "address":this.state.Address,
@@ -526,10 +536,8 @@ class FacilityMember extends React.Component {
                 "propertyFloorId":this.state.PropertyFloorId,
                 "propertyFlatId":this.state.PropertyFlatId,
                 "propertyDetailsIds":this.state.FacilityTypeId == 1 ? JSON.stringify(this.state.PropertyDetailsIds) : JSON.stringify([]),
-                "document":JSON.stringify(this.state.gridDocumentData)
-                //"files":this.state.gridDocumentData.map((item) => {
-                  //  return item.selectedFile;
-                //})
+                "document":JSON.stringify(this.state.gridDocumentData),
+                "files":this.state.gridDocumentData
             });
             break;
           case 'R':
@@ -542,7 +550,30 @@ class FacilityMember extends React.Component {
         return model;
       }
 
-    handleSave = (saveType) => {
+    handleSave = async () => {
+        let UpFile = this.state.ImageData;
+        let res = null;
+        console.log(228);
+        console.log(UpFile.length);
+        console.log(this.state.ImageData);
+        if (UpFile) {
+          if (UpFile!=""){
+          let fileD = await toBase64(UpFile);
+          var imgbytes = UpFile.size; // Size returned in bytes.        
+          var imgkbytes = Math.round(parseInt(imgbytes) / 1024); // Size returned in KB.    
+          let extension = UpFile.name.substring(UpFile.name.lastIndexOf('.') + 1);
+          res = {
+            filename: UpFile.name,
+            filepath: fileD[1],
+            sizeinKb: imgkbytes,
+            fileType: fileD[0],
+            extension: extension.toLowerCase()
+          }
+          this.state.ImageFileName = UpFile.name;
+          this.state.Image = fileD[1];
+          this.state.ImageExt = extension;
+        };
+      };
         let url = new UrlProvider().MainUrl;
         if (ValidateControls()) {
             if (this.state.FacilityTypeId == 1 && this.state.PropertyDetailsIds.length > 0) {
@@ -596,6 +627,10 @@ class FacilityMember extends React.Component {
                 appCommon.showtextalert("At least one flat is required", "", "error");
             }
         }
+
+        this.state.ImageData="";
+        this.state.Image="";
+        this.state.ImageExt="";
     }
 
     handleCancel = () => {
@@ -632,14 +667,50 @@ class FacilityMember extends React.Component {
         });
     }
 
+    // onFileChange(event) {
+    //     if (event.target.files[0]) {
+    //         this.setState({
+    //             selectedFile: event.target.files[0],
+    //             selectedFileName: event.target.files[0].name,
+    //             imageSrc: window.URL.createObjectURL(event.target.files[0]),
+    //             value: event.target.value,
+    //         });
+    //     }
+    // };
+
     onFileChange(event) {
+        let _validFileExtensions = ["jpg", "jpeg", "png", "pdf"];
         if (event.target.files[0]) {
-            this.setState({
-                selectedFile: event.target.files[0],
-                selectedFileName: event.target.files[0].name,
-                imageSrc: window.URL.createObjectURL(event.target.files[0]),
-                value: event.target.value,
-            });
+          let extension = event.target.files[0].name.substring(event.target.files[0].name.lastIndexOf('.') + 1);
+          let isvalidFiletype = _validFileExtensions.some(x => x === extension.toLowerCase());
+          if (isvalidFiletype) {
+    
+            this.state.FileData = event.target.files[0];
+    
+          }
+          else {
+            this.setState({ documentVal: '', currentSelectedFile: null })
+            let temp_validFileExtensions = _validFileExtensions.join(',');
+            appCommon.showtextalert(`${event.target.files[0].name.filename} Invalid file type, Please Select only ${temp_validFileExtensions} `, "", "error");
+          }
+        }
+    }
+
+    onImageChange(event) {
+        let _validFileExtensions = ["jpg", "jpeg", "png", "pdf"];
+        if (event.target.files[0]) {
+          let extension = event.target.files[0].name.substring(event.target.files[0].name.lastIndexOf('.') + 1);
+          let isvalidFiletype = _validFileExtensions.some(x => x === extension.toLowerCase());
+          if (isvalidFiletype) {
+    
+            this.state.ImageData = event.target.files[0];
+    
+          }
+          else {
+            this.setState({ documentVal: '', currentSelectedFile: null })
+            let temp_validFileExtensions = _validFileExtensions.join(',');
+            appCommon.showtextalert(`${event.target.files[0].name.filename} Invalid file type, Please Select only ${temp_validFileExtensions} `, "", "error");
+          }
         }
     };
 
@@ -651,8 +722,28 @@ class FacilityMember extends React.Component {
         };
     }
 
-    handleDocSave = () => {
+    handleDocSave = async () => {
         if (documentBL.ValidateControls() == "") {
+            let UpFile = this.state.FileData;
+            console.log(UpFile)
+    let res = null;
+    if (UpFile) {
+      if (UpFile!=""){
+      let fileD = await toBase64(UpFile);
+      var imgbytes = UpFile.size; // Size returned in bytes.        
+      var imgkbytes = Math.round(parseInt(imgbytes) / 1024); // Size returned in KB.    
+      let extension = UpFile.name.substring(UpFile.name.lastIndexOf('.') + 1);
+      res = {
+        filename: UpFile.name,
+        filepath: fileD[1],
+        sizeinKb: imgkbytes,
+        fileType: fileD[0],
+        extension: extension.toLowerCase()
+      }
+      this.state.File = fileD[1];
+      this.state.FileExt = extension;
+    };
+  };
             let documentTypeName = this.state.documentType.find((item) => { return item.Id == this.state.documentTypeId }).Name;
             this.setState({ documentType: this.removeByAttr(this.state.documentType, 'Id', this.state.documentTypeId) });
             let gridDocumentData = this.state.gridDocumentData;
@@ -661,14 +752,18 @@ class FacilityMember extends React.Component {
                 // propertyMemberDocumentId: 0,
                 documentTypeId: this.state.documentTypeId,
                 documentTypeName: documentTypeName,
-                documentName: this.state.documentName,
+                documentName: UpFile.name,
+                documentNumber : this.state.documentName,
                 documentFileName: this.state.selectedFileName,
-                documentUrl: this.state.imageSrc,
+                documentUrl: this.state.File,
+                documentExt : this.state.FileExt,
                 selectedFile: this.state.selectedFile
             });
             this.setState({ gridDocumentData: gridDocumentData });
+            console.log(this.state.gridDocumentData);
             //clear object
-            this.setState({ documentName: " " });
+            this.setState({ documentName: " ",documentTypeName: " ", documentTypeId: 0, selectedFile: undefined, 
+            selectedFileName: undefined , File:"",FileExt:""});
             this.removeImage();
         }
     }
@@ -975,7 +1070,7 @@ class FacilityMember extends React.Component {
                                                         <label htmlFor="lbPictureUpload">Picture Upload</label>
                                                         <div style={{ display: "flex" }}>
                                                             <div style={{ marginRight: "15px" }}>
-                                                                <ImageUploader
+                                                                {/* <ImageUploader
                                                                     singleImage={true}
                                                                     //withIcon={true}
                                                                     withIcon={false}
@@ -983,10 +1078,17 @@ class FacilityMember extends React.Component {
                                                                     label=""
                                                                     // label="Max file size: 5mb, accepted: jpg, png, svg"
                                                                     buttonText="Upload Images"
-                                                                    onChange={this.onDrop}
+                                                                    onChange={this.onImageChange.bind(this)}
                                                                     imgExtension={[".jpg", ".png", ".svg"]}
                                                                     maxFileSize={5242880}
                                                                     fileSizeError=" file size is too big"
+                                                                /> */}
+                                                                <DocumentUploader
+                                                                Class={"form-control"}
+                                                                Id={"kycfileUploader"}
+                                                                type={"file"}
+                                                                // value={this.state.ImageData}
+                                                                onChange={this.onImageChange.bind(this)}
                                                                 />
                                                             </div>
                                                         </div>
@@ -1049,7 +1151,7 @@ class FacilityMember extends React.Component {
                                                                     Class={"form-control "}
                                                                     Id={"fileDocumentUploader"}
                                                                     type={"file"}
-                                                                    value={this.state.value}
+                                                                    // value={this.state.FileData.name}
                                                                     onChange={this.onFileChange.bind(this)} />
                                                             </div>
                                                         </div>
