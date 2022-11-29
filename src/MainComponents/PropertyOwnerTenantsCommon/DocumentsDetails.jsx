@@ -136,7 +136,6 @@ class DocumentsDetails extends Component {
       };
 
     onViewDocument(gridId) {
-        debugger
         let data = this.props.documentDtDetails.find(x => x.id === gridId);
         let fileExt = data.editDocUrl.substring(data.editDocUrl.lastIndexOf('.') + 1);
         if (fileExt === 'pdf') {

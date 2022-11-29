@@ -70,10 +70,12 @@ class FacilityMember extends React.Component {
             gridDocumentHeader: [
                 { sTitle: 'Id', titleValue: 'facilityMemberDocumentId', "orderable": false, },
                 { sTitle: 'Document Type', titleValue: 'documentTypeName', "orderable": false, },
-                { sTitle: 'Document Name', titleValue: 'documentName', "orderable": false, },
-                { sTitle: 'Action', titleValue: 'Action', Action: "DownloadNDelete", Index: '0', urlIndex: '3', "orderable": false }
+                // { sTitle: 'Document Name', titleValue: 'documentName', "orderable": false, },
+                { sTitle: 'Action', titleValue: 'Action', Action: "View", Index: '0', urlIndex: '3', "orderable": false }
             ],
             gridDocumentData: [],
+        
+            kycDocumentType:"",
             grdTotalRows: 0,
             grdTotalPages: 0,
             //Document file
@@ -349,6 +351,16 @@ class FacilityMember extends React.Component {
         var rowData = this.findItem(Id);
         this.setState({ FacilityMemberId: rowData.facilityMemberId })
         this.setState({ ProfileImageUrl: rowData.profileImageUrl });
+        if(rowData.profileImageUrl != null && rowData.profileImageUrl != ""){
+            this.state.gridDocumentData.push({
+                "facilityMemberDocumentId": 0,
+                "facilityMemberId": 0,
+                "documentTypeId": 0,
+                "documentTypeName": "Profile Image",
+                "documentName": rowData.profileImageUrl,
+                "documentUrl": rowData.profileImageUrl,
+            })
+        }
         this.setState({ Name: rowData.name });
         this.setState({ Contact: rowData.mobileNumber });
         this.setState({ Address: rowData.address });
@@ -388,8 +400,8 @@ class FacilityMember extends React.Component {
         });
         this.setState({ documentType: arrayCopy });
         this.setState({ documentTypeId: "0" });
+        this.setState({gridDocumentData:[...this.state.gridDocumentData, ...rowData.facilityMemberDocumentList]});
 
-        this.setState({ gridDocumentData: rowData.facilityMemberDocumentList });
     }
 
     findItem(id) {
@@ -636,6 +648,7 @@ class FacilityMember extends React.Component {
     handleCancel = () => {
         this.setState({ PageMode: 'Home' }, () => {
             this.getFacilityMember(this.state.FilterValue);
+            this.state.gridDocumentData = [];
         });
     };
 
@@ -900,8 +913,17 @@ class FacilityMember extends React.Component {
         })
     }
 
+    openInNewTab = url => {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      };
+      onViewDocument(docId) {
+        let data = this.state.gridDocumentData.find(x => x.facilityMemberDocumentId === docId); 
+        this.openInNewTab(data.documentUrl);
+    }
+
     //End
     render() {
+        console.log(this.state.gridDocumentData)
         return (
             <div>
                 {this.state.PageMode == 'Home' &&
@@ -1024,7 +1046,7 @@ class FacilityMember extends React.Component {
                                                     className="form-control"
                                                 />
                                             </div>
-                                        </div>
+                                        </div> 
                                         {this.state.FacilityTypeId == 1 &&
                                             <div class="col-sm-4">
                                                 <div class="form-group">
@@ -1036,6 +1058,23 @@ class FacilityMember extends React.Component {
                                             </div>
                                         }
                                     </div>
+                                    <div>
+                                            <label>KYC Documents</label>
+                                        </div>
+                                        <div className="row">
+                                                    <div className="col-sm-12">
+                                                        <DataGrid
+                                                            Id="grdDoc"
+                                                            IsPagination={false}
+                                                            ColumnCollection={this.state.gridDocumentHeader}
+                                                            onGridDeleteMethod={this.onDocumentGridDelete.bind(this)}
+                                                            onGridDownloadMethod={this.onDocumentGridData.bind(this)}
+                                                            onGridViewMethod={this.onViewDocument.bind(this)}
+                                                            GridData={this.state.gridDocumentData}
+                                                        />
+                                                    </div>
+                                        </div>
+                                        
 
                                     {this.state.FacilityTypeId == 1 && <div>
                                         <div className="row">
