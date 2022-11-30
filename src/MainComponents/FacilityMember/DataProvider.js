@@ -27,6 +27,10 @@ class DataProvider {
                 url = `Facility/FacilityMember`;
                 return srv.CallPostService(url, model[0]);
                 break;
+            case 'Upload':
+                url = 'FacilityMemberKYCUpload';
+                return srv.CallPostNewService(url, model[0]);
+                break
             default:
         }
     }

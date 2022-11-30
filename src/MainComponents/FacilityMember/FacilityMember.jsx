@@ -47,6 +47,8 @@ class FacilityMember extends React.Component {
             PropertyTowerId: '0', PropertyTowersData: [],
             PropertyFloorId: '0', PropertyFloors: [],
             PropertyFlatId: '0', PropertyFlat: [],
+            FacilityMemberDocumentId:'0',FacilityMemberId:'0',
+            DocumentTypeId:'0',DocumentTypeName:'',
             Gender: '0', GenderList: [],
             Filter: [], FilterValue: "All",
             PropertyDetailsIds: [],
@@ -68,13 +70,13 @@ class FacilityMember extends React.Component {
             ],
             gridFacilityMemberData: [],
             gridDocumentHeader: [
-                { sTitle: 'Id', titleValue: 'facilityMemberDocumentId', "orderable": false, },
+                // { sTitle: 'Id', titleValue: 'facilityMemberDocumentId', "orderable": false, },
                 { sTitle: 'Document Type', titleValue: 'documentTypeName', "orderable": false, },
                 // { sTitle: 'Document Name', titleValue: 'documentName', "orderable": false, },
                 { sTitle: 'Action', titleValue: 'Action', Action: "View", Index: '0', urlIndex: '3', "orderable": false }
             ],
             gridDocumentData: [],
-        
+            kycDocumentData:[],
             kycDocumentType:"",
             grdTotalRows: 0,
             grdTotalPages: 0,
@@ -259,6 +261,22 @@ class FacilityMember extends React.Component {
 
         //load tower
         this.loadPropertyTowers(this.state.PropertyId);
+
+
+        //load documents panel
+        this.getDocumentType();
+        $('#grdFacilityMember').find("[aria-label=Action]").addClass("addWidth");
+        let arrayCopy = [...this.state.DocumentType];
+        this.setState({ documentType: arrayCopy });
+        this.setState({ documentTypeId: "0" });
+        this.getFacilityMaster(parseInt(this.state.FacilityTypeId));
+    }
+
+    addDocs() {
+        this.setState({ PageMode: 'AddDocs' }, () => {
+            CreateValidator();
+            documentBL.CreateValidator();
+        });
 
 
         //load documents panel
@@ -557,6 +575,12 @@ class FacilityMember extends React.Component {
               "CmdType": type
             });
             break;
+            case 'Upload':
+                model.push({
+                    "FacilityMemberId" : this.state.FacilityMemberId,
+                    "Document":JSON.stringify(this.state.kycDocumentData)
+                });
+                break;
           default:
         };
         return model;
@@ -645,6 +669,52 @@ class FacilityMember extends React.Component {
         this.state.ImageExt="";
     }
 
+    uploadImage = async ()=>{
+        let UpFile = this.state.ImageData;
+        let res = null;
+        if (UpFile) {
+          if (UpFile!=""){
+          let fileD = await toBase64(UpFile);
+          var imgbytes = UpFile.size; // Size returned in bytes.        
+          var imgkbytes = Math.round(parseInt(imgbytes) / 1024); // Size returned in KB.    
+          let extension = UpFile.name.substring(UpFile.name.lastIndexOf('.') + 1);
+          res = {
+            filename: UpFile.name,
+            filepath: fileD[1],
+            sizeinKb: imgkbytes,
+            fileType: fileD[0],
+            extension: extension.toLowerCase()
+          }
+          this.state.ImageFileName = UpFile.name;
+          this.state.Image = fileD[1];
+          this.state.ImageExt = extension;
+          this.state.kycDocumentData.push({
+            "facilityMemberDocumentId": this.state.FacilityMemberDocumentId,
+            "facilityMemberId": this.state.FacilityMemberId,
+            "documentTypeId": this.state.DocumentTypeId,
+            "documentTypeName": this.state.DocumentTypeName,
+            "documentName": res.filename,
+            "documentUrl": res.filepath,
+        })
+        };
+      };
+        let url = new UrlProvider().MainUrl;
+        if (ValidateControls()) {
+                    var type = 'Upload';
+                    var model = this.getFacilityModel(type);
+                    this.ApiProviderr.manageFacilityMember(model,type)
+                        .then(res => {
+                            if (res.data > 0) {
+                                appCommon.ShownotifyError("File Uploaded Successfully");
+                            }
+                        });
+        }
+
+        this.state.ImageData="";
+        this.state.Image="";
+        this.state.ImageExt="";
+    }
+
     handleCancel = () => {
         this.setState({ PageMode: 'Home' }, () => {
             this.getFacilityMember(this.state.FilterValue);
@@ -652,10 +722,17 @@ class FacilityMember extends React.Component {
         });
     };
 
-    onSelected(name, value) {
+    handleCancelUpload = () => {
+        this.setState({ PageMode: 'Edit' }, () => {
+            this.getFacilityMember(this.state.FilterValue);
+        });
+    };
+
+    onSelected(name, value,key) {
+        console.log(key);
         switch (name) {
             case "DocumentType":
-                this.setState({ documentTypeId: value });
+                this.setState({ documentTypeId: value , documentTypeName: value });
                 break;
             case "Filter":
                 this.setState({ FilterValue: value, pageNumber: 1 }, () => {
@@ -923,7 +1000,6 @@ class FacilityMember extends React.Component {
 
     //End
     render() {
-        console.log(this.state.gridDocumentData)
         return (
             <div>
                 {this.state.PageMode == 'Home' &&
@@ -992,7 +1068,7 @@ class FacilityMember extends React.Component {
                         </div>
                     </div>
                 }
-                {(this.state.PageMode == 'Add' || this.state.PageMode == 'Edit') &&
+                {(this.state.PageMode == 'Add') &&
                     <div>
                         <div>
                             <div className="modal-content">
@@ -1058,7 +1134,7 @@ class FacilityMember extends React.Component {
                                             </div>
                                         }
                                     </div>
-                                    <div>
+                                    {/* <div>
                                             <label>KYC Documents</label>
                                         </div>
                                         <div className="row">
@@ -1073,9 +1149,8 @@ class FacilityMember extends React.Component {
                                                             GridData={this.state.gridDocumentData}
                                                         />
                                                     </div>
-                                        </div>
+                                        </div> */}
                                         
-
                                     {this.state.FacilityTypeId == 1 && <div>
                                         <div className="row">
                                             <div class="col-sm-4">
@@ -1222,6 +1297,241 @@ class FacilityMember extends React.Component {
                                         Id="btnCancel"
                                         Text="Cancel"
                                         Action={this.handleCancel}
+                                        ClassName="btn btn-secondary" />
+                                </div>
+                            </div>
+                        </div>
+                        <ToastContainer
+                            position="top-right"
+                            autoClose={5000}
+                            hideProgressBar={false}
+                            newestOnTop={false}
+                            closeOnClick
+                            rtl={false}
+                            pauseOnFocusLoss
+                            draggable
+                            pauseOnHover
+                        />
+                        <ToastContainer />
+                    </div>
+                }
+                 {(this.state.PageMode == 'Edit') &&
+                    <div>
+                        <div>
+                            <div className="modal-content">
+                                <div className="modal-body">
+                                    <div className="row">
+                                        <div class="col-sm-4">
+                                            <div class="form-group">
+                                                <label htmlFor="lblName">Name</label>
+                                                <InputBox Id="txtName"
+                                                    Value={this.state.Name}
+                                                    onChange={this.updateData.bind(this, "Name")}
+                                                    PlaceHolder="Name"
+                                                    className="form-control"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="form-group">
+                                                <label htmlFor="lblGender">Gender</label>
+                                                <DropDownList Id="ddlGender"
+                                                    onSelected={this.onDropdownChanges.bind(this, "Gender")}
+                                                    Options={this.state.GenderList} />
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="form-group">
+                                                <label htmlFor="lblFacilityMaster">Job Profile</label>
+                                                <DropDownList Id="ddlFacilityMaster"
+                                                    onSelected={this.onDropdownChanges.bind(this, "FacilityMaster")}
+                                                    Options={this.state.FacilityMaster} />
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="form-group">
+                                                <label htmlFor="lblContact">Contact</label>
+                                                <InputBox Id="txtContact"
+                                                    Value={this.state.Contact}
+                                                    onChange={this.updateData.bind(this, "Contact")}
+                                                    PlaceHolder="Contact"
+                                                    className="form-control"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="form-group">
+                                                <label htmlFor="lblAddress">Address</label>
+                                                <InputBox Id="txtAddress"
+                                                    Value={this.state.Address}
+                                                    onChange={this.updateData.bind(this, "Address")}
+                                                    PlaceHolder="Address"
+                                                    className="form-control"
+                                                />
+                                            </div>
+                                        </div> 
+                                        {this.state.FacilityTypeId == 1 &&
+                                            <div class="col-sm-4">
+                                                <div class="form-group">
+                                                    <label htmlFor="ddlTowerList">Tower/Wing</label>
+                                                    <DropDownList Id="ddlTowerList"
+                                                        onSelected={this.onDropdownChanges.bind(this, "PropertyTower")}
+                                                        Options={this.state.PropertyTowersData} />
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div className="row" style={{'display':'flex','justifyContent':'space-between'}}>
+                                            <label>KYC Documents</label>
+                                        
+                                        <div >
+                                        <Button id="btnNewComplain"
+                                                            Action={this.addDocs.bind(this)}
+                                                            ClassName="btn btn-success btn-sm"
+                                                            Icon={<i className="fa fa-plus" aria-hidden="true"></i>}
+                                                            Text={`Add Documents`} />
+                                        </div>
+                                        </div>
+                                        <div className="row">
+                                                    <div className="col-sm-12">
+                                                        <DataGrid
+                                                            Id="grdDoc"
+                                                            IsPagination={false}
+                                                            ColumnCollection={this.state.gridDocumentHeader}
+                                                            onGridDeleteMethod={this.onDocumentGridDelete.bind(this)}
+                                                            onGridDownloadMethod={this.onDocumentGridData.bind(this)}
+                                                            onGridViewMethod={this.onViewDocument.bind(this)}
+                                                            GridData={this.state.gridDocumentData}
+                                                        />
+                                                    </div>
+                                        </div>
+                                        
+
+                                    {this.state.FacilityTypeId == 1 && <div>
+                                        <div className="row">
+                                            <div class="col-sm-4">
+                                                <div class="form-group">
+                                                    <label htmlFor="ddlFlatList">Flat Name</label>
+                                                    <DropDownList Id="ddlFlatList"
+                                                        onSelected={this.onDropdownChanges.bind(this, "PropertyFlat")}
+                                                        Options={this.state.PropertyFlat} />
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-8">
+                                                <label htmlFor="selectedFlat">Selected Flat Name</label>
+                                                <div class="form-group">
+                                                    <div className="disableKey"><MultiSelectInline
+                                                        ID="ddlPropertyDetails"
+                                                        isMulti={true}
+                                                        value={this.state.PropertyDetailsIds}
+                                                        onChange={this.onDropdownChanges.bind(this, "PropertyDetails")}
+                                                    //options={this.state.OwnerData} 
+                                                    /></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    }
+                                </div>
+                                <div className="modal-footer">
+                                    <Button
+                                        Id="btnSave"
+                                        Text="Save"
+                                        Action={this.handleSave.bind(this, "Save")}
+                                        ClassName="btn btn-primary" />
+                                    <Button
+                                        Id="btnSaveAndApprove"
+                                        Text="Save &amp; Approve"
+                                        Action={this.handleSave.bind(this, "SaveApprove")}
+                                        ClassName="btn btn-success" />
+                                    <Button
+                                        Id="btnCancel"
+                                        Text="Cancel"
+                                        Action={this.handleCancel}
+                                        ClassName="btn btn-secondary" />
+                                </div>
+                            </div>
+                        </div>
+                        <ToastContainer
+                            position="top-right"
+                            autoClose={5000}
+                            hideProgressBar={false}
+                            newestOnTop={false}
+                            closeOnClick
+                            rtl={false}
+                            pauseOnFocusLoss
+                            draggable
+                            pauseOnHover
+                        />
+                        <ToastContainer />
+                    </div>
+                }
+
+                {(this.state.PageMode == 'AddDocs') &&
+                    <div>
+                        <div>
+                            <div className="modal-content">
+                                <div className="modal-body">
+                                    <div className="row">
+                                        <div className="col-sm-4">
+                                            <div className="form-group">
+                                                <label htmlFor="lblName">Id</label>
+                                                <InputBox Id="txtName"
+                                                    Value={this.state.FacilityMemberId}
+                                                    PlaceHolder="Id"
+                                                    className="form-control"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="col-sm-4">
+                                            <div className="form-group">
+                                                <label htmlFor="lblName">Name</label>
+                                                <InputBox Id="txtName"
+                                                    Value={this.state.Name}
+                                                    PlaceHolder="Name"
+                                                    className="form-control"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className='col-sm-4'>
+                                        <div className="form-group">
+                                                            <label htmlFor="lbDocumentType">Document Type</label>
+                                                            <SelectBox
+                                                                ID="ddlDocumentType"
+                                                                Value={this.state.documentTypeId}
+                                                                onSelected={this.onSelected.bind(this, "DocumentType")}
+                                                                Options={this.state.documentType}
+                                                                ClassName="form-control " />
+                                                        </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                            <label>Upload KYC Documents</label>
+                                    </div>
+                                        <div style={{ display: "flex" }}>
+                                                            <div style={{ marginRight: "15px" }}>
+                                                                
+                                                                <DocumentUploader
+                                                                Class={"form-control"}
+                                                                Id={"kycfileUploader"}
+                                                                type={"file"}
+                                                                onChange={this.onImageChange.bind(this)}
+                                                                />
+                                                            </div>
+                                        </div>
+                                        
+
+                                </div>
+                                <div className="modal-footer">
+                                    <Button
+                                        Id="btnSave"
+                                        Text="Save"
+                                        Action={this.uploadImage.bind(this)}
+                                        ClassName="btn btn-primary" />
+                                    <Button
+                                        Id="btnCancel"
+                                        Text="Cancel"
+                                        Action={this.handleCancelUpload}
                                         ClassName="btn btn-secondary" />
                                 </div>
                             </div>
