@@ -47,8 +47,8 @@ class FacilityMember extends React.Component {
             PropertyTowerId: '0', PropertyTowersData: [],
             PropertyFloorId: '0', PropertyFloors: [],
             PropertyFlatId: '0', PropertyFlat: [],
-            FacilityMemberDocumentId:'0',FacilityMemberId:'0',
-            DocumentTypeId:'0',DocumentTypeName:'',
+            FacilityMemberDocumentId:'0',FacilityMemberId:'0',            
+            documentTypeId:'0',DocumentTypeName:'',
             Gender: '0', GenderList: [],
             Filter: [], FilterValue: "All",
             PropertyDetailsIds: [],
@@ -81,7 +81,7 @@ class FacilityMember extends React.Component {
             grdTotalRows: 0,
             grdTotalPages: 0,
             //Document file
-            DocumentType: [], documentType: [], documentTypeId: "0", documentName: "",
+            DocumentType: [], documentType: [], documentName: "",
             selectedFile: undefined, selectedFileName: undefined, imageSrc: undefined, value: '',
             Showimguploader: false, isServiceStaff: 'Staff', FacilityTypeId: 2,
             documentVal: '', currentSelectedFile: null , ImageData:[] ,FileData:[],File:"",FileExt : "",
@@ -691,7 +691,7 @@ class FacilityMember extends React.Component {
           this.state.kycDocumentData.push({
             "facilityMemberDocumentId": this.state.FacilityMemberDocumentId,
             "facilityMemberId": this.state.FacilityMemberId,
-            "documentTypeId": this.state.DocumentTypeId,
+            "documentTypeId": this.state.documentTypeId,
             "documentTypeName": this.state.DocumentTypeName,
             "documentName": res.filename,
             "documentUrl": res.filepath,
@@ -704,9 +704,10 @@ class FacilityMember extends React.Component {
                     var model = this.getFacilityModel(type);
                     this.ApiProviderr.manageFacilityMember(model,type)
                         .then(res => {
-                            if (res.data > 0) {
+                            if (res.data == "Success") {
                                 appCommon.ShownotifyError("File Uploaded Successfully");
                             }
+                            this.handleCancelUpload()
                         });
         }
 
@@ -728,11 +729,16 @@ class FacilityMember extends React.Component {
         });
     };
 
-    onSelected(name, value,key) {
-        console.log(key);
+    onSelected(name, value) {
         switch (name) {
             case "DocumentType":
-                this.setState({ documentTypeId: value , documentTypeName: value });
+                this.state.documentType.find((item) => {
+                    if (item.Id == value) {
+                        console.log(item);
+                        this.setState({DocumentTypeName : item.Name});
+                        this.setState({documentTypeId : item.Id});
+                    }
+                })
                 break;
             case "Filter":
                 this.setState({ FilterValue: value, pageNumber: 1 }, () => {
@@ -1000,6 +1006,7 @@ class FacilityMember extends React.Component {
 
     //End
     render() {
+        {console.log(this.state.documentTypeId,this.state.DocumentTypeName);}
         return (
             <div>
                 {this.state.PageMode == 'Home' &&
@@ -1502,6 +1509,11 @@ class FacilityMember extends React.Component {
                                                                 onSelected={this.onSelected.bind(this, "DocumentType")}
                                                                 Options={this.state.documentType}
                                                                 ClassName="form-control " />
+                                                            {/* <select className='form-control' onSelect={(e)=>{this.setState({documentTypeId:e.target.value})}}>
+                                                                {this.state.documentType.map((item, index) => {
+                                                                    return <option value={item.Id}>{item.Name}</option>
+                                                                })}
+                                                            </select> */}
                                                         </div>
                                         </div>
                                     </div>
