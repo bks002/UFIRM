@@ -70,7 +70,7 @@ class FacilityMember extends React.Component {
             ],
             gridFacilityMemberData: [],
             gridDocumentHeader: [
-                // { sTitle: 'Id', titleValue: 'facilityMemberDocumentId', "orderable": false, },
+                { sTitle: 'Id', titleValue: 'facilityMemberDocumentId', "orderable": false, },
                 { sTitle: 'Document Type', titleValue: 'documentTypeName', "orderable": false, },
                 // { sTitle: 'Document Name', titleValue: 'documentName', "orderable": false, },
                 { sTitle: 'Action', titleValue: 'Action', Action: "View", Index: '0', urlIndex: '3', "orderable": false }
@@ -81,7 +81,7 @@ class FacilityMember extends React.Component {
             grdTotalRows: 0,
             grdTotalPages: 0,
             //Document file
-            DocumentType: [], documentType: [], documentName: "",
+            DocumentType: [], documentType: [], documentName: "",DocumentNumber:"",
             selectedFile: undefined, selectedFileName: undefined, imageSrc: undefined, value: '',
             Showimguploader: false, isServiceStaff: 'Staff', FacilityTypeId: 2,
             documentVal: '', currentSelectedFile: null , ImageData:[] ,FileData:[],File:"",FileExt : "",
@@ -695,6 +695,7 @@ class FacilityMember extends React.Component {
             "documentTypeName": this.state.DocumentTypeName,
             "documentName": res.filename,
             "documentUrl": res.filepath,
+            "documentNumber":this.state.DocumentNumber
         })
         };
       };
@@ -935,6 +936,9 @@ class FacilityMember extends React.Component {
             case "DocumentName":
                 this.setState({ documentName: value });
                 break;
+            case "DocumentNumber":
+                this.setState({ DocumentNumber: value });
+                break;
             default:
         }
     }
@@ -1006,7 +1010,6 @@ class FacilityMember extends React.Component {
 
     //End
     render() {
-        {console.log(this.state.documentTypeId,this.state.DocumentTypeName);}
         return (
             <div>
                 {this.state.PageMode == 'Home' &&
@@ -1517,6 +1520,8 @@ class FacilityMember extends React.Component {
                                                         </div>
                                         </div>
                                     </div>
+                                    <div className='row'>
+                                    <div className="col-sm-4">
                                     <div>
                                             <label>Upload KYC Documents</label>
                                     </div>
@@ -1531,7 +1536,19 @@ class FacilityMember extends React.Component {
                                                                 />
                                                             </div>
                                         </div>
-                                        
+                                        </div>
+
+                                        <div className="col-sm-4">
+                                            <div className="form-group">
+                                                <label htmlFor="lblName">Document Number</label>
+                                                <InputBox Id="txtName"
+                                                    onChange={this.updateData.bind(this, "DocumentNumber")}
+                                                    PlaceHolder="Document Number"
+                                                    className="form-control"
+                                                />
+                                            </div>
+                                        </div>
+                                        </div>
 
                                 </div>
                                 <div className="modal-footer">
