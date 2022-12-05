@@ -73,7 +73,7 @@ class FacilityMember extends React.Component {
                 { sTitle: 'Id', titleValue: 'facilityMemberDocumentId', "orderable": false, },
                 { sTitle: 'Document Type', titleValue: 'documentTypeName', "orderable": false, },
                 // { sTitle: 'Document Name', titleValue: 'documentName', "orderable": false, },
-                { sTitle: 'Action', titleValue: 'Action', Action: "View&Delete", Index: '0', urlIndex: '3', "orderable": false }
+                { sTitle: 'Action', titleValue: 'Action', Action: "Edit&View", Index: '0', urlIndex: '3', "orderable": false }
             ],
             gridDocumentData: [],
             kycDocumentData:[],
@@ -715,6 +715,10 @@ class FacilityMember extends React.Component {
         });
     };
 
+    handleDeleteFile = () => {
+        this.setState({ PageMode: 'AddDocs' });
+    }
+
     onSelected(name, value) {
         switch (name) {
             case "DocumentType":
@@ -896,53 +900,48 @@ class FacilityMember extends React.Component {
     }
 
     onKYCDocumentDelete(gridId) {
-        let myhtml = document.createElement("div");
-        //myhtml.innerHTML = "Save your changes otherwise all change will be lost! </br></br> Are you sure want to close this page?" + "</hr>"
-        myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>"
-        alert: (
-            swal({
-                buttons: {
-                    ok: "Yes",
-                    cancel: "No",
-                },
-                content: myhtml,
-                icon: "warning",
-                closeOnClickOutside: false,
-                dangerMode: true
-            }).then((value) => {
-                switch (value) {
-                    case "ok":
-                        // this.setState({ gridDocumentData: this.removeByAttr(this.state.gridDocumentData, 'facilityMemberDocumentId', gridId) });
-
-                        // //dropdown                        
-                        // let documentType = this.state.documentType;
-                        // this.state.documentType.map((item) => {
-                        //     if (item.Id == gridId)
-                        //         documentType.push(item);
-                        // });
-                        // let arrayCopy = [...this.state.documentType];
-                        // arrayCopy.sort(this.compareBy("Id"));
-                        // this.setState({ documentType: arrayCopy });
-                        // this.setState({ documentTypeId: "0" });
-
-                        var type = 'DeleteFile';
-                        var model = this.getFacilityModel(type,gridId);
-                        this.ApiProviderr.manageFacilityMember(model,type)
-                            .then(res => {
-                                if (res.data == "Success") {
-                                    appCommon.showtextalert("Document Deleted Successfully", "", "success");
-                                }
-                                this.handleCancelUpload()
-                            });
-                        break;
-                    case "cancel":
-                        //do nothing 
-                        break;
-                    default:
-                        break;
+        // let myhtml = document.createElement("div");
+        // myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>"
+        // alert: (
+        //     swal({
+        //         buttons: {
+        //             ok: "Yes",
+        //             cancel: "No",
+        //         },
+        //         content: myhtml,
+        //         icon: "warning",
+        //         closeOnClickOutside: false,
+        //         dangerMode: true
+        //     }).then((value) => {
+        //         switch (value) {
+        //             case "ok":
+        //                 var type = 'DeleteFile';
+        //                 var model = this.getFacilityModel(type,gridId);
+        //                 this.ApiProviderr.manageFacilityMember(model,type)
+        //                     .then(res => {
+        //                         if (res.data == "Success") {
+        //                             appCommon.showtextalert("Document Deleted Successfully", "", "success");
+        //                         }
+        //                         this.handleDeleteFile()
+        //                     });
+        //                 break;
+        //             case "cancel":
+        //                 //do nothing 
+        //                 break;
+        //             default:
+        //                 break;
+        //         }
+        //     })
+        // );
+        var type = 'DeleteFile';
+        var model = this.getFacilityModel(type,gridId);
+        this.ApiProviderr.manageFacilityMember(model,type)
+            .then(res => {
+                if (res.data == "Success") {
+                    appCommon.showtextalert("Document Deleted Successfully", "", "success");
                 }
-            })
-        );
+                this.handleDeleteFile()
+            });
     }
 
     removeByAttr(arr, attr, value) {
@@ -1443,7 +1442,7 @@ class FacilityMember extends React.Component {
                                                             Id="grdDoc"
                                                             IsPagination={false}
                                                             ColumnCollection={this.state.gridDocumentHeader}
-                                                            onGridDeleteMethod={this.onKYCDocumentDelete.bind(this)}
+                                                            onGridEditMethod={this.onKYCDocumentDelete.bind(this)}
                                                             onGridDownloadMethod={this.onDocumentGridData.bind(this)}
                                                             onGridViewMethod={this.onViewDocument.bind(this)}
                                                             GridData={this.state.gridDocumentData}
