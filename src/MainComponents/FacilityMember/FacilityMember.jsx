@@ -899,49 +899,9 @@ class FacilityMember extends React.Component {
         );
     }
 
-    onKYCDocumentDelete(gridId) {
-        // let myhtml = document.createElement("div");
-        // myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>"
-        // alert: (
-        //     swal({
-        //         buttons: {
-        //             ok: "Yes",
-        //             cancel: "No",
-        //         },
-        //         content: myhtml,
-        //         icon: "warning",
-        //         closeOnClickOutside: false,
-        //         dangerMode: true
-        //     }).then((value) => {
-        //         switch (value) {
-        //             case "ok":
-        //                 var type = 'DeleteFile';
-        //                 var model = this.getFacilityModel(type,gridId);
-        //                 this.ApiProviderr.manageFacilityMember(model,type)
-        //                     .then(res => {
-        //                         if (res.data == "Success") {
-        //                             appCommon.showtextalert("Document Deleted Successfully", "", "success");
-        //                         }
-        //                         this.handleDeleteFile()
-        //                     });
-        //                 break;
-        //             case "cancel":
-        //                 //do nothing 
-        //                 break;
-        //             default:
-        //                 break;
-        //         }
-        //     })
-        // );
-        var type = 'DeleteFile';
-        var model = this.getFacilityModel(type,gridId);
-        this.ApiProviderr.manageFacilityMember(model,type)
-            .then(res => {
-                if (res.data == "Success") {
-                    appCommon.showtextalert("Document Deleted Successfully", "", "success");
-                }
-                this.handleDeleteFile()
-            });
+    onKYCDocumentDelete(docId){
+        let data = this.state.gridDocumentData.find(x => x.facilityMemberDocumentId === docId); 
+        this.setState({PageMode:'AddDocs',documentName : data.documentName})
     }
 
     removeByAttr(arr, attr, value) {
@@ -1442,7 +1402,7 @@ class FacilityMember extends React.Component {
                                                             Id="grdDoc"
                                                             IsPagination={false}
                                                             ColumnCollection={this.state.gridDocumentHeader}
-                                                            onGridEditMethod={this.onKYCDocumentDelete.bind(this)}
+                                                            onEditMethod={this.onKYCDocumentDelete.bind(this)}
                                                             onGridDownloadMethod={this.onDocumentGridData.bind(this)}
                                                             onGridViewMethod={this.onViewDocument.bind(this)}
                                                             GridData={this.state.gridDocumentData}
@@ -1566,6 +1526,7 @@ class FacilityMember extends React.Component {
                                                                 Class={"form-control"}
                                                                 Id={"kycfileUploader"}
                                                                 type={"file"}
+                                                                value={this.state.documentName}
                                                                 onChange={this.onImageChange.bind(this)}
                                                                 />
                                                             </div>
@@ -1576,6 +1537,7 @@ class FacilityMember extends React.Component {
                                             <div className="form-group">
                                                 <label htmlFor="lblName">Document Number</label>
                                                 <InputBox Id="txtName"
+                                                    value={this.state.DocumentNumber}
                                                     onChange={this.updateData.bind(this, "DocumentNumber")}
                                                     PlaceHolder="Document Number"
                                                     className="form-control"
