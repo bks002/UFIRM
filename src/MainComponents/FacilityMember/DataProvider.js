@@ -31,6 +31,10 @@ class DataProvider {
                 url = 'FacilityMemberKYCUpload';
                 return srv.CallPostNewService(url, model[0]);
                 break
+                case 'DeleteFile':
+                    url = 'FacilityMemberKYCRemove';
+                    return srv.CallPostNewService(url, model[0]);
+                    break
             default:
         }
     }

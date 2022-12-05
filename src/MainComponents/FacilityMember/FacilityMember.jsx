@@ -73,7 +73,7 @@ class FacilityMember extends React.Component {
                 { sTitle: 'Id', titleValue: 'facilityMemberDocumentId', "orderable": false, },
                 { sTitle: 'Document Type', titleValue: 'documentTypeName', "orderable": false, },
                 // { sTitle: 'Document Name', titleValue: 'documentName', "orderable": false, },
-                { sTitle: 'Action', titleValue: 'Action', Action: "View", Index: '0', urlIndex: '3', "orderable": false }
+                { sTitle: 'Action', titleValue: 'Action', Action: "View&Delete", Index: '0', urlIndex: '3', "orderable": false }
             ],
             gridDocumentData: [],
             kycDocumentData:[],
@@ -547,27 +547,16 @@ class FacilityMember extends React.Component {
     //     }
     // }
 
-    getFacilityModel = (type) => {
+    getFacilityModel = (type,value) => {
         var model = [];
         switch(type) {
           case 'C':
             model.push({
-              "propertyId": parseInt(this.props.PropertyId),
-              "imageFile": this.state.Image, 
-              "imageExt":this.state.ImageExt,  
-              "imageFileName":this.state.ImageFileName,  
+              "propertyId": parseInt(this.props.PropertyId), 
               "name":this.state.Name,
               "mobileNumber":this.state.Contact,
               "address":this.state.Address,
               "gender":this.state.Gender,
-              "facilityMemberId":this.state.FacilityMemberId,
-              "facilityMasterId":this.state.FacilityMasterId,
-                "propertyTowerId":this.state.PropertyTowerId,
-                "propertyFloorId":this.state.PropertyFloorId,
-                "propertyFlatId":this.state.PropertyFlatId,
-                "propertyDetailsIds":this.state.FacilityTypeId == 1 ? JSON.stringify(this.state.PropertyDetailsIds) : JSON.stringify([]),
-                "document":JSON.stringify(this.state.gridDocumentData),
-                "files":this.state.gridDocumentData
             });
             break;
           case 'R':
@@ -581,6 +570,10 @@ class FacilityMember extends React.Component {
                     "Document":JSON.stringify(this.state.kycDocumentData)
                 });
                 break;
+                case 'DeleteFile':
+                model.push({
+                    FacilityMemberDocumentId : value
+                })
           default:
         };
         return model;
@@ -613,7 +606,6 @@ class FacilityMember extends React.Component {
         let url = new UrlProvider().MainUrl;
         if (ValidateControls()) {
             if (this.state.FacilityTypeId == 1 && this.state.PropertyDetailsIds.length > 0) {
-                if (this.state.gridDocumentData.length > 0) {
                     var type = 'C';
                     var model = this.getFacilityModel(type);
                     this.ApiProviderr.manageFacilityMember(model,type)
@@ -632,12 +624,8 @@ class FacilityMember extends React.Component {
                                 this.handleCancel();
                             }
                         });
-                }
-                else
-                    appCommon.showtextalert("At least one document is required", "", "error");
             }
             else if (this.state.FacilityTypeId == 2) {
-                if (this.state.gridDocumentData.length > 0) {
                     var type = 'C';
                     var model = this.getFacilityModel(type);
                     this.ApiProviderr.manageFacilityMember(model,type)
@@ -655,9 +643,6 @@ class FacilityMember extends React.Component {
                                 this.handleCancel();
                             }
                         });
-                }
-                else
-                    appCommon.showtextalert("At least one document is required", "", "error");
             }
             else {
                 appCommon.showtextalert("At least one flat is required", "", "error");
@@ -899,6 +884,56 @@ class FacilityMember extends React.Component {
                         this.setState({ documentType: arrayCopy });
                         this.setState({ documentTypeId: "0" });
                         appCommon.showtextalert("Document Deleted Successfully", "", "success");
+                        break;
+                    case "cancel":
+                        //do nothing 
+                        break;
+                    default:
+                        break;
+                }
+            })
+        );
+    }
+
+    onKYCDocumentDelete(gridId) {
+        let myhtml = document.createElement("div");
+        //myhtml.innerHTML = "Save your changes otherwise all change will be lost! </br></br> Are you sure want to close this page?" + "</hr>"
+        myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>"
+        alert: (
+            swal({
+                buttons: {
+                    ok: "Yes",
+                    cancel: "No",
+                },
+                content: myhtml,
+                icon: "warning",
+                closeOnClickOutside: false,
+                dangerMode: true
+            }).then((value) => {
+                switch (value) {
+                    case "ok":
+                        // this.setState({ gridDocumentData: this.removeByAttr(this.state.gridDocumentData, 'facilityMemberDocumentId', gridId) });
+
+                        // //dropdown                        
+                        // let documentType = this.state.documentType;
+                        // this.state.documentType.map((item) => {
+                        //     if (item.Id == gridId)
+                        //         documentType.push(item);
+                        // });
+                        // let arrayCopy = [...this.state.documentType];
+                        // arrayCopy.sort(this.compareBy("Id"));
+                        // this.setState({ documentType: arrayCopy });
+                        // this.setState({ documentTypeId: "0" });
+
+                        var type = 'DeleteFile';
+                        var model = this.getFacilityModel(type,gridId);
+                        this.ApiProviderr.manageFacilityMember(model,type)
+                            .then(res => {
+                                if (res.data == "Success") {
+                                    appCommon.showtextalert("Document Deleted Successfully", "", "success");
+                                }
+                                this.handleCancelUpload()
+                            });
                         break;
                     case "cancel":
                         //do nothing 
@@ -1408,7 +1443,7 @@ class FacilityMember extends React.Component {
                                                             Id="grdDoc"
                                                             IsPagination={false}
                                                             ColumnCollection={this.state.gridDocumentHeader}
-                                                            onGridDeleteMethod={this.onDocumentGridDelete.bind(this)}
+                                                            onGridDeleteMethod={this.onKYCDocumentDelete.bind(this)}
                                                             onGridDownloadMethod={this.onDocumentGridData.bind(this)}
                                                             onGridViewMethod={this.onViewDocument.bind(this)}
                                                             GridData={this.state.gridDocumentData}
