@@ -901,7 +901,9 @@ class FacilityMember extends React.Component {
 
     onKYCDocumentDelete(docId){
         let data = this.state.gridDocumentData.find(x => x.facilityMemberDocumentId === docId); 
-        this.setState({PageMode:'AddDocs',documentName : data.documentName})
+        console.log(data);
+        this.setState({PageMode:'UpdateDocs',documentTypeId : data.documentTypeId,FacilityMemberDocumentId : data.facilityMemberDocumentId})
+        console.log(this.state);
     }
 
     removeByAttr(arr, attr, value) {
@@ -1504,7 +1506,7 @@ class FacilityMember extends React.Component {
                                                                 ID="ddlDocumentType"
                                                                 Value={this.state.documentTypeId}
                                                                 onSelected={this.onSelected.bind(this, "DocumentType")}
-                                                                Options={this.state.documentType}
+                                                                Options={this.state.DocumentType}
                                                                 ClassName="form-control " />
                                                             {/* <select className='form-control' onSelect={(e)=>{this.setState({documentTypeId:e.target.value})}}>
                                                                 {this.state.documentType.map((item, index) => {
@@ -1526,7 +1528,7 @@ class FacilityMember extends React.Component {
                                                                 Class={"form-control"}
                                                                 Id={"kycfileUploader"}
                                                                 type={"file"}
-                                                                value={this.state.documentName}
+                                                                // value={this.state.documentName}
                                                                 onChange={this.onImageChange.bind(this)}
                                                                 />
                                                             </div>
@@ -1540,6 +1542,114 @@ class FacilityMember extends React.Component {
                                                     value={this.state.DocumentNumber}
                                                     onChange={this.updateData.bind(this, "DocumentNumber")}
                                                     PlaceHolder="Document Number"
+                                                    className="form-control"
+                                                />
+                                            </div>
+                                        </div>
+                                        </div>
+
+                                </div>
+                                <div className="modal-footer">
+                                    <Button
+                                        Id="btnSave"
+                                        Text="Save"
+                                        Action={this.uploadImage.bind(this)}
+                                        ClassName="btn btn-primary" />
+                                    <Button
+                                        Id="btnCancel"
+                                        Text="Cancel"
+                                        Action={this.handleCancelUpload}
+                                        ClassName="btn btn-secondary" />
+                                </div>
+                            </div>
+                        </div>
+                        <ToastContainer
+                            position="top-right"
+                            autoClose={5000}
+                            hideProgressBar={false}
+                            newestOnTop={false}
+                            closeOnClick
+                            rtl={false}
+                            pauseOnFocusLoss
+                            draggable
+                            pauseOnHover
+                        />
+                        <ToastContainer />
+                    </div>
+                }
+
+{(this.state.PageMode == 'UpdateDocs') &&
+                    <div>
+                        <div>
+                            <div className="modal-content">
+                                <div className="modal-body">
+                                    <div className="row">
+                                        <div className="col-sm-4">
+                                            <div className="form-group">
+                                                <label htmlFor="lblName">Id</label>
+                                                <InputBox Id="txtName"
+                                                    Disabled={true}
+                                                    Value={this.state.FacilityMemberId}
+                                                    PlaceHolder="Id"
+                                                    className="form-control"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="col-sm-4">
+                                            <div className="form-group">
+                                                <label htmlFor="lblName">Name</label>
+                                                <InputBox Id="txtName"
+                                                    Disabled={true}
+                                                    Value={this.state.Name}
+                                                    PlaceHolder="Name"
+                                                    className="form-control"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className='col-sm-4'>
+                                        <div className="form-group">
+                                                            <label htmlFor="lbDocumentType">Document Type</label>
+                                                            <SelectBox
+                                                            disabled={true}
+                                                                ID="ddlDocumentType"
+                                                                Value={this.state.documentTypeId}
+                                                                onSelected={this.onSelected.bind(this, "DocumentType")}
+                                                                Options={this.state.DocumentType}
+                                                                ClassName="form-control " />
+                                                            {/* <select className='form-control' onSelect={(e)=>{this.setState({documentTypeId:e.target.value})}}>
+                                                                {this.state.documentType.map((item, index) => {
+                                                                    return <option value={item.Id}>{item.Name}</option>
+                                                                })}
+                                                            </select> */}
+                                                        </div>
+                                        </div>
+                                    </div>
+                                    <div className='row'>
+                                    <div className="col-sm-4">
+                                    <div>
+                                            <label>Update KYC Documents</label>
+                                    </div>
+                                        <div style={{ display: "flex" }}>
+                                                            <div style={{ marginRight: "15px" }}>
+                                                                
+                                                                <DocumentUploader
+                                                                Class={"form-control"}
+                                                                Id={"kycfileUploader"}
+                                                                type={"file"}
+                                                                onChange={this.onImageChange.bind(this)}
+                                                                />
+                                                            </div>
+                                        </div>
+                                        </div>
+
+                                        <div className="col-sm-4">
+                                            <div className="form-group">
+                                                <label htmlFor="lblName">Document Id</label>
+                                                <InputBox Id="txtName"
+                                                    Disabled={true}
+                                                    Value={this.state.FacilityMemberDocumentId}
+                                                    // onChange={this.updateData.bind(this, "DocumentNumber")}
+                                                    PlaceHolder="Document Id"
                                                     className="form-control"
                                                 />
                                             </div>

@@ -33,6 +33,7 @@ class InputBox extends React.Component {
         return (
             <div>
                 <input autoComplete="off"
+                disabled={this.props.Disabled}
                     type={this.props.Type}
                     onChange={this.handleChangeForAll.bind(this)}
                     name={this.props.Name} id={this.props.Id}
