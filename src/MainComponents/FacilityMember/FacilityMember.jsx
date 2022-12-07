@@ -369,16 +369,16 @@ class FacilityMember extends React.Component {
         var rowData = this.findItem(Id);
         this.setState({ FacilityMemberId: rowData.facilityMemberId })
         this.setState({ ProfileImageUrl: rowData.profileImageUrl });
-        if(rowData.profileImageUrl != null && rowData.profileImageUrl != ""){
-            this.state.gridDocumentData.push({
-                "facilityMemberDocumentId": 0,
-                "facilityMemberId": 0,
-                "documentTypeId": 0,
-                "documentTypeName": "Profile Image",
-                "documentName": rowData.profileImageUrl,
-                "documentUrl": rowData.profileImageUrl,
-            })
-        }
+        // if(rowData.profileImageUrl != null && rowData.profileImageUrl != ""){
+        //     this.state.gridDocumentData.push({
+        //         "facilityMemberDocumentId": 0,
+        //         "facilityMemberId": 0,
+        //         "documentTypeId": 0,
+        //         "documentTypeName": "Profile Image",
+        //         "documentName": rowData.profileImageUrl,
+        //         "documentUrl": rowData.profileImageUrl,
+        //     })
+        // }
         this.setState({ Name: rowData.name });
         this.setState({ Contact: rowData.mobileNumber });
         this.setState({ Address: rowData.address });
@@ -654,7 +654,57 @@ class FacilityMember extends React.Component {
         this.state.ImageExt="";
     }
 
-    uploadImage = async ()=>{
+    uploadFile = async ()=>{
+        let UpFile = this.state.ImageData;
+        let res = null;
+        if (UpFile) {
+          if (UpFile!=""){
+          let fileD = await toBase64(UpFile);
+          var imgbytes = UpFile.size; // Size returned in bytes.        
+          var imgkbytes = Math.round(parseInt(imgbytes) / 1024); // Size returned in KB.    
+          let extension = UpFile.name.substring(UpFile.name.lastIndexOf('.') + 1);
+          res = {
+            filename: UpFile.name,
+            filepath: fileD[1],
+            sizeinKb: imgkbytes,
+            fileType: fileD[0],
+            extension: extension.toLowerCase()
+          }
+          this.state.ImageFileName = UpFile.name;
+          this.state.Image = fileD[1];
+          this.state.ImageExt = extension;
+          this.state.kycDocumentData.push({
+            "facilityMemberDocumentId": 0,
+            "facilityMemberId": this.state.FacilityMemberId,
+            "documentTypeId": this.state.documentTypeId,
+            "documentTypeName": this.state.DocumentTypeName,
+            "documentName": res.filename,
+            "documentUrl": res.filepath,
+            "documentNumber":this.state.DocumentNumber
+        })
+        this.setState({gridDocumentData:[...this.state.gridDocumentData, ...this.state.kycDocumentData]});
+
+        };
+      };
+        let url = new UrlProvider().MainUrl;
+        if (ValidateControls()) {
+                    var type = 'Upload';
+                    var model = this.getFacilityModel(type);
+                    this.ApiProviderr.manageFacilityMember(model,type)
+                        .then(res => {
+                            if (res.data == "Success") {
+                                appCommon.ShownotifyError("File Uploaded Successfully");
+                            }
+                            this.handleCancelUpload()
+                        });
+        }
+
+        this.state.ImageData="";
+        this.state.Image="";
+        this.state.ImageExt="";
+    }
+
+    updateFile = async ()=>{
         let UpFile = this.state.ImageData;
         let res = null;
         if (UpFile) {
@@ -682,8 +732,13 @@ class FacilityMember extends React.Component {
             "documentUrl": res.filepath,
             "documentNumber":this.state.DocumentNumber
         })
-        };
-      };
+        this.state.gridDocumentData.forEach((item, index) => {
+            if (item.facilityMemberDocumentId == this.state.FacilityMemberDocumentId) {
+                console.log(item)
+                this.state.gridDocumentData[index].documentUrl = this.state.gridDocumentData[index].documentUrl.split('FacilityMemberDocuments/')[0]+'FacilityMemberDocuments/'+res.filename;
+            }
+        })
+      }};
         let url = new UrlProvider().MainUrl;
         if (ValidateControls()) {
                     var type = 'Upload';
@@ -712,6 +767,7 @@ class FacilityMember extends React.Component {
     handleCancelUpload = () => {
         this.setState({ PageMode: 'Edit' }, () => {
             this.getFacilityMember(this.state.FilterValue);
+            this.state.kycDocumentData = [];
         });
     };
 
@@ -1553,7 +1609,7 @@ class FacilityMember extends React.Component {
                                     <Button
                                         Id="btnSave"
                                         Text="Save"
-                                        Action={this.uploadImage.bind(this)}
+                                        Action={this.uploadFile.bind(this)}
                                         ClassName="btn btn-primary" />
                                     <Button
                                         Id="btnCancel"
@@ -1661,7 +1717,7 @@ class FacilityMember extends React.Component {
                                     <Button
                                         Id="btnSave"
                                         Text="Save"
-                                        Action={this.uploadImage.bind(this)}
+                                        Action={this.updateFile.bind(this)}
                                         ClassName="btn btn-primary" />
                                     <Button
                                         Id="btnCancel"
