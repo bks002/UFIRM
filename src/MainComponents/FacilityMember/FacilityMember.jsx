@@ -557,6 +557,7 @@ class FacilityMember extends React.Component {
               "mobileNumber":this.state.Contact,
               "address":this.state.Address,
               "gender":this.state.Gender,
+              "facilityMasterId":this.state.FacilityMasterId,
             });
             break;
           case 'R':
@@ -580,29 +581,29 @@ class FacilityMember extends React.Component {
       }
 
     handleSave = async () => {
-        let UpFile = this.state.ImageData;
-        let res = null;
-        console.log(228);
-        console.log(UpFile.length);
-        console.log(this.state.ImageData);
-        if (UpFile) {
-          if (UpFile!=""){
-          let fileD = await toBase64(UpFile);
-          var imgbytes = UpFile.size; // Size returned in bytes.        
-          var imgkbytes = Math.round(parseInt(imgbytes) / 1024); // Size returned in KB.    
-          let extension = UpFile.name.substring(UpFile.name.lastIndexOf('.') + 1);
-          res = {
-            filename: UpFile.name,
-            filepath: fileD[1],
-            sizeinKb: imgkbytes,
-            fileType: fileD[0],
-            extension: extension.toLowerCase()
-          }
-          this.state.ImageFileName = UpFile.name;
-          this.state.Image = fileD[1];
-          this.state.ImageExt = extension;
-        };
-      };
+    //     let UpFile = this.state.ImageData;
+    //     let res = null;
+    //     console.log(228);
+    //     console.log(UpFile.length);
+    //     console.log(this.state.ImageData);
+    //     if (UpFile) {
+    //       if (UpFile!=""){
+    //       let fileD = await toBase64(UpFile);
+    //       var imgbytes = UpFile.size; // Size returned in bytes.        
+    //       var imgkbytes = Math.round(parseInt(imgbytes) / 1024); // Size returned in KB.    
+    //       let extension = UpFile.name.substring(UpFile.name.lastIndexOf('.') + 1);
+    //       res = {
+    //         filename: UpFile.name,
+    //         filepath: fileD[1],
+    //         sizeinKb: imgkbytes,
+    //         fileType: fileD[0],
+    //         extension: extension.toLowerCase()
+    //       }
+    //       this.state.ImageFileName = UpFile.name;
+    //       this.state.Image = fileD[1];
+    //       this.state.ImageExt = extension;
+    //     };
+    //   };
         let url = new UrlProvider().MainUrl;
         if (ValidateControls()) {
             if (this.state.FacilityTypeId == 1 && this.state.PropertyDetailsIds.length > 0) {
@@ -649,9 +650,9 @@ class FacilityMember extends React.Component {
             }
         }
 
-        this.state.ImageData="";
-        this.state.Image="";
-        this.state.ImageExt="";
+        // this.state.ImageData="";
+        // this.state.Image="";
+        // this.state.ImageExt="";
     }
 
     uploadFile = async ()=>{
