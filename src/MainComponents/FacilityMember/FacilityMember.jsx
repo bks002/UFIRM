@@ -57,7 +57,7 @@ class FacilityMember extends React.Component {
             Image:"",
             gridFacilityMemberHeader: [
                 { sTitle: 'Id', titleValue: 'facilityMemberId', "orderable": false, },//"visible": true 
-                { sTitle: 'Image', titleValue: 'Image', ImagePath: 'profileImageUrl', Index: '0' },
+                // { sTitle: 'Image', titleValue: 'Image', ImagePath: 'profileImageUrl', Index: '0' },
                 { sTitle: 'Name', titleValue: 'name', },
                 { sTitle: 'Gender', titleValue: 'gender', },
                 { sTitle: 'Contact', titleValue: 'mobileNumber', },
@@ -1351,11 +1351,11 @@ class FacilityMember extends React.Component {
                                         Text="Save"
                                         Action={this.handleSave.bind(this, "Save")}
                                         ClassName="btn btn-primary" />
-                                    <Button
+                                    {/* <Button
                                         Id="btnSaveAndApprove"
                                         Text="Save &amp; Approve"
                                         Action={this.handleSave.bind(this, "SaveApprove")}
-                                        ClassName="btn btn-success" />
+                                        ClassName="btn btn-success" /> */}
                                     <Button
                                         Id="btnCancel"
                                         Text="Cancel"

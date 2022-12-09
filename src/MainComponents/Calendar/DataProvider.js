@@ -65,6 +65,22 @@ class DataProvider {
         }
     }
 
+    manageResidentEvents(model, type) {
+        console.log(model)
+        let url = '';
+        switch (type) {
+            case 'R':
+                url = `EventTaskBooking`;
+                return srv.getComplaint(url);
+                break;
+                case 'Approve':
+                url = `ApproveEventTaskBooking?BookingId=${model[0].BookingId}`;
+                return srv.CallPostNewService(url);
+                break;
+            default:
+        }
+    }
+
     manageTaskEvents(model, type) {
         // 
         let url = '';

@@ -51,6 +51,7 @@ import CalendarSubCategoryPage from '../pages/CalendarSubCategoryPage';
 import EventApproval from '../pages/EventApproval.jsx';
 import PlannerTaskPage from '../pages/PlannerTaskPage.jsx';
 import PlannerTaskAuditPage from '../pages/PlannerTaskAuditPage';
+import ResidentEventPage from '../pages/ResidentEventPage.jsx';
 
 
 var currentpropertyid = 0;
@@ -706,6 +707,12 @@ class MainLayout extends React.Component {
                                                             <p>Tasks</p>
                                                         </Link>
                                                     </li>
+                                                    <li className="nav-item">
+                                                        <Link to="/Account/App/ResidentEvent" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p>Resident Events</p>
+                                                        </Link>
+                                                    </li>
                                                 </ul>
                                             </li>
                                             : null
@@ -839,6 +846,9 @@ class MainLayout extends React.Component {
                         </Route>
                         <Route path="/Account/App/PlannerTask">
                             <PlannerTaskPage />
+                        </Route>
+                        <Route path="/Account/App/ResidentEvents">
+                            <ResidentEventPage />
                         </Route>
                         <Route path="/Account/App/PlannerTaskAudit">
                             <PlannerTaskAuditPage />
