@@ -1502,11 +1502,11 @@ class FacilityMember extends React.Component {
                                         Text="Save"
                                         Action={this.handleSave.bind(this, "Save")}
                                         ClassName="btn btn-primary" />
-                                    <Button
+                                    {/* <Button
                                         Id="btnSaveAndApprove"
                                         Text="Save &amp; Approve"
                                         Action={this.handleSave.bind(this, "SaveApprove")}
-                                        ClassName="btn btn-success" />
+                                        ClassName="btn btn-success" /> */}
                                     <Button
                                         Id="btnCancel"
                                         Text="Cancel"
