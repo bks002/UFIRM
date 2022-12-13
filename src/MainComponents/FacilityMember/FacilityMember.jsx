@@ -679,7 +679,7 @@ class FacilityMember extends React.Component {
     return model;
   };
 
-  handleSave = async () => {
+  handleSave = async (e) => {
     //     let UpFile = this.state.ImageData;
     //     let res = null;
     //     console.log(228);
@@ -703,6 +703,7 @@ class FacilityMember extends React.Component {
     //       this.state.ImageExt = extension;
     //     };
     //   };
+    e.currentTarget.disabled = true;
     let url = new UrlProvider().MainUrl;
     if (ValidateControls()) {
       if (
@@ -768,7 +769,8 @@ class FacilityMember extends React.Component {
     // this.state.ImageExt="";
   };
 
-  uploadFile = async () => {
+  uploadFile = async (e) => {
+    e.currentTarget.disabled = true;
     let UpFile = this.state.ImageData;
     let res = null;
     if (UpFile) {
@@ -821,7 +823,9 @@ class FacilityMember extends React.Component {
     this.state.ImageExt = "";
   };
 
-  updateFile = async () => {
+  updateFile = async (e) => {
+    e.currentTarget.disabled = true;
+
     let UpFile = this.state.ImageData;
     let res = null;
     if (UpFile) {
@@ -1586,12 +1590,15 @@ class FacilityMember extends React.Component {
                                     </div> */}
                 </div>
                 <div className="modal-footer">
-                  <Button
+                  {/* <Button
                     Id="btnSave"
                     Text="Save"
                     Action={this.handleSave.bind(this, "Save")}
                     ClassName="btn btn-primary"
-                  />
+                  /> */}
+                  <button className="btn btn-primary" onClick={(e)=>this.handleSave(e)}>
+                        Save
+                      </button>
                   {/* <Button
                                         Id="btnSaveAndApprove"
                                         Text="Save &amp; Approve"
@@ -1775,12 +1782,15 @@ class FacilityMember extends React.Component {
                   )}
                 </div>
                 <div className="modal-footer">
-                  <Button
+                  {/* <Button
                     Id="btnSave"
                     Text="Save"
                     Action={this.handleSave.bind(this, "Save")}
                     ClassName="btn btn-primary"
-                  />
+                  /> */}
+                  <button className="btn btn-primary" onClick={(e)=>this.handleSave(e)}>
+                        Save
+                      </button>
                   {/* <Button
                                         Id="btnSaveAndApprove"
                                         Text="Save &amp; Approve"
@@ -1895,12 +1905,15 @@ class FacilityMember extends React.Component {
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <Button
+                  {/* <Button
                     Id="btnSave"
                     Text="Save"
                     Action={this.uploadFile.bind(this)}
                     ClassName="btn btn-primary"
-                  />
+                  /> */}
+                  <button className="btn btn-primary" onClick={(e)=>this.uploadFile(e)}>
+                        Save
+                      </button>
                   <Button
                     Id="btnCancel"
                     Text="Cancel"
@@ -2010,12 +2023,15 @@ class FacilityMember extends React.Component {
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <Button
+                  {/* <Button
                     Id="btnSave"
                     Text="Save"
                     Action={this.updateFile.bind(this)}
                     ClassName="btn btn-primary"
-                  />
+                  /> */}
+                      <button className="btn btn-primary" onClick={(e)=>this.updateFile(e)}>
+                        Save
+                      </button>
                   <Button
                     Id="btnCancel"
                     Text="Cancel"
