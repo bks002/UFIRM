@@ -659,6 +659,17 @@ class FacilityMember extends React.Component {
           facilityMasterId: this.state.FacilityMasterId,
         });
         break;
+        case "U":
+          model.push({
+            facilityMemberId: parseInt(this.state.FacilityMemberId),
+            propertyId: parseInt(this.props.PropertyId),
+            name: this.state.Name,
+            mobileNumber: this.state.Contact,
+            address: this.state.Address,
+            gender: this.state.Gender,
+            facilityMasterId: this.state.FacilityMasterId,
+          });
+          break;
       case "R":
         model.push({
           CmdType: type,
@@ -680,31 +691,7 @@ class FacilityMember extends React.Component {
   };
 
   handleSave = async (e) => {
-    //     let UpFile = this.state.ImageData;
-    //     let res = null;
-    //     console.log(228);
-    //     console.log(UpFile.length);
-    //     console.log(this.state.ImageData);
-    //     if (UpFile) {
-    //       if (UpFile!=""){
-    //       let fileD = await toBase64(UpFile);
-    //       var imgbytes = UpFile.size; // Size returned in bytes.
-    //       var imgkbytes = Math.round(parseInt(imgbytes) / 1024); // Size returned in KB.
-    //       let extension = UpFile.name.substring(UpFile.name.lastIndexOf('.') + 1);
-    //       res = {
-    //         filename: UpFile.name,
-    //         filepath: fileD[1],
-    //         sizeinKb: imgkbytes,
-    //         fileType: fileD[0],
-    //         extension: extension.toLowerCase()
-    //       }
-    //       this.state.ImageFileName = UpFile.name;
-    //       this.state.Image = fileD[1];
-    //       this.state.ImageExt = extension;
-    //     };
-    //   };
     e.currentTarget.disabled = true;
-    let url = new UrlProvider().MainUrl;
     if (ValidateControls()) {
       if (
         this.state.FacilityTypeId == 1 &&
@@ -767,6 +754,56 @@ class FacilityMember extends React.Component {
     // this.state.ImageData="";
     // this.state.Image="";
     // this.state.ImageExt="";
+  };
+
+  handleEdit = async (e) => {
+    e.currentTarget.disabled = true;
+    if (ValidateControls()) {
+      if (
+        this.state.FacilityTypeId == 1 &&
+        this.state.PropertyDetailsIds.length > 0
+      ) {
+        var type = "U";
+        var model = this.getFacilityModel(type);
+        this.ApiProviderr.manageFacilityMember(model, type).then((res) => {
+          if (res.data <= 0) {
+              appCommon.showtextalert(
+                "Facility Member Updated Successfully",
+                "",
+                "success"
+              );
+            this.handleCancel();
+          }
+        });
+      } else if (this.state.FacilityTypeId == 2) {
+        var type = "U";
+        var model = this.getFacilityModel(type);
+        this.ApiProviderr.manageFacilityMember(model, type).then((res) => {
+          if (res.data <= 0) {
+            appCommon.ShownotifyError(
+              "Facility Member Contact is already created"
+            );
+          } else {
+            if (this.props.PageMode != "Edit") {
+              appCommon.showtextalert(
+                "Facility Member Created Successfully",
+                "",
+                "success"
+              );
+            } else {
+              appCommon.showtextalert(
+                "Facility Member Updated Successfully",
+                "",
+                "success"
+              );
+            }
+            this.handleCancel();
+          }
+        });
+      } else {
+        appCommon.showtextalert("At least one flat is required", "", "error");
+      }
+    }
   };
 
   uploadFile = async (e) => {
@@ -894,7 +931,6 @@ class FacilityMember extends React.Component {
 
   handleCancelUpload = () => {
     this.setState({ PageMode: "Edit" }, () => {
-      this.getFacilityMember(this.state.FilterValue);
       this.state.kycDocumentData = [];
     });
   };
@@ -1173,6 +1209,7 @@ class FacilityMember extends React.Component {
         break;
       case "FacilityMaster":
         this.setState({ FacilityMasterId: id });
+        console.log(this.state);
         break;
       case "PropertyTower":
         this.setState({ PropertyTowerId: id });
@@ -1788,7 +1825,7 @@ class FacilityMember extends React.Component {
                     Action={this.handleSave.bind(this, "Save")}
                     ClassName="btn btn-primary"
                   /> */}
-                  <button className="btn btn-primary" onClick={(e)=>this.handleSave(e)}>
+                  <button className="btn btn-primary" onClick={(e)=>this.handleEdit(e)}>
                         Save
                       </button>
                   {/* <Button
