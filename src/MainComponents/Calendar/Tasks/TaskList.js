@@ -212,6 +212,7 @@ export default class TaskList extends Component {
                   SubCategoryName: element.SubCategoryName,
                   EntryType: element.EntryType,
                   AssignedTo: element.AssignedTo,
+                  QRcode: element.QRCode,
                 });
               });
               this.setState({ data: taskData });

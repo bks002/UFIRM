@@ -29,7 +29,7 @@ import "./FacilityMember.css";
 
 import { connect } from "react-redux";
 import departmentAction from "../../redux/department/action";
-import { promiseWrapper } from "../../utility/common";
+import { convertEsTojson, promiseWrapper } from "../../utility/common";
 import { bindActionCreators } from "redux";
 
 const $ = window.$;
@@ -438,7 +438,6 @@ class FacilityMember extends React.Component {
   };
 
   async ongridedit(Id) {
-    //
     this.setState({ PageMode: "Edit", Showimguploader: false }, () => {
       CreateValidator();
       documentBL.CreateValidator();
@@ -515,6 +514,69 @@ class FacilityMember extends React.Component {
         ...rowData.facilityMemberDocumentList,
       ],
     });
+  }
+
+  async ongridShow(Id) {
+    this.setState({ PageMode: "Edit", Showimguploader: false }, () => {
+      CreateValidator();
+      documentBL.CreateValidator();
+    });
+    this.loadGender();
+    var rowData = this.findItem(Id);
+    this.setState({ FacilityMemberId: rowData.facilityMemberId });
+    this.setState({ ProfileImageUrl: rowData.profileImageUrl });
+    this.setState({ Name: rowData.name });
+    this.setState({ Contact: rowData.mobileNumber });
+    this.setState({ Address: rowData.address });
+    $("#ddlGender").val(rowData.gender);
+    this.setState({ Gender: rowData.gender });
+
+    this.comdbprovider
+      .getFacilityMaster(this.state.FacilityTypeId)
+      .then((resp) => {
+        if (resp.ok && resp.status == 200) {
+          return resp.json().then((rData) => {
+            console.log("facility master ", rData);
+            rData = appCommon.changejsoncolumnname(rData, "id", "Value");
+            rData = appCommon.changejsoncolumnname(rData, "text", "Name");
+            this.setState(
+              {
+                FacilityMaster: rData,
+                FacilityMasterId: rowData.facilityMasterId,
+              },
+              () => {
+                $("#ddlFacilityMaster").val(rowData.facilityMasterId);
+              }
+            );
+          });
+        }
+      });
+
+    if (rowData.facilityTypeId == 1) {
+      //load tower
+      this.loadPropertyTowers(this.state.PropertyId);
+      let dataValue = [];
+      rowData.facilityMemberPropertyAssignmentList.map((item) => {
+        dataValue.push({
+          Id: item.value,
+          Name: item.name,
+          value: item.name,
+          label: item.name,
+          color: "#0052CC",
+        });
+      });
+      this.onDropdownChanges("PropertyDetails", dataValue);
+    }
+
+    //Document Grid
+    this.getDocumentType();
+
+    let arrayCopy = [...this.state.DocumentType];
+    rowData.facilityMemberDocumentList.map((item) => {
+      this.removeByAttr(arrayCopy, "Id", item.documentTypeId.toString());
+    });
+    this.setState({ documentType: arrayCopy });
+    this.setState({ documentTypeId: "0" });
   }
 
   findItem(id) {
@@ -826,21 +888,24 @@ class FacilityMember extends React.Component {
         this.state.ImageFileName = UpFile.name;
         this.state.Image = fileD[1];
         this.state.ImageExt = extension;
+        this.state.kycDocumentData = [];
         this.state.kycDocumentData.push({
           facilityMemberDocumentId: 0,
           facilityMemberId: this.state.FacilityMemberId,
-          documentTypeId: this.state.documentTypeId,
+          documentTypeId: parseInt(this.state.documentTypeId),
           documentTypeName: this.state.DocumentTypeName,
           documentName: res.filename,
           documentUrl: res.filepath,
           documentNumber: this.state.DocumentNumber,
         });
+        console.log(this.state.kycDocumentData);
         this.setState({
           gridDocumentData: [
             ...this.state.gridDocumentData,
             ...this.state.kycDocumentData,
           ],
         });
+        console.log(this.state.gridDocumentData);
       }
     }
     let url = new UrlProvider().MainUrl;
@@ -851,7 +916,7 @@ class FacilityMember extends React.Component {
         if (res.data == "Success") {
           appCommon.ShownotifyError("File Uploaded Successfully");
         }
-        this.handleCancelUpload();
+        this.handleSaveUpload()
       });
     }
 
@@ -931,7 +996,14 @@ class FacilityMember extends React.Component {
 
   handleCancelUpload = () => {
     this.setState({ PageMode: "Edit" }, () => {
-      this.state.kycDocumentData = [];
+      this.state.gridDocumentData = [];
+      this.ongridedit(this.state.FacilityMemberId);
+    });
+  };
+
+  handleSaveUpload = () => {
+    this.setState({ PageMode: "Edit" },()=>{
+      this.ongridShow(this.state.FacilityMemberId)
     });
   };
 
@@ -1868,6 +1940,7 @@ class FacilityMember extends React.Component {
                         <label htmlFor="lblName">Id</label>
                         <InputBox
                           Id="txtName"
+                          Disabled={true}
                           Value={this.state.FacilityMemberId}
                           PlaceHolder="Id"
                           className="form-control"
