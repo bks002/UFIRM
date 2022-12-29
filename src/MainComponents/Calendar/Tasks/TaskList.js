@@ -13,6 +13,7 @@ import ViewTask from "./ViewTask";
 import * as appCommon from "../../../Common/AppCommon.js";
 import swal from "sweetalert";
 import { DELETE_CONFIRMATION_MSG } from "../../../Contants/Common";
+import EditTask from "./EditTask";
 
 const $ = window.$;
 
@@ -88,6 +89,14 @@ export default class TaskList extends Component {
                   <i className="fa fa-eye"></i>
                 </button>
                 <button
+                  className="btn btn-sm btn-success"
+                  onClick={this.EditTask.bind(this, data.cell.row.original)}
+                  title="View"
+                  style={{ marginRight: "5px" }}
+                >
+                  <i className="fa fa-edit"></i>
+                </button>
+                <button
                   className="btn btn-sm btn-danger"
                   onClick={this.DeleteTask.bind(this, data.cell.row.original)}
                   title="View"
@@ -107,6 +116,7 @@ export default class TaskList extends Component {
       userIds: "",
       loading: false,
       showAddModal: false,
+      showEditModal: false,
       PageMode: "Home",
       showQuesModal: false,
       showTaskModal: false,
@@ -212,6 +222,8 @@ export default class TaskList extends Component {
                   SubCategoryName: element.SubCategoryName,
                   EntryType: element.EntryType,
                   AssignedTo: element.AssignedTo,
+                  AssignedToId:element.AssignedToId,
+                  QRcode: element.QRCode,
                 });
               });
               this.setState({ data: taskData });
@@ -383,6 +395,9 @@ export default class TaskList extends Component {
   };
   ViewTask = (data) => {
     this.setState({ PageMode: "ViewTask", showTaskModal: true, rowData: data });
+  };
+  EditTask = (data) => {
+    this.setState({ PageMode: "EditTask", showEditModal: true, rowData: data });
   };
 
   DeleteTask = (data) => {
@@ -659,6 +674,14 @@ export default class TaskList extends Component {
             showTaskModal={this.state.showTaskModal}
             closeModal={this.closeModal}
             rowData={this.state.rowData}
+          />
+        )}
+         {this.state.PageMode === "EditTask" && (
+          <EditTask
+           showEditModal={this.state.showEditModal}
+            closeModal={this.closeModal}
+            rowData={this.state.rowData}
+            categoryData={this.state.CategoryData}
           />
         )}
       </div>
