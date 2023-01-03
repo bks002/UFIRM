@@ -15,7 +15,7 @@ export default class EditTask extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      taskName: "",
+      taskName: props.rowData.Name,
       location: "",
       categoryId: "",
       subCategoryId: "",
@@ -31,8 +31,8 @@ export default class EditTask extends Component {
       // endTime: moment().add(moment().minute() > 30 && 1, 'hours').minutes(moment().minute() <= 30 ? 30 : 0).add(30, 'm').toDate(),
       startTime: new Date(),
       endTime: new Date(),
-      selectedCategory: "",
-      selectedSubCategory: "",
+      selectedCategory: props.rowData.TaskCategoryId,
+      selectedSubCategory: props.rowData.TaskSubCategoryId,
       subCategory: [],
       assets: [],
       assetId: "",
@@ -78,7 +78,7 @@ export default class EditTask extends Component {
         break;
       case "C":
         model.push({
-          TaskId: parseInt(this.props.rowData.TaskId),
+          Id: parseInt(this.props.rowData.TaskId),
           CategoryId: parseInt(this.state.selectedCategory),
           SubCategoryId: parseInt(this.state.selectedSubCategory),
           Name: this.state.taskName,
@@ -233,10 +233,10 @@ export default class EditTask extends Component {
   componentDidMount() {
     this.getAssets();
     this.getAssign();
+    this.getSubCategory()
   }
 
   render() {
-    console.log(this.props.rowData)
     return (
       <div>
         <Modal
@@ -284,7 +284,7 @@ export default class EditTask extends Component {
                         placeholder="Enter Task"
                         type="text"
                         className="form-control"
-                        value={this.props.rowData.Name}
+                        value={this.state.taskName}
                         onChange={(e) => {
                           this.setState({ taskName: e.target.value });
                         }}
@@ -309,7 +309,7 @@ export default class EditTask extends Component {
                       <select
                         id="dllCategory"
                         className="form-control"
-                        value={this.props.rowData.TaskCategoryId}
+                        value={this.state.selectedCategory}
                         onChange={(e) =>
                           this.setState({
                             selectedCategory: e.target.value,
@@ -332,7 +332,7 @@ export default class EditTask extends Component {
                       <label>Sub Category</label>
                       <select
                         id="dllCategory"
-                        value={this.props.rowData.TaskSubCategoryId}
+                        value={this.state.selectedSubCategory}
                         className="form-control"
                         onChange={(e) =>
                           this.setState({
@@ -467,7 +467,7 @@ export default class EditTask extends Component {
                       <select
                         iid="ddlAssignee"
                         className="form-control"
-                        value={this.props.rowData.AssignedTo}
+                        value={this.props.rowData.AssignedToId}
                         onChange={(e) =>
                           this.setState({
                             assignTo: e.target.value,
