@@ -14,7 +14,6 @@ import * as appCommon from "../../../Common/AppCommon.js";
 import swal from "sweetalert";
 import { DELETE_CONFIRMATION_MSG } from "../../../Contants/Common";
 import EditTask from "./EditTask";
-import EditTask from "./EditTask";
 
 const $ = window.$;
 
@@ -92,14 +91,6 @@ export default class TaskList extends Component {
                   style={{ marginRight: "5px" }}
                 >
                   <i className="fa fa-eye"></i>
-                </button>
-                <button
-                  className="btn btn-sm btn-success"
-                  onClick={this.EditTask.bind(this, data.cell.row.original)}
-                  title="View"
-                  style={{ marginRight: "5px" }}
-                >
-                  <i className="fa fa-edit"></i>
                 </button>
                 <button
                   className="btn btn-sm btn-success"
