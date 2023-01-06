@@ -752,12 +752,12 @@ class MainNav extends React.Component {
                                                             <p>Tasks</p>
                                                         </Link>
                                                     </li>
-                                                    <li className="nav-item">
+                                                    {/* <li className="nav-item">
                                                         <Link to="/Account/App/PlannerTaskAudit" className="nav-link">
                                                             <i className=" fas fa-caret-right nav-icon"></i>
                                                             <p>Tasks Audit</p>
                                                         </Link>
-                                                    </li>
+                                                    </li> */}
                                                     <li className="nav-item">
                                                         <Link to="/Account/App/TaskEventsCalender" className="nav-link">
                                                             <i className=" fas fa-caret-right nav-icon"></i>

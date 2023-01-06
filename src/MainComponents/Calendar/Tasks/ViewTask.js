@@ -202,6 +202,16 @@ export default class ViewTask extends Component {
                         className="form-control"
                       />
                     </div> 
+                    <div className="col-6">
+                      <label>QR Code</label>
+                      <input
+                        id="txtName"
+                        value={this.props.rowData.QRcode}
+                        disabled
+                        type="text"
+                        className="form-control"
+                      />
+                    </div> 
                     <br />
                     
                     <div className="col-md-12">

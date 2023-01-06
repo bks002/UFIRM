@@ -29,7 +29,7 @@ import "./FacilityMember.css";
 
 import { connect } from "react-redux";
 import departmentAction from "../../redux/department/action";
-import { promiseWrapper } from "../../utility/common";
+import { convertEsTojson, promiseWrapper } from "../../utility/common";
 import { bindActionCreators } from "redux";
 
 const $ = window.$;
@@ -438,7 +438,6 @@ class FacilityMember extends React.Component {
   };
 
   async ongridedit(Id) {
-    //
     this.setState({ PageMode: "Edit", Showimguploader: false }, () => {
       CreateValidator();
       documentBL.CreateValidator();
@@ -515,6 +514,69 @@ class FacilityMember extends React.Component {
         ...rowData.facilityMemberDocumentList,
       ],
     });
+  }
+
+  async ongridShow(Id) {
+    this.setState({ PageMode: "Edit", Showimguploader: false }, () => {
+      CreateValidator();
+      documentBL.CreateValidator();
+    });
+    this.loadGender();
+    var rowData = this.findItem(Id);
+    this.setState({ FacilityMemberId: rowData.facilityMemberId });
+    this.setState({ ProfileImageUrl: rowData.profileImageUrl });
+    this.setState({ Name: rowData.name });
+    this.setState({ Contact: rowData.mobileNumber });
+    this.setState({ Address: rowData.address });
+    $("#ddlGender").val(rowData.gender);
+    this.setState({ Gender: rowData.gender });
+
+    this.comdbprovider
+      .getFacilityMaster(this.state.FacilityTypeId)
+      .then((resp) => {
+        if (resp.ok && resp.status == 200) {
+          return resp.json().then((rData) => {
+            console.log("facility master ", rData);
+            rData = appCommon.changejsoncolumnname(rData, "id", "Value");
+            rData = appCommon.changejsoncolumnname(rData, "text", "Name");
+            this.setState(
+              {
+                FacilityMaster: rData,
+                FacilityMasterId: rowData.facilityMasterId,
+              },
+              () => {
+                $("#ddlFacilityMaster").val(rowData.facilityMasterId);
+              }
+            );
+          });
+        }
+      });
+
+    if (rowData.facilityTypeId == 1) {
+      //load tower
+      this.loadPropertyTowers(this.state.PropertyId);
+      let dataValue = [];
+      rowData.facilityMemberPropertyAssignmentList.map((item) => {
+        dataValue.push({
+          Id: item.value,
+          Name: item.name,
+          value: item.name,
+          label: item.name,
+          color: "#0052CC",
+        });
+      });
+      this.onDropdownChanges("PropertyDetails", dataValue);
+    }
+
+    //Document Grid
+    this.getDocumentType();
+
+    let arrayCopy = [...this.state.DocumentType];
+    rowData.facilityMemberDocumentList.map((item) => {
+      this.removeByAttr(arrayCopy, "Id", item.documentTypeId.toString());
+    });
+    this.setState({ documentType: arrayCopy });
+    this.setState({ documentTypeId: "0" });
   }
 
   findItem(id) {
@@ -659,6 +721,17 @@ class FacilityMember extends React.Component {
           facilityMasterId: this.state.FacilityMasterId,
         });
         break;
+        case "U":
+          model.push({
+            facilityMemberId: parseInt(this.state.FacilityMemberId),
+            propertyId: parseInt(this.props.PropertyId),
+            name: this.state.Name,
+            mobileNumber: this.state.Contact,
+            address: this.state.Address,
+            gender: this.state.Gender,
+            facilityMasterId: this.state.FacilityMasterId,
+          });
+          break;
       case "R":
         model.push({
           CmdType: type,
@@ -679,31 +752,8 @@ class FacilityMember extends React.Component {
     return model;
   };
 
-  handleSave = async () => {
-    //     let UpFile = this.state.ImageData;
-    //     let res = null;
-    //     console.log(228);
-    //     console.log(UpFile.length);
-    //     console.log(this.state.ImageData);
-    //     if (UpFile) {
-    //       if (UpFile!=""){
-    //       let fileD = await toBase64(UpFile);
-    //       var imgbytes = UpFile.size; // Size returned in bytes.
-    //       var imgkbytes = Math.round(parseInt(imgbytes) / 1024); // Size returned in KB.
-    //       let extension = UpFile.name.substring(UpFile.name.lastIndexOf('.') + 1);
-    //       res = {
-    //         filename: UpFile.name,
-    //         filepath: fileD[1],
-    //         sizeinKb: imgkbytes,
-    //         fileType: fileD[0],
-    //         extension: extension.toLowerCase()
-    //       }
-    //       this.state.ImageFileName = UpFile.name;
-    //       this.state.Image = fileD[1];
-    //       this.state.ImageExt = extension;
-    //     };
-    //   };
-    let url = new UrlProvider().MainUrl;
+  handleSave = async (e) => {
+    e.currentTarget.disabled = true;
     if (ValidateControls()) {
       if (
         this.state.FacilityTypeId == 1 &&
@@ -768,7 +818,58 @@ class FacilityMember extends React.Component {
     // this.state.ImageExt="";
   };
 
-  uploadFile = async () => {
+  handleEdit = async (e) => {
+    e.currentTarget.disabled = true;
+    if (ValidateControls()) {
+      if (
+        this.state.FacilityTypeId == 1 &&
+        this.state.PropertyDetailsIds.length > 0
+      ) {
+        var type = "U";
+        var model = this.getFacilityModel(type);
+        this.ApiProviderr.manageFacilityMember(model, type).then((res) => {
+          if (res.data <= 0) {
+              appCommon.showtextalert(
+                "Facility Member Updated Successfully",
+                "",
+                "success"
+              );
+            this.handleCancel();
+          }
+        });
+      } else if (this.state.FacilityTypeId == 2) {
+        var type = "U";
+        var model = this.getFacilityModel(type);
+        this.ApiProviderr.manageFacilityMember(model, type).then((res) => {
+          if (res.data <= 0) {
+            appCommon.ShownotifyError(
+              "Facility Member Contact is already created"
+            );
+          } else {
+            if (this.props.PageMode != "Edit") {
+              appCommon.showtextalert(
+                "Facility Member Created Successfully",
+                "",
+                "success"
+              );
+            } else {
+              appCommon.showtextalert(
+                "Facility Member Updated Successfully",
+                "",
+                "success"
+              );
+            }
+            this.handleCancel();
+          }
+        });
+      } else {
+        appCommon.showtextalert("At least one flat is required", "", "error");
+      }
+    }
+  };
+
+  uploadFile = async (e) => {
+    e.currentTarget.disabled = true;
     let UpFile = this.state.ImageData;
     let res = null;
     if (UpFile) {
@@ -787,21 +888,24 @@ class FacilityMember extends React.Component {
         this.state.ImageFileName = UpFile.name;
         this.state.Image = fileD[1];
         this.state.ImageExt = extension;
+        this.state.kycDocumentData = [];
         this.state.kycDocumentData.push({
           facilityMemberDocumentId: 0,
           facilityMemberId: this.state.FacilityMemberId,
-          documentTypeId: this.state.documentTypeId,
+          documentTypeId: parseInt(this.state.documentTypeId),
           documentTypeName: this.state.DocumentTypeName,
           documentName: res.filename,
           documentUrl: res.filepath,
           documentNumber: this.state.DocumentNumber,
         });
+        console.log(this.state.kycDocumentData);
         this.setState({
           gridDocumentData: [
             ...this.state.gridDocumentData,
             ...this.state.kycDocumentData,
           ],
         });
+        console.log(this.state.gridDocumentData);
       }
     }
     let url = new UrlProvider().MainUrl;
@@ -812,7 +916,7 @@ class FacilityMember extends React.Component {
         if (res.data == "Success") {
           appCommon.ShownotifyError("File Uploaded Successfully");
         }
-        this.handleCancelUpload();
+        this.handleSaveUpload()
       });
     }
 
@@ -821,7 +925,9 @@ class FacilityMember extends React.Component {
     this.state.ImageExt = "";
   };
 
-  updateFile = async () => {
+  updateFile = async (e) => {
+    e.currentTarget.disabled = true;
+
     let UpFile = this.state.ImageData;
     let res = null;
     if (UpFile) {
@@ -890,8 +996,14 @@ class FacilityMember extends React.Component {
 
   handleCancelUpload = () => {
     this.setState({ PageMode: "Edit" }, () => {
-      this.getFacilityMember(this.state.FilterValue);
-      this.state.kycDocumentData = [];
+      this.state.gridDocumentData = [];
+      this.ongridedit(this.state.FacilityMemberId);
+    });
+  };
+
+  handleSaveUpload = () => {
+    this.setState({ PageMode: "Edit" },()=>{
+      this.ongridShow(this.state.FacilityMemberId)
     });
   };
 
@@ -1169,6 +1281,7 @@ class FacilityMember extends React.Component {
         break;
       case "FacilityMaster":
         this.setState({ FacilityMasterId: id });
+        console.log(this.state);
         break;
       case "PropertyTower":
         this.setState({ PropertyTowerId: id });
@@ -1586,12 +1699,15 @@ class FacilityMember extends React.Component {
                                     </div> */}
                 </div>
                 <div className="modal-footer">
-                  <Button
+                  {/* <Button
                     Id="btnSave"
                     Text="Save"
                     Action={this.handleSave.bind(this, "Save")}
                     ClassName="btn btn-primary"
-                  />
+                  /> */}
+                  <button className="btn btn-primary" onClick={(e)=>this.handleSave(e)}>
+                        Save
+                      </button>
                   {/* <Button
                                         Id="btnSaveAndApprove"
                                         Text="Save &amp; Approve"
@@ -1775,12 +1891,15 @@ class FacilityMember extends React.Component {
                   )}
                 </div>
                 <div className="modal-footer">
-                  <Button
+                  {/* <Button
                     Id="btnSave"
                     Text="Save"
                     Action={this.handleSave.bind(this, "Save")}
                     ClassName="btn btn-primary"
-                  />
+                  /> */}
+                  <button className="btn btn-primary" onClick={(e)=>this.handleEdit(e)}>
+                        Save
+                      </button>
                   {/* <Button
                                         Id="btnSaveAndApprove"
                                         Text="Save &amp; Approve"
@@ -1821,6 +1940,7 @@ class FacilityMember extends React.Component {
                         <label htmlFor="lblName">Id</label>
                         <InputBox
                           Id="txtName"
+                          Disabled={true}
                           Value={this.state.FacilityMemberId}
                           PlaceHolder="Id"
                           className="form-control"
@@ -1895,12 +2015,15 @@ class FacilityMember extends React.Component {
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <Button
+                  {/* <Button
                     Id="btnSave"
                     Text="Save"
                     Action={this.uploadFile.bind(this)}
                     ClassName="btn btn-primary"
-                  />
+                  /> */}
+                  <button className="btn btn-primary" onClick={(e)=>this.uploadFile(e)}>
+                        Save
+                      </button>
                   <Button
                     Id="btnCancel"
                     Text="Cancel"
@@ -2010,12 +2133,15 @@ class FacilityMember extends React.Component {
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <Button
+                  {/* <Button
                     Id="btnSave"
                     Text="Save"
                     Action={this.updateFile.bind(this)}
                     ClassName="btn btn-primary"
-                  />
+                  /> */}
+                      <button className="btn btn-primary" onClick={(e)=>this.updateFile(e)}>
+                        Save
+                      </button>
                   <Button
                     Id="btnCancel"
                     Text="Cancel"

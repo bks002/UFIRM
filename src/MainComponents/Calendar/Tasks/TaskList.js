@@ -39,6 +39,10 @@ export default class TaskList extends Component {
           accessor: "Name",
         },
         {
+          Header: "Assigned To",
+          accessor: "AssignedTo",
+        },
+        {
           Header: "Start Date",
           accessor: "DateFrom",
         },
@@ -46,21 +50,22 @@ export default class TaskList extends Component {
           Header: "End Date",
           accessor: "DateTo",
         },
-        {
-          Header: "Start Time",
-          accessor: "TimeFrom",
-        },
-        {
-          Header: "End Time",
-          accessor: "TimeTo",
-        },
+        // {
+        //   Header: "Start Time",
+        //   accessor: "TimeFrom",
+        // },
+        // {
+        //   Header: "End Time",
+        //   accessor: "TimeTo",
+        // },
         // {
         //   Header: "Recurrence",
         //   accessor: "Occurrence",
         // },
-        // {
-        //   Header: "Status",
-        // },
+        {
+          Header: "Task Status",
+          accessor:"TaskStatus"
+        },
         // {
         //   Header: "Assigned To",
         // },
@@ -117,6 +122,7 @@ export default class TaskList extends Component {
       loading: false,
       showAddModal: false,
       showEditModal: false,
+      showEditModal: false,
       PageMode: "Home",
       showQuesModal: false,
       showTaskModal: false,
@@ -133,7 +139,7 @@ export default class TaskList extends Component {
     this.ApiProvider = new ApiProvider();
   }
 
-  getModel = (type, categoryId, subCategoryId) => {
+  getModel = (type, categoryId, subCategoryId,assignTo,occurance) => {
     var model = [];
     switch (type) {
       case "R":
@@ -141,6 +147,8 @@ export default class TaskList extends Component {
           CmdType: type,
           CategoryId: categoryId,
           SubCategoryId: subCategoryId,
+          AssignedTo: assignTo,
+          Occurrence: occurance,
         });
         break;
       default:
@@ -315,7 +323,11 @@ export default class TaskList extends Component {
     var subCategoryId = this.state.selectedSubCategoryId
       ? this.state.selectedSubCategoryId
       : 0;
-    var model = this.getModel(type, categoryId, subCategoryId);
+      var assignToId = this.state.assignTo
+      ? this.state.assignTo
+      : 0;
+      var occurance = this.state.occurance ? this.state.occurance : 0;
+    var model = this.getModel(type, categoryId, subCategoryId, assignToId, occurance);
     this.manageTask(model, type);
   }
   getAssign() {
@@ -369,11 +381,11 @@ export default class TaskList extends Component {
   };
 
   Filter = () => {
-    if (this.state.selectedCategoryId > 0) {
+    if (this.state.selectedCategoryId > 0 ||this.state.assignTo > 0 || this.state.occurance > 0) {
       this.setState({ filtered: true });
       this.getTasks();
     } else {
-      appCommon.showtextalert("", "Please Select Category", "warning");
+      appCommon.showtextalert("", "Please Select Any Filter Attribute", "warning");
     }
   };
 
@@ -382,6 +394,8 @@ export default class TaskList extends Component {
       filtered: false,
       selectedCategoryId: 0,
       selectedSubCategoryId: 0,
+      occurance:0,
+      assignTo:0,
     });
     this.getTasks();
   };
@@ -395,6 +409,9 @@ export default class TaskList extends Component {
   };
   ViewTask = (data) => {
     this.setState({ PageMode: "ViewTask", showTaskModal: true, rowData: data });
+  };
+  EditTask = (data) => {
+    this.setState({ PageMode: "EditTask", showEditModal: true, rowData: data });
   };
   EditTask = (data) => {
     this.setState({ PageMode: "EditTask", showEditModal: true, rowData: data });
@@ -593,6 +610,27 @@ export default class TaskList extends Component {
                           </div>
                         </div>
                       </li>
+                      <li>
+                        <select
+                          className="form-control"
+                          onChange={(e) =>
+                            this.setState({
+                              assignTo: e.target.value,
+                            })
+                          }
+                          value={this.state.assignTo}
+                        >
+                          <option value={0}>Assigned To</option>
+                          {this.state.assign &&
+                            this.state.assign.map((e, key) => {
+                              return (
+                                <option key={key} value={e.assignId}>
+                                  {e.assignName}
+                                </option>
+                              );
+                            })}
+                        </select>
+                      </li>
                       {!this.state.filtered && (
                         <li>
                           <Button
@@ -674,6 +712,14 @@ export default class TaskList extends Component {
             showTaskModal={this.state.showTaskModal}
             closeModal={this.closeModal}
             rowData={this.state.rowData}
+          />
+        )}
+         {this.state.PageMode === "EditTask" && (
+          <EditTask
+           showEditModal={this.state.showEditModal}
+            closeModal={this.closeModal}
+            rowData={this.state.rowData}
+            categoryData={this.state.CategoryData}
           />
         )}
          {this.state.PageMode === "EditTask" && (
