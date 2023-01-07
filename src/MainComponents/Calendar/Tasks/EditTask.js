@@ -19,7 +19,7 @@ export default class EditTask extends Component {
       location: "",
       categoryId: "",
       subCategoryId: "",
-      assignTo: "",
+      assignTo: props.rowData.AssignedToId,
       assign: [],
       remindme: "",
       repeat: "",
@@ -38,6 +38,7 @@ export default class EditTask extends Component {
       assetId: "",
       QRCode: "",
       taskData: [],
+      occurence:this.props.rowData.Occurence
     };
     this.onStartDateChange = this.onStartDateChange.bind(this);
     this.onEndDateChange = this.onEndDateChange.bind(this);
@@ -88,7 +89,7 @@ export default class EditTask extends Component {
           TimeFrom: this.state.startTime.toString().split(" GMT")[0],
           TimeTo: this.state.endTime.toString().split(" GMT")[0],
           Remarks: "remarks",
-          Occurence: "W",
+          Occurence: this.state.occurence,
           CreatedBy: 1,
           CreatedOn: this.state.createdOn,
           AssignTo: parseInt(this.state.assignTo),
@@ -467,7 +468,7 @@ export default class EditTask extends Component {
                       <select
                         iid="ddlAssignee"
                         className="form-control"
-                        value={this.props.rowData.AssignedToId}
+                        value={this.state.assignTo}
                         onChange={(e) =>
                           this.setState({
                             assignTo: e.target.value,
@@ -490,11 +491,10 @@ export default class EditTask extends Component {
                       <select
                         id="ddleventrepeat"
                         className="form-control"
-                        value={this.props.rowData.Occurence.split(" ")[0]}
+                        value={this.state.occurence}
                         onChange={(e) => {
                           this.setState({
-                            repeat: e.target.value,
-                            RepeateEndBy: this.state.endDate,
+                            occurence: e.target.value,
                           });
                         }}
                       >

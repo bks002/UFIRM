@@ -58,10 +58,10 @@ export default class TaskList extends Component {
         //   Header: "End Time",
         //   accessor: "TimeTo",
         // },
-        // {
-        //   Header: "Recurrence",
-        //   accessor: "Occurrence",
-        // },
+        {
+          Header: "Occurence",
+          accessor: "OccurenceView",
+        },
         {
           Header: "Task Status",
           accessor:"TaskStatus"
@@ -225,7 +225,9 @@ export default class TaskList extends Component {
                   TimeFrom: element.TimeFrom.split("T")[1],
                   TimeTo: element.TimeTo.split("T")[1],
                   Remarks: element.Remarks,
-                  Occurence: element.Occurence,
+                  TaskStatus:element.TaskStatus,
+                  Occurence: element.Occurence.split(" ")[0] ,
+                  OccurenceView: this.modifyOccurence(element.Occurence.split(" ")[0]) ,
                   CategoryName: element.CategoryName,
                   SubCategoryName: element.SubCategoryName,
                   EntryType: element.EntryType,
@@ -255,6 +257,20 @@ export default class TaskList extends Component {
     });
   };
 
+  modifyOccurence = (Occurrence)=>{
+    if(Occurrence == 'W'){
+      return 'Weekly'
+    }
+    if(Occurrence == 'Y'){
+      return 'Yearly'
+    }
+    if(Occurrence == 'D'){
+      return 'Daily'
+    }
+    if(Occurrence == 'M'){
+      return 'Monthly'
+    }
+  }
   manageSubCategory = (model, type, categoryId) => {
     this.ApiProvider.manageSubCategory(model, type, categoryId).then((resp) => {
       if (resp.ok && resp.status == 200) {
