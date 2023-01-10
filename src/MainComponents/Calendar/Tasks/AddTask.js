@@ -37,6 +37,8 @@ export default class AddTask extends Component {
       assets: [],
       assetId: "",
       QRCode: "",
+      remarks:"",
+      occurence:""
     };
     this.onStartDateChange = this.onStartDateChange.bind(this);
     this.onEndDateChange = this.onEndDateChange.bind(this);
@@ -85,8 +87,8 @@ export default class AddTask extends Component {
           DateTo: this.state.endDate,
           TimeFrom: this.state.startTime.toString().split(" GMT")[0],
           TimeTo: this.state.endTime.toString().split(" GMT")[0],
-          Remarks: "remarks",
-          Occurence: "W",
+          Remarks: this.state.remarks,
+          Occurence: this.state.occurence,
           CreatedBy: 1,
           CreatedOn: this.state.createdOn,
           AssignTo: parseInt(this.state.assignTo),
@@ -466,11 +468,9 @@ export default class AddTask extends Component {
                       <select
                         id="ddleventrepeat"
                         className="form-control"
-                        value={this.state.repeat}
                         onChange={(e) => {
                           this.setState({
-                            repeat: e.target.value,
-                            RepeateEndBy: this.state.endDate,
+                            occurence:e.target.value
                           });
                         }}
                       >
