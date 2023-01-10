@@ -358,7 +358,7 @@ export default class EditTask extends Component {
                       <label>Start Date</label>
                       <ReactDatePicker
                         className="form-control"
-                        value={this.props.rowData.DateFrom}
+                        value={this.state.startDate}
                         selected={this.state.startDate}
                         onChange={this.onStartDateChange}
                         dateFormat="dd/MM/yyyy"
@@ -374,7 +374,7 @@ export default class EditTask extends Component {
                       <ReactDatePicker
                         className="form-control"
                         selected={this.state.endDate}
-                        value={this.props.rowData.DateTo}
+                        value={this.state.endDate}
                         onChange={this.onEndDateChange}
                         dateFormat="dd/MM/yyyy"
                         peekNextmonth
@@ -406,7 +406,7 @@ export default class EditTask extends Component {
                       <ReactDatePicker
                         className="form-control"
                         selected={this.state.startTime}
-                        value={this.props.rowData.TimeFrom}
+                        value={this.state.startTime}
                         onChange={(date) =>
                           this.setState({
                             startTime: date,
@@ -425,7 +425,7 @@ export default class EditTask extends Component {
                       <label>End Time</label>
                       <ReactDatePicker
                         className="form-control"
-                        value={this.props.rowData.TimeTo}
+                        value={this.state.endTime}
                         selected={this.state.endTime}
                         onChange={(date) => this.setState({ endTime: date })}
                         showTimeSelect
