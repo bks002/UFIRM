@@ -36,7 +36,7 @@ export default class EditTask extends Component {
       subCategory: [],
       assets: [],
       assetId: "",
-      QRCode: "",
+      QRCode: props.rowData.QRcode,
       taskData: [],
     };
     this.onStartDateChange = this.onStartDateChange.bind(this);
@@ -536,7 +536,7 @@ export default class EditTask extends Component {
                         placeholder="QR Code"
                         type="text"
                         className="form-control"
-                        value={this.props.rowData.QRcode}
+                        value={this.state.QRCode}
                         onChange={(e) => {
                           this.setState({ QRCode: e.target.value });
                         }}
