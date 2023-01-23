@@ -39,6 +39,13 @@ export default class ViewTask extends Component {
           Id: Id,
         });
         break;
+        case "U":
+          model.push({
+            TaskID: this.props.taskId,
+  QuestID: this.state.editQuesId,
+  QuestionName: this.state.editQuesName,
+          });
+          break;
         case 'D':
             model.push({
                 CmdType: type,
@@ -87,8 +94,8 @@ export default class ViewTask extends Component {
               }
               this.getQuestion();
               break;
-              case "C":
-                if (rData === "Created !") {
+              case "U":
+                if (rData === "sucess !") {
                   appCommon.showtextalert(
                     "Question Updated Successfully!",
                     "",

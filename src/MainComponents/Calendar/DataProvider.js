@@ -127,8 +127,8 @@ class DataProvider {
                 return srv.CallPostNewService(url, model[0]);
                 break;
             case 'U':
-                url = `Calendar/Category/Save`;
-                return srv.CallPostService(url, model[0]);
+                url = `/UpdateQuestionnaire`;
+                return srv.CallPostNewService(url, model[0]);
                 break;
             case 'D':
                 url = `DeleteQuestionnaire?questID=${model[0].Id}`;
