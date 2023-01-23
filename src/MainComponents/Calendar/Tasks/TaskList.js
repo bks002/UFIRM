@@ -429,9 +429,6 @@ export default class TaskList extends Component {
   EditTask = (data) => {
     this.setState({ PageMode: "EditTask", showEditModal: true, rowData: data });
   };
-  EditTask = (data) => {
-    this.setState({ PageMode: "EditTask", showEditModal: true, rowData: data });
-  };
 
   DeleteTask = (data) => {
     console.log(data);
@@ -728,14 +725,6 @@ export default class TaskList extends Component {
             showTaskModal={this.state.showTaskModal}
             closeModal={this.closeModal}
             rowData={this.state.rowData}
-          />
-        )}
-         {this.state.PageMode === "EditTask" && (
-          <EditTask
-           showEditModal={this.state.showEditModal}
-            closeModal={this.closeModal}
-            rowData={this.state.rowData}
-            categoryData={this.state.CategoryData}
           />
         )}
          {this.state.PageMode === "EditTask" && (

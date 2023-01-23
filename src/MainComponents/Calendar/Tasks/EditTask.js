@@ -571,6 +571,13 @@ export default class EditTask extends Component {
           pauseOnHover
         />
         <ToastContainer />
+        {this.state.PageMode === "EditQuestion" && (
+          <EditTask
+           showEditModal={this.state.showEditModal}
+            closeModal={this.closeModal}
+            rowData={this.state.rowData}
+          />
+        )}
       </div>
     );
   }
