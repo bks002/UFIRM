@@ -132,7 +132,7 @@ export default class TaskList extends Component {
       rowData: {},
       subCategory: [],
       filtered: false,
-      occurance: "",
+      occurance: 0,
       assignTo: "",
       assign: [],
       filterFromDate:'',
@@ -424,7 +424,12 @@ export default class TaskList extends Component {
       selectedSubCategoryId: 0,
       occurance:0,
       assignTo:0,
+      filterFromDate:0,
+      filterToDate:0,
     });
+    const startDate = moment().clone().startOf("month");
+    const endDate = moment().clone().endOf("month");
+    this.DateRangeConfig(startDate, endDate);
     this.getTasks();
   };
 
@@ -589,9 +594,10 @@ export default class TaskList extends Component {
                               occurance: e.target.value,
                             })
                           }
+                          value={this.state.occurance}
                           disabled={this.state.filtered}
                         >
-                          <option value="N">Repeat</option>
+                          <option value="0">Repeat</option>
                           <option value="D">Daily</option>
                           <option value="W">Weekly</option>
                           <option value="M">Monthly</option>
