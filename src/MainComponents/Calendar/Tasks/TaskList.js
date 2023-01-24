@@ -135,11 +135,13 @@ export default class TaskList extends Component {
       occurance: "",
       assignTo: "",
       assign: [],
+      filterFromDate:'',
+      filterToDate:''
     };
     this.ApiProvider = new ApiProvider();
   }
 
-  getModel = (type, categoryId, subCategoryId,assignTo,occurance) => {
+  getModel = (type, categoryId, subCategoryId,assignTo,occurance,startDate,endDate) => {
     var model = [];
     switch (type) {
       case "R":
@@ -149,6 +151,8 @@ export default class TaskList extends Component {
           SubCategoryId: subCategoryId,
           AssignedTo: assignTo,
           Occurrence: occurance,
+          DteFr : startDate,
+          DteTo : endDate
         });
         break;
       default:
@@ -343,7 +347,9 @@ export default class TaskList extends Component {
       ? this.state.assignTo
       : 0;
       var occurance = this.state.occurance ? this.state.occurance : 0;
-    var model = this.getModel(type, categoryId, subCategoryId, assignToId, occurance);
+      var startDate  = this.state.filterFromDate ? this.state.filterFromDate : 0;
+      var endDate  = this.state.filterToDate ? this.state.filterToDate : 0;
+    var model = this.getModel(type, categoryId, subCategoryId, assignToId, occurance,startDate,endDate);
     this.manageTask(model, type);
   }
   getAssign() {
@@ -379,6 +385,12 @@ export default class TaskList extends Component {
       startDate: startDate,
       endDate: endDate,
     });
+    $('#dataRange').on('apply.daterangepicker', function (ev, picker) {
+      var startDate = picker.startDate;
+      var endDate = picker.endDate;
+      console.log(startDate , endDate);
+      _this.setState({ filterFromDate: startDate.format('YYYY-MM-DD'), filterToDate: endDate.format('YYYY-MM-DD') })
+  });
   }
 
   componentDidMount() {
