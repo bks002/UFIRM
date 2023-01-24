@@ -42,8 +42,8 @@ export default class ViewTask extends Component {
         case "U":
           model.push({
             TaskID: this.props.taskId,
-  QuestID: this.state.editQuesId,
-  QuestionName: this.state.editQuesName,
+            QuestID: this.state.editQuesId,
+            QuestionName: this.state.editQuesName,
           });
           break;
         case 'D':
@@ -102,7 +102,7 @@ export default class ViewTask extends Component {
                     "success"
                   );
                   console.log("Question Saved Successfully!");
-                  this.handleCancel();
+                  this.handleCancelEditQuestion();
                 }
             default:
           }
@@ -166,6 +166,7 @@ export default class ViewTask extends Component {
     this.setState({ PageMode: "EditQuestion",editQuesId:data.QuesId,editQuesName:data.QuesName});
   };
   handleCancelEditQuestion = () => {
+    this.getQuestion();
     this.setState(
       {
         PageMode: "Home",
@@ -173,7 +174,7 @@ export default class ViewTask extends Component {
     );
   }
   handleUpdateQuestion = () => {
-    var type = "C";
+    var type = "U";
     var model = this.getQuesModel(type);
     this.manageQues(model, type);
   }
@@ -377,6 +378,9 @@ export default class ViewTask extends Component {
                         value={this.state.editQuesName}
                         type="text"
                         className="form-control"
+                        onChange={(e) => {
+                          this.setState({ editQuesName: e.target.value });
+                        }}
                       />
                     </div> 
                     <br />
