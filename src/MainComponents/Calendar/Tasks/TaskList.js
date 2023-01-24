@@ -531,6 +531,7 @@ export default class TaskList extends Component {
                               selectedCategoryId: e.target.value,
                             })
                           }
+                          disabled={this.state.filtered}
                           value={this.state.selectedCategoryId}
                         >
                           <option value={0}>Select Category</option>
@@ -554,6 +555,8 @@ export default class TaskList extends Component {
                             })
                           }
                           value={this.state.selectedSubCategoryId}
+                          disabled={this.state.filtered}
+
                         >
                           <option value={0}>Sub Category</option>
                           {this.state.subCategory &&
@@ -574,6 +577,7 @@ export default class TaskList extends Component {
                               occurance: e.target.value,
                             })
                           }
+                          disabled={this.state.filtered}
                         >
                           <option value="N">Repeat</option>
                           <option value="D">Daily</option>
@@ -618,6 +622,7 @@ export default class TaskList extends Component {
                                 type="text"
                                 className="form-control float-right"
                                 id="dataRange"
+                          disabled={this.state.filtered}
                               ></input>
                             </div>
                           </div>
@@ -631,6 +636,7 @@ export default class TaskList extends Component {
                               assignTo: e.target.value,
                             })
                           }
+                          disabled={this.state.filtered}
                           value={this.state.assignTo}
                         >
                           <option value={0}>Assigned To</option>
