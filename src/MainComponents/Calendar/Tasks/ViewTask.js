@@ -180,6 +180,7 @@ export default class ViewTask extends Component {
   }
 
   render() {
+    console.log(this.props.rowData)
     return (
       <div>
         <Modal
@@ -251,7 +252,27 @@ export default class ViewTask extends Component {
                       />
                     </div> 
                     <br />
-                    
+                    <div className="col-6">
+                      <label>Start Date</label>
+                      <input
+                        id="txtName"
+                        value={this.props.rowData.DateFrom}
+                        disabled
+                        type="text"
+                        className="form-control"
+                      />
+                    </div> 
+                    <div className="col-6">
+                      <label>End Data</label>
+                      <input
+                        id="txtName"
+                        value={this.props.rowData.DateTo}
+                        disabled
+                        type="text"
+                        className="form-control"
+                      />
+                    </div> 
+                    <br />                    
                     <div className="col-md-12">
                       <div className="row">
                       <div className="col-md-5" style={{ marginTop: "20px" }}>

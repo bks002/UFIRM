@@ -38,14 +38,14 @@ export default class TaskList extends Component {
           Header: "Task Name",
           accessor: "Name",
         },
-        {
-          Header: "Assigned To",
-          accessor: "AssignedTo",
-        },
-        {
-          Header: "Start Date",
-          accessor: "DateFrom",
-        },
+        // {
+        //   Header: "Assigned To",
+        //   accessor: "AssignedTo",
+        // },
+         {
+           Header: "Start Date",
+           accessor: "DateFrom",
+         },
         {
           Header: "End Date",
           accessor: "DateTo",
@@ -132,7 +132,7 @@ export default class TaskList extends Component {
       rowData: {},
       subCategory: [],
       filtered: false,
-      occurance: 0,
+      occurance: "",
       assignTo: "",
       assign: [],
       filterFromDate:'',
@@ -210,6 +210,7 @@ export default class TaskList extends Component {
   };
 
   manageTask = (model, type) => {
+    console.log(model);
     this.ApiProvider.manageTask(model, type).then((resp) => {
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
@@ -424,13 +425,8 @@ export default class TaskList extends Component {
       selectedSubCategoryId: 0,
       occurance:0,
       assignTo:0,
-      filterFromDate:0,
-      filterToDate:0,
     });
-    const startDate = moment().clone().startOf("month");
-    const endDate = moment().clone().endOf("month");
-    this.DateRangeConfig(startDate, endDate);
-    this.getTasks();
+    //this.getTasks();
   };
 
   AddQuestion = (data) => {
@@ -594,10 +590,9 @@ export default class TaskList extends Component {
                               occurance: e.target.value,
                             })
                           }
-                          value={this.state.occurance}
                           disabled={this.state.filtered}
                         >
-                          <option value="0">Repeat</option>
+                          <option value="N">Repeat</option>
                           <option value="D">Daily</option>
                           <option value="W">Weekly</option>
                           <option value="M">Monthly</option>
