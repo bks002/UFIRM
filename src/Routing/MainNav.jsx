@@ -59,6 +59,8 @@ import AttendanceRecordsPage from '../pages/AttendanceRecordsPage.jsx';
 import EmployeePage from '../pages/EmployeePage.jsx';
 import GuardMasterPage from '../pages/GuardMasterPage';
 import ResidentEventPage from '../pages/ResidentEventPage.jsx';
+import PlannerTaskStatus from '../pages/PlannerTaskStatus.jsx';
+
 
 
 var currentpropertyid = 0;
@@ -770,6 +772,12 @@ class MainNav extends React.Component {
                                                             <p>Resident Events</p>
                                                         </Link>
                                                     </li>
+                                                    <li className="nav-item">
+                                                        <Link to="/Account/App/TaskStatus" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p>Task Status</p>
+                                                        </Link>
+                                                    </li>
                                                 </ul>
                                             </li>
                                             : null
@@ -927,6 +935,9 @@ class MainNav extends React.Component {
                         </Route>
                         <Route path="/Account/App/ResidentEvents">
                             <ResidentEventPage />
+                        </Route>
+                        <Route path="/Account/App/TaskStatus">
+                            <PlannerTaskStatus />
                         </Route>
                     </Switch>
                     <footer className="main-footer">

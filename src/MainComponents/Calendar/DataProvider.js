@@ -61,6 +61,14 @@ class DataProvider {
                 url = `TaskDetails?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}&dteFr=${model[0].DteFr}&dteTo=${model[0].DteTo}`;
                 return srv.getComplaint(url);
                 break;
+                case 'T':
+                    url = `TaskDetails?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}`;
+                    return srv.getComplaint(url);
+                    break;
+                case 'TaskWithQuestionName':
+                        url = `TaskDetailsWithQuestion`;
+                        return srv.getComplaint(url);
+                        break;
             default:
         }
     }
