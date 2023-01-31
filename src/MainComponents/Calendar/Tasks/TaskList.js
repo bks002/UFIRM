@@ -42,14 +42,14 @@ export default class TaskList extends Component {
         //   Header: "Assigned To",
         //   accessor: "AssignedTo",
         // },
-         {
-           Header: "Start Date",
-           accessor: "DateFrom",
-         },
-        {
-          Header: "End Date",
-          accessor: "DateTo",
-        },
+        //  {
+        //    Header: "Start Date",
+        //    accessor: "DateFrom",
+        //  },
+        // {
+        //   Header: "End Date",
+        //   accessor: "DateTo",
+        // },
         // {
         //   Header: "Start Time",
         //   accessor: "TimeFrom",
@@ -423,7 +423,7 @@ export default class TaskList extends Component {
       filtered: false,
       selectedCategoryId: 0,
       selectedSubCategoryId: 0,
-      occurance:0,
+      //occurance:0,
       assignTo:0,
     });
     //this.getTasks();

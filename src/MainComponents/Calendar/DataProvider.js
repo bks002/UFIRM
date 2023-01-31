@@ -42,7 +42,7 @@ class DataProvider {
     }
 
     manageTask(model, type) {
-        // 
+        console.log(model)
         let url = '';
         switch (type) {
             case 'C':
@@ -61,12 +61,16 @@ class DataProvider {
                 url = `TaskDetails?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}&dteFr=${model[0].DteFr}&dteTo=${model[0].DteTo}`;
                 return srv.getComplaint(url);
                 break;
-                case 'T':
+                case 'SR':
+                    url = `TaskDetailsWithQuestion?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}&dteFr=${model[0].DteFr}&dteTo=${model[0].DteTo}`;
+                    return srv.getComplaint(url);
+                    break;
+                    case 'T':
                     url = `TaskDetails?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}`;
                     return srv.getComplaint(url);
                     break;
                 case 'TaskWithQuestionName':
-                        url = `TaskDetailsWithQuestion`;
+                        url = `TaskDetailsWithQuestion?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}`;
                         return srv.getComplaint(url);
                         break;
             default:

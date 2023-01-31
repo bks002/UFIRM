@@ -6,7 +6,7 @@ class PlannerTaskStatus extends Component {
     super(props);
     this.state = {
       PageMode: 'Home',
-      PageTitle: 'TaskStatus'
+      PageTitle: 'Task Status Report'
     };
   }
 

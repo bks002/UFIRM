@@ -47,10 +47,10 @@ export default class TaskStatusList extends Component {
           Header: "Task Status",
           accessor:"TaskStatus"
         },
-        {
-          Header: "Question",
-          accessor:"QuestionName"
-        },
+        // {
+        //   Header: "Question",
+        //   accessor:"QuestionName"
+        // },
         {
           Header: "Remarks",
           accessor:"Remarks"
@@ -143,10 +143,19 @@ export default class TaskStatusList extends Component {
           CmdType: type,
           CategoryId: categoryId,
           SubCategoryId: subCategoryId,
-          AssignedTo: assignTo,
+          AssignedTo: 0,
           Occurrence: occurance,
         });
         break;
+        case "TaskWithQuestionName":
+          model.push({
+            CmdType: type,
+            CategoryId: categoryId,
+            SubCategoryId: subCategoryId,
+            AssignedTo: 0,
+            Occurrence: occurance,
+          });
+          break;
       default:
     }
     return model;
@@ -206,37 +215,37 @@ export default class TaskStatusList extends Component {
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
           switch (type) {
-            case "R":
-              let taskData = [];
-              rData.forEach((element) => {
-                taskData.push({
-                  Id: element.Id,
-                  TaskId: element.TaskId,
-                  TaskCategoryId: element.TaskCategoryId,
-                  TaskSubCategoryId: element.TaskSubCategoryId,
-                  Name: element.Name,
-                  Description: element.Description,
-                  DateFrom: element.DateFrom.split("T")[0],
-                  DateTo: element.DateTo.split("T")[0],
-                  TimeFrom: element.TimeFrom.split("T")[1],
-                  TimeTo: element.TimeTo.split("T")[1],
-                  Remarks: element.Remarks,
-                  TaskStatus:element.TaskStatus,
-                  Occurence: element.Occurence.split(" ")[0] ,
-                  OccurenceView: this.modifyOccurence(element.Occurence.split(" ")[0]) ,
-                  CategoryName: element.CategoryName,
-                  SubCategoryName: element.SubCategoryName,
-                  EntryType: element.EntryType,
-                  AssignedTo: element.AssignedTo,
-                  AssignedToId:element.AssignedToId,
-                  QRcode: element.QRCode,
-                  QuestionName:element.QuestionName,
-                  UpdatedOn:element.UpdatedOn,
-                  Remarks:element.RemarksQuestion,
-                });
-              });
-              this.setState({ data: taskData });
-              break;
+            // case "R":
+            //   let taskData = [];
+            //   rData.forEach((element) => {
+            //     taskData.push({
+            //       Id: element.Id,
+            //       TaskId: element.TaskId,
+            //       TaskCategoryId: element.TaskCategoryId,
+            //       TaskSubCategoryId: element.TaskSubCategoryId,
+            //       Name: element.Name,
+            //       Description: element.Description,
+            //       DateFrom: element.DateFrom.split("T")[0],
+            //       DateTo: element.DateTo.split("T")[0],
+            //       TimeFrom: element.TimeFrom.split("T")[1],
+            //       TimeTo: element.TimeTo.split("T")[1],
+            //       Remarks: element.RemarksQuestion,
+            //       TaskStatus:element.TaskStatus,
+            //       Occurence: element.Occurence.split(" ")[0] ,
+            //       OccurenceView: this.modifyOccurence(element.Occurence.split(" ")[0]) ,
+            //       CategoryName: element.CategoryName,
+            //       SubCategoryName: element.SubCategoryName,
+            //       EntryType: element.EntryType,
+            //       AssignedTo: element.AssignedTo,
+            //       AssignedToId:element.AssignedToId,
+            //       QRcode: element.QRCode,
+            //       //QuestionName:element.QuestionName,
+            //       UpdatedOn:element.UpdatedOn,
+            //       Remarks:element.RemarksQuestion,
+            //     });
+            //   });
+            //   this.setState({ data: taskData });
+              // break;
               case "TaskWithQuestionName":
                 let taskDataWithQuestion = [];
                 rData.forEach((element) => {
@@ -251,7 +260,7 @@ export default class TaskStatusList extends Component {
                     DateTo: element.DateTo.split("T")[0],
                     TimeFrom: element.TimeFrom.split("T")[1],
                     TimeTo: element.TimeTo.split("T")[1],
-                    Remarks: element.Remarks,
+                    Remarks: element.RemarksQuestion,
                     TaskStatus:element.TaskStatus,
                     Occurence: element.Occurence.split(" ")[0] ,
                     OccurenceView: this.modifyOccurence(element.Occurence.split(" ")[0]) ,
@@ -261,8 +270,10 @@ export default class TaskStatusList extends Component {
                     AssignedTo: element.AssignedTo,
                     AssignedToId:element.AssignedToId,
                     QRcode: element.QRCode,
-                    QuestionName:element.QuestionName,
-                  });
+                    //QuestionName:element.QuestionName,
+                    UpdatedOn: element.UpdatedOn,
+                    Remarks:element.RemarksQuestion,
+                    });
                 });
                 this.setState({ data: taskDataWithQuestion });
                 break;
@@ -360,8 +371,20 @@ export default class TaskStatusList extends Component {
     this.manageSubCategory(model, type, categoryId);
   }
 
-  getTasks() {
-    var type = "R";
+  // getTasks() {
+  //   var type = "R";
+  //   var categoryId = this.state.selectedCategoryId
+  //     ? this.state.selectedCategoryId
+  //     : 0;
+  //   var subCategoryId = this.state.selectedSubCategoryId
+  //     ? this.state.selectedSubCategoryId
+  //     : 0;
+  //     var occurance = this.state.occurance ? this.state.occurance : 0;
+  //   var model = this.getModel(type, categoryId, subCategoryId, occurance);
+  //   this.manageTask(model, type);
+  // }
+  getTaskWithQuestion() {
+    var type = "TaskWithQuestionName";
     var categoryId = this.state.selectedCategoryId
       ? this.state.selectedCategoryId
       : 0;
@@ -373,11 +396,6 @@ export default class TaskStatusList extends Component {
       : 0;
       var occurance = this.state.occurance ? this.state.occurance : 0;
     var model = this.getModel(type, categoryId, subCategoryId, assignToId, occurance);
-    this.manageTask(model, type);
-  }
-  getTaskWithQuestion() {
-    var type = "TaskWithQuestionName";
-    var model = this.getModel(type);
     this.manageTask(model, type);
   }
   getAssign() {
@@ -421,10 +439,8 @@ export default class TaskStatusList extends Component {
     this.DateRangeConfig(startDate, endDate);
 
     this.getCategory();
-    this.getTasks();
     this.getAssign()
-    this.
-    getTaskWithQuestion();
+    this.getTaskWithQuestion();
     // this.TaskStatusConfig();
   }
 
@@ -435,7 +451,7 @@ export default class TaskStatusList extends Component {
   Filter = () => {
     if (this.state.selectedCategoryId > 0 ||this.state.assignTo > 0 || this.state.occurance > 0) {
       this.setState({ filtered: true });
-      this.getTasks();
+      this.getTaskWithQuestion();
     } else {
       appCommon.showtextalert("", "Please Select Any Filter Attribute", "warning");
     }
@@ -449,7 +465,7 @@ export default class TaskStatusList extends Component {
       occurance:0,
       assignTo:0,
     });
-    // this.getTasks();
+    // this.getTaskWithQuestion();
   };
 
   // AddQuestion = (data) => {
@@ -529,7 +545,7 @@ export default class TaskStatusList extends Component {
       prevState.selectedCategoryId !== this.state.selectedCategoryId &&
       prevState.selectedSubCategoryId !== this.state.selectedSubCategoryId
     ) {
-      this.getTasks();
+      this.getTaskWithQuestion();
     }
   }
   onCategorySelected = (val) => {};
@@ -625,8 +641,8 @@ export default class TaskStatusList extends Component {
                         </select>
                       </li>
 
-            
-                      {/* <li className="nav-item">
+{/*             
+                      <li className="nav-item">
                         <div className="input-group-prepend">
                           <select
                             className="form-control-sm pr-0 input-group-text"
@@ -647,7 +663,14 @@ export default class TaskStatusList extends Component {
                           option={this.state.usersList}
                         />
                       </li> */}
-                      <li className="nav-item">
+
+                      {/* <li>
+                      <div className="input-group input-group-sm">
+                            <h1>Today's Task Status</h1>
+                        </div>
+                        </li>   */}
+
+                      {/* <li className="nav-item">
                         <div className="input-group input-group-sm">
                           <div className="form-group">
                             <div className="input-group">
@@ -665,8 +688,8 @@ export default class TaskStatusList extends Component {
                             </div>
                           </div>
                         </div>
-                      </li>
-                      <li>
+                      </li> */}
+                      {/* <li>
                         <select
                           className="form-control"
                           onChange={(e) =>
@@ -687,7 +710,7 @@ export default class TaskStatusList extends Component {
                               );
                             })}
                         </select>
-                      </li>
+                      </li> */}
                       {!this.state.filtered && (
                         <li>
                           <Button
