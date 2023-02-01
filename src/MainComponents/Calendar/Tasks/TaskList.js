@@ -704,6 +704,12 @@ export default class TaskList extends Component {
                             Action={this.handleDownloadExcel.bind(this)}
                             ClassName="btn btn-info"
                             Text="Export"
+                            Icon={
+                              <i
+                                className="fa fa-arrow-down"
+                                aria-hidden="true"
+                              ></i>
+                            }
                           />
                         </li>
                     </ul>
