@@ -14,6 +14,8 @@ import * as appCommon from "../../../Common/AppCommon.js";
 import swal from "sweetalert";
 import { DELETE_CONFIRMATION_MSG } from "../../../Contants/Common";
 import EditTask from "./EditTask";
+import { downloadExcel } from "react-export-table-to-excel";
+
 
 const $ = window.$;
 
@@ -136,9 +138,22 @@ export default class TaskList extends Component {
       assignTo: "",
       assign: [],
       filterFromDate:'',
-      filterToDate:''
+      filterToDate:'',
+      header :["Task Id", "Category", "Sub Category","Task Name","Occurence","Task Status"]
     };
     this.ApiProvider = new ApiProvider();
+  }
+
+  handleDownloadExcel() {
+    downloadExcel({
+      fileName: `TaskList`,
+      sheet: "react-export-table-to-excel",
+      tablePayload: {
+        header:this.state.header,
+        // accept two different data structures
+        body: this.state.data
+      }
+    });
   }
 
   getModel = (type, categoryId, subCategoryId,assignTo,occurance,startDate,endDate) => {
@@ -683,6 +698,14 @@ export default class TaskList extends Component {
                           />
                         </li>
                       )}
+                      <li>
+                          <Button
+                            id="btnNewTask"
+                            Action={this.handleDownloadExcel.bind(this)}
+                            ClassName="btn btn-info"
+                            Text="Export"
+                          />
+                        </li>
                     </ul>
                     <ul className="nav ml-auto tableFilterContainer">
                       <li className="nav-item">
