@@ -27,6 +27,7 @@
     "react-bootstrap-typeahead": "^5.1.2",
     "react-collapse": "^5.1.1",
     "react-color": "^2.19.3",
+    "react-csv": "^2.2.2",
     "react-date-range": "^1.4.0",
     "react-datepicker": "^4.5.0",
     "react-dom": "^16.4.1",

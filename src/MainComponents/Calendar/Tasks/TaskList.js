@@ -15,7 +15,7 @@ import swal from "sweetalert";
 import { DELETE_CONFIRMATION_MSG } from "../../../Contants/Common";
 import EditTask from "./EditTask";
 import { downloadExcel } from "react-export-table-to-excel";
-
+import { CSVLink } from 'react-csv'
 
 const $ = window.$;
 
@@ -699,7 +699,7 @@ export default class TaskList extends Component {
                         </li>
                       )}
                       <li>
-                          <Button
+                          {/* <Button
                             id="btnNewTask"
                             Action={this.handleDownloadExcel.bind(this)}
                             ClassName="btn btn-info"
@@ -710,7 +710,16 @@ export default class TaskList extends Component {
                                 aria-hidden="true"
                               ></i>
                             }
-                          />
+                          /> */}
+        <button
+                  className="btn btn-info"
+                  name="Export"
+                >
+            <CSVLink data={this.state.data} filename={'Tasklist'} style={{ color: "white" }}><i
+                                className="fa fa-arrow-down"
+                                aria-hidden="true"
+                              ></i> Export</CSVLink>
+                </button>
                         </li>
                     </ul>
                     <ul className="nav ml-auto tableFilterContainer">
