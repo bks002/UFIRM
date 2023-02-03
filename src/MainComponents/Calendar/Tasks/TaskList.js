@@ -139,6 +139,7 @@ export default class TaskList extends Component {
       assign: [],
       filterFromDate:'',
       filterToDate:'',
+      taskStatus:'',
       header :["Task Id", "Category", "Sub Category","Task Name","Occurence","Task Status"]
     };
     this.ApiProvider = new ApiProvider();
@@ -156,7 +157,7 @@ export default class TaskList extends Component {
     });
   }
 
-  getModel = (type, categoryId, subCategoryId,assignTo,occurance,startDate,endDate) => {
+  getModel = (type, categoryId, subCategoryId,assignTo,occurance,startDate,endDate,taskStatus) => {
     var model = [];
     switch (type) {
       case "R":
@@ -167,7 +168,8 @@ export default class TaskList extends Component {
           AssignedTo: assignTo,
           Occurrence: occurance,
           DteFr : startDate,
-          DteTo : endDate
+          DteTo : endDate,
+          TaskStatus : taskStatus
         });
         break;
       default:
@@ -365,7 +367,8 @@ export default class TaskList extends Component {
       var occurance = this.state.occurance ? this.state.occurance : 0;
       var startDate  = this.state.filterFromDate ? this.state.filterFromDate : 0;
       var endDate  = this.state.filterToDate ? this.state.filterToDate : 0;
-    var model = this.getModel(type, categoryId, subCategoryId, assignToId, occurance,startDate,endDate);
+      var taskStatus = this.state.taskStatus ? this.state.taskStatus : '';
+    var model = this.getModel(type, categoryId, subCategoryId, assignToId, occurance,startDate,endDate,taskStatus);
     this.manageTask(model, type);
   }
   getAssign() {
@@ -425,7 +428,7 @@ export default class TaskList extends Component {
   };
 
   Filter = () => {
-    if (this.state.selectedCategoryId > 0 ||this.state.assignTo > 0 || this.state.occurance > 0) {
+    if (this.state.selectedCategoryId > 0 ||this.state.assignTo > 0 || this.state.occurance > 0 || this.state.taskStatus != "") {
       this.setState({ filtered: true });
       this.getTasks();
     } else {
@@ -612,6 +615,22 @@ export default class TaskList extends Component {
                           <option value="W">Weekly</option>
                           <option value="M">Monthly</option>
                           <option value="Y">Yearly</option>
+                        </select>
+                      </li>
+                      <li>
+                        <select
+                          className="form-control"
+                          onChange={(e) =>
+                            this.setState({
+                              taskStatus: e.target.value,
+                            })
+                          }
+                          disabled={this.state.filtered}
+                        >
+                          <option>Task Status</option>
+                          <option value="Pending">Pending</option>
+                          <option value="Complete">Complete</option>
+                          <option value="InProgress">InProgress</option>
                         </select>
                       </li>
 
