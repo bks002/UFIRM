@@ -577,7 +577,7 @@ export default class TaskStatusList extends Component {
                 <div className="card">
                   <div className="card-header d-flex p-0">
                     <ul className="nav tableFilterContainer">
-                      <li className="nav-item">
+                      {/* <li className="nav-item">
                         <select
                           id="dllCategory"
                           className="form-control"
@@ -600,8 +600,8 @@ export default class TaskStatusList extends Component {
                               })
                             : null}
                         </select>
-                      </li>
-                      <li className="nav-item">
+                      </li> */}
+                      {/* <li className="nav-item">
                         <select
                           className="form-control"
                           onChange={(e) =>
@@ -639,7 +639,7 @@ export default class TaskStatusList extends Component {
                           <option value="M">Monthly</option>
                           <option value="Y">Yearly</option>
                         </select>
-                      </li>
+                      </li> */}
 
 {/*             
                       <li className="nav-item">
@@ -711,7 +711,7 @@ export default class TaskStatusList extends Component {
                             })}
                         </select>
                       </li> */}
-                      {!this.state.filtered && (
+                      {/* {!this.state.filtered && (
                         <li>
                           <Button
                             id="btnNewTask"
@@ -730,7 +730,7 @@ export default class TaskStatusList extends Component {
                             Text="Reset"
                           />
                         </li>
-                      )}
+                      )} */}
                     </ul>
                     <ul className="nav ml-auto tableFilterContainer">
                       <li className="nav-item">

@@ -162,6 +162,35 @@ export default class ViewTask extends Component {
       }
     });
   };
+
+  DeleteQuestion = (data) => {
+    console.log(data)
+    let myhtml = document.createElement("div");
+    myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
+    alert: swal({
+      buttons: {
+        ok: "Yes",
+        cancel: "No",
+      },
+      content: myhtml,
+      icon: "warning",
+      closeOnClickOutside: false,
+      dangerMode: true,
+    }).then((value) => {
+      switch (value) {
+        case "ok":
+          var type = "D";
+          var model = this.getQuesModel(type, data.QuesId);
+          this.manageQues(model, type);
+          break;
+        case "cancel":
+          break;
+        default:
+          break;
+      }
+    });
+  };
+
   EditQuestion = (data) => {
     this.setState({ PageMode: "EditQuestion",editQuesId:data.QuesId,editQuesName:data.QuesName});
   };
@@ -180,7 +209,6 @@ export default class ViewTask extends Component {
   }
 
   render() {
-    console.log(this.props.rowData)
     return (
       <div>
         <Modal
@@ -330,6 +358,13 @@ export default class ViewTask extends Component {
                   style={{ marginRight: "5px" }}
                 >
                   <i className="fa fa-edit"></i>
+                </button>
+                <button
+                  className="btn btn-sm btn-danger"
+                  onClick={this.DeleteQuestion.bind(this, element)}
+                  title="View"
+                >
+                  <i className="fa fa-trash"></i>
                 </button>
                             </div>
                         </div>

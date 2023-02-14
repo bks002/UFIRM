@@ -439,7 +439,7 @@ export default class TaskList extends Component {
   Reset = () => {
     this.setState({
       filtered: false,
-      selectedCategoryId: 0,
+      //selectedCategoryId: 0,
       selectedSubCategoryId: 0,
       //occurance:0,
       assignTo:0,
@@ -462,7 +462,6 @@ export default class TaskList extends Component {
   };
 
   DeleteTask = (data) => {
-    console.log(data);
     let myhtml = document.createElement("div");
     myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
     alert: swal({
@@ -630,7 +629,7 @@ export default class TaskList extends Component {
                           <option>Task Status</option>
                           <option value="Pending">Pending</option>
                           <option value="Complete">Complete</option>
-                          <option value="InProgress">InProgress</option>
+                          <option value="Actionable">Actionable</option>
                         </select>
                       </li>
 
