@@ -428,7 +428,7 @@ export default class TaskList extends Component {
   };
 
   Filter = () => {
-    if (this.state.selectedCategoryId > 0 ||this.state.assignTo > 0 || this.state.occurance > 0 || this.state.taskStatus != "") {
+    if (this.state.selectedCategoryId > 0 ||this.state.assignTo > 0 || this.state.occurance !="" || this.state.taskStatus != "") {
       this.setState({ filtered: true });
       this.getTasks();
     } else {
@@ -439,9 +439,9 @@ export default class TaskList extends Component {
   Reset = () => {
     this.setState({
       filtered: false,
-      //selectedCategoryId: 0,
+      selectedCategoryId: 0,
       selectedSubCategoryId: 0,
-      //occurance:0,
+      occurance:'',
       assignTo:0,
     });
     //this.getTasks();
