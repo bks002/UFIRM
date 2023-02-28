@@ -26,7 +26,11 @@ export default class TaskStatusList extends Component {
           Header: "Task Id",
           accessor: "TaskId",
         },
-        // {
+        {
+          Header: "Due Date",
+          accessor: "DateFrom",
+        },
+      // {
         //   // Header: "Category",
         //   // accessor: "CategoryName",
         // },
@@ -453,7 +457,7 @@ export default class TaskStatusList extends Component {
       this.setState({ filtered: true });
       this.getTaskWithQuestion();
     } else {
-      appCommon.showtextalert("", "Please Select Any Filter Attribute", "warning");
+      //appCommon.showtextalert("", "Please Select Any Filter Attribute", "warning");
     }
   };
 
@@ -465,7 +469,7 @@ export default class TaskStatusList extends Component {
       occurance:0,
       assignTo:0,
     });
-    // this.getTaskWithQuestion();
+     this.getTaskWithQuestion();
   };
 
   // AddQuestion = (data) => {
@@ -577,7 +581,7 @@ export default class TaskStatusList extends Component {
                 <div className="card">
                   <div className="card-header d-flex p-0">
                     <ul className="nav tableFilterContainer">
-                      {/* <li className="nav-item">
+                      <li className="nav-item">
                         <select
                           id="dllCategory"
                           className="form-control"
@@ -600,8 +604,8 @@ export default class TaskStatusList extends Component {
                               })
                             : null}
                         </select>
-                      </li> */}
-                      {/* <li className="nav-item">
+                      </li>
+                      <li className="nav-item">
                         <select
                           className="form-control"
                           onChange={(e) =>
@@ -639,9 +643,9 @@ export default class TaskStatusList extends Component {
                           <option value="M">Monthly</option>
                           <option value="Y">Yearly</option>
                         </select>
-                      </li> */}
+                      </li>
 
-{/*             
+            
                       <li className="nav-item">
                         <div className="input-group-prepend">
                           <select
@@ -656,13 +660,13 @@ export default class TaskStatusList extends Component {
                             <option value="Over Due">Over Due</option>
                           </select>
                         </div>
-                      </li> */}
-                      {/* <li className="nav-item">
+                      </li>
+                      <li className="nav-item">
                         <MultiSelectDropdown
                           id="assigneeUser"
                           option={this.state.usersList}
                         />
-                      </li> */}
+                      </li>
 
                       {/* <li>
                       <div className="input-group input-group-sm">
@@ -670,7 +674,7 @@ export default class TaskStatusList extends Component {
                         </div>
                         </li>   */}
 
-                      {/* <li className="nav-item">
+                      <li className="nav-item">
                         <div className="input-group input-group-sm">
                           <div className="form-group">
                             <div className="input-group">
@@ -688,8 +692,8 @@ export default class TaskStatusList extends Component {
                             </div>
                           </div>
                         </div>
-                      </li> */}
-                      {/* <li>
+                      </li>
+                      <li>
                         <select
                           className="form-control"
                           onChange={(e) =>
@@ -710,8 +714,8 @@ export default class TaskStatusList extends Component {
                               );
                             })}
                         </select>
-                      </li> */}
-                      {/* {!this.state.filtered && (
+                      </li>
+                      {!this.state.filtered && (
                         <li>
                           <Button
                             id="btnNewTask"
@@ -730,7 +734,7 @@ export default class TaskStatusList extends Component {
                             Text="Reset"
                           />
                         </li>
-                      )} */}
+                      )}
                     </ul>
                     <ul className="nav ml-auto tableFilterContainer">
                       <li className="nav-item">
