@@ -42,7 +42,7 @@ class DataProvider {
     }
 
     manageTask(model, type) {
-        // 
+        console.log(model)
         let url = '';
         switch (type) {
             case 'C':
@@ -58,9 +58,21 @@ class DataProvider {
                 return srv.CallDeleteNewService(url,model[0]);
                 break;
             case 'R':
-                url = `TaskDetails?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}`;
+                url = `TaskDetails?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}&dteFr=${model[0].DteFr}&dteTo=${model[0].DteTo}&taskstatus=${model[0].TaskStatus}`;
                 return srv.getComplaint(url);
                 break;
+                case 'SR':
+                    url = `TaskDetailsWithQuestion?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}&dteFr=${model[0].DteFr}&dteTo=${model[0].DteTo}`;
+                    return srv.getComplaint(url);
+                    break;
+                    case 'T':
+                    url = `TaskDetails?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}`;
+                    return srv.getComplaint(url);
+                    break;
+                case 'TaskWithQuestionName':
+                        url = `TaskDetailsWithQuestion?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}`;
+                        return srv.getComplaint(url);
+                        break;
             default:
         }
     }
@@ -127,8 +139,8 @@ class DataProvider {
                 return srv.CallPostNewService(url, model[0]);
                 break;
             case 'U':
-                url = `Calendar/Category/Save`;
-                return srv.CallPostService(url, model[0]);
+                url = `/UpdateQuestionnaire`;
+                return srv.CallPostNewService(url, model[0]);
                 break;
             case 'D':
                 url = `DeleteQuestionnaire?questID=${model[0].Id}`;

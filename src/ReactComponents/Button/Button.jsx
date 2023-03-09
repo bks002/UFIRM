@@ -21,9 +21,9 @@ class ButtonComponent extends React.Component {
                 data-target={'#' + this.props.DataTarget}
                 type="button"
                 title={this.props.Title}>
-                {this.props.Icon}
-                &nbsp;
                 {this.props.Text}
+                &nbsp;
+                {this.props.Icon}
             </button>
         );
     }

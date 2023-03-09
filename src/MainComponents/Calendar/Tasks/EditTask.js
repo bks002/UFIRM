@@ -14,6 +14,7 @@ import { ToastContainer, toast } from "react-toastify";
 export default class EditTask extends Component {
   constructor(props) {
     super(props);
+    console.log(props);
     this.state = {
       taskName: props.rowData.Name,
       location: "",
@@ -26,6 +27,10 @@ export default class EditTask extends Component {
       check: true,
       startDate: new Date(),
       endDate: new Date(),
+
+      // startDate: props.rowData.DateFrom,
+      // endDate: props.rowData.DateTo,
+
       createdOn: moment().format(),
       // startTime: moment().add(moment().minute() > 30 && 1, 'hours').minutes(moment().minute() <= 30 ? 30 : 0).toDate(),
       // endTime: moment().add(moment().minute() > 30 && 1, 'hours').minutes(moment().minute() <= 30 ? 30 : 0).add(30, 'm').toDate(),
@@ -36,7 +41,7 @@ export default class EditTask extends Component {
       subCategory: [],
       assets: [],
       assetId: "",
-      QRCode: "",
+      QRCode: props.rowData.QRcode,
       taskData: [],
       occurence:this.props.rowData.Occurence
     };
@@ -358,7 +363,7 @@ export default class EditTask extends Component {
                       <label>Start Date</label>
                       <ReactDatePicker
                         className="form-control"
-                        value={this.props.rowData.DateFrom}
+                        value={this.state.startDate}
                         selected={this.state.startDate}
                         onChange={this.onStartDateChange}
                         dateFormat="dd/MM/yyyy"
@@ -374,7 +379,7 @@ export default class EditTask extends Component {
                       <ReactDatePicker
                         className="form-control"
                         selected={this.state.endDate}
-                        value={this.props.rowData.DateTo}
+                        value={this.state.endDate}
                         onChange={this.onEndDateChange}
                         dateFormat="dd/MM/yyyy"
                         peekNextmonth
@@ -406,7 +411,7 @@ export default class EditTask extends Component {
                       <ReactDatePicker
                         className="form-control"
                         selected={this.state.startTime}
-                        value={this.props.rowData.TimeFrom}
+                        value={this.state.startTime}
                         onChange={(date) =>
                           this.setState({
                             startTime: date,
@@ -425,7 +430,7 @@ export default class EditTask extends Component {
                       <label>End Time</label>
                       <ReactDatePicker
                         className="form-control"
-                        value={this.props.rowData.TimeTo}
+                        value={this.state.endTime}
                         selected={this.state.endTime}
                         onChange={(date) => this.setState({ endTime: date })}
                         showTimeSelect
@@ -536,7 +541,7 @@ export default class EditTask extends Component {
                         placeholder="QR Code"
                         type="text"
                         className="form-control"
-                        value={this.props.rowData.QRcode}
+                        value={this.state.QRCode}
                         onChange={(e) => {
                           this.setState({ QRCode: e.target.value });
                         }}
@@ -571,6 +576,13 @@ export default class EditTask extends Component {
           pauseOnHover
         />
         <ToastContainer />
+        {this.state.PageMode === "EditQuestion" && (
+          <EditTask
+           showEditModal={this.state.showEditModal}
+            closeModal={this.closeModal}
+            rowData={this.state.rowData}
+          />
+        )}
       </div>
     );
   }

@@ -141,6 +141,15 @@ export default class AddTask extends Component {
                 console.log("Task Saved Successfully!");
                 this.handleCancel();
               }
+              else
+              {
+                appCommon.showtextalert(
+                  "Task Cannot Be Created !",
+                  rData.split('?')[0],
+                  "warning"
+                );
+                this.handleCancel();
+              }
               break;
             default:
           }

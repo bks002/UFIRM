@@ -12,7 +12,6 @@ import { CreateValidator, ValidateControls } from "../Validation";
 import { ToastContainer, toast } from "react-toastify";
 import swal from "sweetalert";
 import { DELETE_CONFIRMATION_MSG } from '../../../Contants/Common';
-import EditQuestion from "./EditQuestion";
 
 
 export default class ViewTask extends Component {
@@ -23,9 +22,6 @@ export default class ViewTask extends Component {
       QuestionName: "",
       QuesId: "",
       QuesData: [],
-      editQuesId :'',
-      editQuesName :'',
-      PageMode: "Home",
     };
     this.ApiProvider = new ApiProvider();
   }
@@ -33,19 +29,12 @@ export default class ViewTask extends Component {
   getQuesModel = (type, Id) => {
     var model = [];
     switch (type) {
-      case "R":
+      case "T":
         model.push({
           CmdType: type,
           Id: Id,
         });
         break;
-        case "U":
-          model.push({
-            TaskID: this.props.taskId,
-            QuestID: this.state.editQuesId,
-            QuestionName: this.state.editQuesName,
-          });
-          break;
         case 'D':
             model.push({
                 CmdType: type,
@@ -73,7 +62,7 @@ export default class ViewTask extends Component {
                 console.log("Question Saved Successfully!");
                 this.handleCancel();
               }
-            case "R":
+            case "T":
               let quesData = rData.map((element) => ({
                 QuesId: element.QuestID,
                 QuesName: element.QuestionName,
@@ -94,16 +83,6 @@ export default class ViewTask extends Component {
               }
               this.getQuestion();
               break;
-              case "U":
-                if (rData === "sucess !") {
-                  appCommon.showtextalert(
-                    "Question Updated Successfully!",
-                    "",
-                    "success"
-                  );
-                  console.log("Question Saved Successfully!");
-                  this.handleCancelEditQuestion();
-                }
             default:
           }
         });
@@ -112,7 +91,7 @@ export default class ViewTask extends Component {
   };
 
   getQuestion() {
-    var type = "R";
+    var type = "T";
     const taskId = this.props.rowData.TaskId;
     var model = this.getQuesModel(type, taskId);
     this.manageQues(model, type);
@@ -163,51 +142,6 @@ export default class ViewTask extends Component {
     });
   };
 
-  DeleteQuestion = (data) => {
-    console.log(data)
-    let myhtml = document.createElement("div");
-    myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
-    alert: swal({
-      buttons: {
-        ok: "Yes",
-        cancel: "No",
-      },
-      content: myhtml,
-      icon: "warning",
-      closeOnClickOutside: false,
-      dangerMode: true,
-    }).then((value) => {
-      switch (value) {
-        case "ok":
-          var type = "D";
-          var model = this.getQuesModel(type, data.QuesId);
-          this.manageQues(model, type);
-          break;
-        case "cancel":
-          break;
-        default:
-          break;
-      }
-    });
-  };
-
-  EditQuestion = (data) => {
-    this.setState({ PageMode: "EditQuestion",editQuesId:data.QuesId,editQuesName:data.QuesName});
-  };
-  handleCancelEditQuestion = () => {
-    this.getQuestion();
-    this.setState(
-      {
-        PageMode: "Home",
-      }
-    );
-  }
-  handleUpdateQuestion = () => {
-    var type = "U";
-    var model = this.getQuesModel(type);
-    this.manageQues(model, type);
-  }
-
   render() {
     return (
       <div>
@@ -217,7 +151,6 @@ export default class ViewTask extends Component {
           onClickAway={this.props.closeModal}
           width="1000"
         >
-                  {this.state.PageMode === "Home" && (
           <div className="row">
             <div className="col-12">
               <div className="card card-primary">
@@ -280,30 +213,10 @@ export default class ViewTask extends Component {
                       />
                     </div> 
                     <br />
-                    <div className="col-6">
-                      <label>Start Date</label>
-                      <input
-                        id="txtName"
-                        value={this.props.rowData.DateFrom}
-                        disabled
-                        type="text"
-                        className="form-control"
-                      />
-                    </div> 
-                    <div className="col-6">
-                      <label>End Data</label>
-                      <input
-                        id="txtName"
-                        value={this.props.rowData.DateTo}
-                        disabled
-                        type="text"
-                        className="form-control"
-                      />
-                    </div> 
-                    <br />                    
+                    
                     <div className="col-md-12">
                       <div className="row">
-                      <div className="col-md-5" style={{ marginTop: "20px" }}>
+                      <div className="col-md-7" style={{ marginTop: "20px" }}>
                       <label>Task Questionnaire</label>
                       </div>
                       <div className="col-md-3" style={{ marginTop: "20px" }}>
@@ -312,15 +225,12 @@ export default class ViewTask extends Component {
                       <div className="col-md-2" style={{ marginTop: "20px" }}>
                       <label>Status</label>
                       </div>
-                      <div className="col-md-2" style={{ marginTop: "20px" }}>
-                      <label>Actiom</label>
-                      </div>
                       </div>
                     </div>
                     {this.state.QuesData.map((element, index) => (
                       <div className="col-md-12" style={{ marginTop: "20px" }}>
                         <div style={{ display: "flex" }}>
-                          <div className="col-md-5">
+                          <div className="col-md-7">
                             <input
                               id="txtName"
                               type="text"
@@ -350,23 +260,6 @@ export default class ViewTask extends Component {
                               <option value={element.Action}>{element.Action}</option>
                             </select>
                           </div>
-                          <div className="col-md-2">
-                          <button
-                  className="btn btn-sm btn-success"
-                  onClick={this.EditQuestion.bind(this, element)}
-                  title="Edit"
-                  style={{ marginRight: "5px" }}
-                >
-                  <i className="fa fa-edit"></i>
-                </button>
-                <button
-                  className="btn btn-sm btn-danger"
-                  onClick={this.DeleteQuestion.bind(this, element)}
-                  title="View"
-                >
-                  <i className="fa fa-trash"></i>
-                </button>
-                            </div>
                         </div>
                       </div>
                     ))}
@@ -383,87 +276,7 @@ export default class ViewTask extends Component {
               </div>
             </div>
           </div>
-        )}
-                  {this.state.PageMode === "EditQuestion" && (
-
-
-          <div className="row">
-            <div className="col-12">
-              <div className="card card-primary">
-                <div className="card-header">
-                  <h3 className="card-title">Edit Question</h3>
-                  <div className="card-tools">
-                    <button
-                      className="btn btn-tool"
-                      onClick={this.props.closeModal}
-                    >
-                      <i className="fas fa-times"></i>
-                    </button>
-                  </div>
-                </div>
-                <div
-                  className="card-body"
-                  style={{ height: "250px", overflowY: "scroll" }}
-                >
-                  <div className="row">
-                    <div className="col-6">
-                      <label>Task Id</label>
-                      <input
-                        id="txtName"
-                        value={this.props.rowData.TaskId}
-                        disabled
-                        type="text"
-                        className="form-control"
-                      />
-                    </div>
-                    <div className="col-6">
-                      <label>Question Id</label>
-                      <input
-                        id="txtName"
-                        value={this.state.editQuesId}
-                        disabled
-                        type="text"
-                        className="form-control"
-                      />
-                    </div> 
-                    <br/>
-                    <div className="col-6">
-                      <label>Edit Question Name</label>
-                      <input
-                        id="txtName"
-                        value={this.state.editQuesName}
-                        type="text"
-                        className="form-control"
-                        onChange={(e) => {
-                          this.setState({ editQuesName: e.target.value });
-                        }}
-                      />
-                    </div> 
-                    <br />
-             
-                  </div>
-                  <div className="modal-footer">
-                    <Button
-                      Id="btnCancel"
-                      Text="Close"
-                      Action={this.handleCancelEditQuestion}
-                      ClassName="btn btn-secondary"
-                    />
-                     <Button
-                      Id="btnSave"
-                      Text="Update"
-                      Action={this.handleUpdateQuestion}
-                      ClassName="btn btn-primary"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         </Modal>
-
         <ToastContainer
           position="top-right"
           autoClose={5000}

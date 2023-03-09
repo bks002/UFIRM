@@ -7,19 +7,17 @@ import DataTable from "../../../ReactComponents/ReactTable/DataTable";
 import DropdownList from "../../../ReactComponents/SelectBox/DropdownList";
 import MultiSelectDropdown from "../../KanbanBoard/MultiSelectDropdown";
 import ApiProvider from "../DataProvider";
-import AddTask from "./AddTask";
-import AddQuestion from "./AddQuestion";
+// import AddTask from "./AddTask";
+// import AddQuestion from "./AddQuestion";
 import ViewTask from "./ViewTask";
 import * as appCommon from "../../../Common/AppCommon.js";
 import swal from "sweetalert";
 import { DELETE_CONFIRMATION_MSG } from "../../../Contants/Common";
-import EditTask from "./EditTask";
-import { downloadExcel } from "react-export-table-to-excel";
-import { CSVLink } from 'react-csv'
+// import EditTask from "./EditTask";
 
 const $ = window.$;
 
-export default class TaskList extends Component {
+export default class TaskStatusList extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -32,38 +30,19 @@ export default class TaskList extends Component {
           Header: "Due Date",
           accessor: "DateFrom",
         },
-        {
-          Header: "Category",
-          accessor: "CategoryName",
-        },
-        {
-          Header: "Sub Category",
-          accessor: "SubCategoryName",
-        },
+      // {
+        //   // Header: "Category",
+        //   // accessor: "CategoryName",
+        // },
+        // {
+        //   // Header: "Sub Category",
+        //   // accessor: "SubCategoryName",
+        // },
         {
           Header: "Task Name",
           accessor: "Name",
         },
-        // {
-        //   Header: "Assigned To",
-        //   accessor: "AssignedTo",
-        // },
-        // {
-        //   Header: "Due Date",
-        //   accessor: "DateFrom",
-        // },
-        // {
-        //   Header: "End Date",
-        //   accessor: "DateTo",
-        // },
-        // {
-        //   Header: "Start Time",
-        //   accessor: "TimeFrom",
-        // },
-        // {
-        //   Header: "End Time",
-        //   accessor: "TimeTo",
-        // },
+       
         {
           Header: "Occurence",
           accessor: "OccurenceView",
@@ -73,51 +52,66 @@ export default class TaskList extends Component {
           accessor:"TaskStatus"
         },
         // {
+        //   Header: "Question",
+        //   accessor:"QuestionName"
+        // },
+        {
+          Header: "Remarks",
+          accessor:"Remarks"
+        },
+        {
+          Header: "Updated On",
+          accessor:"UpdatedOn"
+        }
+
+       
+        
+        // {
         //   Header: "Assigned To",
         // },
         // {
         //   Header: "Assigned By",
         // },
-        {
-          Header: "Action",
-          Cell: (data) => {
-            return (
-              <div style={{ display: "flex" }}>
-                <button
-                  className="btn btn-sm btn-primary"
-                  onClick={this.AddQuestion.bind(this, data.cell.row.original)}
-                  title="Add"
-                  style={{ marginRight: "5px" }}
-                >
-                  <i className="fa fa-plus"></i>
-                </button>
-                <button
-                  className="btn btn-sm btn-info"
-                  onClick={this.ViewTask.bind(this, data.cell.row.original)}
-                  title="View"
-                  style={{ marginRight: "5px" }}
-                >
-                  <i className="fa fa-eye"></i>
-                </button>
-                <button
-                  className="btn btn-sm btn-success"
-                  onClick={this.EditTask.bind(this, data.cell.row.original)}
-                  title="View"
-                  style={{ marginRight: "5px" }}
-                >
-                  <i className="fa fa-edit"></i>
-                </button>
-                <button
-                  className="btn btn-sm btn-danger"
-                  onClick={this.DeleteTask.bind(this, data.cell.row.original)}
-                  title="View"
-                >
-                  <i className="fa fa-trash"></i>
-                </button>
-              </div>
-            );
-          },
-        },
+        // {
+        //   Header: "Action",
+        //   Cell: (data) => {
+        //     return (
+        //       <div style={{ display: "flex" }}>
+        //         {/* <button
+        //           className="btn btn-sm btn-primary"
+        //           onClick={this.AddQuestion.bind(this, data.cell.row.original)}
+        //           title="Add"
+        //           style={{ marginRight: "5px" }}
+        //         >
+        //           <i className="fa fa-plus"></i>
+        //         </button> */}
+        //         <button
+        //           className="btn btn-sm btn-info"
+        //           onClick={this.ViewTask.bind(this, data.cell.row.original)}
+        //           title="View"
+        //           style={{ marginRight: "5px" }}
+        //         >
+        //           <i className="fa fa-eye"></i>
+        //         </button>
+        //         {/* <button
+        //           className="btn btn-sm btn-success"
+        //           onClick={this.EditTask.bind(this, data.cell.row.original)}
+        //           title="View"
+        //           style={{ marginRight: "5px" }}
+        //         >
+        //           <i className="fa fa-edit"></i>
+        //         </button> */}
+        //         {/* <button
+        //           className="btn btn-sm btn-danger"
+        //           onClick={this.DeleteTask.bind(this, data.cell.row.original)}
+        //           title="View"
+        //         >
+        //           <i className="fa fa-trash"></i>
+        //         </button> */}
+        //       </div>
+        //     );
+        //   },
+        // },
       ],
       data: [],
       CategoryData: [],
@@ -138,30 +132,14 @@ export default class TaskList extends Component {
       rowData: {},
       subCategory: [],
       filtered: false,
-      occurance: 0,
+      occurance: "",
       assignTo: "",
       assign: [],
-      filterFromDate:'',
-      filterToDate:'',
-      taskStatus:0,
-      header :["Task Id", "Category", "Sub Category","Task Name","Occurence","Task Status"]
     };
     this.ApiProvider = new ApiProvider();
   }
 
-  handleDownloadExcel() {
-    downloadExcel({
-      fileName: `TaskList`,
-      sheet: "react-export-table-to-excel",
-      tablePayload: {
-        header:this.state.header,
-        // accept two different data structures
-        body: this.state.data
-      }
-    });
-  }
-
-  getModel = (type, categoryId, subCategoryId,assignTo,occurance,startDate,endDate,taskStatus) => {
+  getModel = (type, categoryId, subCategoryId,assignTo,occurance) => {
     var model = [];
     switch (type) {
       case "R":
@@ -169,13 +147,19 @@ export default class TaskList extends Component {
           CmdType: type,
           CategoryId: categoryId,
           SubCategoryId: subCategoryId,
-          AssignedTo: assignTo,
+          AssignedTo: 0,
           Occurrence: occurance,
-          DteFr : startDate,
-          DteTo : endDate,
-          TaskStatus : taskStatus
         });
         break;
+        case "TaskWithQuestionName":
+          model.push({
+            CmdType: type,
+            CategoryId: categoryId,
+            SubCategoryId: subCategoryId,
+            AssignedTo: 0,
+            Occurrence: occurance,
+          });
+          break;
       default:
     }
     return model;
@@ -231,40 +215,73 @@ export default class TaskList extends Component {
   };
 
   manageTask = (model, type) => {
-    console.log(model);
     this.ApiProvider.manageTask(model, type).then((resp) => {
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
-          console.log("response:",rData);
           switch (type) {
-            case "R":
-              let taskData = [];
-              rData.forEach((element) => {
-                taskData.push({
-                  Id: element.Id,
-                  TaskId: element.TaskId,
-                  TaskCategoryId: element.TaskCategoryId,
-                  TaskSubCategoryId: element.TaskSubCategoryId,
-                  Name: element.Name,
-                  Description: element.Description,
-                  DateFrom: element.DateFrom.split("T")[0],
-                  DateTo: element.DateTo.split("T")[0],
-                  TimeFrom: element.TimeFrom.split("T")[1],
-                  TimeTo: element.TimeTo.split("T")[1],
-                  Remarks: element.Remarks,
-                  TaskStatus:element.TaskStatus,
-                  Occurence: element.Occurence.split(" ")[0] ,
-                  OccurenceView: this.modifyOccurence(element.Occurence.split(" ")[0]) ,
-                  CategoryName: element.CategoryName,
-                  SubCategoryName: element.SubCategoryName,
-                  EntryType: element.EntryType,
-                  AssignedTo: element.AssignedTo,
-                  AssignedToId:element.AssignedToId,
-                  QRcode: element.QRCode,
+            // case "R":
+            //   let taskData = [];
+            //   rData.forEach((element) => {
+            //     taskData.push({
+            //       Id: element.Id,
+            //       TaskId: element.TaskId,
+            //       TaskCategoryId: element.TaskCategoryId,
+            //       TaskSubCategoryId: element.TaskSubCategoryId,
+            //       Name: element.Name,
+            //       Description: element.Description,
+            //       DateFrom: element.DateFrom.split("T")[0],
+            //       DateTo: element.DateTo.split("T")[0],
+            //       TimeFrom: element.TimeFrom.split("T")[1],
+            //       TimeTo: element.TimeTo.split("T")[1],
+            //       Remarks: element.RemarksQuestion,
+            //       TaskStatus:element.TaskStatus,
+            //       Occurence: element.Occurence.split(" ")[0] ,
+            //       OccurenceView: this.modifyOccurence(element.Occurence.split(" ")[0]) ,
+            //       CategoryName: element.CategoryName,
+            //       SubCategoryName: element.SubCategoryName,
+            //       EntryType: element.EntryType,
+            //       AssignedTo: element.AssignedTo,
+            //       AssignedToId:element.AssignedToId,
+            //       QRcode: element.QRCode,
+            //       //QuestionName:element.QuestionName,
+            //       UpdatedOn:element.UpdatedOn,
+            //       Remarks:element.RemarksQuestion,
+            //     });
+            //   });
+            //   this.setState({ data: taskData });
+              // break;
+              case "TaskWithQuestionName":
+                let taskDataWithQuestion = [];
+                rData.forEach((element) => {
+                  taskDataWithQuestion.push({
+                    Id: element.Id,
+                    TaskId: element.TaskId,
+                    TaskCategoryId: element.TaskCategoryId,
+                    TaskSubCategoryId: element.TaskSubCategoryId,
+                    Name: element.Name,
+                    Description: element.Description,
+                    DateFrom: element.DateFrom.split("T")[0],
+                    DateTo: element.DateTo.split("T")[0],
+                    TimeFrom: element.TimeFrom.split("T")[1],
+                    TimeTo: element.TimeTo.split("T")[1],
+                    Remarks: element.RemarksQuestion,
+                    TaskStatus:element.TaskStatus,
+                    Occurence: element.Occurence.split(" ")[0] ,
+                    OccurenceView: this.modifyOccurence(element.Occurence.split(" ")[0]) ,
+                    CategoryName: element.CategoryName,
+                    SubCategoryName: element.SubCategoryName,
+                    EntryType: element.EntryType,
+                    AssignedTo: element.AssignedTo,
+                    AssignedToId:element.AssignedToId,
+                    QRcode: element.QRCode,
+                    //QuestionName:element.QuestionName,
+                    UpdatedOn: element.UpdatedOn,
+                    Remarks:element.RemarksQuestion,
+                    });
                 });
-              });
-              this.setState({ data: taskData });
-              break;
+                this.setState({ data: taskDataWithQuestion });
+                break;
+
             case "D":
               if (rData === "Deleted !") {
                 appCommon.showtextalert(
@@ -358,8 +375,20 @@ export default class TaskList extends Component {
     this.manageSubCategory(model, type, categoryId);
   }
 
-  getTasks() {
-    var type = "R";
+  // getTasks() {
+  //   var type = "R";
+  //   var categoryId = this.state.selectedCategoryId
+  //     ? this.state.selectedCategoryId
+  //     : 0;
+  //   var subCategoryId = this.state.selectedSubCategoryId
+  //     ? this.state.selectedSubCategoryId
+  //     : 0;
+  //     var occurance = this.state.occurance ? this.state.occurance : 0;
+  //   var model = this.getModel(type, categoryId, subCategoryId, occurance);
+  //   this.manageTask(model, type);
+  // }
+  getTaskWithQuestion() {
+    var type = "TaskWithQuestionName";
     var categoryId = this.state.selectedCategoryId
       ? this.state.selectedCategoryId
       : 0;
@@ -370,10 +399,7 @@ export default class TaskList extends Component {
       ? this.state.assignTo
       : 0;
       var occurance = this.state.occurance ? this.state.occurance : 0;
-      var startDate  = this.state.filterFromDate ? this.state.filterFromDate : 0;
-      var endDate  = this.state.filterToDate ? this.state.filterToDate : 0;
-      var taskStatus = this.state.taskStatus ? this.state.taskStatus : 0;
-    var model = this.getModel(type, categoryId, subCategoryId, assignToId, occurance,startDate,endDate,taskStatus);
+    var model = this.getModel(type, categoryId, subCategoryId, assignToId, occurance);
     this.manageTask(model, type);
   }
   getAssign() {
@@ -382,15 +408,15 @@ export default class TaskList extends Component {
     this.manageAssign(model, type);
   }
 
-  onAddQuestion = (data) => {
-    var rowData = this.findItem(data);
-    if (rowData) {
-      this.setState({
-        taskId: rowData.TaskId,
-        taskName: rowData.Name,
-      });
-    }
-  };
+  // onAddQuestion = (data) => {
+  //   var rowData = this.findItem(data);
+  //   if (rowData) {
+  //     this.setState({
+  //       taskId: rowData.TaskId,
+  //       taskName: rowData.Name,
+  //     });
+  //   }
+  // };
 
   findItem(id) {
     return this.state.data.find((item) => {
@@ -409,12 +435,6 @@ export default class TaskList extends Component {
       startDate: startDate,
       endDate: endDate,
     });
-    $('#dataRange').on('apply.daterangepicker', function (ev, picker) {
-      var startDate = picker.startDate;
-      var endDate = picker.endDate;
-      console.log(startDate , endDate);
-      _this.setState({ filterFromDate: startDate.format('YYYY-MM-DD'), filterToDate: endDate.format('YYYY-MM-DD') })
-  });
   }
 
   componentDidMount() {
@@ -423,8 +443,8 @@ export default class TaskList extends Component {
     this.DateRangeConfig(startDate, endDate);
 
     this.getCategory();
-    this.getTasks();
     this.getAssign()
+    this.getTaskWithQuestion();
     // this.TaskStatusConfig();
   }
 
@@ -433,11 +453,11 @@ export default class TaskList extends Component {
   };
 
   Filter = () => {
-    if (this.state.selectedCategoryId > 0 ||this.state.assignTo > 0 || this.state.occurance !=0 || this.state.taskStatus != 0) {
+    if (this.state.selectedCategoryId > 0 ||this.state.assignTo > 0 || this.state.occurance > 0) {
       this.setState({ filtered: true });
-      this.getTasks();
+      this.getTaskWithQuestion();
     } else {
-      appCommon.showtextalert("", "Please Select Any Filter Attribute", "warning");
+      //appCommon.showtextalert("", "Please Select Any Filter Attribute", "warning");
     }
   };
 
@@ -448,26 +468,29 @@ export default class TaskList extends Component {
       selectedSubCategoryId: 0,
       occurance:0,
       assignTo:0,
-      taskStatus:0,
     });
-    this.getTasks();
+     this.getTaskWithQuestion();
   };
 
-  AddQuestion = (data) => {
-    this.setState({
-      PageMode: "AddQuestion",
-      showQuesModal: true,
-      rowData: data,
-    });
-  };
+  // AddQuestion = (data) => {
+  //   this.setState({
+  //     PageMode: "AddQuestion",
+  //     showQuesModal: true,
+  //     rowData: data,
+  //   });
+  // };
   ViewTask = (data) => {
     this.setState({ PageMode: "ViewTask", showTaskModal: true, rowData: data });
   };
-  EditTask = (data) => {
-    this.setState({ PageMode: "EditTask", showEditModal: true, rowData: data });
-  };
+  // EditTask = (data) => {
+  //   this.setState({ PageMode: "EditTask", showEditModal: true, rowData: data });
+  // };
+  // EditTask = (data) => {
+  //   this.setState({ PageMode: "EditTask", showEditModal: true, rowData: data });
+  // };
 
   DeleteTask = (data) => {
+    console.log(data);
     let myhtml = document.createElement("div");
     myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
     alert: swal({
@@ -526,7 +549,7 @@ export default class TaskList extends Component {
       prevState.selectedCategoryId !== this.state.selectedCategoryId &&
       prevState.selectedSubCategoryId !== this.state.selectedSubCategoryId
     ) {
-      this.getTasks();
+      this.getTaskWithQuestion();
     }
   }
   onCategorySelected = (val) => {};
@@ -613,35 +636,17 @@ export default class TaskList extends Component {
                             })
                           }
                           disabled={this.state.filtered}
-                          value={this.state.occurance}
                         >
-                          <option value={0}>Repeat</option>
+                          <option value="N">Repeat</option>
                           <option value="D">Daily</option>
                           <option value="W">Weekly</option>
                           <option value="M">Monthly</option>
                           <option value="Y">Yearly</option>
                         </select>
                       </li>
-                      <li>
-                        <select
-                          className="form-control"
-                          onChange={(e) =>
-                            this.setState({
-                              taskStatus: e.target.value,
-                            })
-                          }
-                          value={this.state.taskStatus}
-                          disabled={this.state.filtered}
-                        >
-                          <option value={0}>Task Status</option>
-                          <option value="Pending">Pending</option>
-                          <option value="Complete">Complete</option>
-                          <option value="Actionable">Actionable</option>
-                        </select>
-                      </li>
 
             
-                      {/* <li className="nav-item">
+                      <li className="nav-item">
                         <div className="input-group-prepend">
                           <select
                             className="form-control-sm pr-0 input-group-text"
@@ -655,13 +660,20 @@ export default class TaskList extends Component {
                             <option value="Over Due">Over Due</option>
                           </select>
                         </div>
-                      </li> */}
-                      {/* <li className="nav-item">
+                      </li>
+                      <li className="nav-item">
                         <MultiSelectDropdown
                           id="assigneeUser"
                           option={this.state.usersList}
                         />
-                      </li> */}
+                      </li>
+
+                      {/* <li>
+                      <div className="input-group input-group-sm">
+                            <h1>Today's Task Status</h1>
+                        </div>
+                        </li>   */}
+
                       <li className="nav-item">
                         <div className="input-group input-group-sm">
                           <div className="form-group">
@@ -723,29 +735,6 @@ export default class TaskList extends Component {
                           />
                         </li>
                       )}
-                      <li>
-                          {/* <Button
-                            id="btnNewTask"
-                            Action={this.handleDownloadExcel.bind(this)}
-                            ClassName="btn btn-info"
-                            Text="Export"
-                            Icon={
-                              <i
-                                className="fa fa-arrow-down"
-                                aria-hidden="true"
-                              ></i>
-                            }
-                          /> */}
-        <button
-                  className="btn btn-info"
-                  name="Export"
-                >
-            <CSVLink data={this.state.data} filename={'Tasklist'} style={{ color: "white" }}><i
-                                className="fa fa-arrow-down"
-                                aria-hidden="true"
-                              ></i> Export</CSVLink>
-                </button>
-                        </li>
                     </ul>
                     <ul className="nav ml-auto tableFilterContainer">
                       <li className="nav-item">
@@ -787,21 +776,21 @@ export default class TaskList extends Component {
             </LoadingOverlay>
           </div>
         )}
-        {this.state.showAddModal && (
+        {/* {this.state.showAddModal && (
           <AddTask
             showAddModal={this.state.showAddModal}
             closeModal={this.closeModal}
             categoryData={this.state.CategoryData}
             getTask={this.getTasks}
           />
-        )}
-        {this.state.PageMode === "AddQuestion" && (
+        )} */}
+        {/* {this.state.PageMode === "AddQuestion" && (
           <AddQuestion
             showQuesModal={this.state.showQuesModal}
             closeModal={this.closeModal}
             rowData={this.state.rowData}
           />
-        )}
+        )} */}
         {this.state.PageMode === "ViewTask" && (
           <ViewTask
             showTaskModal={this.state.showTaskModal}
@@ -809,14 +798,22 @@ export default class TaskList extends Component {
             rowData={this.state.rowData}
           />
         )}
-         {this.state.PageMode === "EditTask" && (
+         {/* {this.state.PageMode === "EditTask" && (
           <EditTask
            showEditModal={this.state.showEditModal}
             closeModal={this.closeModal}
             rowData={this.state.rowData}
             categoryData={this.state.CategoryData}
           />
-        )}
+        )} */}
+         {/* {this.state.PageMode === "EditTask" && (
+          <EditTask
+           showEditModal={this.state.showEditModal}
+            closeModal={this.closeModal}
+            rowData={this.state.rowData}
+            categoryData={this.state.CategoryData}
+          />
+        )} */}
       </div>
     );
   }
