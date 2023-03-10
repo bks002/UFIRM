@@ -13,7 +13,7 @@ class APIUrlProvider {
         
         //this.complaintUrl  = "https://urest.in/complaint/"
         this.complaintUrl  = "https://103.67.238.61:8096/"
-        //this.complaintUrl  = "http://localhost:62929/"
+        // this.complaintUrl  = "http://localhost:62929/"
     }
 }
 export default APIUrlProvider;

@@ -69,6 +69,10 @@ export default class TaskList extends Component {
           accessor: "OccurenceView",
         },
         {
+          Header: "UpdatedOn",
+          accessor: "UpdatedOn",
+        },
+        {
           Header: "Task Status",
           accessor:"TaskStatus"
         },
@@ -138,13 +142,13 @@ export default class TaskList extends Component {
       rowData: {},
       subCategory: [],
       filtered: false,
-      occurance: 0,
+      occurance: "",
       assignTo: "",
       assign: [],
       filterFromDate:'',
       filterToDate:'',
-      taskStatus:0,
-      header :["Task Id", "Category", "Sub Category","Task Name","Occurence","Task Status"]
+      taskStatus:'',
+      header :["Task Id", "Category", "Sub Category","Task Name","Occurence","Updated On","Task Status"]
     };
     this.ApiProvider = new ApiProvider();
   }
@@ -161,7 +165,7 @@ export default class TaskList extends Component {
     });
   }
 
-  getModel = (type, categoryId, subCategoryId,assignTo,occurance,startDate,endDate,taskStatus) => {
+  getModel = (type, categoryId, subCategoryId,assignTo,occurance,startDate,endDate,updatedOn,taskStatus) => {
     var model = [];
     switch (type) {
       case "R":
@@ -173,6 +177,7 @@ export default class TaskList extends Component {
           Occurrence: occurance,
           DteFr : startDate,
           DteTo : endDate,
+          UpdatedOn : updatedOn,
           TaskStatus : taskStatus
         });
         break;
@@ -235,7 +240,6 @@ export default class TaskList extends Component {
     this.ApiProvider.manageTask(model, type).then((resp) => {
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
-          console.log("response:",rData);
           switch (type) {
             case "R":
               let taskData = [];
@@ -261,6 +265,7 @@ export default class TaskList extends Component {
                   AssignedTo: element.AssignedTo,
                   AssignedToId:element.AssignedToId,
                   QRcode: element.QRCode,
+                  UpdatedOn : element.UpdatedOn,
                 });
               });
               this.setState({ data: taskData });
@@ -372,7 +377,7 @@ export default class TaskList extends Component {
       var occurance = this.state.occurance ? this.state.occurance : 0;
       var startDate  = this.state.filterFromDate ? this.state.filterFromDate : 0;
       var endDate  = this.state.filterToDate ? this.state.filterToDate : 0;
-      var taskStatus = this.state.taskStatus ? this.state.taskStatus : 0;
+      var taskStatus = this.state.taskStatus ? this.state.taskStatus : '';
     var model = this.getModel(type, categoryId, subCategoryId, assignToId, occurance,startDate,endDate,taskStatus);
     this.manageTask(model, type);
   }
@@ -433,7 +438,7 @@ export default class TaskList extends Component {
   };
 
   Filter = () => {
-    if (this.state.selectedCategoryId > 0 ||this.state.assignTo > 0 || this.state.occurance !=0 || this.state.taskStatus != 0) {
+    if (this.state.selectedCategoryId > 0 ||this.state.assignTo > 0 || this.state.occurance !="" || this.state.taskStatus != "") {
       this.setState({ filtered: true });
       this.getTasks();
     } else {
@@ -444,13 +449,12 @@ export default class TaskList extends Component {
   Reset = () => {
     this.setState({
       filtered: false,
-      selectedCategoryId: 0,
-      selectedSubCategoryId: 0,
-      occurance:0,
-      assignTo:0,
-      taskStatus:0,
+      //selectedCategoryId: 0,
+      //selectedSubCategoryId: 0,
+      //occurance:'',
+      //assignTo:0,
     });
-    this.getTasks();
+    //this.getTasks();
   };
 
   AddQuestion = (data) => {
@@ -592,6 +596,7 @@ export default class TaskList extends Component {
                           }
                           value={this.state.selectedSubCategoryId}
                           disabled={this.state.filtered}
+
                         >
                           <option value={0}>Sub Category</option>
                           {this.state.subCategory &&
@@ -613,9 +618,8 @@ export default class TaskList extends Component {
                             })
                           }
                           disabled={this.state.filtered}
-                          value={this.state.occurance}
                         >
-                          <option value={0}>Repeat</option>
+                          <option value="N">Repeat</option>
                           <option value="D">Daily</option>
                           <option value="W">Weekly</option>
                           <option value="M">Monthly</option>
@@ -630,10 +634,9 @@ export default class TaskList extends Component {
                               taskStatus: e.target.value,
                             })
                           }
-                          value={this.state.taskStatus}
                           disabled={this.state.filtered}
                         >
-                          <option value={0}>Task Status</option>
+                          <option>Task Status</option>
                           <option value="Pending">Pending</option>
                           <option value="Complete">Complete</option>
                           <option value="Actionable">Actionable</option>

@@ -60,6 +60,7 @@ import EmployeePage from '../pages/EmployeePage.jsx';
 import GuardMasterPage from '../pages/GuardMasterPage';
 import ResidentEventPage from '../pages/ResidentEventPage.jsx';
 import PlannerTaskStatus from '../pages/PlannerTaskStatus.jsx';
+import GuardListPage from '../pages/GuardListPage.jsx';
 
 
 
@@ -778,6 +779,12 @@ class MainNav extends React.Component {
                                                             <p>Task Status</p>
                                                         </Link>
                                                     </li>
+                                                    <li className="nav-item">
+                                                        <Link to="/Account/App/GuardList" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p>Guard List</p>
+                                                        </Link>
+                                                    </li>
                                                 </ul>
                                             </li>
                                             : null
@@ -938,6 +945,9 @@ class MainNav extends React.Component {
                         </Route>
                         <Route path="/Account/App/TaskStatus">
                             <PlannerTaskStatus />
+                        </Route>
+                        <Route path="/Account/App/GuardList">
+                            <GuardListPage />
                         </Route>
                     </Switch>
                     <footer className="main-footer">

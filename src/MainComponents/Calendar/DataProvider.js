@@ -227,6 +227,16 @@ class DataProvider {
         }
     }
 
+    manageGuardData() {
+        let url = `GuardList`;
+        return srv.getComplaint(url);
+    }
+
+    manageGuardSpotVisitDetails(modal, type) {
+        let url = `SpotVisitDetails?guardId=${modal[0].GuardId}`;
+        return srv.getComplaint(url);
+    }
+
     getTaskStatus() {
         let url = `Calendar/Event/TaskStatus`;
         return srv.get(url);
