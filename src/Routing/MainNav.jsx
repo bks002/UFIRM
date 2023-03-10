@@ -782,7 +782,7 @@ class MainNav extends React.Component {
                                                     <li className="nav-item">
                                                         <Link to="/Account/App/GuardList" className="nav-link">
                                                             <i className=" fas fa-caret-right nav-icon"></i>
-                                                            <p>Guard List</p>
+                                                            <p>Spot Visit Details</p>
                                                         </Link>
                                                     </li>
                                                 </ul>

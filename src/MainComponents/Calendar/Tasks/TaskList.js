@@ -148,6 +148,8 @@ export default class TaskList extends Component {
       filterFromDate:'',
       filterToDate:'',
       taskStatus:'',
+      startDate : moment().clone().startOf("month"),
+      endDate : moment().clone().endOf("month"),
       header :["Task Id", "Category", "Sub Category","Task Name","Occurence","Updated On","Task Status"]
     };
     this.ApiProvider = new ApiProvider();
@@ -375,8 +377,8 @@ export default class TaskList extends Component {
       ? this.state.assignTo
       : 0;
       var occurance = this.state.occurance ? this.state.occurance : 0;
-      var startDate  = this.state.filterFromDate ? this.state.filterFromDate : 0;
-      var endDate  = this.state.filterToDate ? this.state.filterToDate : 0;
+      var startDate  = this.state.filterFromDate ? this.state.filterFromDate : this.state.startDate.format('YYYY-MM-DD');
+      var endDate  = this.state.filterToDate ? this.state.filterToDate : this.state.endDate.format('YYYY-MM-DD');
       var taskStatus = this.state.taskStatus ? this.state.taskStatus : '';
     var model = this.getModel(type, categoryId, subCategoryId, assignToId, occurance,startDate,endDate,taskStatus);
     this.manageTask(model, type);
@@ -423,8 +425,8 @@ export default class TaskList extends Component {
   }
 
   componentDidMount() {
-    const startDate = moment().clone().startOf("month");
-    const endDate = moment().clone().endOf("month");
+    const startDate = this.state.startDate;
+    const endDate = this.state.endDate;
     this.DateRangeConfig(startDate, endDate);
 
     this.getCategory();

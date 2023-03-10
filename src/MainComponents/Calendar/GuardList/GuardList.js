@@ -47,6 +47,9 @@ export default class GuardList extends Component {
       filtered: false,
       filterFromDate:'',
       filterToDate:'',
+      startDate :moment().clone().startOf("month"),
+      endDate :moment().clone().startOf("month"),
+
     };
     this.ApiProvider = new ApiProvider();
   }
@@ -142,14 +145,14 @@ export default class GuardList extends Component {
     var guardId = this.state.selectedGuardId
       ? this.state.selectedGuardId
       : 0;
-    var startDate  = this.state.filterFromDate ? this.state.filterFromDate : 0;
+    var startDate  = this.state.filterFromDate ? this.state.filterFromDate : this.state.startDate.format('YYYY-MM-DD');
     var model = this.getGuardSpotModel(type, guardId, startDate);
     this.manageGuardSpotList(model, type);
   }
 
   componentDidMount() {
-    const startDate = moment().clone().startOf("month");
-    const endDate = moment().clone().endOf("month");
+    const startDate = this.state.startDate;
+    const endDate = this.state.endDate;
     this.DateRangeConfig(startDate, endDate);
     this.getGuardList();
     // this.getGuardSpotList()
@@ -160,7 +163,7 @@ export default class GuardList extends Component {
       this.setState({ filtered: true });
       this.getGuardSpotList();
     } else {
-      appCommon.showtextalert("", "Please Select Any Filter Attribute", "warning");
+      appCommon.showtextalert("", "Please Select Any One of Guards !", "warning");
     }
   };
 
