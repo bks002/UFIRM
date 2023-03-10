@@ -233,7 +233,7 @@ class DataProvider {
     }
 
     manageGuardSpotVisitDetails(modal, type) {
-        let url = `SpotVisitDetails?guardId=${modal[0].GuardId}`;
+        let url = `SpotVisitDetails?guardId=${modal[0].GuardId}&visitdate=${modal[0].VisitDate}`;
         return srv.getComplaint(url);
     }
 

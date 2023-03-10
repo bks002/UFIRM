@@ -45,18 +45,21 @@ export default class GuardList extends Component {
       PageMode: "Home",
       guardId: "",
       filtered: false,
+      filterFromDate:'',
+      filterToDate:'',
     };
     this.ApiProvider = new ApiProvider();
   }
 
 
-  getGuardSpotModel = (type, guardId) => {
+  getGuardSpotModel = (type, guardId,startDate) => {
     var model = [];
     switch (type) {
       case "R":
         model.push({
           CmdType: type,
           GuardId: guardId,
+          VisitDate: startDate,
         });
         break;
       default:
@@ -139,11 +142,15 @@ export default class GuardList extends Component {
     var guardId = this.state.selectedGuardId
       ? this.state.selectedGuardId
       : 0;
-    var model = this.getGuardSpotModel(type, guardId);
+    var startDate  = this.state.filterFromDate ? this.state.filterFromDate : 0;
+    var model = this.getGuardSpotModel(type, guardId, startDate);
     this.manageGuardSpotList(model, type);
   }
 
   componentDidMount() {
+    const startDate = moment().clone().startOf("month");
+    const endDate = moment().clone().endOf("month");
+    this.DateRangeConfig(startDate, endDate);
     this.getGuardList();
     // this.getGuardSpotList()
   }
@@ -167,6 +174,23 @@ export default class GuardList extends Component {
     });
     //this.getTasks();
   };
+
+  DateRangeConfig(startDate, endDate) {
+    let _this = this;
+    $("#dataRange").daterangepicker({
+      locale: {
+        format: "DD/MM/YYYY",
+      },
+      startDate: startDate,
+      endDate: endDate,
+    });
+    $('#dataRange').on('apply.daterangepicker', function (ev, picker) {
+      var startDate = picker.startDate;
+      var endDate = picker.endDate;
+      console.log(startDate , endDate);
+      _this.setState({ filterFromDate: startDate.format('YYYY-MM-DD'), filterToDate: endDate.format('YYYY-MM-DD') })
+  });
+  }
 
   render() {
     return (
@@ -204,6 +228,26 @@ export default class GuardList extends Component {
                               })
                             : null}
                         </select>
+                      </li>
+
+                      <li className="nav-item">
+                        <div className="input-group input-group-sm">
+                          <div className="form-group">
+                            <div className="input-group">
+                              <div className="input-group-prepend">
+                                <span className="input-group-text">
+                                  <i className="far fa-calendar-alt"></i>
+                                </span>
+                              </div>
+                              <input
+                                type="text"
+                                className="form-control float-right"
+                                id="dataRange"
+                          disabled={this.state.filtered}
+                              ></input>
+                            </div>
+                          </div>
+                        </div>
                       </li>
                     
         
