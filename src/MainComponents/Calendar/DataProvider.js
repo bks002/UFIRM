@@ -77,6 +77,18 @@ class DataProvider {
         }
     }
 
+    manageAssetTracking(model, type) {
+        console.log(model)
+        let url = '';
+        switch (type) {
+            case 'R':
+                url = `AssetTracking?assetId=${model[0].AssetId}&dteFr=${model[0].DteFr}&dteTo=${model[0].DteTo}`;
+                return srv.getComplaint(url);
+                break;
+            default:
+        }
+    }
+
     manageResidentEvents(model, type) {
         console.log(model)
         let url = '';

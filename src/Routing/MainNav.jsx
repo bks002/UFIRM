@@ -61,6 +61,7 @@ import GuardMasterPage from '../pages/GuardMasterPage';
 import ResidentEventPage from '../pages/ResidentEventPage.jsx';
 import PlannerTaskStatus from '../pages/PlannerTaskStatus.jsx';
 import GuardListPage from '../pages/GuardListPage.jsx';
+import AssetTrackingPage from '../pages/AssetTrackingPage.jsx';
 
 
 
@@ -785,6 +786,12 @@ class MainNav extends React.Component {
                                                             <p>Spot Visit Details</p>
                                                         </Link>
                                                     </li>
+                                                    <li className="nav-item">
+                                                        <Link to="/Account/App/AssetTracking" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p>AssetTracking</p>
+                                                        </Link>
+                                                    </li>
                                                 </ul>
                                             </li>
                                             : null
@@ -945,6 +952,9 @@ class MainNav extends React.Component {
                         </Route>
                         <Route path="/Account/App/TaskStatus">
                             <PlannerTaskStatus />
+                        </Route>
+                        <Route path="/Account/App/AssetTracking">
+                            <AssetTrackingPage />
                         </Route>
                         <Route path="/Account/App/GuardList">
                             <GuardListPage />

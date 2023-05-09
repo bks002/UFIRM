@@ -147,7 +147,7 @@ export default class TaskList extends Component {
       assign: [],
       filterFromDate:'',
       filterToDate:'',
-      taskStatus:'',
+      taskStatus:'None',
       startDate : moment().clone().startOf("month"),
       endDate : moment().clone().endOf("month"),
       header :["Task Id", "Category", "Sub Category","Task Name","Occurence","Updated On","Task Status"]
@@ -167,7 +167,7 @@ export default class TaskList extends Component {
     });
   }
 
-  getModel = (type, categoryId, subCategoryId,assignTo,occurance,startDate,endDate,updatedOn,taskStatus) => {
+  getModel = (type, categoryId, subCategoryId,assignTo,occurance,startDate,endDate,taskStatus) => {
     var model = [];
     switch (type) {
       case "R":
@@ -179,7 +179,6 @@ export default class TaskList extends Component {
           Occurrence: occurance,
           DteFr : startDate,
           DteTo : endDate,
-          UpdatedOn : updatedOn,
           TaskStatus : taskStatus
         });
         break;
@@ -377,9 +376,9 @@ export default class TaskList extends Component {
       ? this.state.assignTo
       : 0;
       var occurance = this.state.occurance ? this.state.occurance : 0;
-      var startDate  = this.state.filterFromDate ? this.state.filterFromDate : this.state.startDate.format('YYYY-MM-DD');
-      var endDate  = this.state.filterToDate ? this.state.filterToDate : this.state.endDate.format('YYYY-MM-DD');
-      var taskStatus = this.state.taskStatus ? this.state.taskStatus : '';
+      var startDate  = this.state.filterFromDate ? this.state.filterFromDate :'';
+      var endDate  = this.state.filterToDate ? this.state.filterToDate : '';
+      var taskStatus = this.state.taskStatus === 'None'? '' : this.state.taskStatus;
     var model = this.getModel(type, categoryId, subCategoryId, assignToId, occurance,startDate,endDate,taskStatus);
     this.manageTask(model, type);
   }
@@ -440,7 +439,7 @@ export default class TaskList extends Component {
   };
 
   Filter = () => {
-    if (this.state.selectedCategoryId > 0 ||this.state.assignTo > 0 || this.state.occurance !="" || this.state.taskStatus != "") {
+    if (this.state.selectedCategoryId > 0 ||this.state.assignTo > 0 || this.state.occurance !="" || this.state.taskStatus != "None") {
       this.setState({ filtered: true });
       this.getTasks();
     } else {
@@ -451,10 +450,11 @@ export default class TaskList extends Component {
   Reset = () => {
     this.setState({
       filtered: false,
-      //selectedCategoryId: 0,
-      //selectedSubCategoryId: 0,
-      //occurance:'',
-      //assignTo:0,
+      selectedCategoryId: 0,
+      selectedSubCategoryId: 0,
+      occurance:'',
+      assignTo:0,
+      taskStatus:"None",
     });
     //this.getTasks();
   };
@@ -620,6 +620,7 @@ export default class TaskList extends Component {
                             })
                           }
                           disabled={this.state.filtered}
+                          value={this.state.selectedCategoryId}
                         >
                           <option value="N">Repeat</option>
                           <option value="D">Daily</option>
@@ -637,8 +638,10 @@ export default class TaskList extends Component {
                             })
                           }
                           disabled={this.state.filtered}
+                          value={this.state.selectedCategoryId}
+
                         >
-                          <option>Task Status</option>
+                          <option value="None">Task Status</option>
                           <option value="Pending">Pending</option>
                           <option value="Complete">Complete</option>
                           <option value="Actionable">Actionable</option>

@@ -90,7 +90,7 @@ export default class ViewTask extends Component {
                   "success"
                 );
               } else {
-                appCommon.showtextalert("Someting went wrong !", "", "error");
+                appCommon.showtextalert(rData, "", "error");
               }
               this.getQuestion();
               break;

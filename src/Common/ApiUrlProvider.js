@@ -9,11 +9,12 @@ class APIUrlProvider {
 
 
         this.MainUrl = "https://admin-api.urest.in/api/" 
+        
         //this.MainUrl = "https://localhost:62058/api/"
         
         //this.complaintUrl  = "https://urest.in/complaint/"
-        this.complaintUrl  = "https://103.67.238.61:8096/"
-        // this.complaintUrl  = "http://localhost:62929/"
+        this.complaintUrl  = "https://api.urest.in:8096/"
+        //this.complaintUrl  = "http://localhost:62929/"
     }
 }
 export default APIUrlProvider;
