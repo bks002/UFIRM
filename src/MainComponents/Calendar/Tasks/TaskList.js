@@ -620,7 +620,7 @@ export default class TaskList extends Component {
                             })
                           }
                           disabled={this.state.filtered}
-                          value={this.state.selectedCategoryId}
+                          value={this.state.occurance}
                         >
                           <option value="N">Repeat</option>
                           <option value="D">Daily</option>
@@ -638,7 +638,7 @@ export default class TaskList extends Component {
                             })
                           }
                           disabled={this.state.filtered}
-                          value={this.state.selectedCategoryId}
+                          value={this.state.taskStatus}
 
                         >
                           <option value="None">Task Status</option>
