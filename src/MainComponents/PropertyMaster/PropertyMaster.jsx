@@ -18,7 +18,7 @@ class PropertyMaster extends React.Component {
             CityData:[],
             GridData:[],
             gridHeader: [
-                { sTitle: 'Id', titleValue: 'propertyId', "orderable": false },
+                { sTitle: 'Id', titleValue: 'id', "orderable": false },
                 { sTitle: 'property Name', titleValue: 'name',  },
                 { sTitle: 'Type', titleValue: 'propertyType',  },
                 { sTitle: 'Number', titleValue: 'contactNumber',  },
@@ -83,6 +83,9 @@ class PropertyMaster extends React.Component {
              resp => {          
                  if (resp.ok && resp.status == 200) {
                      return resp.json().then(rData => {
+                        rData.map((item,index)=>{
+                            item['id']=index+1;
+                        })
                          this.setState({GridData:rData});
                      });
                  
