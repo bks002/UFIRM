@@ -33,11 +33,11 @@ class AssetsMaster extends Component {
       PageMode: "Home",
       Id: 0,
       AssetType: "",
-      ManufacturerName: 0,
-      SelectedCategory: 0,
-      SelectedSubCategory: 0,
-      SelectedAssetName: 0,
-      SelectedAssetModel: 0,
+      ManufacturerName: "",
+      SelectedCategory: "",
+      SelectedSubCategory: "",
+      SelectedAssetName: "",
+      SelectedAssetModel: "",
       IsMovable: false,
       Name: "",
       Description: "",
@@ -55,9 +55,16 @@ class AssetsMaster extends Component {
     var mode = [
       {
         Id: this.state.Id,
-        Name: this.state.Name,
+        Name: this.state.SelectedAssetName,
         Description: this.state.Description,
         QRCode: this.state.QRCode,
+        AssetType: this.state.AssetType,
+        Manufacturer : this.state.ManufacturerName,
+        Category : this.state.SelectedCategory,
+        SubCategory : this.state.SelectedSubCategory,
+        AssetName : this.state.SelectedAssetName,
+        AssetModel : this.state.SelectedAssetModel,
+        IsMovable : this.state.IsMovable,
         Flag: type,
       },
     ];
@@ -144,7 +151,7 @@ class AssetsMaster extends Component {
   };
 
   handleSave = () => {
-    //
+    console.log(this.state)
     if (ValidateControls()) {
       var type = "";
       if (this.state.PageMode == "Add") {
@@ -307,85 +314,65 @@ class AssetsMaster extends Component {
                   <div className="row">
                     <div className="col-sm-4">
                       <div className="form-group">
-                      <select
-                        id="dllCategory"
-                        className="form-control"
-                        onChange={(e) =>
-                            this.setState({
-                                ManufacturerName: e.target.value,
-                            })
-                          }
-                      >
-                        <option value={0}>Manufacturer</option>
-                      </select>
+                      <label htmlFor="manufacturer">Manufacturer</label>
+                          <input type="text" id="manufacturer" placeholder="Manufacturer" 
+                          className="form-control"
+                          onChange={(e) =>this.setState({ManufacturerName: e.target.value})}
+                          />
                       </div>
                     </div>
                     <div className="col-sm-4">
                       <div className="form-group">
-                      <select
-                        id="dllCategory"
-                        className="form-control"
-                        onChange={(e) =>
-                            this.setState({
-                                SelectedCategory: e.target.value,
-                            })
-                          }
-                      >
-                        <option value={0}>Category</option>
-                      </select>
+                      <label for="txtQRCodeL">Asset Name</label>
+                      <input type="text" id="manufacturer" placeholder="Asset Name" 
+                          className="form-control"
+                          onChange={(e) =>this.setState({SelectedAssetName: e.target.value})}
+                          />
                       </div>
                     </div>
+                    {/* <div className="col-sm-4">
+                      <div className="form-group">
+                      <label for="txtQRCodeL">Category</label>
+                      <input type="text" id="manufacturer" placeholder="Category" 
+                          className="form-control"
+                          onChange={(e) =>this.setState({SelectedCategory: e.target.value})}
+                          />
+                      </div>
+                    </div> */}
+                  </div>
+                  <div className="row">
+                    {/* <div className="col-sm-4">
+                      <div className="form-group">
+                   <label for="txtQRCodeL">Sub Category</label>
+                   <input type="text" id="manufacturer" placeholder="Sub Category" 
+                          className="form-control"
+                          onChange={(e) =>this.setState({SelectedSubCategory: e.target.value})}
+                          />
+                      </div>
+                    </div> */}
+                    {/* <div className="col-sm-4">
+                      <div className="form-group">
+                      <label for="txtQRCodeL">Asset Name</label>
+                      <input type="text" id="manufacturer" placeholder="Asset Name" 
+                          className="form-control"
+                          onChange={(e) =>this.setState({SelectedAssetName: e.target.value})}
+                          />
+                      </div>
+                    </div> */}
                   </div>
                   <div className="row">
                     <div className="col-sm-4">
                       <div className="form-group">
-                      <select
-                        id="dllCategory"
-                        className="form-control"
-                        onChange={(e) =>
-                            this.setState({
-                                SelectedSubCategory: e.target.value,
-                            })
-                          }
-                      >
-                        <option value={0}>Sub-Category</option>
-                      </select>
+                      <label for="txtQRCodeL">Asset Model</label>
+                      <input type="text" id="manufacturer" placeholder="Asset Name" 
+                          className="form-control"
+                          onChange={(e) =>this.setState({SelectedAssetModel: e.target.value})}
+                          />
                       </div>
                     </div>
                     <div className="col-sm-4">
                       <div className="form-group">
-                      <select
-                        id="dllCategory"
-                        className="form-control"
-                        onChange={(e) =>
-                            this.setState({
-                                SelectedAssetName: e.target.value,
-                            })
-                          }
-                      >
-                        <option value={0}>Asset Name</option>
-                      </select>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-sm-4">
-                      <div className="form-group">
-                      <select
-                        id="dllCategory"
-                        className="form-control"
-                        onChange={(e) =>
-                            this.setState({
-                                SelectedAssetModel: e.target.value,
-                            })
-                          }
-                      >
-                        <option value={0}>Asset Model</option>
-                      </select>
-                      </div>
-                    </div>
-                    <div className="col-sm-4">
-                      <div className="form-group">
+                      <label for="txtDescriptionL">Is Movable</label>
                       <select
                         id="dllCategory"
                         className="form-control"
@@ -423,13 +410,10 @@ class AssetsMaster extends Component {
                     <div className="col-sm-4">
                       <div className="form-group">
                         <label for="txtQRCodeL">QRCode</label>
-                           <InputBox
-                          Id="txtQRCode"
-                          Value={this.state.QRCode}
-                          onChange={this.updatetextmodel.bind(this, "QRCode")}
-                          PlaceHolder="QRCode"
-                          className="form-control form-control-sm"
-                                    />
+                        <input type="text" id="manufacturer" placeholder="QR Code" 
+                          className="form-control"
+                          onChange={(e) =>this.setState({QRCode: e.target.value})}
+                          />
                     </div>
                   </div>
                   </div>
