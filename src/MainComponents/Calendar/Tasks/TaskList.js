@@ -123,6 +123,82 @@ export default class TaskList extends Component {
           },
         },
       ],
+      columnsWithoutDueDate: [
+        {
+          Header: "Task Id",
+          accessor: "TaskId",
+        },
+        {
+          Header: "Category",
+          accessor: "CategoryName",
+        },
+        {
+          Header: "Sub Category",
+          accessor: "SubCategoryName",
+        },
+        {
+          Header: "Task Name",
+          accessor: "Name",
+        },
+        {
+          Header: "Occurence",
+          accessor: "OccurenceView",
+        },
+        {
+          Header: "UpdatedOn",
+          accessor: "UpdatedOn",
+        },
+        {
+          Header: "Task Status",
+          accessor:"TaskStatus"
+        },
+        // {
+        //   Header: "Assigned To",
+        // },
+        // {
+        //   Header: "Assigned By",
+        // },
+        {
+          Header: "Action",
+          Cell: (data) => {
+            return (
+              <div style={{ display: "flex" }}>
+                <button
+                  className="btn btn-sm btn-primary"
+                  onClick={this.AddQuestion.bind(this, data.cell.row.original)}
+                  title="Add"
+                  style={{ marginRight: "5px" }}
+                >
+                  <i className="fa fa-plus"></i>
+                </button>
+                <button
+                  className="btn btn-sm btn-info"
+                  onClick={this.ViewTask.bind(this, data.cell.row.original)}
+                  title="View"
+                  style={{ marginRight: "5px" }}
+                >
+                  <i className="fa fa-eye"></i>
+                </button>
+                <button
+                  className="btn btn-sm btn-success"
+                  onClick={this.EditTask.bind(this, data.cell.row.original)}
+                  title="View"
+                  style={{ marginRight: "5px" }}
+                >
+                  <i className="fa fa-edit"></i>
+                </button>
+                <button
+                  className="btn btn-sm btn-danger"
+                  onClick={this.DeleteTask.bind(this, data.cell.row.original)}
+                  title="View"
+                >
+                  <i className="fa fa-trash"></i>
+                </button>
+              </div>
+            );
+          },
+        },
+      ],
       data: [],
       CategoryData: [],
       selectedCategoryId: "",
@@ -781,13 +857,21 @@ export default class TaskList extends Component {
                       active={this.state.loading}
                       spinner={<PropagateLoader color="#336B93" size={30} />}
                     >
+                      {this.state.occurance === "D" ?
                       <DataTable
                         data={this.state.data}
-                        columns={this.state.columns}
+                        columns={this.state.columnsWithoutDueDate}
                         hideGridSearchAndSize={true}
                         globalSearch={true}
                         isDefaultPagination={true}
-                      />
+                      />:
+                      <DataTable
+                      data={this.state.data}
+                      columns={this.state.columns}
+                      hideGridSearchAndSize={true}
+                      globalSearch={true}
+                      isDefaultPagination={true}/> }
+                      
                     </LoadingOverlay>
                   </div>
                 </div>
