@@ -9,9 +9,15 @@ import { DELETE_CONFIRMATION_MSG } from "../../Contants/Common";
 import swal from "sweetalert";
 import { CreateValidator, ValidateControls } from "./Validation.js";
 import CommonDataProvider from "../../Common/DataProvider/CommonDataProvider.js";
+import DocumentUploader from "../../ReactComponents/FileUploader/DocumentUploader.jsx";
 
 const $ = window.$;
-
+const toBase64 = file => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  reader.onload = () => resolve(reader.result.split(','));
+  reader.onerror = error => reject(error);
+});
 class AssetsMaster extends Component {
   constructor(props) {
     super(props);
@@ -42,6 +48,11 @@ class AssetsMaster extends Component {
       Name: "",
       Description: "",
       QRCode: "",
+      ImageData:[],
+      Image: "",
+      ImageExt: "",
+      documentVal: '',
+      currentSelectedFile: null,
     };
     this.ApiProviderr = new ApiProvider();
     this.comdbprovider = new CommonDataProvider();
@@ -66,6 +77,7 @@ class AssetsMaster extends Component {
         AssetModel : this.state.SelectedAssetModel,
         IsMovable : this.state.IsMovable,
         Flag: type,
+        Image: this.state.Image,
       },
     ];
     return mode;
@@ -140,6 +152,25 @@ class AssetsMaster extends Component {
     });
   };
 
+    // Document change
+    onFileChange(event) {
+      let _validFileExtensions = ["jpg", "jpeg", "png", "pdf"];
+      if (event.target.files[0]) {
+        let extension = event.target.files[0].name.substring(event.target.files[0].name.lastIndexOf('.') + 1);
+        let isvalidFiletype = _validFileExtensions.some(x => x === extension.toLowerCase());
+        if (isvalidFiletype) {
+  
+          this.state.ImageData = event.target.files[0];
+  
+        }
+        else {
+          this.setState({ documentVal: '', currentSelectedFile: null })
+          let temp_validFileExtensions = _validFileExtensions.join(',');
+          appCommon.showtextalert(`${event.target.files[0].name.filename} Invalid file type, Please Select only ${temp_validFileExtensions} `, "", "error");
+        }
+      }
+    };
+
   updatetextmodel = (ctrl, val) => {
     if (ctrl == "Name") {
       this.setState({ Name: val });
@@ -150,8 +181,26 @@ class AssetsMaster extends Component {
     }
   };
 
-  handleSave = () => {
-    console.log(this.state)
+  handleSave = async () => {
+    let UpFile = this.state.ImageData;
+    let res = null
+    if (UpFile) {
+      if (UpFile!=""){
+      let fileD = await toBase64(UpFile);
+      var imgbytes = UpFile.size; // Size returned in bytes.        
+      var imgkbytes = Math.round(parseInt(imgbytes) / 1024); // Size returned in KB.    
+      let extension = UpFile.name.substring(UpFile.name.lastIndexOf('.') + 1);
+      res = {
+        filename: UpFile.name,
+        filepath: fileD[1],
+        sizeinKb: imgkbytes,
+        fileType: fileD[0],
+        extension: extension.toLowerCase()
+      }
+      this.state.Image = fileD[1];
+      this.state.ImageExt = extension;
+    };
+  };
     if (ValidateControls()) {
       var type = "";
       if (this.state.PageMode == "Add") {
@@ -162,6 +211,10 @@ class AssetsMaster extends Component {
       var model = this.getModel(type);
       this.mangaeSave(model, type);
     }
+    
+    this.state.ImageData="";
+    this.state.Image="";
+    this.state.ImageExt="";
   };
   mangaeSave = (model, type) => {
     //
@@ -251,7 +304,7 @@ class AssetsMaster extends Component {
                 <div className="row">
                   <div className="col-sm-6">
                       <div className="form-group">
-                        <label for="radio1">Choose Asset Type</label>
+                        <label htmlFor="radio1">Choose Asset Type</label>
                       </div>
                     </div>
                   </div>
@@ -416,6 +469,18 @@ class AssetsMaster extends Component {
                           />
                     </div>
                   </div>
+                  </div>
+                  <div className="row">
+                    <div className="col-sm-2">
+                      <label>File Upload</label>
+                      <DocumentUploader
+                        Class={"form-control"}
+                        Id={"kycfileUploader"}
+                        type={"file"}
+                        value={this.state.ImageData}
+                        onChange={this.onFileChange.bind(this)}
+                      />
+                    </div>
                   </div>
                 </div>
 
