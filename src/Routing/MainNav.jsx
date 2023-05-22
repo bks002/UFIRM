@@ -115,14 +115,15 @@ class MainNav extends React.Component {
     }
 
     componentDidMount() {
-        var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJTYW5qYXkgSyIsImxhc3RuYW1lIjoiVmlzaHdha2FybWEiLCJpbmZvX3QiOiIzaUVleCtRYzAxcUZMSUl1N1BEVUxuWFhuV2xTWElsV0RyZm9ISlFzZlJleHdrWlNtS09GMDhLQTEzeDZhOUoxMlphQW84Y0l4aitTeW1tVngyRTRTSUwxTFZnME04L05maExyQ0N4eWpyU20wRWs3TnFiaHp4cHYvcSt1anF0NDNCNW5FRm9EOXJxcFhocmI1Y3NmMzFzQ20xVnBIOXV4VUsxUnltS0g4K016am5USURMN09RUDVrUGQ2MEpuUENmbWJjTm1YVmMyNVNQa0JuTFlRdTBxYkQ1b0F0N0ozbzI5SHE5TFo0WGd4QisxdytJRG56ZTFOT091TWVDR0doZkxXbk9TNWN2cFJsRjN1WDF0V0huV0ozclBsZnh0Zjl4OWhzODBEc1lFY0p4dXBpdDF6R1BRWk9nNVo1VEpXSkNXQU5IL3NGRW5qcHV1MUVIWHIvNkE9PSIsIm5iZiI6MTY1MzE0NTU4NiwiZXhwIjoxNjg0NjgxNTg2LCJpYXQiOjE2NTMxNDU1ODZ9.n5chCqZ2cDhfxIyftleZ693jKc4s6mf18l1BZFEGBHw";
-        // if (window.sessionStorage.getItem("userinfo_key") == null) {
-        // //if (token == null) {
-        //     const timerId = setTimeout(() => {
-        //         this.componentDidMount()
-        //     }, 1000);
-        // }
-        // else {
+        // var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
+        var token = window.sessionStorage.getItem("userinfo_key")
+        if (window.sessionStorage.getItem("userinfo_key") == null) {
+        if (token == null) {
+            const timerId = setTimeout(() => {
+                this.componentDidMount()
+            }, 1000);
+        }}
+        else {
             this.loaduserRole();
             this.loadProperty();
 
@@ -133,7 +134,7 @@ class MainNav extends React.Component {
             if (document.getElementById("app").getAttribute("username") != null) {
                 this.setState({ UserName: document.getElementById("app").getAttribute("username") })
             }
-        //}
+        }
 
     }
     onPropertyChanged = (value) => {
