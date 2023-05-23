@@ -372,6 +372,20 @@ class FacilityMember extends React.Component {
     this.getFacilityMaster(parseInt(this.state.FacilityTypeId));
   }
 
+  uploadDocs() {
+    this.setState({ PageMode: "UploadDocs" }, () => {
+      CreateValidator();
+      documentBL.CreateValidator();
+    });
+
+    //load documents panel
+    this.getDocumentType();
+    $("#grdFacilityMember").find("[aria-label=Action]").addClass("addWidth");
+    let arrayCopy = [...this.state.DocumentType];
+    this.setState({ documentType: arrayCopy });
+    this.setState({ documentTypeId: "0" });
+  }
+
   onPagechange = (page) => {
     this.setState({ pageNumber: page }, () => {
       this.getFacilityMember(this.state.FilterValue);
@@ -994,6 +1008,10 @@ class FacilityMember extends React.Component {
     });
   };
 
+  handleCancelAddUpload = () => {
+    this.addNew();
+  };
+
   handleCancelUpload = () => {
     this.setState({ PageMode: "Edit" }, () => {
       this.state.gridDocumentData = [];
@@ -1537,22 +1555,37 @@ class FacilityMember extends React.Component {
                       </div>
                     )}
                   </div>
-                  {/* <div>
-                                            <label>KYC Documents</label>
-                                        </div>
-                                        <div className="row">
-                                                    <div className="col-sm-12">
-                                                        <DataGrid
-                                                            Id="grdDoc"
-                                                            IsPagination={false}
-                                                            ColumnCollection={this.state.gridDocumentHeader}
-                                                            onGridDeleteMethod={this.onDocumentGridDelete.bind(this)}
-                                                            onGridDownloadMethod={this.onDocumentGridData.bind(this)}
-                                                            onGridViewMethod={this.onViewDocument.bind(this)}
-                                                            GridData={this.state.gridDocumentData}
-                                                        />
-                                                    </div>
-                                        </div> */}
+                  <div
+                    className="row"
+                    style={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <label>KYC Documents</label>
+
+                    <div>
+                      <Button
+                        id="btnNewComplain"
+                        Action={this.uploadDocs.bind(this)}
+                        ClassName="btn btn-success btn-sm"
+                        Icon={<i className="fa fa-plus" aria-hidden="true"></i>}
+                        Text={`Add Documents`}
+                      />
+                    </div>
+                  </div>
+                  <div className="row">
+                    <div className="col-sm-12">
+                      <DataGrid
+                        Id="grdDoc"
+                        IsPagination={false}
+                        ColumnCollection={this.state.gridDocumentHeader}
+                        onEditMethod={this.onKYCDocumentDelete.bind(this)}
+                        onGridDownloadMethod={this.onDocumentGridData.bind(
+                          this
+                        )}
+                        onGridViewMethod={this.onViewDocument.bind(this)}
+                        GridData={this.state.gridDocumentData}
+                      />
+                    </div>
+                  </div>
 
                   {this.state.FacilityTypeId == 1 && (
                     <div>
@@ -1909,6 +1942,97 @@ class FacilityMember extends React.Component {
                     Id="btnCancel"
                     Text="Cancel"
                     Action={this.handleCancel}
+                    ClassName="btn btn-secondary"
+                  />
+                </div>
+              </div>
+            </div>
+            <ToastContainer
+              position="top-right"
+              autoClose={5000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+            />
+            <ToastContainer />
+          </div>
+        )}
+
+      {this.state.PageMode == "UploadDocs" && (
+          <div>
+            <div>
+              <div className="modal-content">
+                <div className="modal-body">
+                  <div className="row">
+                    <div className="col-sm-4">
+                      <div className="form-group">
+                        <label htmlFor="lbDocumentType">Document Type</label>
+                        <SelectBox
+                          ID="ddlDocumentType"
+                          Value={this.state.documentTypeId}
+                          onSelected={this.onSelected.bind(
+                            this,
+                            "DocumentType"
+                          )}
+                          Options={this.state.DocumentType}
+                          ClassName="form-control "
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="row">
+                    <div className="col-sm-4">
+                      <div>
+                        <label>Upload KYC Documents</label>
+                      </div>
+                      <div style={{ display: "flex" }}>
+                        <div style={{ marginRight: "15px" }}>
+                          <DocumentUploader
+                            Class={"form-control"}
+                            Id={"kycfileUploader"}
+                            type={"file"}
+                            // value={this.state.documentName}
+                            onChange={this.onImageChange.bind(this)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-sm-4">
+                      <div className="form-group">
+                        <label htmlFor="lblName">Document Number</label>
+                        <InputBox
+                          Id="txtName"
+                          value={this.state.DocumentNumber}
+                          onChange={this.updateData.bind(
+                            this,
+                            "DocumentNumber"
+                          )}
+                          PlaceHolder="Document Number"
+                          className="form-control"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  {/* <Button
+                    Id="btnSave"
+                    Text="Save"
+                    Action={this.uploadFile.bind(this)}
+                    ClassName="btn btn-primary"
+                  /> */}
+                  <button className="btn btn-primary" onClick={(e)=>this.uploadFile(e)}>
+                        Save
+                      </button>
+                  <Button
+                    Id="btnCancel"
+                    Text="Cancel"
+                    Action={this.handleCancelAddUpload}
                     ClassName="btn btn-secondary"
                   />
                 </div>

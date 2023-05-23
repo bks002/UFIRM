@@ -10,6 +10,7 @@ import swal from "sweetalert";
 import { CreateValidator, ValidateControls } from "./Validation.js";
 import CommonDataProvider from "../../Common/DataProvider/CommonDataProvider.js";
 import DocumentUploader from "../../ReactComponents/FileUploader/DocumentUploader.jsx";
+import { ShowImageModal } from "../KanbanBoard/ImageModal.js";
 
 const $ = window.$;
 const toBase64 = file => new Promise((resolve, reject) => {
@@ -24,14 +25,14 @@ class AssetsMaster extends Component {
     this.state = {
       GridData: [],
       gridHeader: [
-        { sTitle: "Id", titleValue: "Id", orderable: false },
+        { sTitle: "Id", titleValue: "sNo", orderable: false },
         { sTitle: "Assets Name", titleValue: "Name" },
         { sTitle: "Description", titleValue: "Description" },
         { sTitle: "QRCode", titleValue: "QRCode" },
         {
           sTitle: "Action",
           titleValue: "Action",
-          Action: "Edit&Delete",
+          Action: "Edit&View&Delete",
           Index: "0",
           orderable: false,
         },
@@ -53,6 +54,10 @@ class AssetsMaster extends Component {
       ImageExt: "",
       documentVal: '',
       currentSelectedFile: null,
+      showImagefilename: '',
+      showImagefiletype: null,
+      showImagefile: [],
+      extension: ''
     };
     this.ApiProviderr = new ApiProvider();
     this.comdbprovider = new CommonDataProvider();
@@ -89,6 +94,10 @@ class AssetsMaster extends Component {
     this.ApiProviderr.manageDocumentTypeMaster(model, "R").then((resp) => {
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
+          rData.sort((a, b) => (a.Id > b.Id ? 1 : -1))
+          rData.map((item,index)=>{
+            item['sNo']=index+1;
+        })
           this.setState({ GridData: rData });
         });
       }
@@ -111,8 +120,15 @@ class AssetsMaster extends Component {
     });
   }
 
+  findBySno(id) {
+    return this.state.GridData.find((item) => {
+      if (item.sNo == id) {
+        return item;
+      }
+    });
+  }
+
   ongridedit = (Id) => {
-    //
     this.setState({ PageMode: "Edit" }, () => {
       CreateValidator();
       var rowData = this.findItem(Id);
@@ -124,6 +140,8 @@ class AssetsMaster extends Component {
   };
 
   onGridDelete = (Id) => {
+    var rowData = this.findBySno(Id);
+    console.log(rowData);
     let myhtml = document.createElement("div");
     myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
     alert: swal({
@@ -138,7 +156,7 @@ class AssetsMaster extends Component {
     }).then((value) => {
       switch (value) {
         case "ok":
-          this.setState({ Id: Id.toString() }, () => {
+          this.setState({ Id: rowData.Id.toString() }, () => {
             var type = "D";
             var model = this.getModel(type);
             this.mangaeSave(model, type);
@@ -150,6 +168,17 @@ class AssetsMaster extends Component {
           break;
       }
     });
+  };
+
+  onGridView = (Id) => {
+    this.setState({ PageMode: "View" }, () => {
+    var rowData = this.findBySno(Id);
+    this.setState({
+      showImagefilename: rowData.Name,
+      showImagefiletype: rowData.ImageExt,
+      showImagefile: rowData.Image,
+      extension: rowData.ImageExt
+    })})
   };
 
     // Document change
@@ -286,6 +315,7 @@ class AssetsMaster extends Component {
                     Onpageindexchanged={this.onPagechange.bind(this)}
                     onEditMethod={this.ongridedit.bind(this)}
                     onGridDeleteMethod={this.onGridDelete.bind(this)}
+                    onGridViewMethod={this.onGridView.bind(this)}
                     DefaultPagination={false}
                     IsSarching="true"
                     GridData={this.state.GridData}
@@ -494,6 +524,46 @@ class AssetsMaster extends Component {
                   <Button
                     Id="btnCancel"
                     Text="Cancel"
+                    Action={this.handleCancel}
+                    ClassName="btn btn-secondary"
+                  />
+                </div>
+              </div>
+            </div>
+            <ToastContainer
+              position="top-right"
+              autoClose={5000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+            />
+            <ToastContainer />
+          </div>
+        )}
+                {(this.state.PageMode == "View") && (
+          <div>
+            <div>
+              <div className="modal-content">
+                <div className="modal-body">
+                  <h3>Assets Images</h3>
+                <div className="row">
+                  <div className="col-sm-6">
+                      <div className="form-group">
+                        {/* <img src={this.state.showImagefile} alt="Image" width="100" height="100" /> */}
+                        <img src={`data:image/jpeg;base64,${this.state.showImagefile}`} style={{"height":"400px","width":"400px"}} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="modal-footer">
+                  <Button
+                    Id="btnCancel"
+                    Text="Close"
                     Action={this.handleCancel}
                     ClassName="btn btn-secondary"
                   />
