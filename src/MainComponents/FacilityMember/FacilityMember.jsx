@@ -122,6 +122,27 @@ class FacilityMember extends React.Component {
           orderable: false,
         },
       ],
+      addDocumentHeader: [
+        {
+          sTitle: "Id",
+          titleValue: "id",
+          orderable: false,
+        },
+        {
+          sTitle: "Document Type",
+          titleValue: "documentTypeName",
+          orderable: false,
+        },
+        // { sTitle: 'Document Name', titleValue: 'documentName', "orderable": false, },
+        {
+          sTitle: "Action",
+          titleValue: "Action",
+          Action: "View&Delete",
+          Index: "0",
+          urlIndex: "3",
+          orderable: false,
+        },
+      ],
       gridDocumentData: [],
       kycDocumentData: [],
       kycDocumentType: "",
@@ -145,6 +166,9 @@ class FacilityMember extends React.Component {
       FileData: [],
       File: "",
       FileExt: "",
+      addKYCData : [],
+      gridAddKYCData : [],
+      showDocfile:""
     };
     this.onDrop = this.onDrop.bind(this);
     this.removeImage = this.removeImage.bind(this);
@@ -347,14 +371,6 @@ class FacilityMember extends React.Component {
 
     //load tower
     this.loadPropertyTowers(this.state.PropertyId);
-
-    //load documents panel
-    this.getDocumentType();
-    $("#grdFacilityMember").find("[aria-label=Action]").addClass("addWidth");
-    let arrayCopy = [...this.state.DocumentType];
-    this.setState({ documentType: arrayCopy });
-    this.setState({ documentTypeId: "0" });
-    this.getFacilityMaster(parseInt(this.state.FacilityTypeId));
   }
 
   addDocs() {
@@ -421,6 +437,40 @@ class FacilityMember extends React.Component {
       }
     });
   };
+
+  onDocDelete = (Id) => {
+    let myhtml = document.createElement("div");
+    myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
+    alert: swal({
+      buttons: {
+        ok: "Yes",
+        cancel: "No",
+      },
+      content: myhtml,
+      icon: "warning",
+      closeOnClickOutside: false,
+      dangerMode: true,
+    }).then((value) => {
+      switch (value) {
+        case "ok":
+          this.setState({
+            gridAddKYCData : this.state.gridAddKYCData.filter((item) => item.id !== Id),
+          })
+          break;
+        case "cancel":
+          break;
+        default:
+          break;
+      }
+    });
+  };
+
+  onDocView = (Id) => {
+    this.setState({ PageMode: "docView" }, () => {
+    var doc = this.state.gridAddKYCData.find((item) => item.id == Id);
+    this.setState({ showDocfile: doc.documentUrl });
+    })
+  }
 
   onGridBlock = (Id) => {
     let val = this.findItem(parseInt(Id)).isBlocked;
@@ -881,6 +931,50 @@ class FacilityMember extends React.Component {
       }
     }
   };
+  addFile = async (e) => {
+    e.currentTarget.disabled = true;
+    let UpFile = this.state.ImageData;
+    let res = null;
+    if (UpFile) {
+      if (UpFile != "") {
+        let fileD = await toBase64(UpFile);
+        var imgbytes = UpFile.size; // Size returned in bytes.
+        var imgkbytes = Math.round(parseInt(imgbytes) / 1024); // Size returned in KB.
+        let extension = UpFile.name.substring(UpFile.name.lastIndexOf(".") + 1);
+        res = {
+          filename: UpFile.name,
+          filepath: fileD[1],
+          sizeinKb: imgkbytes,
+          fileType: fileD[0],
+          extension: extension.toLowerCase(),
+        };
+        this.state.ImageFileName = UpFile.name;
+        this.state.Image = fileD[1];
+        this.state.ImageExt = extension;
+        this.state.addKYCData = [];
+        this.state.addKYCData.push({
+          id:this.state.gridAddKYCData.length+1,
+          documentTypeId: parseInt(this.state.documentTypeId),
+          documentTypeName: this.state.DocumentTypeName,
+          documentName: res.filename,
+          documentUrl: res.filepath,
+          documentNumber: this.state.DocumentNumber,
+        });
+        console.log(this.state.addKYCData);
+        this.setState({
+          gridAddKYCData: [
+            ...this.state.gridAddKYCData,
+            ...this.state.addKYCData,
+          ],
+        });
+      }
+    }
+    console.log(this.state.gridDocumentData);
+    this.state.ImageData = "";
+    this.state.Image = "";
+    this.state.ImageExt = "";
+    this.handleCancelAddUpload()
+  };
 
   uploadFile = async (e) => {
     e.currentTarget.disabled = true;
@@ -1004,7 +1098,7 @@ class FacilityMember extends React.Component {
   handleCancel = () => {
     this.setState({ PageMode: "Home" }, () => {
       this.getFacilityMember(this.state.FilterValue);
-      this.state.gridDocumentData = [];
+      this.state.gridAddKYCData = [];
     });
   };
 
@@ -1030,6 +1124,7 @@ class FacilityMember extends React.Component {
   };
 
   onSelected(name, value) {
+    console.log(name, value);
     switch (name) {
       case "DocumentType":
         this.state.documentType.find((item) => {
@@ -1480,12 +1575,20 @@ class FacilityMember extends React.Component {
                     <div class="col-sm-4">
                       <div class="form-group">
                         <label htmlFor="lblName">Name</label>
-                        <InputBox
+                        {/* <InputBox
                           Id="txtName"
                           Value={this.state.Name}
                           onChange={this.updateData.bind(this, "Name")}
                           PlaceHolder="Name"
                           className="form-control"
+                        /> */}
+                         <input
+                            id="txtCatColor"
+                            placeholder="Enter Name"
+                            type="text"
+                            className="form-control"
+                            value={this.state.Name}
+                            onChange={(e) => { this.setState({ Name: e.target.value }) }}
                         />
                       </div>
                     </div>
@@ -1494,6 +1597,7 @@ class FacilityMember extends React.Component {
                         <label htmlFor="lblGender">Gender</label>
                         <DropDownList
                           Id="ddlGender"
+                          Value={this.state.Gender}
                           onSelected={this.onDropdownChanges.bind(
                             this,
                             "Gender"
@@ -1576,13 +1680,10 @@ class FacilityMember extends React.Component {
                       <DataGrid
                         Id="grdDoc"
                         IsPagination={false}
-                        ColumnCollection={this.state.gridDocumentHeader}
-                        onEditMethod={this.onKYCDocumentDelete.bind(this)}
-                        onGridDownloadMethod={this.onDocumentGridData.bind(
-                          this
-                        )}
-                        onGridViewMethod={this.onViewDocument.bind(this)}
-                        GridData={this.state.gridDocumentData}
+                        ColumnCollection={this.state.addDocumentHeader}
+                        onGridDeleteMethod={this.onDocDelete.bind(this)}
+                        onGridViewMethod={this.onDocView.bind(this)}
+                        GridData={this.state.gridAddKYCData}
                       />
                     </div>
                   </div>
@@ -2026,7 +2127,7 @@ class FacilityMember extends React.Component {
                     Action={this.uploadFile.bind(this)}
                     ClassName="btn btn-primary"
                   /> */}
-                  <button className="btn btn-primary" onClick={(e)=>this.uploadFile(e)}>
+                  <button className="btn btn-primary" onClick={(e)=>this.addFile(e)}>
                         Save
                       </button>
                   <Button
@@ -2270,6 +2371,46 @@ class FacilityMember extends React.Component {
                     Id="btnCancel"
                     Text="Cancel"
                     Action={this.handleCancelUpload}
+                    ClassName="btn btn-secondary"
+                  />
+                </div>
+              </div>
+            </div>
+            <ToastContainer
+              position="top-right"
+              autoClose={5000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+            />
+            <ToastContainer />
+          </div>
+        )}
+          {(this.state.PageMode == "docView") && (
+          <div>
+            <div>
+              <div className="modal-content">
+                <div className="modal-body">
+                  <h3>Document Images</h3>
+                <div className="row">
+                  <div className="col-sm-6">
+                      <div className="form-group">
+                        {/* <img src={this.state.showImagefile} alt="Image" width="100" height="100" /> */}
+                        <img src={`data:image/jpeg;base64,${this.state.showDocfile}`} style={{"height":"400px","width":"400px"}} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="modal-footer">
+                  <Button
+                    Id="btnCancel"
+                    Text="Close"
+                    Action={this.handleCancelAddUpload}
                     ClassName="btn btn-secondary"
                   />
                 </div>
