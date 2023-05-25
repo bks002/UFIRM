@@ -76,7 +76,7 @@ class FacilityMember extends React.Component {
       pageNumber: 1,
       Image: "",
       gridFacilityMemberHeader: [
-        { sTitle: "Id", titleValue: "facilityMemberId", orderable: false }, //"visible": true
+        { sTitle: "Id", titleValue: "sNo", orderable: false }, //"visible": true
         // { sTitle: 'Image', titleValue: 'Image', ImagePath: 'profileImageUrl', Index: '0' },
         { sTitle: "Name", titleValue: "name" },
         { sTitle: "Gender", titleValue: "gender" },
@@ -226,7 +226,6 @@ class FacilityMember extends React.Component {
   getFacilityMember(value) {
     var type = "R";
     var model = this.getModel(type, value);
-    console.log(model[0]);
     this.manageFacilityMember(model, type);
   }
 
@@ -234,7 +233,6 @@ class FacilityMember extends React.Component {
     this.comdbprovider.getFacilityType().then((resp) => {
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
-          console.log("facility type ", rData);
           rData = appCommon.changejsoncolumnname(rData, "id", "Value");
           rData = appCommon.changejsoncolumnname(rData, "text", "Name");
           this.setState({ FacilityType: rData });
@@ -346,6 +344,9 @@ class FacilityMember extends React.Component {
               this.handleCancel();
               break;
             case "R":
+              rData.facilityMember.map((item,index)=>{
+                item['sNo']=index+1;
+            })
               this.setState({ grdTotalPages: rData.totalPages });
               this.setState({ grdTotalRows: rData.totalRows });
               this.setState({ gridFacilityMemberData: rData.facilityMember });
@@ -413,6 +414,7 @@ class FacilityMember extends React.Component {
   }
 
   onGridDelete = (Id) => {
+    var rowData = this.findByRowId(Id)
     let myhtml = document.createElement("div");
     myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
     alert: swal({
@@ -427,7 +429,7 @@ class FacilityMember extends React.Component {
     }).then((value) => {
       switch (value) {
         case "ok":
-          var model = [{ facilityMemberId: parseInt(Id) }];
+          var model = [{ facilityMemberId: parseInt(rowData.facilityMemberId) }];
           this.manageFacilityMember(model, "D");
           break;
         case "cancel":
@@ -473,7 +475,7 @@ class FacilityMember extends React.Component {
   }
 
   onGridBlock = (Id) => {
-    let val = this.findItem(parseInt(Id)).isBlocked;
+    let val = this.findByRowId(parseInt(Id)).isBlocked;
     let myhtml = document.createElement("div");
     myhtml.innerHTML = BLOCK_CONFIRMATION_MSG + "</hr>";
     if (val) myhtml.innerHTML = UNBLOCK_CONFIRMATION_MSG + "</hr>";
@@ -507,7 +509,7 @@ class FacilityMember extends React.Component {
       documentBL.CreateValidator();
     });
     this.loadGender();
-    var rowData = this.findItem(Id);
+    var rowData = this.findByRowId(Id);
     this.setState({ FacilityMemberId: rowData.facilityMemberId });
     this.setState({ ProfileImageUrl: rowData.profileImageUrl });
     // if(rowData.profileImageUrl != null && rowData.profileImageUrl != ""){
@@ -531,7 +533,6 @@ class FacilityMember extends React.Component {
       .then((resp) => {
         if (resp.ok && resp.status == 200) {
           return resp.json().then((rData) => {
-            console.log("facility master ", rData);
             rData = appCommon.changejsoncolumnname(rData, "id", "Value");
             rData = appCommon.changejsoncolumnname(rData, "text", "Name");
             this.setState(
@@ -567,6 +568,7 @@ class FacilityMember extends React.Component {
     this.getDocumentType();
 
     let arrayCopy = [...this.state.DocumentType];
+    this.state.gridDocumentData = [];
     rowData.facilityMemberDocumentList.map((item) => {
       this.removeByAttr(arrayCopy, "Id", item.documentTypeId.toString());
     });
@@ -586,7 +588,7 @@ class FacilityMember extends React.Component {
       documentBL.CreateValidator();
     });
     this.loadGender();
-    var rowData = this.findItem(Id);
+    var rowData = this.findByRowId(Id);
     this.setState({ FacilityMemberId: rowData.facilityMemberId });
     this.setState({ ProfileImageUrl: rowData.profileImageUrl });
     this.setState({ Name: rowData.name });
@@ -600,7 +602,6 @@ class FacilityMember extends React.Component {
       .then((resp) => {
         if (resp.ok && resp.status == 200) {
           return resp.json().then((rData) => {
-            console.log("facility master ", rData);
             rData = appCommon.changejsoncolumnname(rData, "id", "Value");
             rData = appCommon.changejsoncolumnname(rData, "text", "Name");
             this.setState(
@@ -646,6 +647,14 @@ class FacilityMember extends React.Component {
   findItem(id) {
     return this.state.gridFacilityMemberData.find((item) => {
       if (item.facilityMemberId == id) {
+        return item;
+      }
+    });
+  }
+
+  findByRowId(id) {
+    return this.state.gridFacilityMemberData.find((item) => {
+      if (item.sNo == id) {
         return item;
       }
     });
@@ -960,7 +969,6 @@ class FacilityMember extends React.Component {
           documentUrl: res.filepath,
           documentNumber: this.state.DocumentNumber,
         });
-        console.log(this.state.addKYCData);
         this.setState({
           gridAddKYCData: [
             ...this.state.gridAddKYCData,
@@ -969,7 +977,6 @@ class FacilityMember extends React.Component {
         });
       }
     }
-    console.log(this.state.gridDocumentData);
     this.state.ImageData = "";
     this.state.Image = "";
     this.state.ImageExt = "";
@@ -1006,14 +1013,12 @@ class FacilityMember extends React.Component {
           documentUrl: res.filepath,
           documentNumber: this.state.DocumentNumber,
         });
-        console.log(this.state.kycDocumentData);
         this.setState({
           gridDocumentData: [
             ...this.state.gridDocumentData,
             ...this.state.kycDocumentData,
           ],
         });
-        console.log(this.state.gridDocumentData);
       }
     }
     let url = new UrlProvider().MainUrl;
@@ -1067,7 +1072,6 @@ class FacilityMember extends React.Component {
           if (
             item.facilityMemberDocumentId == this.state.FacilityMemberDocumentId
           ) {
-            console.log(item);
             this.state.gridDocumentData[index].documentUrl =
               this.state.gridDocumentData[index].documentUrl.split(
                 "FacilityMemberDocuments/"
@@ -1109,13 +1113,19 @@ class FacilityMember extends React.Component {
   handleCancelUpload = () => {
     this.setState({ PageMode: "Edit" }, () => {
       this.state.gridDocumentData = [];
-      this.ongridedit(this.state.FacilityMemberId);
+      var rowId = this.state.gridFacilityMemberData.find((item)=>{
+        return item.facilityMemberId == this.state.FacilityMemberId
+      })
+      this.ongridedit(rowId.sNo);
     });
   };
 
   handleSaveUpload = () => {
     this.setState({ PageMode: "Edit" },()=>{
-      this.ongridShow(this.state.FacilityMemberId)
+      var rowId = this.state.gridFacilityMemberData.find((item)=>{
+        return item.facilityMemberId == this.state.FacilityMemberId
+      })
+      this.ongridShow(rowId.sNo)
     });
   };
 
@@ -1124,12 +1134,10 @@ class FacilityMember extends React.Component {
   };
 
   onSelected(name, value) {
-    console.log(name, value);
     switch (name) {
       case "DocumentType":
         this.state.documentType.find((item) => {
           if (item.Id == value) {
-            console.log(item);
             this.setState({ DocumentTypeName: item.Name });
             this.setState({ documentTypeId: item.Id });
           }
@@ -1226,7 +1234,6 @@ class FacilityMember extends React.Component {
   handleDocSave = async () => {
     if (documentBL.ValidateControls() == "") {
       let UpFile = this.state.FileData;
-      console.log(UpFile);
       let res = null;
       if (UpFile) {
         if (UpFile != "") {
@@ -1271,7 +1278,6 @@ class FacilityMember extends React.Component {
         selectedFile: this.state.selectedFile,
       });
       this.setState({ gridDocumentData: gridDocumentData });
-      console.log(this.state.gridDocumentData);
       //clear object
       this.setState({
         documentName: " ",
@@ -1342,13 +1348,11 @@ class FacilityMember extends React.Component {
     let data = this.state.gridDocumentData.find(
       (x) => x.facilityMemberDocumentId === docId
     );
-    console.log(data);
     this.setState({
       PageMode: "UpdateDocs",
       documentTypeId: data.documentTypeId,
       FacilityMemberDocumentId: data.facilityMemberDocumentId,
     });
-    console.log(this.state);
   }
 
   removeByAttr(arr, attr, value) {
@@ -1394,7 +1398,6 @@ class FacilityMember extends React.Component {
         break;
       case "FacilityMaster":
         this.setState({ FacilityMasterId: id });
-        console.log(this.state);
         break;
       case "PropertyTower":
         this.setState({ PropertyTowerId: id });
@@ -2062,7 +2065,7 @@ class FacilityMember extends React.Component {
             <ToastContainer />
           </div>
         )}
-
+{/* While Creating New User */}
       {this.state.PageMode == "UploadDocs" && (
           <div>
             <div>
@@ -2153,7 +2156,7 @@ class FacilityMember extends React.Component {
             <ToastContainer />
           </div>
         )}
-
+{/* While Editing User and adding new documents */}
         {this.state.PageMode == "AddDocs" && (
           <div>
             <div>
@@ -2272,7 +2275,7 @@ class FacilityMember extends React.Component {
             <ToastContainer />
           </div>
         )}
-
+{/* While Editing User and updating documents */}
         {this.state.PageMode == "UpdateDocs" && (
           <div>
             <div>

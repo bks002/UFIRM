@@ -184,9 +184,9 @@ export default class AssetTracking extends Component {
           switch (type) {
             case "R":
               let assetTrackingData = [];
-              rData.forEach((element) => {
+              rData.forEach((element,index) => {
                 assetTrackingData.push({
-                  Id: element.Id,
+                  Id: index+1,
                   TaskId: element.TaskId,
                   AssetId: element.AssetId,
                   Name: element.Name,
