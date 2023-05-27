@@ -372,6 +372,13 @@ class FacilityMember extends React.Component {
 
     //load tower
     this.loadPropertyTowers(this.state.PropertyId);
+        //load documents panel
+        this.getDocumentType();
+        $("#grdFacilityMember").find("[aria-label=Action]").addClass("addWidth");
+        let arrayCopy = [...this.state.DocumentType];
+        this.setState({ documentType: arrayCopy });
+        this.setState({ documentTypeId: "0" });
+        this.getFacilityMaster(parseInt(this.state.FacilityTypeId));
   }
 
   addDocs() {
