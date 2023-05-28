@@ -799,6 +799,7 @@ class FacilityMember extends React.Component {
           address: this.state.Address,
           gender: this.state.Gender,
           facilityMasterId: this.state.FacilityMasterId,
+          fileData : this.state.gridAddKYCData,
         });
         break;
         case "U":
@@ -841,6 +842,7 @@ class FacilityMember extends React.Component {
       ) {
         var type = "C";
         var model = this.getFacilityModel(type);
+        console.log(model)
         this.ApiProviderr.manageFacilityMember(model, type).then((res) => {
           if (res.data <= 0) {
             appCommon.ShownotifyError(
