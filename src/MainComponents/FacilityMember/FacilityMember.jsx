@@ -477,7 +477,7 @@ class FacilityMember extends React.Component {
   onDocView = (Id) => {
     this.setState({ PageMode: "docView" }, () => {
     var doc = this.state.gridAddKYCData.find((item) => item.id == Id);
-    this.setState({ showDocfile: doc.documentUrl });
+    this.setState({ showDocfile: doc.docURl });
     })
   }
 
@@ -868,6 +868,7 @@ class FacilityMember extends React.Component {
       } else if (this.state.FacilityTypeId == 2) {
         var type = "C";
         var model = this.getFacilityModel(type);
+        console.log(model)
         this.ApiProviderr.manageFacilityMember(model, type).then((res) => {
           if (res.data <= 0) {
             appCommon.ShownotifyError(
@@ -951,44 +952,26 @@ class FacilityMember extends React.Component {
   };
   addFile = async (e) => {
     e.currentTarget.disabled = true;
-    let UpFile = this.state.ImageData;
-    let res = null;
-    if (UpFile) {
-      if (UpFile != "") {
-        let fileD = await toBase64(UpFile);
-        var imgbytes = UpFile.size; // Size returned in bytes.
-        var imgkbytes = Math.round(parseInt(imgbytes) / 1024); // Size returned in KB.
-        let extension = UpFile.name.substring(UpFile.name.lastIndexOf(".") + 1);
-        res = {
-          filename: UpFile.name,
-          filepath: fileD[1],
-          sizeinKb: imgkbytes,
-          fileType: fileD[0],
-          extension: extension.toLowerCase(),
-        };
-        this.state.ImageFileName = UpFile.name;
-        this.state.Image = fileD[1];
-        this.state.ImageExt = extension;
-        this.state.addKYCData = [];
-        this.state.addKYCData.push({
-          id:this.state.gridAddKYCData.length+1,
-          documentTypeId: parseInt(this.state.documentTypeId),
-          documentTypeName: this.state.DocumentTypeName,
-          documentName: res.filename,
-          documentUrl: res.filepath,
-          documentNumber: this.state.DocumentNumber,
-        });
-        this.setState({
-          gridAddKYCData: [
-            ...this.state.gridAddKYCData,
-            ...this.state.addKYCData,
-          ],
-        });
-      }
-    }
-    this.state.ImageData = "";
-    this.state.Image = "";
-    this.state.ImageExt = "";
+    this.state.addKYCData = [];
+    let upfile = this.state.ImageData;
+    let fileD = await toBase64(upfile);
+    this.state.addKYCData.push({
+      id:this.state.gridAddKYCData.length+1,
+      //Have to implement a formData
+      file:this.state.ImageData,
+      documentTypeId: parseInt(this.state.documentTypeId),
+      documentTypeName: this.state.DocumentTypeName,
+      documentNumber: this.state.DocumentNumber,
+      docURl : fileD[1],
+    });
+    console.log(this.state.addKYCData)
+    this.setState({
+      gridAddKYCData: [
+        ...this.state.gridAddKYCData,
+        ...this.state.addKYCData,
+      ],
+    });
+    console.log(this.state)
     this.handleCancelAddUpload()
   };
 
@@ -1116,6 +1099,7 @@ class FacilityMember extends React.Component {
   };
 
   handleCancelAddUpload = () => {
+    this.state.ImageData = "";
     this.addNew();
   };
 

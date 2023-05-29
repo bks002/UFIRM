@@ -192,7 +192,7 @@ export default class DataGrid extends React.Component {
                             case 'Edit&Delete&Block':
                                 //btnhtml += `<a title="Edit" class="fa fa-edit" href="#"></a>`;
                                 //RG Changes because added status col in facilty member (show block and unblock function)
-                                if (Gridarray[IsBlockedFacilty] !== 'Old') {
+                                // if (Gridarray[IsBlockedFacilty] !== 'Old') {
                                     btnhtml += '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
                                     btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
                                     if (Gridarray[IsBlockedFacilty] === 'Blocked') {
@@ -200,7 +200,7 @@ export default class DataGrid extends React.Component {
                                     } else {
                                         btnhtml += '<button class="btn btn-sm btn-dark BlockAndUnblock" title="Block"><i class="fa fa-ban"></i></button>';
                                     }
-                                }
+                                // }
 
                                 break;
                             case 'Edit':
