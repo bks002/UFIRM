@@ -22,6 +22,10 @@ export default class AssetTracking extends Component {
           accessor: "Id",
         },
         {
+          Header: "Asset Name",
+          accessor: "AssetName",
+        },
+        {
           Header: "Task Name",
           accessor: "Name",
         },
@@ -30,8 +34,32 @@ export default class AssetTracking extends Component {
           accessor: "OccurenceView",
         },
         {
+          Header: "Start Date",
+          accessor: "StartDate",
+        },
+        {
+          Header: "Start Time",
+          accessor: "StartTime",
+        },
+        {
+          Header: "End Date",
+          accessor: "EndDate",
+        },
+        {
+          Header: "End Time",
+          accessor: "EndTime",
+        },
+        {
+          Header: "Duration",
+          accessor: "Duration",
+        },
+        {
           Header: "UpdatedOn",
           accessor: "UpdatedOn",
+        },
+        {
+          Header: "Status",
+          accessor: "Status",
         },
         {
           Header: "Remarks",
@@ -188,10 +216,15 @@ export default class AssetTracking extends Component {
                 assetTrackingData.push({
                   Id: index+1,
                   TaskId: element.TaskId,
+                  AssetName : element.AssetName,
                   AssetId: element.AssetId,
                   Name: element.Name,
-                  DateFrom: element.DateFrom.split("T")[0],
-                  DateTo: element.DateTo.split("T")[0],
+                  StartDate: element.TimeFrom.split("T")[0],
+                  StartTime: element.TimeFrom.split("T")[1],
+                  EndDate: element.TimeTo.split("T")[0],
+                  EndTime: element.TimeTo.split("T")[1],
+                  Duration: this.calculateDuration(element.TimeFrom.split("T")[1], element.TimeTo.split("T")[1]),
+                  Status: element.TaskStatus, 
                   Remarks: element.Remarks,
                   Occurence: element.Occurence.split(" ")[0] ,
                   OccurenceView: this.modifyOccurence(element.Occurence.split(" ")[0]) ,
@@ -218,6 +251,16 @@ export default class AssetTracking extends Component {
       }
     });
   };
+
+  calculateDuration = (startTime, endTime) => {
+    var start = moment(startTime, "HH:mm:ss");
+    var end = moment(endTime, "HH:mm:ss");
+    var duration = moment.duration(end.diff(start));
+    var hours = parseInt(duration.asHours());
+    var minutes = parseInt(duration.asMinutes()) % 60;
+    var seconds = parseInt(duration.asSeconds()) % 60;
+    return hours + "hrs " + minutes + "min " + seconds + "sec";
+  }
 
   modifyOccurence = (Occurrence)=>{
     if(Occurrence == 'W'){
