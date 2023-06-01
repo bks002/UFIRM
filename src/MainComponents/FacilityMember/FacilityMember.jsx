@@ -715,78 +715,71 @@ class FacilityMember extends React.Component {
     return model;
   };
 
-  // handleSave = (saveType) => {
-  //     let url = new UrlProvider().MainUrl;
-  //     if (ValidateControls()) {
-  //         const formData = new FormData();
-  //         formData.append("propertyId", this.props.PropertyId);
-  //         formData.append('imageFile', this.state.Pictures != null ? this.state.Pictures[0] : null);
-  //         formData.append("name", this.state.Name);
-  //         formData.append("mobileNumber", this.state.Contact);
-  //         formData.append("address", this.state.Address);
-  //         formData.append("gender", this.state.Gender);
-  //         formData.append("facilityMemberId", this.state.FacilityMemberId);
-  //         formData.append("facilityMasterId", this.state.FacilityMasterId);
-  //         formData.append("propertyTowerId", this.state.PropertyTowerId);
-  //         formData.append("propertyFloorId", this.state.PropertyFloorId);
-  //         formData.append("propertyFlatId", this.state.PropertyFlatId);
-  //         if (this.state.FacilityTypeId == 1) {
-  //             formData.append("propertyDetailsIds", JSON.stringify(this.state.PropertyDetailsIds));
-  //         } else {
-  //             formData.append("propertyDetailsIds", JSON.stringify([]));
-  //         }
-  //         formData.append("saveType", saveType);
-  //         this.state.gridDocumentData.map((item) => {
-  //             formData.append('files', item.selectedFile);
-  //         });
-  //         formData.append('document', JSON.stringify(this.state.gridDocumentData));
-  //         if (this.state.FacilityTypeId == 1 && this.state.PropertyDetailsIds.length > 0) {
-  //             if (this.state.gridDocumentData.length > 0) {
-  //                 this.ApiProviderr.saveFacilityMember(formData)
-  //                     .then(res => {
-  //                         if (res.data <= 0) {
-  //                             appCommon.ShownotifyError("Facility Member Contact is already created");
-  //                         }
-  //                         else {
-  //                             if (this.props.PageMode != "Edit") {
-  //                                 appCommon.showtextalert("Facility Member Created Successfully", "", "success");
-  //                             }
-  //                             else {
-  //                                 appCommon.showtextalert("Facility Member Updated Successfully", "", "success");
-  //                             }
-  //                             this.handleCancel();
-  //                         }
-  //                     });
-  //             }
-  //             else
-  //                 appCommon.showtextalert("At least one document is required", "", "error");
-  //         }
-  //         else if (this.state.FacilityTypeId == 2) {
-  //             if (this.state.gridDocumentData.length > 0) {
-  //                 this.ApiProviderr.saveFacilityMember(formData)
-  //                     .then(res => {
-  //                         if (res.data <= 0) {
-  //                             appCommon.ShownotifyError("Facility Member Contact is already created");
-  //                         }
-  //                         else {
-  //                             if (this.props.PageMode != "Edit") {
-  //                                 appCommon.showtextalert("Facility Member Created Successfully", "", "success");
-  //                             }
-  //                             else {
-  //                                 appCommon.showtextalert("Facility Member Updated Successfully", "", "success");
-  //                             }
-  //                             this.handleCancel();
-  //                         }
-  //                     });
-  //             }
-  //             else
-  //                 appCommon.showtextalert("At least one document is required", "", "error");
-  //         }
-  //         else {
-  //             appCommon.showtextalert("At least one flat is required", "", "error");
-  //         }
-  //     }
-  // }
+  handleSave = (saveType) => {
+      let url = new UrlProvider().MainUrl;
+      if (ValidateControls()) {
+          const formData = new FormData();
+          formData.append("propertyId", this.props.PropertyId);
+          formData.append("name", this.state.Name);
+          formData.append("mobileNumber", this.state.Contact);
+          formData.append("address", this.state.Address);
+          formData.append("gender", this.state.Gender);
+          formData.append("facilityMasterId", this.state.FacilityMasterId);
+          formData.append("saveType", saveType);
+          this.state.gridAddKYCData.map((item,index) => {
+              formData.append(`fileData[${index}].file`, item.file);
+              formData.append(`fileData[${index}].DocumentTypeId`, item.documentTypeId);
+              formData.append(`fileData[${index}].DocumentNumber`, item.documentNumber);
+              formData.append(`fileData[${index}].DocumentName`, item.documentName);
+          });
+          formData.append('document', JSON.stringify(this.state.gridAddKYCData));
+          if (this.state.FacilityTypeId == 1 && this.state.PropertyDetailsIds.length > 0) {
+              if (this.state.gridAddKYCData.length > 0) {
+                  this.ApiProviderr.saveFacilityMember(formData)
+                      .then(res => {
+                          if (res.data <= 0) {
+                              appCommon.ShownotifyError("Facility Member Contact is already created");
+                          }
+                          else {
+                              if (this.props.PageMode != "Edit") {
+                                  appCommon.showtextalert("Facility Member Created Successfully", "", "success");
+                              }
+                              else {
+                                  appCommon.showtextalert("Facility Member Updated Successfully", "", "success");
+                              }
+                              this.handleCancel();
+                          }
+                      });
+              }
+              else
+                  appCommon.showtextalert("At least one document is required", "", "error");
+          }
+          else if (this.state.FacilityTypeId == 2) {
+              if (this.state.gridAddKYCData.length > 0) {
+                  this.ApiProviderr.saveFacilityMember(formData)
+                      .then(res => {
+                          if (res.data <= 0) {
+                              appCommon.ShownotifyError("Facility Member Contact is already created");
+                          }
+                          else {
+                              if (this.props.PageMode != "Edit") {
+                                  appCommon.showtextalert("Facility Member Created Successfully", "", "success");
+                              }
+                              else {
+                                  appCommon.showtextalert("Facility Member Updated Successfully", "", "success");
+                              }
+                              this.handleCancel();
+                          }
+                      });
+              }
+              else
+                  appCommon.showtextalert("At least one document is required", "", "error");
+          }
+          else {
+              appCommon.showtextalert("At least one flat is required", "", "error");
+          }
+      }
+  }
 
   getFacilityModel = (type, value) => {
     var model = [];
@@ -833,73 +826,73 @@ class FacilityMember extends React.Component {
     return model;
   };
 
-  handleSave = async (e) => {
-    e.currentTarget.disabled = true;
-    if (ValidateControls()) {
-      if (
-        this.state.FacilityTypeId == 1 &&
-        this.state.PropertyDetailsIds.length > 0
-      ) {
-        var type = "C";
-        var model = this.getFacilityModel(type);
-        console.log(model)
-        this.ApiProviderr.manageFacilityMember(model, type).then((res) => {
-          if (res.data <= 0) {
-            appCommon.ShownotifyError(
-              "Facility Member Contact is already created"
-            );
-          } else {
-            if (this.props.PageMode != "Edit") {
-              appCommon.showtextalert(
-                "Facility Member Created Successfully",
-                "",
-                "success"
-              );
-            } else {
-              appCommon.showtextalert(
-                "Facility Member Updated Successfully",
-                "",
-                "success"
-              );
-            }
-            this.handleCancel();
-          }
-        });
-      } else if (this.state.FacilityTypeId == 2) {
-        var type = "C";
-        var model = this.getFacilityModel(type);
-        console.log(model)
-        this.ApiProviderr.manageFacilityMember(model, type).then((res) => {
-          if (res.data <= 0) {
-            appCommon.ShownotifyError(
-              "Facility Member Contact is already created"
-            );
-          } else {
-            if (this.props.PageMode != "Edit") {
-              appCommon.showtextalert(
-                "Facility Member Created Successfully",
-                "",
-                "success"
-              );
-            } else {
-              appCommon.showtextalert(
-                "Facility Member Updated Successfully",
-                "",
-                "success"
-              );
-            }
-            this.handleCancel();
-          }
-        });
-      } else {
-        appCommon.showtextalert("At least one flat is required", "", "error");
-      }
-    }
+  // handleSave = async (e) => {
+  //   e.currentTarget.disabled = true;
+  //   if (ValidateControls()) {
+  //     if (
+  //       this.state.FacilityTypeId == 1 &&
+  //       this.state.PropertyDetailsIds.length > 0
+  //     ) {
+  //       var type = "C";
+  //       var model = this.getFacilityModel(type);
+  //       console.log(model)
+  //       this.ApiProviderr.manageFacilityMember(model, type).then((res) => {
+  //         if (res.data <= 0) {
+  //           appCommon.ShownotifyError(
+  //             "Facility Member Contact is already created"
+  //           );
+  //         } else {
+  //           if (this.props.PageMode != "Edit") {
+  //             appCommon.showtextalert(
+  //               "Facility Member Created Successfully",
+  //               "",
+  //               "success"
+  //             );
+  //           } else {
+  //             appCommon.showtextalert(
+  //               "Facility Member Updated Successfully",
+  //               "",
+  //               "success"
+  //             );
+  //           }
+  //           this.handleCancel();
+  //         }
+  //       });
+  //     } else if (this.state.FacilityTypeId == 2) {
+  //       var type = "C";
+  //       var model = this.getFacilityModel(type);
+  //       console.log(model)
+  //       this.ApiProviderr.manageFacilityMember(model, type).then((res) => {
+  //         if (res.data <= 0) {
+  //           appCommon.ShownotifyError(
+  //             "Facility Member Contact is already created"
+  //           );
+  //         } else {
+  //           if (this.props.PageMode != "Edit") {
+  //             appCommon.showtextalert(
+  //               "Facility Member Created Successfully",
+  //               "",
+  //               "success"
+  //             );
+  //           } else {
+  //             appCommon.showtextalert(
+  //               "Facility Member Updated Successfully",
+  //               "",
+  //               "success"
+  //             );
+  //           }
+  //           this.handleCancel();
+  //         }
+  //       });
+  //     } else {
+  //       appCommon.showtextalert("At least one flat is required", "", "error");
+  //     }
+  //   }
 
-    // this.state.ImageData="";
-    // this.state.Image="";
-    // this.state.ImageExt="";
-  };
+  //   // this.state.ImageData="";
+  //   // this.state.Image="";
+  //   // this.state.ImageExt="";
+  // };
 
   handleEdit = async (e) => {
     e.currentTarget.disabled = true;
@@ -1835,14 +1828,14 @@ class FacilityMember extends React.Component {
                     Action={this.handleSave.bind(this, "Save")}
                     ClassName="btn btn-primary"
                   /> */}
-                  <button className="btn btn-primary" onClick={(e)=>this.handleSave(e)}>
+                  {/* <button className="btn btn-primary" onClick={(e)=>this.handleSave(e)}>
                         Save
-                      </button>
-                  {/* <Button
+                      </button> */}
+                  <Button
                                         Id="btnSaveAndApprove"
                                         Text="Save &amp; Approve"
                                         Action={this.handleSave.bind(this, "SaveApprove")}
-                                        ClassName="btn btn-success" /> */}
+                                        ClassName="btn btn-success" />
                   <Button
                     Id="btnCancel"
                     Text="Cancel"
