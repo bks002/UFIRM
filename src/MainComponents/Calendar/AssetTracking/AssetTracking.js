@@ -50,7 +50,7 @@ export default class AssetTracking extends Component {
           accessor: "EndTime",
         },
         {
-          Header: "Duration",
+          Header: "Duration (Min)",
           accessor: "Duration",
         },
         {
@@ -213,17 +213,18 @@ export default class AssetTracking extends Component {
             case "R":
               let assetTrackingData = [];
               rData.forEach((element,index) => {
+                console.log(rData);
                 assetTrackingData.push({
                   Id: index+1,
                   TaskId: element.TaskId,
                   AssetName : element.AssetName,
                   AssetId: element.AssetId,
                   Name: element.Name,
-                  StartDate: element.TimeFrom.split("T")[0],
+                  StartDate: element.DateFrom.split("T")[0],
                   StartTime: element.TimeFrom.split("T")[1],
-                  EndDate: element.TimeTo.split("T")[0],
+                  EndDate: element.DateTo.split("T")[0],
                   EndTime: element.TimeTo.split("T")[1],
-                  Duration: this.calculateDuration(element.TimeFrom.split("T")[1], element.TimeTo.split("T")[1]),
+                  Duration: element.Duration,
                   Status: element.TaskStatus, 
                   Remarks: element.Remarks,
                   Occurence: element.Occurence.split(" ")[0] ,
