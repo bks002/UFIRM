@@ -62,6 +62,7 @@ import ResidentEventPage from '../pages/ResidentEventPage.jsx';
 import PlannerTaskStatus from '../pages/PlannerTaskStatus.jsx';
 import GuardListPage from '../pages/GuardListPage.jsx';
 import AssetTrackingPage from '../pages/AssetTrackingPage.jsx';
+import AttendanceSummaryPage from '../pages/AttendanceSummaryPage.jsx';
 
 
 
@@ -115,15 +116,15 @@ class MainNav extends React.Component {
     }
 
     componentDidMount() {
-        // var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
-        var token = window.sessionStorage.getItem("userinfo_key")
-        if (window.sessionStorage.getItem("userinfo_key") == null) {
-        if (token == null) {
-            const timerId = setTimeout(() => {
-                this.componentDidMount()
-            }, 1000);
-        }}
-        else {
+         var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
+        // var token = window.sessionStorage.getItem("userinfo_key")
+        // if (window.sessionStorage.getItem("userinfo_key") == null) {
+        // if (token == null) {
+        //     const timerId = setTimeout(() => {
+        //         this.componentDidMount()
+        //     }, 1000);
+        // }}
+        // else {
             this.loaduserRole();
             this.loadProperty();
 
@@ -134,7 +135,7 @@ class MainNav extends React.Component {
             if (document.getElementById("app").getAttribute("username") != null) {
                 this.setState({ UserName: document.getElementById("app").getAttribute("username") })
             }
-        }
+        // }
 
     }
     onPropertyChanged = (value) => {
@@ -277,10 +278,10 @@ class MainNav extends React.Component {
 
                     <aside className="main-sidebar elevation-4 sidebar-light-primary">
                         <Link to="/" className="brand-link">
-                            <img src="https://ufirm.in/assets/cdn/public/img/Ufirm-fabicon.png" alt="UFIRM Logo" className="brand-image"></img>
+                            {/* <img src="https://ufirm.in/assets/cdn/public/img/Ufirm-fabicon.png" alt="UFIRM Logo" className="brand-image"></img>
                             <span className="brand-text">
                                 <img src="https://ufirm.in/assets/cdn/public/img/LogoShort.png" alt="UFIRM Logo" ></img>
-                            </span>
+                            </span> */}
                         </Link>
                         <div className="sidebar">
                             <nav className="mt-2">
@@ -790,7 +791,13 @@ class MainNav extends React.Component {
                                                     <li className="nav-item">
                                                         <Link to="/Account/App/AssetTracking" className="nav-link">
                                                             <i className=" fas fa-caret-right nav-icon"></i>
-                                                            <p>AssetTracking</p>
+                                                            <p>Asset Tracking</p>
+                                                        </Link>
+                                                    </li>
+                                                    <li className="nav-item">
+                                                        <Link to="/Account/App/AttendanceSummary" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p>Attendance Summary</p>
                                                         </Link>
                                                     </li>
                                                 </ul>
@@ -959,6 +966,9 @@ class MainNav extends React.Component {
                         </Route>
                         <Route path="/Account/App/GuardList">
                             <GuardListPage />
+                        </Route>
+                        <Route path="/Account/App/AttendanceSummary">
+                            <AttendanceSummaryPage />
                         </Route>
                     </Switch>
                     <footer className="main-footer">

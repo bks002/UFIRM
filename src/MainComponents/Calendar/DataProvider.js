@@ -89,6 +89,18 @@ class DataProvider {
         }
     }
 
+    manageAttendanceData(model, type) {
+        console.log(model)
+        let url = '';
+        switch (type) {
+            case 'R':
+                url = `GetAllEmployeeAttendanceSummary?date=${model[0].Date}`;
+                return srv.getComplaint(url);
+                break;
+            default:
+        }
+    }
+
     manageResidentEvents(model, type) {
         console.log(model)
         let url = '';
@@ -286,6 +298,15 @@ class DataProvider {
                 return srv.get(url);
                 break;
             default:
+        }
+    }
+
+    manageFacility(model, type) {
+        switch (type) {
+        case 'R':
+            let url = `Facility/FacilityMember`;
+            return srv.CallPostService(url, model[0]);
+            break;
         }
     }
 
