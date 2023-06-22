@@ -97,7 +97,21 @@ class DataProvider {
                 url = `GetAllEmployeeAttendanceSummary?date=${model[0].Date}`;
                 return srv.getComplaint(url);
                 break;
+            case 'D':
+                url = `DeleteEmployeeAttendanceSummary?id=${model[0].Id}`;
+                return srv.CallDeleteNewService(url,model[0]);
+                break;
             default:
+        }
+    }
+
+    manageEmployee(model, type) {
+        console.log(model)
+        switch (type) {
+        case 'R':
+            let url = `Facility/FacilityMember`;
+            return srv.CallPostService(url, model[0]);
+            break;
         }
     }
 
@@ -298,15 +312,6 @@ class DataProvider {
                 return srv.get(url);
                 break;
             default:
-        }
-    }
-
-    manageFacility(model, type) {
-        switch (type) {
-        case 'R':
-            let url = `Facility/FacilityMember`;
-            return srv.CallPostService(url, model[0]);
-            break;
         }
     }
 

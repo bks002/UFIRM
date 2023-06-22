@@ -10,10 +10,13 @@ import swal from "sweetalert";
 import { DELETE_CONFIRMATION_MSG } from "../../../Contants/Common";
 import { downloadExcel } from "react-export-table-to-excel";
 import { CSVLink } from 'react-csv'
+import { bindActionCreators } from "redux";
+import departmentActions from "../../../redux/department/action";
+import { connect } from "react-redux";
+import ReactDatePicker from "react-datepicker";
 
 const $ = window.$;
-
-export default class AttendanceSummary extends Component {
+class AttendanceSummary extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -53,8 +56,8 @@ export default class AttendanceSummary extends Component {
       ],
 
       data: [],
-      CategoryData: [],
-      selectedCategoryId: "",
+      EmployeeData: [],
+      selectedEmpId: "",
       selectedSubCategoryId: "",
       usersList: [],
       userIds: "",
@@ -77,7 +80,7 @@ export default class AttendanceSummary extends Component {
       filterFromDate:'',
       filterToDate:'',
       taskStatus:'None',
-      startDate : moment().clone().startOf("month"),
+      summaryDate : new Date(),
       endDate : moment().clone().endOf("month"),
       header :["Task Id", "Category", "Sub Category","Task Name","Occurence","Updated On","Task Status"]
     };
@@ -99,13 +102,32 @@ export default class AttendanceSummary extends Component {
     return model;
   };
 
-  getDeleteTaskModel = (type, taskId) => {
+  getEmployeeModel = (type) => {
+    console.log(this.props.PropertyId);
+    var model = [];
+    switch (type) {
+      case "R":
+        model.push({
+          PropertyId:parseInt(this.props.PropertyId),
+          SearchValue:"NULL",
+          PageSize:100,
+          PageNumber:1,
+          Filter:"All",
+          FacilityType:"Staff"
+        });
+        break;
+      default:
+    }
+    return model;
+  };
+
+  getDeleteTaskModel = (type, Id) => {
     var model = [];
     switch (type) {
       case "D":
         model.push({
           CmdType: type,
-          TaskId: taskId,
+          Id: Id,
         });
         break;
       default:
@@ -126,42 +148,20 @@ export default class AttendanceSummary extends Component {
     return model;
   };
 
-  manageCategory = (model, type) => {
-    this.ApiProvider.manageCategory(model, type).then((resp) => {
-      if (resp.ok && resp.status == 200) {
-        return resp.json().then((rData) => {
-          let catData = [];
-          rData.forEach((element) => {
-            catData.push({
-              Id: element.catId,
-              Name: element.name,
-            });
-          });
-          switch (type) {
-            case "R":
-              this.setState({ CategoryData: catData });
-              break;
-            default:
-          }
-        });
-      }
-    });
-  };
-
   manageEmployee = (model, type) => {
-    this.ApiProvider.manageCategory(model, type).then((resp) => {
+    this.ApiProvider.manageEmployee(model, type).then((resp) => {
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
-          let catData = [];
-          rData.forEach((element) => {
-            catData.push({
-              Id: element.catId,
+          let empData = [];
+          rData.facilityMember.forEach((element) => {
+            empData.push({
+              Id: element.facilityMemberId,
               Name: element.name,
             });
           });
           switch (type) {
             case "R":
-              this.setState({ CategoryData: catData });
+              this.setState({ EmployeeData: empData });
               break;
             default:
           }
@@ -170,11 +170,6 @@ export default class AttendanceSummary extends Component {
     });
   };
 
-  getFacilityMember(value) {
-    var type = "R";
-    var model = this.getModel(type, value);
-    this.manageFacilityMember(model, type);
-  }
 
   manageFacilityMember = (model, type) => {
     this.ApiProvider.manageFacility(model, type).then((resp) => {
@@ -199,7 +194,6 @@ export default class AttendanceSummary extends Component {
   };
 
   manageAttendanceData = (model, type) => {
-    console.log(model);
     this.ApiProvider.manageAttendanceData(model, type).then((resp) => {
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
@@ -218,9 +212,9 @@ export default class AttendanceSummary extends Component {
               this.setState({ data: attendanceData });
               break;
             case "D":
-              if (rData === "Deleted !") {
+              if (rData === "Data deleted successfully!") {
                 appCommon.showtextalert(
-                  "Task Deleted Successfully!",
+                  "Entry Deleted Successfully!",
                   "",
                   "success"
                 );
@@ -237,16 +231,16 @@ export default class AttendanceSummary extends Component {
   };
 
 
-  getCategory() {
+  getEmployee() {
     var type = "R";
-    var model = this.getModel(type);
-    this.manageCategory(model, type);
+    var model = this.getEmployeeModel(type);
+    this.manageEmployee(model, type);
   }
 
   getAttendanceData() {
     var type = "R";
     //today date
-    var date = moment().format("2023-06-20");
+    var date = moment().format("2023-06-22");
     var model = this.getModel(type, date);
     this.manageAttendanceData(model, type);
   }
@@ -276,12 +270,16 @@ export default class AttendanceSummary extends Component {
   });
   }
 
+  onSummaryDateChange = (date) => {
+    this.setState({ summaryDate: date });
+  }
+
   componentDidMount() {
     const startDate = this.state.startDate;
     const endDate = this.state.endDate;
     this.DateRangeConfig(startDate, endDate);
 
-    this.getCategory();
+    this.getEmployee();
     this.getAttendanceData();
   }
 
@@ -290,7 +288,7 @@ export default class AttendanceSummary extends Component {
   };
 
   Filter = () => {
-    if (this.state.selectedCategoryId > 0 ||this.state.assignTo > 0 || this.state.occurance !="" || this.state.taskStatus != "None") {
+    if (this.state.selectedEmpId > 0) {
       this.setState({ filtered: true });
       this.getTasks();
     } else {
@@ -301,11 +299,7 @@ export default class AttendanceSummary extends Component {
   Reset = () => {
     this.setState({
       filtered: false,
-      selectedCategoryId: 0,
-      selectedSubCategoryId: 0,
-      occurance:'',
-      assignTo:0,
-      taskStatus:"None",
+      selectedEmpId: 0,
     });
     //this.getTasks();
   };
@@ -334,8 +328,8 @@ export default class AttendanceSummary extends Component {
       switch (value) {
         case "ok":
           var type = "D";
-          var model = this.getDeleteTaskModel(type, data.TaskId);
-          this.manageTask(model, type);
+          var model = this.getDeleteTaskModel(type, data.Id);
+          this.manageAttendanceData(model, type);
           break;
         case "cancel":
           break;
@@ -405,7 +399,7 @@ export default class AttendanceSummary extends Component {
             >
               <div className="col-12">
                 <div className="card">
-                  {/* <div className="card-header d-flex p-0">
+                  <div className="card-header d-flex p-0">
                     <ul className="nav tableFilterContainer">
                       <li className="nav-item">
                         <select
@@ -413,15 +407,15 @@ export default class AttendanceSummary extends Component {
                           className="form-control"
                           onChange={(e) =>
                             this.setState({
-                              selectedCategoryId: e.target.value,
+                              selectedEmpId: e.target.value,
                             })
                           }
                           disabled={this.state.filtered}
-                          value={this.state.selectedCategoryId}
+                          value={this.state.selectedEmpId}
                         >
-                          <option value={0}>Select Category</option>
-                          {this.state.CategoryData
-                            ? this.state.CategoryData.map((e, key) => {
+                          <option value={0}>Select Employee</option>
+                          {this.state.EmployeeData
+                            ? this.state.EmployeeData.map((e, key) => {
                                 return (
                                   <option key={key} value={e.Id}>
                                     {e.Name}
@@ -432,104 +426,38 @@ export default class AttendanceSummary extends Component {
                         </select>
                       </li>
                       <li className="nav-item">
-                        <select
-                          className="form-control"
-                          onChange={(e) =>
-                            this.setState({
-                              selectedSubCategoryId: e.target.value,
-                            })
-                          }
-                          value={this.state.selectedSubCategoryId}
-                          disabled={this.state.filtered}
-
-                        >
-                          <option value={0}>Sub Category</option>
-                          {this.state.subCategory &&
-                            this.state.subCategory.map((e, key) => {
-                              return (
-                                <option key={key} value={e.SubCategoryId}>
-                                  {e.SubCategoryName}
-                                </option>
-                              );
-                            })}
-                        </select>
-                      </li>
-                      <li>
-                        <select
-                          className="form-control"
-                          onChange={(e) =>
-                            this.setState({
-                              occurance: e.target.value,
-                            })
-                          }
-                          disabled={this.state.filtered}
-                          value={this.state.occurance}
-                        >
-                          <option value="N">Repeat</option>
-                          <option value="D">Daily</option>
-                          <option value="W">Weekly</option>
-                          <option value="M">Monthly</option>
-                          <option value="Y">Yearly</option>
-                        </select>
-                      </li>
-                      <li>
-                        <select
-                          className="form-control"
-                          onChange={(e) =>
-                            this.setState({
-                              taskStatus: e.target.value,
-                            })
-                          }
-                          disabled={this.state.filtered}
-                          value={this.state.taskStatus}
-
-                        >
-                          <option value="None">Task Status</option>
-                          <option value="Pending">Pending</option>
-                          <option value="Complete">Complete</option>
-                          <option value="Actionable">Actionable</option>
-                        </select>
-                      </li>
-                      <li className="nav-item">
                         <div className="input-group input-group-sm">
                           <div className="form-group">
                             <div className="input-group">
-                              <div className="input-group-prepend">
+                              <div className="input-group-prepend" style={{
+                                height: "38px"
+                              }}>
                                 <span className="input-group-text">
                                   <i className="far fa-calendar-alt"></i>
                                 </span>
                               </div>
-                              <input
-                                type="text"
-                                className="form-control float-right"
-                                id="dataRange"
-                          disabled={this.state.filtered}
-                              ></input>
                             </div>
                           </div>
                         </div>
                       </li>
-                      <li>
-                        <select
-                          className="form-control"
-                          onChange={(e) =>
-                            this.setState({
-                              assignTo: e.target.value,
-                            })
-                          }
-                          disabled={this.state.filtered}
-                          value={this.state.assignTo}
-                        >
-                          <option value={0}>Assigned To</option>
-                          {this.state.assign &&
-                            this.state.assign.map((e, key) => {
-                              return (
-                                <option key={key} value={e.assignId}>
-                                  {e.assignName}
-                                </option>
-                              );
-                            })}
-                        </select>
+                      <li className="nav-item" style={{paddingLeft:"unset"}}>
+                        <div className="input-group input-group-sm">
+                          <div className="form-group">
+                            <div className="input-group">
+                              <ReactDatePicker
+                        className="form-control"
+                        selected={this.state.summaryDate}
+                        onChange={this.onSummaryDateChange}
+                        dateFormat="dd/MM/yyyy"
+                        peekNextmonth
+                        showMonthDropdown
+                        showYearDropdown
+                        dropdownMode="select"
+                        id="textStartDate"
+                      />
+                            </div>
+                          </div>
+                        </div>
                       </li>
                       {!this.state.filtered && (
                         <li>
@@ -552,15 +480,6 @@ export default class AttendanceSummary extends Component {
                         </li>
                       )}
                       <li>
-        <button
-                  className="btn btn-info"
-                  name="Export"
-                >
-            <CSVLink data={this.state.data} filename={'Tasklist'} style={{ color: "white" }}><i
-                                className="fa fa-arrow-down"
-                                aria-hidden="true"
-                              ></i> Export</CSVLink>
-                </button>
                         </li>
                     </ul>
                     <ul className="nav ml-auto tableFilterContainer">
@@ -583,7 +502,7 @@ export default class AttendanceSummary extends Component {
                         </div>
                       </li>
                     </ul>
-                  </div> */}
+                  </div>
                   <div className="card-body pt-2">
                     <LoadingOverlay
                       active={this.state.loading}
@@ -615,3 +534,16 @@ export default class AttendanceSummary extends Component {
     );
   }
 }
+
+function mapStoreToprops(state, props) {
+  return {
+    PropertyId: state.Commonreducer.puidn,
+  };
+}
+
+function mapDispatchToProps(dispatch) {
+  const actions = bindActionCreators(departmentActions, dispatch);
+  return { actions };
+}
+export default connect(mapStoreToprops, mapDispatchToProps)(AttendanceSummary);
+
