@@ -76,6 +76,10 @@ export default class TaskList extends Component {
           Header: "Task Status",
           accessor:"TaskStatus"
         },
+        {
+          Header: "Remarks",
+          accessor:"Remarks"
+        },
         // {
         //   Header: "Assigned To",
         // },
