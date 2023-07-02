@@ -330,8 +330,8 @@ export default class ViewTask extends Component {
                               disabled
                             />
                           </div>
-                          {
-                            element.Action === "No" ?(
+                          {/* {
+                            element.Action === "No" ?( */}
                           <div className="col-md-3">
                           <input
                               id="txtName"
@@ -342,8 +342,8 @@ export default class ViewTask extends Component {
                               className="form-control"
                             />
                           </div>
-                            ) : (<div className="col-md-3"></div>)
-                          }
+                            {/* ) : (<div className="col-md-3"></div>)
+                          } */}
                           
                           <div className="col-md-2">
                             <select className="form-control" disabled>

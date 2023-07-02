@@ -278,10 +278,10 @@ class MainNav extends React.Component {
 
                     <aside className="main-sidebar elevation-4 sidebar-light-primary">
                         <Link to="/" className="brand-link">
-                            {/* <img src="https://ufirm.in/assets/cdn/public/img/Ufirm-fabicon.png" alt="UFIRM Logo" className="brand-image"></img>
+                            <img src="https://ufirm.in/assets/cdn/public/img/Ufirm-fabicon.png" alt="UFIRM Logo" className="brand-image"></img>
                             <span className="brand-text">
                                 <img src="https://ufirm.in/assets/cdn/public/img/LogoShort.png" alt="UFIRM Logo" ></img>
-                            </span> */}
+                            </span>
                         </Link>
                         <div className="sidebar">
                             <nav className="mt-2">

@@ -38,7 +38,9 @@ export default class AddTask extends Component {
       assetId: "",
       QRCode: "",
       remarks:"",
-      occurence:""
+      occurence:"",
+      propertyData: [],
+      propertyId: 0,
     };
     this.onStartDateChange = this.onStartDateChange.bind(this);
     this.onEndDateChange = this.onEndDateChange.bind(this);
@@ -62,6 +64,19 @@ export default class AddTask extends Component {
       case "R":
         model.push({
           CmdType: type,
+        });
+        break;
+      default:
+    }
+    return model;
+  };
+  getAssignModel = (type) => {
+    var model = [];
+    switch (type) {
+      case "R":
+        model.push({
+          CmdType: type,
+          PropertyId: this.state.propertyId ? this.state.propertyId : 0,
         });
         break;
       default:
@@ -202,6 +217,28 @@ export default class AddTask extends Component {
     });
   };
 
+  manageProperties = (model, type) => {
+    this.ApiProvider.manageProperties(model, type).then((resp) => {
+      if (resp.ok && resp.status == 200) {
+        return resp.json().then((rData) => {
+          let propertyData = [];
+          rData.forEach((element) => {
+            propertyData.push({
+              propertyId: element.PropertyId,
+              name: element.Name,
+            });
+          });
+          switch (type) {
+            case "R":
+              this.setState({ propertyData: propertyData });
+              break;
+            default:
+          }
+        });
+      }
+    });
+  };
+
   getSubCategory() {
     var type = "R";
     var model = this.getModel(type);
@@ -219,8 +256,14 @@ export default class AddTask extends Component {
 
   getAssign() {
     var type = "R";
-    var model = this.getModel(type);
+    var model = this.getAssignModel(type);
     this.manageAssign(model, type);
+  }
+
+  getAllProperties() {
+    var type = "R";
+    var model = this.getModel(type);
+    this.manageProperties(model, type);
   }
 
   handleSave = (e) => {
@@ -237,11 +280,16 @@ export default class AddTask extends Component {
     if (prevState.selectedCategory !== this.state.selectedCategory) {
       this.getSubCategory();
     }
+
+    if (prevState.propertyId !== this.state.propertyId) {
+      this.getAssign();
+    }
   }
 
   componentDidMount() {
     this.getAssets();
     this.getAssign();
+    this.getAllProperties();
   }
 
   render() {
@@ -450,7 +498,29 @@ export default class AddTask extends Component {
                     </div>
                   </div>
                   <div className="row mt-2">
-                    <div className="col-6">
+                    <div className="col-5">
+                      <label>Property</label>
+                      <select
+                        iid="ddlAssignee"
+                        className="form-control"
+                        onChange={(e) =>
+                          this.setState({
+                            propertyId: e.target.value,
+                          })
+                        }
+                      >
+                        <option value={0}>Select Property</option>
+                        {this.state.propertyData &&
+                          this.state.propertyData.map((e, key) => {
+                            return (
+                              <option key={key} value={e.propertyId}>
+                                {e.name}
+                              </option>
+                            );
+                          })}
+                      </select>
+                    </div>
+                    <div className="col-4">
                       <label>Assign To</label>
                       <select
                         iid="ddlAssignee"

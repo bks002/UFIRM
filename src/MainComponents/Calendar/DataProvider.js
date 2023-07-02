@@ -156,11 +156,23 @@ class DataProvider {
     }
 
     manageAssign(model, type) {
+        console.log(model)
+        let url = '';
+        switch (type) {
+            case 'R':
+                url = `AssignToList?propertyId=${model[0].PropertyId}`;
+                return srv.getComplaint(url);
+                break;
+            default:
+        }
+    }
+
+    manageProperties(model, type) {
         // 
         let url = '';
         switch (type) {
             case 'R':
-                url = `AssignToList`;
+                url = `GetAllProperties`;
                 return srv.getComplaint(url);
                 break;
             default:

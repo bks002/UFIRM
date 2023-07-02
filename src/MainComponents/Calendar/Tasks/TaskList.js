@@ -287,6 +287,7 @@ export default class TaskList extends Component {
       case "R":
         model.push({
           CmdType: type,
+          PropertyId: this.state.rowData.PropertyId ? this.state.rowData.PropertyId : 0,
         });
         break;
       default:
@@ -409,6 +410,7 @@ export default class TaskList extends Component {
 
   manageAssign = (model, type) => {
     this.ApiProvider.manageAssign(model, type).then((resp) => {
+      console.log(model);
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
           let assignData = [];
