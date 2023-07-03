@@ -230,6 +230,8 @@ export default class TaskList extends Component {
       taskStatus:'None',
       startDate : moment().clone().startOf("month"),
       endDate : moment().clone().endOf("month"),
+      propertyId:0,
+      propertyData:[],
       header :["Task Id", "Category", "Sub Category","Task Name","Occurence","Updated On","Task Status"]
     };
     this.ApiProvider = new ApiProvider();
@@ -247,7 +249,7 @@ export default class TaskList extends Component {
     });
   }
 
-  getModel = (type, categoryId, subCategoryId,assignTo,occurance,startDate,endDate,taskStatus) => {
+  getModel = (type, categoryId, subCategoryId,assignTo,occurance,startDate,endDate,taskStatus,propertyId) => {
     var model = [];
     switch (type) {
       case "R":
@@ -259,7 +261,8 @@ export default class TaskList extends Component {
           Occurrence: occurance,
           DteFr : startDate,
           DteTo : endDate,
-          TaskStatus : taskStatus
+          TaskStatus : taskStatus,
+          PropertyId : propertyId
         });
         break;
       default:
@@ -348,6 +351,7 @@ export default class TaskList extends Component {
                   AssignedToId:element.AssignedToId,
                   QRcode: element.QRCode,
                   UpdatedOn : element.UpdatedOn,
+                  PropertyId:element.PropertyId
                 });
               });
               this.setState({ data: taskData });
@@ -431,6 +435,29 @@ export default class TaskList extends Component {
     });
   };
 
+  
+  manageProperties = (model, type) => {
+    this.ApiProvider.manageProperties(model, type).then((resp) => {
+      if (resp.ok && resp.status == 200) {
+        return resp.json().then((rData) => {
+          let propertyData = [];
+          rData.forEach((element) => {
+            propertyData.push({
+              propertyId: element.PropertyId,
+              name: element.Name,
+            });
+          });
+          switch (type) {
+            case "R":
+              this.setState({ propertyData: propertyData });
+              break;
+            default:
+          }
+        });
+      }
+    });
+  };
+
   getCategory() {
     var type = "R";
     var model = this.getModel(type);
@@ -444,6 +471,13 @@ export default class TaskList extends Component {
       ? this.state.selectedCategoryId
       : 0;
     this.manageSubCategory(model, type, categoryId);
+  }
+
+  
+  getAllProperties() {
+    var type = "R";
+    var model = this.getModel(type);
+    this.manageProperties(model, type);
   }
 
   getTasks() {
@@ -461,7 +495,8 @@ export default class TaskList extends Component {
       var startDate  = this.state.filterFromDate ? this.state.filterFromDate :'';
       var endDate  = this.state.filterToDate ? this.state.filterToDate : '';
       var taskStatus = this.state.taskStatus === 'None'? '' : this.state.taskStatus;
-    var model = this.getModel(type, categoryId, subCategoryId, assignToId, occurance,startDate,endDate,taskStatus);
+      var propertyId = this.state.propertyId ? this.state.propertyId : 0;
+    var model = this.getModel(type, categoryId, subCategoryId, assignToId, occurance,startDate,endDate,taskStatus,propertyId);
     this.manageTask(model, type);
   }
   getAssign() {
@@ -513,6 +548,7 @@ export default class TaskList extends Component {
     this.getCategory();
     this.getTasks();
     this.getAssign()
+    this.getAllProperties();
     // this.TaskStatusConfig();
   }
 
@@ -688,6 +724,30 @@ export default class TaskList extends Component {
                               return (
                                 <option key={key} value={e.SubCategoryId}>
                                   {e.SubCategoryName}
+                                </option>
+                              );
+                            })}
+                        </select>
+                      </li>
+
+                      <li className="nav-item">
+                        <select
+                          className="form-control"
+                          onChange={(e) =>
+                            this.setState({
+                              propertyId: e.target.value,
+                            })
+                          }
+                          value={this.state.propertyId}
+                          disabled={this.state.filtered}
+
+                        >
+                          <option value={0}>Property</option>
+                          {this.state.propertyData &&
+                            this.state.propertyData.map((e, key) => {
+                              return (
+                                <option key={key} value={e.propertyId}>
+                                  {e.name}
                                 </option>
                               );
                             })}
