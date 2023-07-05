@@ -43,7 +43,9 @@ export default class EditTask extends Component {
       assetId: "",
       QRCode: props.rowData.QRcode,
       taskData: [],
-      occurence:this.props.rowData.Occurence
+      occurence:this.props.rowData.Occurence,
+      propertyData: [],
+      propertyId: 0,
     };
     this.onStartDateChange = this.onStartDateChange.bind(this);
     this.onEndDateChange = this.onEndDateChange.bind(this);
@@ -67,6 +69,20 @@ export default class EditTask extends Component {
       case "R":
         model.push({
           CmdType: type,
+        });
+        break;
+      default:
+    }
+    return model;
+  };
+
+  getAssignModel = (type) => {
+    var model = [];
+    switch (type) {
+      case "R":
+        model.push({
+          CmdType: type,
+          PropertyId: this.state.propertyId ? this.state.propertyId : 0,
         });
         break;
       default:
@@ -216,7 +232,7 @@ export default class EditTask extends Component {
 
   getAssign() {
     var type = "R";
-    var model = this.getModel(type);
+    var model = this.getAssignModel(type);
     this.manageAssign(model, type);
   }
 
@@ -233,6 +249,9 @@ export default class EditTask extends Component {
   componentDidUpdate(prevProps, prevState) {
     if (prevState.selectedCategory !== this.state.selectedCategory) {
       this.getSubCategory();
+    }
+    if (prevState.propertyId !== this.state.propertyId) {
+      this.getAssign();
     }
   }
 
