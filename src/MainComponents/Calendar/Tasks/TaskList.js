@@ -573,6 +573,7 @@ export default class TaskList extends Component {
       occurance:'',
       assignTo:0,
       taskStatus:"None",
+      propertyId:0,
     });
     //this.getTasks();
   };
@@ -651,6 +652,10 @@ export default class TaskList extends Component {
       prevState.selectedSubCategoryId !== this.state.selectedSubCategoryId
     ) {
       this.getTasks();
+    }
+
+    if (prevState.propertyId !== this.state.propertyId) {
+      this.getAssign();
     }
   }
   onCategorySelected = (val) => {};
