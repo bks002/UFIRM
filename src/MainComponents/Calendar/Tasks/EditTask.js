@@ -487,7 +487,30 @@ export default class EditTask extends Component {
                     </div>
                   </div>
                   <div className="row mt-2">
-                    <div className="col-6">
+                    <div className="col-5">
+                      <label>Property</label>
+                      <select
+                        iid="ddlAssignee"
+                        className="form-control"
+                        value={this.state.propertyId}
+                        onChange={(e) =>
+                          this.setState({
+                            propertyId: e.target.value,
+                          })
+                        }
+                      >
+                        <option value={0}>Select Property</option>
+                        {this.state.propertyData &&
+                          this.state.propertyData.map((e, key) => {
+                            return (
+                              <option key={key} value={e.propertyId}>
+                                {e.name}
+                              </option>
+                            );
+                          })}
+                      </select>
+                    </div>
+                    <div className="col-4">
                       <label>Assign To</label>
                       <select
                         iid="ddlAssignee"
@@ -518,7 +541,7 @@ export default class EditTask extends Component {
                         value={this.state.occurence}
                         onChange={(e) => {
                           this.setState({
-                            occurence: e.target.value,
+                            occurence:e.target.value
                           });
                         }}
                       >
