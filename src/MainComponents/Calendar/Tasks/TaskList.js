@@ -290,7 +290,7 @@ export default class TaskList extends Component {
       case "R":
         model.push({
           CmdType: type,
-          PropertyId: this.state.rowData.PropertyId ? this.state.rowData.PropertyId : 0,
+          PropertyId: this.state.propertyId ? this.state.propertyId : 0,
         });
         break;
       default:
@@ -321,7 +321,6 @@ export default class TaskList extends Component {
   };
 
   manageTask = (model, type) => {
-    console.log(model);
     this.ApiProvider.manageTask(model, type).then((resp) => {
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
