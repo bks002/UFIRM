@@ -26,6 +26,7 @@ export default class ViewTask extends Component {
       editQuesId :'',
       editQuesName :'',
       PageMode: "Home",
+      supervisorRemarks:''
     };
     this.ApiProvider = new ApiProvider();
   }
@@ -53,6 +54,24 @@ export default class ViewTask extends Component {
               });
               console.log(model)
             break;
+      default:
+            }
+
+    return model;
+  };
+  getRemarksModel = (type) => {
+    var model = [];
+    switch (type) {
+      case "C":
+        model.push({
+          CmdType: type,
+          Id: 0,
+          TaskId:this.props.taskId,
+          QuestId:this.state.editQuesId,
+          Date:new Date().toJSON().slice(0,10).replace(/-/g,'-'),
+          Remarks:this.state.supervisorRemarks
+        });
+        break;
       default:
     }
     return model;
@@ -104,6 +123,28 @@ export default class ViewTask extends Component {
                   console.log("Question Saved Successfully!");
                   this.handleCancelEditQuestion();
                 }
+            default:
+          }
+        });
+      }
+    });
+  };
+
+  manageRemarks = (model, type) => {
+    this.ApiProvider.manageRemarks(model, type).then((resp) => {
+      if (resp.ok && resp.status == 200) {
+        return resp.json().then((rData) => {
+          switch (type) {
+            case "C":
+              if (rData === "Data inserted successfully!") {
+                appCommon.showtextalert(
+                  "Remarks Saved Successfully!",
+                  "",
+                  "success"
+                );
+                console.log("Remarks Saved Successfully!");
+                this.handleCancelEditQuestion();
+              }
             default:
           }
         });
@@ -194,6 +235,9 @@ export default class ViewTask extends Component {
   EditQuestion = (data) => {
     this.setState({ PageMode: "EditQuestion",editQuesId:data.QuesId,editQuesName:data.QuesName});
   };
+  AddRemarksPage = (data) => {
+    this.setState({ PageMode: "SupervisorRemarks"});
+  };
   handleCancelEditQuestion = () => {
     this.getQuestion();
     this.setState(
@@ -206,6 +250,12 @@ export default class ViewTask extends Component {
     var type = "U";
     var model = this.getQuesModel(type);
     this.manageQues(model, type);
+  }
+
+  handleAddRemarks = () => {
+    var type = "C";
+    var model = this.getRemarksModel(type);
+    this.manageRemarks(model, type);
   }
 
   render() {
@@ -439,6 +489,14 @@ export default class ViewTask extends Component {
                         }}
                       />
                     </div> 
+                    <div className="col-md-6 mt-4">
+                    <Button
+                      Id="btnSave"
+                      Text="Add Supervisor Remarks"
+                      Action={this.AddRemarksPage}
+                      ClassName="btn btn-primary"
+                    />
+                    </div>
                     <br />
              
                   </div>
@@ -453,6 +511,83 @@ export default class ViewTask extends Component {
                       Id="btnSave"
                       Text="Update"
                       Action={this.handleUpdateQuestion}
+                      ClassName="btn btn-primary"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+                          {this.state.PageMode === "SupervisorRemarks" && (
+
+
+          <div className="row">
+            <div className="col-12">
+              <div className="card card-primary">
+                <div className="card-header">
+                  <h3 className="card-title">Add Supervisor Remarks</h3>
+                  <div className="card-tools">
+                    <button
+                      className="btn btn-tool"
+                      onClick={this.props.closeModal}
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+                </div>
+                <div
+                  className="card-body"
+                  style={{ height: "250px", overflowY: "scroll" }}
+                >
+                  <div className="row">
+                    <div className="col-6">
+                      <label>Task Id</label>
+                      <input
+                        id="txtName"
+                        value={this.props.rowData.TaskId}
+                        disabled
+                        type="text"
+                        className="form-control"
+                      />
+                    </div>
+                    <div className="col-6">
+                      <label>Question Id</label>
+                      <input
+                        id="txtName"
+                        value={this.state.editQuesId}
+                        disabled
+                        type="text"
+                        className="form-control"
+                      />
+                    </div> 
+                    <br/>
+                    <div className="col-6">
+                      <label>Remarks</label>
+                      <input
+                        id="txtName"
+                        type="text"
+                        className="form-control"
+                        onChange={(e) => {
+                          this.setState({ supervisorRemarks: e.target.value });
+                        }}
+                      />
+                    </div> 
+                    <br />
+             
+                  </div>
+                  <div className="modal-footer">
+                    <Button
+                      Id="btnCancel"
+                      Text="Close"
+                      Action={this.handleCancelEditQuestion}
+                      ClassName="btn btn-secondary"
+                    />
+                     <Button
+                      Id="btnSave"
+                      Text="Add"
+                      Action={this.handleAddRemarks}
                       ClassName="btn btn-primary"
                     />
                   </div>

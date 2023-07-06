@@ -212,6 +212,19 @@ class DataProvider {
         }
     }
 
+    manageRemarks(model, type) {
+        // 
+        let url = '';
+        console.log(model)
+        switch (type) {
+            case 'C':
+                url = `CreateTaskWiseFmStatusData`;
+                return srv.CallPostNewService(url, model[0]);
+                break;
+            default:
+        }
+    }
+
     manageAssigne(PropertyId) {
         let url = `Calendar/Assignee/${PropertyId}`;
         return srv.get(url);
