@@ -45,7 +45,7 @@ export default class EditTask extends Component {
       taskData: [],
       occurence:this.props.rowData.Occurence,
       propertyData: [],
-      propertyId: 0,
+      propertyId: props.rowData.PropertyId,
     };
     this.onStartDateChange = this.onStartDateChange.bind(this);
     this.onEndDateChange = this.onEndDateChange.bind(this);
@@ -215,6 +215,28 @@ export default class EditTask extends Component {
     });
   };
 
+  manageProperties = (model, type) => {
+    this.ApiProvider.manageProperties(model, type).then((resp) => {
+      if (resp.ok && resp.status == 200) {
+        return resp.json().then((rData) => {
+          let propertyData = [];
+          rData.forEach((element) => {
+            propertyData.push({
+              propertyId: element.PropertyId,
+              name: element.Name,
+            });
+          });
+          switch (type) {
+            case "R":
+              this.setState({ propertyData: propertyData });
+              break;
+            default:
+          }
+        });
+      }
+    });
+  };
+
   getSubCategory() {
     var type = "R";
     var model = this.getModel(type);
@@ -235,6 +257,13 @@ export default class EditTask extends Component {
     var model = this.getAssignModel(type);
     this.manageAssign(model, type);
   }
+
+  getAllProperties() {
+    var type = "R";
+    var model = this.getModel(type);
+    this.manageProperties(model, type);
+  }
+
 
   handleSave = (e) => {
     e.currentTarget.disabled = true;
@@ -259,6 +288,7 @@ export default class EditTask extends Component {
     this.getAssets();
     this.getAssign();
     this.getSubCategory()
+    this.getAllProperties();
   }
 
   render() {
