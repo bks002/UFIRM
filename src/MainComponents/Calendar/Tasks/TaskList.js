@@ -345,12 +345,14 @@ export default class TaskList extends Component {
                   OccurenceView: this.modifyOccurence(element.Occurence.split(" ")[0]) ,
                   CategoryName: element.CategoryName,
                   SubCategoryName: element.SubCategoryName,
+                  Location:element.Location,
                   EntryType: element.EntryType,
                   AssignedTo: element.AssignedTo,
                   AssignedToId:element.AssignedToId,
                   QRcode: element.QRCode,
                   UpdatedOn : element.UpdatedOn,
-                  PropertyId:element.PropertyId
+                  PropertyId:element.PropertyId,
+                  AssetId:element.AssetId
                 });
               });
               this.setState({ data: taskData });

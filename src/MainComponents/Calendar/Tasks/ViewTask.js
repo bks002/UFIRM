@@ -492,7 +492,7 @@ export default class ViewTask extends Component {
                     <div className="col-md-6 mt-4">
                     <Button
                       Id="btnSave"
-                      Text="Add Supervisor Remarks"
+                      Text="Add FM Remarks"
                       Action={this.AddRemarksPage}
                       ClassName="btn btn-primary"
                     />
@@ -527,7 +527,7 @@ export default class ViewTask extends Component {
             <div className="col-12">
               <div className="card card-primary">
                 <div className="card-header">
-                  <h3 className="card-title">Add Supervisor Remarks</h3>
+                  <h3 className="card-title">Add Facility Member Remarks</h3>
                   <div className="card-tools">
                     <button
                       className="btn btn-tool"

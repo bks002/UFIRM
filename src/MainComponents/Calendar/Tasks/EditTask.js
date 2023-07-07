@@ -17,7 +17,7 @@ export default class EditTask extends Component {
     console.log(props);
     this.state = {
       taskName: props.rowData.Name,
-      location: "",
+      location: props.rowData.Location,
       categoryId: "",
       subCategoryId: "",
       assignTo: props.rowData.AssignedToId,
@@ -40,7 +40,7 @@ export default class EditTask extends Component {
       selectedSubCategory: props.rowData.TaskSubCategoryId,
       subCategory: [],
       assets: [],
-      assetId: "",
+      assetId: props.rowData.AssetId,
       QRCode: props.rowData.QRcode,
       taskData: [],
       occurence:this.props.rowData.Occurence,
@@ -116,7 +116,7 @@ export default class EditTask extends Component {
           AssignTo: parseInt(this.state.assignTo),
           RemindMe: this.state.remindme,
           Location: this.state.location,
-          AssetsID: parseInt(this.state.assetId),
+          AssetsId: parseInt(this.state.assetId),
           QRCode: this.state.QRCode,
         });
         break;
@@ -292,6 +292,7 @@ export default class EditTask extends Component {
   }
 
   render() {
+    console.log(this.props)
     return (
       <div>
         <Modal
@@ -351,6 +352,7 @@ export default class EditTask extends Component {
                         id="txtLocation"
                         placeholder="Enter Location"
                         type="text"
+                        value={this.state.location}
                         className="form-control"
                         onChange={(e) => {
                           this.setState({ location: e.target.value });
@@ -591,6 +593,7 @@ export default class EditTask extends Component {
                       <select
                         iid="ddlAssignee"
                         className="form-control"
+                        value={this.state.assetId}
                         onChange={(e) => {
                           this.setState({ assetId: e.target.value });
                         }}
