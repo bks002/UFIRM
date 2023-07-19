@@ -41,7 +41,7 @@ class DataProvider {
     saveFacilityMember(formdata) {
         let url = '';
         url = `Facility/FacilityMember/Save`;
-        return srv.CallPostFormData(url, formdata);
+        return srv.CallPostFormDataNew(url, formdata);
     }
 
 }

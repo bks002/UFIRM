@@ -174,13 +174,14 @@ class ServiceProvider {
     }
 
     CallPostFormDataNew(url, formData) {
+        axios.defaults.withCredentials = false
         return axios.post(urls.MainUrl + url, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
                 'Access-Control-Allow-Origin': 'true',
                 Authorization: 'Bearer ' + appCommonJs.getapitoken()
             }
-        });
+        })
     }
 
     CallPostService(url, Pdata) {
