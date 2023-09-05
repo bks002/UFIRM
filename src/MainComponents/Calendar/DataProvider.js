@@ -42,7 +42,6 @@ class DataProvider {
     }
 
     manageTask(model, type) {
-        console.log(model)
         let url = '';
         switch (type) {
             case 'C':
@@ -58,7 +57,7 @@ class DataProvider {
                 return srv.CallDeleteNewService(url,model[0]);
                 break;
             case 'R':
-                url = `TaskDetails?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}&dteFr=${model[0].DteFr}&dteTo=${model[0].DteTo}&taskstatus=${model[0].TaskStatus}&propID=${model[0].PropertyId}`;
+                url = `TaskDetails?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}&dteFr=${model[0].DteFr}&dteTo=${model[0].DteTo}&taskstatus=${model[0].TaskStatus}&propID=${model[0].PropertyId}&taskPriority=${model[0].TaskPriority}`;
                 return srv.getComplaint(url);
                 break;
                 case 'SR':
@@ -78,7 +77,6 @@ class DataProvider {
     }
 
     manageAssetTracking(model, type) {
-        console.log(model)
         let url = '';
         switch (type) {
             case 'R':
@@ -161,6 +159,17 @@ class DataProvider {
         switch (type) {
             case 'R':
                 url = `AssignToList?propertyId=${model[0].PropertyId}`;
+                return srv.getComplaint(url);
+                break;
+            default:
+        }
+    }
+
+    manageTaskPriority(model, type) {
+        let url = '';
+        switch (type) {
+            case 'R':
+                url = `GetAllTaskPriorities`;
                 return srv.getComplaint(url);
                 break;
             default:

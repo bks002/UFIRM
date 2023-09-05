@@ -225,6 +225,8 @@ export default class TaskList extends Component {
       occurance: "",
       assignTo: "",
       assign: [],
+      taskPriorityList:[],
+      taskPriority:'',
       filterFromDate:'',
       filterToDate:'',
       taskStatus:'None',
@@ -249,7 +251,7 @@ export default class TaskList extends Component {
     });
   }
 
-  getModel = (type, categoryId, subCategoryId,assignTo,occurance,startDate,endDate,taskStatus,propertyId) => {
+  getModel = (type, categoryId, subCategoryId,assignTo,occurance,startDate,endDate,taskStatus,propertyId,taskPriority) => {
     var model = [];
     switch (type) {
       case "R":
@@ -262,7 +264,8 @@ export default class TaskList extends Component {
           DteFr : startDate,
           DteTo : endDate,
           TaskStatus : taskStatus,
-          PropertyId : propertyId
+          PropertyId : propertyId,
+          TaskPriority:taskPriority
         });
         break;
       default:
@@ -291,6 +294,19 @@ export default class TaskList extends Component {
         model.push({
           CmdType: type,
           PropertyId: this.state.propertyId ? this.state.propertyId : 0,
+        });
+        break;
+      default:
+    }
+    return model;
+  };
+
+  getTaskPriorityModel = (type) => {
+    var model = [];
+    switch (type) {
+      case "R":
+        model.push({
+          CmdType: type,
         });
         break;
       default:
@@ -352,7 +368,8 @@ export default class TaskList extends Component {
                   QRcode: element.QRCode,
                   UpdatedOn : element.UpdatedOn,
                   PropertyId:element.PropertyId,
-                  AssetId:element.AssetId
+                  AssetId:element.AssetId,
+                  TaskPriority : element.TaskPriority
                 });
               });
               this.setState({ data: taskData });
@@ -415,7 +432,6 @@ export default class TaskList extends Component {
 
   manageAssign = (model, type) => {
     this.ApiProvider.manageAssign(model, type).then((resp) => {
-      console.log(model);
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
           let assignData = [];
@@ -428,6 +444,29 @@ export default class TaskList extends Component {
           switch (type) {
             case "R":
               this.setState({ assign: assignData });
+              break;
+            default:
+          }
+        });
+      }
+    });
+  };
+
+  manageTaskPriority = (model, type) => {
+    this.ApiProvider.manageTaskPriority(model, type).then((resp) => {
+      if (resp.ok && resp.status == 200) {
+        return resp.json().then((rData) => {
+          let taskPriorityList = [];
+          rData.forEach((element) => {
+            taskPriorityList.push({
+              Id: element.Id,
+              Name: element.Name,
+            });
+          });
+          console.log(taskPriorityList)
+          switch (type) {
+            case "R":
+              this.setState({ taskPriorityList: taskPriorityList });
               break;
             default:
           }
@@ -497,13 +536,19 @@ export default class TaskList extends Component {
       var endDate  = this.state.filterToDate ? this.state.filterToDate : '';
       var taskStatus = this.state.taskStatus === 'None'? '' : this.state.taskStatus;
       var propertyId = this.state.propertyId ? this.state.propertyId : 0;
-    var model = this.getModel(type, categoryId, subCategoryId, assignToId, occurance,startDate,endDate,taskStatus,propertyId);
+      var taskPriority = this.state.taskPriority ? this.state.taskPriority : 0;
+    var model = this.getModel(type, categoryId, subCategoryId, assignToId, occurance,startDate,endDate,taskStatus,propertyId,taskPriority);
     this.manageTask(model, type);
   }
   getAssign() {
     var type = "R";
     var model = this.getAssignModel(type);
     this.manageAssign(model, type);
+  }
+  getTasksPriority() {
+    var type = "R";
+    var model = this.getTaskPriorityModel(type);
+    this.manageTaskPriority(model, type);
   }
 
   onAddQuestion = (data) => {
@@ -548,6 +593,7 @@ export default class TaskList extends Component {
 
     this.getCategory();
     this.getTasks();
+    this.getTasksPriority();
     this.getAssign()
     this.getAllProperties();
     // this.TaskStatusConfig();
@@ -793,6 +839,30 @@ export default class TaskList extends Component {
                           <option value="Pending">Pending</option>
                           <option value="Complete">Complete</option>
                           <option value="Actionable">Actionable</option>
+                        </select>
+                      </li>
+
+                      <li>
+                        <select
+                          className="form-control"
+                          onChange={(e) =>
+                            this.setState({
+                              taskPriority: e.target.value,
+                            })
+                          }
+                          disabled={this.state.filtered}
+                          value={this.state.taskStatus}
+
+                        >
+                          <option value={0}>Task Priority</option>
+                          {this.state.taskPriorityList &&
+                            this.state.taskPriorityList.map((e, key) => {
+                              return (
+                                <option key={key} value={e.Id}>
+                                  {e.Name}
+                                </option>
+                              );
+                            })}
                         </select>
                       </li>
 
