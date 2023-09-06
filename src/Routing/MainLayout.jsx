@@ -301,6 +301,64 @@ class MainLayout extends React.Component {
                                     </li>
 
                                     {
+                                        this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager") || this.state.userRoles.includes("Property Admin")) ?
+                                            <li className="nav-item has-treeview">
+                                                <a href="#" className="nav-link">
+                                                    <i className="nav-icon fas fa-calendar"></i>
+                                                    <p>
+                                                        Planner<i className="right fas fa-angle-left"></i>
+                                                    </p>
+                                                </a>
+                                                <ul className="nav nav-treeview">
+                                                    {
+                                                        this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Admin") ?
+                                                            <Fragment>
+                                                                <li className="nav-item">
+                                                                    <Link to="/Account/App/CalendarCategory" className="nav-link">
+                                                                        <i className=" fas fa-caret-right nav-icon"></i>
+                                                                        <p>Category </p>
+                                                                    </Link>
+                                                                </li>
+                                                                <li className="nav-item">
+                                                                    <Link to="/Account/App/CalendarSubCategory" className="nav-link">
+                                                                        <i className=" fas fa-caret-right nav-icon"></i>
+                                                                        <p>Sub Category </p>
+                                                                    </Link>
+                                                                </li>
+                                                                <li className="nav-item">
+                                                                    <Link to="/Account/App/EventApproval" className="nav-link">
+                                                                        <i className=" fas fa-caret-right nav-icon"></i>
+                                                                        <p>Event Approval</p>
+                                                                    </Link>
+                                                                </li>
+                                                            </Fragment>
+                                                            : null
+                                                    }
+
+                                                    <li className="nav-item">
+                                                        <Link to="/Account/App/EventCalendar" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p>Events</p>
+                                                        </Link>
+                                                    </li>
+                                                    <li className="nav-item">
+                                                        <Link to="/Account/App/PlannerTask" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p>Tasks</p>
+                                                        </Link>
+                                                    </li>
+                                                    <li className="nav-item">
+                                                        <Link to="/Account/App/ResidentEvent" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p>Resident Events</p>
+                                                        </Link>
+                                                    </li>
+                                                </ul>
+                                            </li>
+                                            : null
+                                    }
+
+                                    {
                                         this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager")) ?
                                             <li className="nav-item has-treeview">
                                                 <a href="#" className="nav-link">
@@ -661,63 +719,7 @@ class MainLayout extends React.Component {
                                             </li>
                                             : null
                                     }
-                                    {
-                                        this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager") || this.state.userRoles.includes("Property Admin")) ?
-                                            <li className="nav-item has-treeview">
-                                                <a href="#" className="nav-link">
-                                                    <i className="nav-icon fas fa-calendar"></i>
-                                                    <p>
-                                                        Planner<i className="right fas fa-angle-left"></i>
-                                                    </p>
-                                                </a>
-                                                <ul className="nav nav-treeview">
-                                                    {
-                                                        this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Admin") ?
-                                                            <Fragment>
-                                                                <li className="nav-item">
-                                                                    <Link to="/Account/App/CalendarCategory" className="nav-link">
-                                                                        <i className=" fas fa-caret-right nav-icon"></i>
-                                                                        <p>Category </p>
-                                                                    </Link>
-                                                                </li>
-                                                                <li className="nav-item">
-                                                                    <Link to="/Account/App/CalendarSubCategory" className="nav-link">
-                                                                        <i className=" fas fa-caret-right nav-icon"></i>
-                                                                        <p>Sub Category </p>
-                                                                    </Link>
-                                                                </li>
-                                                                <li className="nav-item">
-                                                                    <Link to="/Account/App/EventApproval" className="nav-link">
-                                                                        <i className=" fas fa-caret-right nav-icon"></i>
-                                                                        <p>Event Approval</p>
-                                                                    </Link>
-                                                                </li>
-                                                            </Fragment>
-                                                            : null
-                                                    }
-
-                                                    <li className="nav-item">
-                                                        <Link to="/Account/App/EventCalendar" className="nav-link">
-                                                            <i className=" fas fa-caret-right nav-icon"></i>
-                                                            <p>Events</p>
-                                                        </Link>
-                                                    </li>
-                                                    <li className="nav-item">
-                                                        <Link to="/Account/App/PlannerTask" className="nav-link">
-                                                            <i className=" fas fa-caret-right nav-icon"></i>
-                                                            <p>Tasks</p>
-                                                        </Link>
-                                                    </li>
-                                                    <li className="nav-item">
-                                                        <Link to="/Account/App/ResidentEvent" className="nav-link">
-                                                            <i className=" fas fa-caret-right nav-icon"></i>
-                                                            <p>Resident Events</p>
-                                                        </Link>
-                                                    </li>
-                                                </ul>
-                                            </li>
-                                            : null
-                                    }
+                                
                                 </ul>
                             </nav>
                         </div>

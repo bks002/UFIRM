@@ -311,6 +311,99 @@ class MainNav extends React.Component {
                                             </li> */}
                                         </ul>
                                     </li>
+                                    {
+                                        this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager") || this.state.userRoles.includes("Property Admin")) ?
+                                            <li className="nav-item has-treeview">
+                                                <a href="#" className="nav-link">
+                                                    <i className="nav-icon fas fa-calendar"></i>
+                                                    <p>
+                                                        Planner<i className="right fas fa-angle-left"></i>
+                                                    </p>
+                                                </a>
+                                                <ul className="nav nav-treeview">
+                                                    {
+                                                        this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Admin") ?
+                                                            <Fragment>
+                                                                <li className="nav-item">
+                                                                    <Link to="/Account/App/CalendarCategory" className="nav-link">
+                                                                        <i className=" fas fa-caret-right nav-icon"></i>
+                                                                        <p>Category </p>
+                                                                    </Link>
+                                                                </li>
+                                                                <li className="nav-item">
+                                                                    <Link to="/Account/App/CalendarSubCategory" className="nav-link">
+                                                                        <i className=" fas fa-caret-right nav-icon"></i>
+                                                                        <p>Sub Category </p>
+                                                                    </Link>
+                                                                </li>
+                                                                <li className="nav-item">
+                                                                    <Link to="/Account/App/EventApproval" className="nav-link">
+                                                                        <i className=" fas fa-caret-right nav-icon"></i>
+                                                                        <p>Event Approval</p>
+                                                                    </Link>
+                                                                </li>
+                                                            </Fragment>
+                                                            : null
+                                                    }
+
+                                                    <li className="nav-item">
+                                                        <Link to="/Account/App/EventCalendar" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p>Events</p>
+                                                        </Link>
+                                                    </li>
+                                                    <li className="nav-item">
+                                                        <Link to="/Account/App/PlannerTask" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p>Tasks</p>
+                                                        </Link>
+                                                    </li>
+                                                    {/* <li className="nav-item">
+                                                        <Link to="/Account/App/PlannerTaskAudit" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p>Tasks Audit</p>
+                                                        </Link>
+                                                    </li> */}
+                                                    <li className="nav-item">
+                                                        <Link to="/Account/App/TaskEventsCalender" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p>Tasks Events</p>
+                                                        </Link>
+                                                    </li>
+                                                    <li className="nav-item">
+                                                        <Link to="/Account/App/ResidentEvents" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p>Resident Events</p>
+                                                        </Link>
+                                                    </li>
+                                                    <li className="nav-item">
+                                                        <Link to="/Account/App/TaskStatus" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p>Task Status</p>
+                                                        </Link>
+                                                    </li>
+                                                    <li className="nav-item">
+                                                        <Link to="/Account/App/GuardList" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p>Spot Visit Details</p>
+                                                        </Link>
+                                                    </li>
+                                                    <li className="nav-item">
+                                                        <Link to="/Account/App/AssetTracking" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p>Asset Tracking</p>
+                                                        </Link>
+                                                    </li>
+                                                    {/* <li className="nav-item">
+                                                        <Link to="/Account/App/AttendanceSummary" className="nav-link">
+                                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                                            <p>Attendance Summary</p>
+                                                        </Link>
+                                                    </li> */}
+                                                </ul>
+                                            </li>
+                                            : null
+                                    }
 
                                     {
                                         this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager")) ?
@@ -707,99 +800,6 @@ class MainNav extends React.Component {
                                                             <p >Amenities Booking</p>
                                                         </Link>
                                                     </li>
-                                                </ul>
-                                            </li>
-                                            : null
-                                    }
-                                    {
-                                        this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager") || this.state.userRoles.includes("Property Admin")) ?
-                                            <li className="nav-item has-treeview">
-                                                <a href="#" className="nav-link">
-                                                    <i className="nav-icon fas fa-calendar"></i>
-                                                    <p>
-                                                        Planner<i className="right fas fa-angle-left"></i>
-                                                    </p>
-                                                </a>
-                                                <ul className="nav nav-treeview">
-                                                    {
-                                                        this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Admin") ?
-                                                            <Fragment>
-                                                                <li className="nav-item">
-                                                                    <Link to="/Account/App/CalendarCategory" className="nav-link">
-                                                                        <i className=" fas fa-caret-right nav-icon"></i>
-                                                                        <p>Category </p>
-                                                                    </Link>
-                                                                </li>
-                                                                <li className="nav-item">
-                                                                    <Link to="/Account/App/CalendarSubCategory" className="nav-link">
-                                                                        <i className=" fas fa-caret-right nav-icon"></i>
-                                                                        <p>Sub Category </p>
-                                                                    </Link>
-                                                                </li>
-                                                                <li className="nav-item">
-                                                                    <Link to="/Account/App/EventApproval" className="nav-link">
-                                                                        <i className=" fas fa-caret-right nav-icon"></i>
-                                                                        <p>Event Approval</p>
-                                                                    </Link>
-                                                                </li>
-                                                            </Fragment>
-                                                            : null
-                                                    }
-
-                                                    <li className="nav-item">
-                                                        <Link to="/Account/App/EventCalendar" className="nav-link">
-                                                            <i className=" fas fa-caret-right nav-icon"></i>
-                                                            <p>Events</p>
-                                                        </Link>
-                                                    </li>
-                                                    <li className="nav-item">
-                                                        <Link to="/Account/App/PlannerTask" className="nav-link">
-                                                            <i className=" fas fa-caret-right nav-icon"></i>
-                                                            <p>Tasks</p>
-                                                        </Link>
-                                                    </li>
-                                                    {/* <li className="nav-item">
-                                                        <Link to="/Account/App/PlannerTaskAudit" className="nav-link">
-                                                            <i className=" fas fa-caret-right nav-icon"></i>
-                                                            <p>Tasks Audit</p>
-                                                        </Link>
-                                                    </li> */}
-                                                    <li className="nav-item">
-                                                        <Link to="/Account/App/TaskEventsCalender" className="nav-link">
-                                                            <i className=" fas fa-caret-right nav-icon"></i>
-                                                            <p>Tasks Events</p>
-                                                        </Link>
-                                                    </li>
-                                                    <li className="nav-item">
-                                                        <Link to="/Account/App/ResidentEvents" className="nav-link">
-                                                            <i className=" fas fa-caret-right nav-icon"></i>
-                                                            <p>Resident Events</p>
-                                                        </Link>
-                                                    </li>
-                                                    <li className="nav-item">
-                                                        <Link to="/Account/App/TaskStatus" className="nav-link">
-                                                            <i className=" fas fa-caret-right nav-icon"></i>
-                                                            <p>Task Status</p>
-                                                        </Link>
-                                                    </li>
-                                                    <li className="nav-item">
-                                                        <Link to="/Account/App/GuardList" className="nav-link">
-                                                            <i className=" fas fa-caret-right nav-icon"></i>
-                                                            <p>Spot Visit Details</p>
-                                                        </Link>
-                                                    </li>
-                                                    <li className="nav-item">
-                                                        <Link to="/Account/App/AssetTracking" className="nav-link">
-                                                            <i className=" fas fa-caret-right nav-icon"></i>
-                                                            <p>Asset Tracking</p>
-                                                        </Link>
-                                                    </li>
-                                                    {/* <li className="nav-item">
-                                                        <Link to="/Account/App/AttendanceSummary" className="nav-link">
-                                                            <i className=" fas fa-caret-right nav-icon"></i>
-                                                            <p>Attendance Summary</p>
-                                                        </Link>
-                                                    </li> */}
                                                 </ul>
                                             </li>
                                             : null
