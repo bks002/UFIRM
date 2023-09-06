@@ -234,7 +234,10 @@ export default class TaskList extends Component {
       endDate : moment().clone().endOf("month"),
       propertyId:0,
       propertyData:[],
-      header :["Task Id", "Category", "Sub Category","Task Name","Occurence","Updated On","Task Status"]
+      header :["Task Id", "Category", "Sub Category","Task Name","Occurence","Updated On","Task Status"],
+      pendingTasks:0,
+      completedTasks:0,
+      actionableTasks:0,
     };
     this.ApiProvider = new ApiProvider();
   }
@@ -372,7 +375,8 @@ export default class TaskList extends Component {
                   TaskPriority : element.TaskPriority
                 });
               });
-              this.setState({ data: taskData });
+              this.countTasksByStatus(taskData)
+              this.setState({ data: taskData});
               break;
             case "D":
               if (rData === "Deleted !") {
@@ -621,6 +625,10 @@ export default class TaskList extends Component {
       assignTo:0,
       taskStatus:"None",
       propertyId:0,
+      completedTasks:0,
+      pendingTasks:0,
+      actionableTasks:0,
+      taskPriority:0
     });
     //this.getTasks();
   };
@@ -721,6 +729,22 @@ export default class TaskList extends Component {
   //     },
   //   });
   // }
+
+  countTasksByStatus = (data) => {
+    console.log(data)
+    data.forEach((element)=>{
+      if(element.TaskStatus === 'Completed'){
+        this.setState({completedTasks:this.state.completedTasks+1})
+      }
+      if(element.TaskStatus === 'Pending'){
+        this.setState({pendingTasks:this.state.pendingTasks+1})
+      }
+      if(element.TaskStatus === 'Actionable'){
+        this.setState({actionableTasks:this.state.actionableTasks+1})
+      }
+    })
+  };
+
   render() {
     return (
       <div>
@@ -732,6 +756,41 @@ export default class TaskList extends Component {
             >
               <div className="col-12">
                 <div className="card">
+                  <div className="card-header d-flex p-10">
+                    <div className="p-10" style={{marginRight:'10px'}}>
+                      <h6 style={{fontWeight:'600'}}> Completed Tasks</h6>
+                      <input
+                        id="txtName"
+                        value={this.state.completedTasks}
+                        disabled
+                        type="text"
+                        className="form-control"
+                        style={{background:'#336b93',fontWeight:'600',fontSize:'18px',color:'white'}}
+                      />
+                    </div>
+                    <div className="p-10" style={{marginRight:'10px'}}>
+                      <h6 style={{fontWeight:'600'}}> Pending Tasks</h6>
+                      <input
+                        id="txtName"
+                        value={this.state.pendingTasks}
+                        disabled
+                        type="text"
+                        className="form-control"
+                        style={{background:'#f44336e0',fontWeight:'600',fontSize:'18px',color:'white'}}
+                      />
+                    </div>
+                    <div className="p-10" style={{marginRight:'10px'}}>
+                      <h6 style={{fontWeight:'600'}}> Actionable Tasks</h6>
+                      <input
+                        id="txtName"
+                        value={this.state.actionableTasks}
+                        disabled
+                        type="text"
+                        className="form-control"
+                        style={{background:'#17a2b8',fontWeight:'600',fontSize:'18px',color:'white'}}
+                      />
+                    </div>
+                  </div>
                   <div className="card-header d-flex p-0">
                     <ul className="nav tableFilterContainer">
                       <li className="nav-item">
@@ -851,7 +910,7 @@ export default class TaskList extends Component {
                             })
                           }
                           disabled={this.state.filtered}
-                          value={this.state.taskStatus}
+                          value={this.state.taskPriority}
 
                         >
                           <option value={0}>Task Priority</option>
