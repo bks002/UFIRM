@@ -16,6 +16,7 @@ import { DELETE_CONFIRMATION_MSG } from "../../../Contants/Common";
 import EditTask from "./EditTask";
 import { downloadExcel } from "react-export-table-to-excel";
 import { CSVLink } from 'react-csv'
+import LayoutDataProvider from '../../../Routing/LayoutDataProvider'
 
 const $ = window.$;
 
@@ -238,8 +239,10 @@ export default class TaskList extends Component {
       pendingTasks:0,
       completedTasks:0,
       actionableTasks:0,
+      assignedProperty:[]
     };
     this.ApiProvider = new ApiProvider();
+    this.comdbprovider = new LayoutDataProvider();
   }
 
   handleDownloadExcel() {
@@ -253,6 +256,17 @@ export default class TaskList extends Component {
       }
     });
   }
+
+  loadProperty() {
+    this.comdbprovider.getUserAssignedproperty().then(
+        resp => {
+            if (resp && resp.ok && resp.status == 200) {
+                return resp.json().then(rData => {
+                    this.setState({ propertyData: rData });
+                });
+            }
+        });
+}
 
   getModel = (type, categoryId, subCategoryId,assignTo,occurance,startDate,endDate,taskStatus,propertyId,taskPriority) => {
     var model = [];
@@ -467,7 +481,6 @@ export default class TaskList extends Component {
               Name: element.Name,
             });
           });
-          console.log(taskPriorityList)
           switch (type) {
             case "R":
               this.setState({ taskPriorityList: taskPriorityList });
@@ -480,27 +493,27 @@ export default class TaskList extends Component {
   };
 
   
-  manageProperties = (model, type) => {
-    this.ApiProvider.manageProperties(model, type).then((resp) => {
-      if (resp.ok && resp.status == 200) {
-        return resp.json().then((rData) => {
-          let propertyData = [];
-          rData.forEach((element) => {
-            propertyData.push({
-              propertyId: element.PropertyId,
-              name: element.Name,
-            });
-          });
-          switch (type) {
-            case "R":
-              this.setState({ propertyData: propertyData });
-              break;
-            default:
-          }
-        });
-      }
-    });
-  };
+  // manageProperties = (model, type) => {
+  //   this.ApiProvider.manageProperties(model, type).then((resp) => {
+  //     if (resp.ok && resp.status == 200) {
+  //       return resp.json().then((rData) => {
+  //         let propertyData = [];
+  //         rData.forEach((element) => {
+  //           propertyData.push({
+  //             propertyId: element.PropertyId,
+  //             name: element.Name,
+  //           });
+  //         });
+  //         switch (type) {
+  //           case "R":
+  //             this.setState({ propertyData: propertyData });
+  //             break;
+  //           default:
+  //         }
+  //       });
+  //     }
+  //   });
+  // };
 
   getCategory() {
     var type = "R";
@@ -599,7 +612,8 @@ export default class TaskList extends Component {
     this.getTasks();
     this.getTasksPriority();
     this.getAssign()
-    this.getAllProperties();
+    // this.getAllProperties();
+    this.loadProperty()
     // this.TaskStatusConfig();
   }
 
@@ -731,7 +745,6 @@ export default class TaskList extends Component {
   // }
 
   countTasksByStatus = (data) => {
-    console.log(data)
     data.forEach((element)=>{
       if(element.TaskStatus === 'Completed'){
         this.setState({completedTasks:this.state.completedTasks+1})
@@ -857,8 +870,8 @@ export default class TaskList extends Component {
                           {this.state.propertyData &&
                             this.state.propertyData.map((e, key) => {
                               return (
-                                <option key={key} value={e.propertyId}>
-                                  {e.name}
+                                <option key={key} value={e.id}>
+                                  {e.text}
                                 </option>
                               );
                             })}
