@@ -78,6 +78,10 @@ export default class TaskList extends Component {
           accessor:"TaskStatus"
         },
         {
+          Header: "Task Priority",
+          accessor:"TaskPriority"
+        },
+        {
           Header: "Remarks",
           accessor:"Remarks"
         },
