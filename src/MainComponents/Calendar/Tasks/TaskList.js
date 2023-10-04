@@ -234,6 +234,7 @@ export default class TaskList extends Component {
       occurance: "",
       assignTo: "",
       assign: [],
+      dashboardAssign:[],
       taskPriorityList:[],
       taskPriority:'',
       filterFromDate:'',
@@ -478,6 +479,28 @@ export default class TaskList extends Component {
     });
   };
 
+  manageDashboardAssign = (model, type) => {
+    this.ApiProvider.manageDashboardAssign(model, type).then((resp) => {
+      if (resp.ok && resp.status == 200) {
+        return resp.json().then((rData) => {
+          let assignData = [];
+          rData.forEach((element) => {
+            assignData.push({
+              assignId: element.Id,
+              assignName: element.Name,
+            });
+          });
+          switch (type) {
+            case "R":
+              this.setState({ dashboardAssign: assignData });
+              break;
+            default:
+          }
+        });
+      }
+    });
+  };
+
   manageTaskPriority = (model, type) => {
     this.ApiProvider.manageTaskPriority(model, type).then((resp) => {
       if (resp.ok && resp.status == 200) {
@@ -570,6 +593,11 @@ export default class TaskList extends Component {
     var model = this.getAssignModel(type);
     this.manageAssign(model, type);
   }
+  getDashboardAssignList() {
+    var type = "R";
+    var model = this.getAssignModel(type);
+    this.manageDashboardAssign(model, type);
+  }
   getTasksPriority() {
     var type = "R";
     var model = this.getTaskPriorityModel(type);
@@ -620,6 +648,7 @@ export default class TaskList extends Component {
     this.getTasks();
     this.getTasksPriority();
     this.getAssign()
+    this.getDashboardAssignList()
     // this.getAllProperties();
     this.loadProperty()
     // this.TaskStatusConfig();
@@ -733,6 +762,7 @@ export default class TaskList extends Component {
 
     if (prevState.propertyId !== this.state.propertyId) {
       this.getAssign();
+      this.getDashboardAssignList()
     }
   }
   onCategorySelected = (val) => {};
@@ -999,8 +1029,8 @@ export default class TaskList extends Component {
                           value={this.state.assignTo}
                         >
                           <option value={0}>Assigned To</option>
-                          {this.state.assign &&
-                            this.state.assign.map((e, key) => {
+                          {this.state.dashboardAssign &&
+                            this.state.dashboardAssign.map((e, key) => {
                               return (
                                 <option key={key} value={e.assignId}>
                                   {e.assignName}
