@@ -165,6 +165,18 @@ class DataProvider {
         }
     }
 
+    manageDashboardAssign(model, type) {
+        console.log(model)
+        let url = '';
+        switch (type) {
+            case 'R':
+                url = `DashboardAssignToList?propertyId=${model[0].PropertyId}`;
+                return srv.getComplaint(url);
+                break;
+            default:
+        }
+    }
+
     manageTaskPriority(model, type) {
         let url = '';
         switch (type) {
