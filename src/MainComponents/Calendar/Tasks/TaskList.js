@@ -1109,20 +1109,12 @@ export default class TaskList extends Component {
                       active={this.state.loading}
                       spinner={<PropagateLoader color="#336B93" size={30} />}
                     >
-                      {this.state.occurance === "D" ?
-                      <DataTable
-                        data={this.state.data}
-                        columns={this.state.columnsWithoutDueDate}
-                        hideGridSearchAndSize={true}
-                        globalSearch={true}
-                        isDefaultPagination={true}
-                      />:
                       <DataTable
                       data={this.state.data}
                       columns={this.state.columns}
                       hideGridSearchAndSize={true}
                       globalSearch={true}
-                      isDefaultPagination={true}/> }
+                      isDefaultPagination={true}/> 
                       
                     </LoadingOverlay>
                   </div>
