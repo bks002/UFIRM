@@ -60,18 +60,22 @@ class DataProvider {
                 url = `TaskDetails?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}&dteFr=${model[0].DteFr}&dteTo=${model[0].DteTo}&taskstatus=${model[0].TaskStatus}&propID=${model[0].PropertyId}&taskPriorityId=${model[0].TaskPriority}`;
                 return srv.getComplaint(url);
                 break;
-                case 'SR':
-                    url = `TaskDetailsWithQuestion?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}&dteFr=${model[0].DteFr}&dteTo=${model[0].DteTo}`;
+            case 'SR':
+                url = `TaskDetailsWithQuestion?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}&dteFr=${model[0].DteFr}&dteTo=${model[0].DteTo}`;
+                return srv.getComplaint(url);
+                break;
+                case 'T':
+                url = `TaskDetails?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}`;
+                return srv.getComplaint(url);
+                break;
+            case 'TaskWithQuestionName':
+                    url = `TaskDetailsWithQuestion?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}`;
                     return srv.getComplaint(url);
                     break;
-                    case 'T':
-                    url = `TaskDetails?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}`;
-                    return srv.getComplaint(url);
-                    break;
-                case 'TaskWithQuestionName':
-                        url = `TaskDetailsWithQuestion?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}`;
-                        return srv.getComplaint(url);
-                        break;
+            case 'GetAllTaskWiseSummary':
+                url = `GetAllTaskWiseSummary?categoryId=${model[0].CategoryId}&subCategoryId=${model[0].SubCategoryId}&occurrence=${model[0].Occurrence}&dateFrom=${model[0].DteFr}&dateTo=${model[0].DteTo}&status=${model[0].TaskStatus}&priorityId=${model[0].TaskPriority}`;
+                return srv.getComplaint(url);
+                break;
             default:
         }
     }
