@@ -19,109 +19,45 @@ export default class ViewTask extends Component {
     super(props);
     this.state = {
       taskId: "",
-      QuestionName: "",
-      QuesId: "",
-      QuesData: [],
-      editQuesId :'',
-      editQuesName :'',
+      catId:"",
       PageMode: "Home",
-      supervisorRemarks:''
+      TaskData:[],
+      TaskDefaultData:[],
+      taskStatus:'All'
     };
     this.ApiProvider = new ApiProvider();
   }
 
-  getQuesModel = (type, Id) => {
+  getTaskModel = (type, catId,occurance) => {
     var model = [];
     switch (type) {
-      case "R":
+      case "GetAllTaskWiseStatusFinalDash":
         model.push({
-          CmdType: type,
-          Id: Id,
+          CmdType: 'GetAllTaskWiseStatusFinalDash',
+          catId: catId,
+          occurance:occurance
         });
         break;
-        case "U":
-          model.push({
-            TaskID: this.props.taskId,
-            QuestID: this.state.editQuesId,
-            QuestionName: this.state.editQuesName,
-          });
-          break;
-        case 'D':
-            model.push({
-                CmdType: type,
-                Id: Id,
-              });
-              console.log(model)
-            break;
       default:
             }
 
     return model;
   };
-  getRemarksModel = (type) => {
-    var model = [];
-    switch (type) {
-      case "C":
-        model.push({
-          CmdType: type,
-          Id: 0,
-          TaskId:this.props.taskId,
-          QuestId:this.state.editQuesId,
-          Date:new Date().toJSON().slice(0,10).replace(/-/g,'-'),
-          Remarks:this.state.supervisorRemarks
-        });
-        break;
-      default:
-    }
-    return model;
-  };
 
-  manageQues = (model, type) => {
-    this.ApiProvider.manageQues(model, type).then((resp) => {
+  manageTask = (model, type) => {
+    this.ApiProvider.manageTask(model, type).then((resp) => {
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
           switch (type) {
-            case "C":
-              if (rData === "Created !") {
-                appCommon.showtextalert(
-                  "Question Saved Successfully!",
-                  "",
-                  "success"
-                );
-                console.log("Question Saved Successfully!");
-                this.handleCancel();
-              }
-            case "R":
-              let quesData = rData.map((element) => ({
-                QuesId: element.QuestID,
-                QuesName: element.QuestionName,
-                Action:element.Action,
-                Remark:element.Remarks
+            case "GetAllTaskWiseStatusFinalDash":
+              let taskData = rData.map((element) => ({
+                TaskName: element.TaskName,
+                AssignToName: element.AssignToName,
+                Updatedon:element.Updatedon.split('T')[0],
+                TaskStatus:element.TaskStatus
               }));
-              this.setState({ QuesData: quesData });
+              this.setState({ TaskData: taskData , TaskDefaultData : taskData});
               break;
-            case "D":
-              if (rData === "Deleted !") {
-                appCommon.showtextalert(
-                  "Question Deleted Successfully!",
-                  "",
-                  "success"
-                );
-              } else {
-                appCommon.showtextalert(rData, "", "error");
-              }
-              this.getQuestion();
-              break;
-              case "U":
-                if (rData === "sucess !") {
-                  appCommon.showtextalert(
-                    "Question Updated Successfully!",
-                    "",
-                    "success"
-                  );
-                  console.log("Question Saved Successfully!");
-                  this.handleCancelEditQuestion();
-                }
             default:
           }
         });
@@ -129,133 +65,31 @@ export default class ViewTask extends Component {
     });
   };
 
-  manageRemarks = (model, type) => {
-    this.ApiProvider.manageRemarks(model, type).then((resp) => {
-      if (resp.ok && resp.status == 200) {
-        return resp.json().then((rData) => {
-          switch (type) {
-            case "C":
-              if (rData === "Data inserted successfully!") {
-                appCommon.showtextalert(
-                  "Remarks Saved Successfully!",
-                  "",
-                  "success"
-                );
-                console.log("Remarks Saved Successfully!");
-                this.handleCancelEditQuestion();
-              }
-            default:
-          }
-        });
-      }
-    });
-  };
-
-  getQuestion() {
-    var type = "R";
-    const taskId = this.props.rowData.TaskId;
-    var model = this.getQuesModel(type, taskId);
-    this.manageQues(model, type);
+  getTasks() {
+    var type = "GetAllTaskWiseStatusFinalDash";
+    const categoryId = this.props.rowData.CategoryId;
+    const occurance = this.props.occurance
+    var model = this.getTaskModel(type, categoryId,occurance);
+    this.manageTask(model, type);
   }
 
   componentDidMount() {
-    this.getQuestion();
+    this.getTasks();
   }
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevState.selectedCategory !== this.state.selectedCategory) {
-      this.getSubCategory();
-    }
-  }
 
   handleCancel = () => {
     this.props.closeModal();
   };
 
-  removeQuesFields = (QuesId) => {
-      console.log(QuesId)
-    //debugger
-    let myhtml = document.createElement("div");
-    myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
-    alert: swal({
-      buttons: {
-        ok: "Yes",
-        cancel: "No",
-      },
-      content: myhtml,
-      icon: "warning",
-      closeOnClickOutside: false,
-      dangerMode: true,
-    }).then((value) => {
-      switch (value) {
-        case "ok":
-          this.setState({ QuesId: QuesId }, () => {
-            var type = "D";
-            var model = this.getQuesModel(type, QuesId);
-            this.manageQues(model, type);
-          });
-          break;
-        case "cancel":
-          break;
-        default:
-          break;
-      }
-    });
+  Filter = () => {
+    if (this.state.taskStatus === 'All') {
+      this.state.TaskData = this.state.TaskDefaultData
+    } else {
+      this.state.TaskData = this.state.TaskDefaultData.filter(task => task.TaskStatus === this.state.taskStatus);
+    }
   };
 
-  DeleteQuestion = (data) => {
-    console.log(data)
-    let myhtml = document.createElement("div");
-    myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
-    alert: swal({
-      buttons: {
-        ok: "Yes",
-        cancel: "No",
-      },
-      content: myhtml,
-      icon: "warning",
-      closeOnClickOutside: false,
-      dangerMode: true,
-    }).then((value) => {
-      switch (value) {
-        case "ok":
-          var type = "D";
-          var model = this.getQuesModel(type, data.QuesId);
-          this.manageQues(model, type);
-          break;
-        case "cancel":
-          break;
-        default:
-          break;
-      }
-    });
-  };
-
-  EditQuestion = (data) => {
-    this.setState({ PageMode: "EditQuestion",editQuesId:data.QuesId,editQuesName:data.QuesName});
-  };
-  AddRemarksPage = (data) => {
-    this.setState({ PageMode: "SupervisorRemarks"});
-  };
-  handleCancelEditQuestion = () => {
-    this.getQuestion();
-    this.setState(
-      {
-        PageMode: "Home",
-      }
-    );
-  }
-  handleUpdateQuestion = () => {
-    var type = "U";
-    var model = this.getQuesModel(type);
-    this.manageQues(model, type);
-  }
-
-  handleAddRemarks = () => {
-    var type = "C";
-    var model = this.getRemarksModel(type);
-    this.manageRemarks(model, type);
-  }
 
   render() {
     return (
@@ -285,137 +119,92 @@ export default class ViewTask extends Component {
                   className="card-body"
                   style={{ height: "450px", overflowY: "scroll" }}
                 >
-                  <div className="row">
-                    <div className="col-6">
-                      <label>Task Id</label>
-                      <input
-                        id="txtName"
-                        value={this.props.rowData.TaskId}
-                        disabled
-                        type="text"
-                        className="form-control"
-                      />
-                    </div>
-                    <div className="col-6">
-                      <label>Task Name</label>
-                      <input
-                        id="txtName"
-                        value={this.props.rowData.Name}
-                        disabled
-                        placeholder="Enter Task"
-                        type="text"
-                        className="form-control"
-                      />
-                    </div> 
-                    <br/>
-                    <div className="col-6">
-                      <label>Assigned To</label>
-                      <input
-                        id="txtName"
-                        value={this.props.rowData.AssignedTo}
-                        disabled
-                        type="text"
-                        className="form-control"
-                      />
-                    </div> 
-                    <div className="col-6">
-                      <label>QR Code</label>
-                      <input
-                        id="txtName"
-                        value={this.props.rowData.QRcode}
-                        disabled
-                        type="text"
-                        className="form-control"
-                      />
-                    </div> 
-                    <br />
-                    <div className="col-6">
-                      <label>Start Date</label>
-                      <input
-                        id="txtName"
-                        value={this.props.rowData.DateFrom}
-                        disabled
-                        type="text"
-                        className="form-control"
-                      />
-                    </div> 
-                    <div className="col-6">
-                      <label>End Data</label>
-                      <input
-                        id="txtName"
-                        value={this.props.rowData.DateTo}
-                        disabled
-                        type="text"
-                        className="form-control"
-                      />
-                    </div> 
-                    <br />                    
+                                      <ul className="nav tableFilterContainer">
+                      <li>
+                        <select
+                          className="form-control"
+                          onChange={(e) =>
+                            this.setState({
+                              taskStatus: e.target.value,
+                            })
+                          }
+                          value={this.state.taskStatus}
+                        >
+                          <option value="All">All</option>
+                          <option value="Pending">Pending</option>
+                          <option value="Completed">Complete</option>
+                          <option value="Actionable">Actionable</option>
+                        </select>
+                      </li>
+                      <li>
+                          <Button
+                            id="btnNewTask"
+                            Action={this.Filter.bind(this)}
+                            ClassName="btn btn-primary ml-2"
+                            Text="Filter"
+                          />
+                        </li>
+                    </ul>
+                  <div className="row">                   
                     <div className="col-md-12">
                       <div className="row">
                       <div className="col-md-5" style={{ marginTop: "20px" }}>
-                      <label>Task Questionnaire</label>
+                      <label>Task Name</label>
                       </div>
                       <div className="col-md-3" style={{ marginTop: "20px" }}>
-                      <label>Remark</label>
+                      <label>Assigned To</label>
+                      </div>
+                      <div className="col-md-2" style={{ marginTop: "20px" }}>
+                      <label>Updated On</label>
                       </div>
                       <div className="col-md-2" style={{ marginTop: "20px" }}>
                       <label>Status</label>
                       </div>
-                      <div className="col-md-2" style={{ marginTop: "20px" }}>
-                      <label>Actiom</label>
-                      </div>
                       </div>
                     </div>
-                    {this.state.QuesData.map((element, index) => (
+                    {this.state.TaskData.map((element, index) => (
                       <div className="col-md-12" style={{ marginTop: "20px" }}>
-                        <div style={{ display: "flex" }}>
+                        <div style={{ display: "flex" }} key={index}>
                           <div className="col-md-5">
                             <input
                               id="txtName"
                               type="text"
                               name="QuestionName"
                               className="form-control"
-                              value={element.QuesName}
+                              value={element.TaskName}
                               disabled
                             />
                           </div>
-                          {/* {
-                            element.Action === "No" ?( */}
                           <div className="col-md-3">
                           <input
                               id="txtName"
                               type="text"
                               name="Remark"
-                              value={element.Remark}
+                              value={element.AssignToName}
                               disabled
                               className="form-control"
                             />
                           </div>
-                            {/* ) : (<div className="col-md-3"></div>)
-                          } */}
-                          
                           <div className="col-md-2">
-                            <select className="form-control" disabled>
-                              <option value={element.Action}>{element.Action}</option>
-                            </select>
+                          <input
+                              id="txtName"
+                              type="text"
+                              name="Remark"
+                              value={element.Updatedon}
+                              disabled
+                              className="form-control"
+                            />
                           </div>
                           <div className="col-md-2">
-                          <button
-                  className="btn btn-sm btn-success"
-                  onClick={this.EditQuestion.bind(this, element)}
-                  title="Edit"
-                  style={{ marginRight: "5px" }}
-                >
-                  <i className="fa fa-edit"></i>
-                </button>
-                <button
-                  className="btn btn-sm btn-danger"
-                  onClick={this.DeleteQuestion.bind(this, element)}
-                  title="View"
-                >
-                  <i className="fa fa-trash"></i>
-                </button>
-                            </div>
+                          <input
+                              id="txtName"
+                              type="text"
+                              name="Remark"
+                              value={element.TaskStatus}
+                              disabled
+                              className="form-control"
+                            />
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -426,168 +215,6 @@ export default class ViewTask extends Component {
                       Text="Close"
                       Action={this.handleCancel}
                       ClassName="btn btn-secondary"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-                  {this.state.PageMode === "EditQuestion" && (
-
-
-          <div className="row">
-            <div className="col-12">
-              <div className="card card-primary">
-                <div className="card-header">
-                  <h3 className="card-title">Edit Question</h3>
-                  <div className="card-tools">
-                    <button
-                      className="btn btn-tool"
-                      onClick={this.props.closeModal}
-                    >
-                      <i className="fas fa-times"></i>
-                    </button>
-                  </div>
-                </div>
-                <div
-                  className="card-body"
-                  style={{ height: "250px", overflowY: "scroll" }}
-                >
-                  <div className="row">
-                    <div className="col-6">
-                      <label>Task Id</label>
-                      <input
-                        id="txtName"
-                        value={this.props.rowData.TaskId}
-                        disabled
-                        type="text"
-                        className="form-control"
-                      />
-                    </div>
-                    <div className="col-6">
-                      <label>Question Id</label>
-                      <input
-                        id="txtName"
-                        value={this.state.editQuesId}
-                        disabled
-                        type="text"
-                        className="form-control"
-                      />
-                    </div> 
-                    <br/>
-                    <div className="col-6">
-                      <label>Edit Question Name</label>
-                      <input
-                        id="txtName"
-                        value={this.state.editQuesName}
-                        type="text"
-                        className="form-control"
-                        onChange={(e) => {
-                          this.setState({ editQuesName: e.target.value });
-                        }}
-                      />
-                    </div> 
-                    <div className="col-md-6 mt-4">
-                    <Button
-                      Id="btnSave"
-                      Text="Add FM Remarks"
-                      Action={this.AddRemarksPage}
-                      ClassName="btn btn-primary"
-                    />
-                    </div>
-                    <br />
-             
-                  </div>
-                  <div className="modal-footer">
-                    <Button
-                      Id="btnCancel"
-                      Text="Close"
-                      Action={this.handleCancelEditQuestion}
-                      ClassName="btn btn-secondary"
-                    />
-                     <Button
-                      Id="btnSave"
-                      Text="Update"
-                      Action={this.handleUpdateQuestion}
-                      ClassName="btn btn-primary"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-                          {this.state.PageMode === "SupervisorRemarks" && (
-
-
-          <div className="row">
-            <div className="col-12">
-              <div className="card card-primary">
-                <div className="card-header">
-                  <h3 className="card-title">Add Facility Member Remarks</h3>
-                  <div className="card-tools">
-                    <button
-                      className="btn btn-tool"
-                      onClick={this.props.closeModal}
-                    >
-                      <i className="fas fa-times"></i>
-                    </button>
-                  </div>
-                </div>
-                <div
-                  className="card-body"
-                  style={{ height: "250px", overflowY: "scroll" }}
-                >
-                  <div className="row">
-                    <div className="col-6">
-                      <label>Task Id</label>
-                      <input
-                        id="txtName"
-                        value={this.props.rowData.TaskId}
-                        disabled
-                        type="text"
-                        className="form-control"
-                      />
-                    </div>
-                    <div className="col-6">
-                      <label>Question Id</label>
-                      <input
-                        id="txtName"
-                        value={this.state.editQuesId}
-                        disabled
-                        type="text"
-                        className="form-control"
-                      />
-                    </div> 
-                    <br/>
-                    <div className="col-6">
-                      <label>Remarks</label>
-                      <input
-                        id="txtName"
-                        type="text"
-                        className="form-control"
-                        onChange={(e) => {
-                          this.setState({ supervisorRemarks: e.target.value });
-                        }}
-                      />
-                    </div> 
-                    <br />
-             
-                  </div>
-                  <div className="modal-footer">
-                    <Button
-                      Id="btnCancel"
-                      Text="Close"
-                      Action={this.handleCancelEditQuestion}
-                      ClassName="btn btn-secondary"
-                    />
-                     <Button
-                      Id="btnSave"
-                      Text="Add"
-                      Action={this.handleAddRemarks}
-                      ClassName="btn btn-primary"
                     />
                   </div>
                 </div>

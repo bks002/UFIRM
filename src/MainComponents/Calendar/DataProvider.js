@@ -73,9 +73,24 @@ class DataProvider {
                     return srv.getComplaint(url);
                     break;
             case 'GetAllTaskWiseSummary':
-                url = `GetAllTaskWiseSummary?categoryId=${model[0].CategoryId}&subCategoryId=${model[0].SubCategoryId}&occurrence=${model[0].Occurrence}&dateFrom=${model[0].DteFr}&dateTo=${model[0].DteTo}&status=${model[0].TaskStatus}&priorityId=${model[0].TaskPriority}`;
+                // url = `GetAllTaskWiseSummary?categoryId=${model[0].CategoryId}&subCategoryId=${model[0].SubCategoryId}&occurrence=${model[0].Occurrence}&dateFrom=${model[0].DteFr}&dateTo=${model[0].DteTo}&status=${model[0].TaskStatus}&priorityId=${model[0].TaskPriority}`;
+                let url = 'GetAllTaskWiseSummary?';
+
+                for (let key in model[0]) {
+                    if (model[0].hasOwnProperty(key)) {
+                        url += `${key}=${model[0][key]}&`;
+                    }
+                }
+                
+                // Remove the trailing '&' if it's present
+                if (url.endsWith('&')) {
+                    url = url.slice(0, -1);
+                }
                 return srv.getComplaint(url);
                 break;
+            case 'GetAllTaskWiseStatusFinalDash':
+                url = `GetAllTaskWiseStatusFinalDash?categoryId=${model[0].catId}&occurance=${model[0].occurance}`
+                return srv.getComplaint(url);
             default:
         }
     }

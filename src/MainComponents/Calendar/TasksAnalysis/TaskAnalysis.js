@@ -54,25 +54,11 @@ export default class TaskAnalysis extends Component {
           Header: "Action Item",
           accessor:"ActionItem"
         },
-        // {
-        //   Header: "Assigned To",
-        // },
-        // {
-        //   Header: "Assigned By",
-        // },
         {
           Header: "Action",
           Cell: (data) => {
             return (
               <div style={{ display: "flex" }}>
-                <button
-                  className="btn btn-sm btn-primary"
-                  onClick={this.AddQuestion.bind(this, data.cell.row.original)}
-                  title="Add"
-                  style={{ marginRight: "5px" }}
-                >
-                  <i className="fa fa-plus"></i>
-                </button>
                 <button
                   className="btn btn-sm btn-info"
                   onClick={this.ViewTask.bind(this, data.cell.row.original)}
@@ -80,21 +66,6 @@ export default class TaskAnalysis extends Component {
                   style={{ marginRight: "5px" }}
                 >
                   <i className="fa fa-eye"></i>
-                </button>
-                <button
-                  className="btn btn-sm btn-success"
-                  onClick={this.EditTask.bind(this, data.cell.row.original)}
-                  title="View"
-                  style={{ marginRight: "5px" }}
-                >
-                  <i className="fa fa-edit"></i>
-                </button>
-                <button
-                  className="btn btn-sm btn-danger"
-                  onClick={this.DeleteTask.bind(this, data.cell.row.original)}
-                  title="View"
-                >
-                  <i className="fa fa-trash"></i>
                 </button>
               </div>
             );
@@ -193,7 +164,19 @@ export default class TaskAnalysis extends Component {
     var model = [];
     switch (type) {
       case "GetAllTaskWiseSummary":
-        model.push({
+        // model.push({
+        //   CmdType: type,
+        //   CategoryId: categoryId,
+        //   SubCategoryId: subCategoryId,
+        //   AssignedTo: assignTo,
+        //   Occurrence: occurance,
+        //   DteFr : startDate,
+        //   DteTo : endDate,
+        //   TaskStatus : taskStatus,
+        //   PropertyId : propertyId,
+        //   TaskPriority:taskPriority
+        // });
+        let obj = {
           CmdType: type,
           CategoryId: categoryId,
           SubCategoryId: subCategoryId,
@@ -204,7 +187,13 @@ export default class TaskAnalysis extends Component {
           TaskStatus : taskStatus,
           PropertyId : propertyId,
           TaskPriority:taskPriority
-        });
+        }
+        for(let key in obj){
+          if(obj[key] == '' || obj[key] == 0 ||obj[key] == undefined || obj[key] == null){
+            delete obj[key]
+          }
+        }
+        model.push(obj)
         break;
       default:
     }
@@ -275,7 +264,6 @@ export default class TaskAnalysis extends Component {
   };
 
   manageTask = (model, type) => {
-    console.log(model)
     this.ApiProvider.manageTask(model, type).then((resp) => {
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
@@ -285,6 +273,7 @@ export default class TaskAnalysis extends Component {
               rData.forEach((element) => {
                 taskData.push({
                   Id: element.Id,
+                  CategoryId:element.CategoryId,
                   CategoryName: element.CategoryName,
                   TaskName: element.TaskName,
                   TotalTasks: element.TotalTasks,
@@ -466,6 +455,7 @@ export default class TaskAnalysis extends Component {
 
   getTasks() {
     var type = "GetAllTaskWiseSummary";
+    var propertyId = this.state.propertyId ? this.state.propertyId : 0;
     var categoryId = this.state.selectedCategoryId
       ? this.state.selectedCategoryId
       : 0;
@@ -475,11 +465,10 @@ export default class TaskAnalysis extends Component {
       var assignToId = this.state.assignTo
       ? this.state.assignTo
       : 0;
-      var occurance = this.state.occurance ? this.state.occurance : '';
-      var startDate  = this.state.filterFromDate ? this.state.filterFromDate :'';
-      var endDate  = this.state.filterToDate ? this.state.filterToDate : '';
-      var taskStatus = this.state.taskStatus === 'None'? '' : this.state.taskStatus;
-      var propertyId = this.state.propertyId ? this.state.propertyId : 0;
+      var occurance = this.state.occurance ? this.state.occurance : null;
+      var startDate  = this.state.filterFromDate ? this.state.filterFromDate :null;
+      var endDate  = this.state.filterToDate ? this.state.filterToDate : null;
+      var taskStatus = this.state.taskStatus === 'None'? null : this.state.taskStatus;
       var taskPriority = this.state.taskPriority ? this.state.taskPriority : 0;
     var model = this.getTaskModel(type, categoryId, subCategoryId, assignToId, occurance,startDate,endDate,taskStatus,propertyId,taskPriority);
     this.manageTask(model, type);
@@ -555,7 +544,7 @@ export default class TaskAnalysis extends Component {
   };
 
   Filter = () => {
-    if (this.state.selectedCategoryId > 0 ||this.state.assignTo > 0 || this.state.occurance !="" || this.state.taskStatus != "None") {
+    if (this.state.selectedCategoryId > 0) {
       this.setState({ filtered: true });
       this.getTasks();
     } else {
@@ -577,7 +566,7 @@ export default class TaskAnalysis extends Component {
       actionableTasks:0,
       taskPriority:0
     });
-    //this.getTasks();
+    this.getTasks();
   };
 
   AddQuestion = (data) => {
@@ -588,7 +577,13 @@ export default class TaskAnalysis extends Component {
     });
   };
   ViewTask = (data) => {
-    this.setState({ PageMode: "ViewTask", showTaskModal: true, rowData: data });
+    if(this.state.occurance === ''){
+      appCommon.showtextalert("", "Please Select Occurance", "warning");
+
+    }
+    else{
+      this.setState({ PageMode: "ViewTask", showTaskModal: true, rowData: data });
+    }
   };
   EditTask = (data) => {
     this.setState({ PageMode: "EditTask", showEditModal: true, rowData: data });
@@ -940,6 +935,14 @@ export default class TaskAnalysis extends Component {
               </div>
             </LoadingOverlay>
           </div>
+        )}
+        {this.state.PageMode === "ViewTask" && (
+          <ViewTask
+            showTaskModal={this.state.showTaskModal}
+            closeModal={this.closeModal}
+            rowData={this.state.rowData}
+            occurance={this.state.occurance}
+          />
         )}
       </div>
     );
