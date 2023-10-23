@@ -23,7 +23,7 @@ export default class ViewTask extends Component {
       PageMode: "Home",
       TaskData:[],
       TaskDefaultData:[],
-      taskStatus:'All'
+      filterType:'All'
     };
     this.ApiProvider = new ApiProvider();
   }
@@ -82,16 +82,10 @@ export default class ViewTask extends Component {
     this.props.closeModal();
   };
 
-  Filter = () => {
-    if (this.state.taskStatus === 'All') {
-      this.state.TaskData = this.state.TaskDefaultData
-    } else {
-      this.state.TaskData = this.state.TaskDefaultData.filter(task => task.TaskStatus === this.state.taskStatus);
-    }
-  };
-
 
   render() {
+    const {filterType,TaskData} = this.state
+    const filteredData = filterType === 'All' ? TaskData : TaskData.filter(item => item.TaskStatus === filterType);
     return (
       <div>
         <Modal
@@ -119,16 +113,16 @@ export default class ViewTask extends Component {
                   className="card-body"
                   style={{ height: "450px", overflowY: "scroll" }}
                 >
-                                      <ul className="nav tableFilterContainer">
+                                      <ul className="nav tableFilterContainer align-items-center justify-content-between">
                       <li>
                         <select
                           className="form-control"
                           onChange={(e) =>
                             this.setState({
-                              taskStatus: e.target.value,
+                              filterType: e.target.value,
                             })
                           }
-                          value={this.state.taskStatus}
+                          value={this.state.filterType}
                         >
                           <option value="All">All</option>
                           <option value="Pending">Pending</option>
@@ -136,14 +130,15 @@ export default class ViewTask extends Component {
                           <option value="Actionable">Actionable</option>
                         </select>
                       </li>
-                      <li>
+                      {/* <li>
                           <Button
                             id="btnNewTask"
                             Action={this.Filter.bind(this)}
                             ClassName="btn btn-primary ml-2"
                             Text="Filter"
                           />
-                        </li>
+                        </li> */}
+                        <li>Total Tasks : {filteredData.length}</li>
                     </ul>
                   <div className="row">                   
                     <div className="col-md-12">
@@ -162,7 +157,7 @@ export default class ViewTask extends Component {
                       </div>
                       </div>
                     </div>
-                    {this.state.TaskData.map((element, index) => (
+                    {filteredData.map((element, index) => (
                       <div className="col-md-12" style={{ marginTop: "20px" }}>
                         <div style={{ display: "flex" }} key={index}>
                           <div className="col-md-5">

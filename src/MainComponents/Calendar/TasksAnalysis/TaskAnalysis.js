@@ -109,7 +109,7 @@ export default class TaskAnalysis extends Component {
       pendingTasks:0,
       completedTasks:0,
       actionableTasks:0,
-      assignedProperty:[]
+      assignedProperty:[],
     };
     this.ApiProvider = new ApiProvider();
     this.comdbprovider = new LayoutDataProvider();
