@@ -21,8 +21,8 @@ class PlannerTaskAnalysisPage extends Component {
               </div>
               <div className="col-sm-6">
                   <ol className="breadcrumb float-sm-right">
-                      <li className="breadcrumb-item"><a href="/">Home</a></li>
-                      <li className="breadcrumb-item active"><a href="/Account/App/PlannerTask">Task Analysis</a> </li>
+                      <li className="breadcrumb-item">Home</li>
+                      <li className="breadcrumb-item active">Task Analysis</li>
                   </ol>
               </div>
             </div>

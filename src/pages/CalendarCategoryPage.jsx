@@ -26,8 +26,8 @@ class CalendarCategoryPage extends Component {
                             </div>
                             <div className="col-sm-6">
                                 <ol className="breadcrumb float-sm-right">
-                                    <li className="breadcrumb-item"><a href="/">{this.state.PageMode}</a></li>
-                                    <li className="breadcrumb-item active"><a href="/Account/App/CalendarCategory">{this.state.PageTitle}</a> </li>
+                                    <li className="breadcrumb-item">{this.state.PageMode}</li>
+                                    <li className="breadcrumb-item active">{this.state.PageTitle}</li>
                                 </ol>
                             </div>
                         </div>
