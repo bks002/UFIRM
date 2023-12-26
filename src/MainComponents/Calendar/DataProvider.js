@@ -237,7 +237,7 @@ class DataProvider {
                 return srv.CallDeleteNewService(url,model[0]);
                 break;
             case 'R':
-                url=`QuestionsDetailsOfTask?taskID=${model[0].Id}`;
+                url=`QuestionsDetailsOfTask?taskID=${model[0].Id}&TransactionDate=${model[0].date}`;
                 return srv.getComplaint(url);
                 break;
             case 'AB': //Amenites Bookings
@@ -260,6 +260,19 @@ class DataProvider {
             case 'C':
                 url = `CreateTaskWiseFmStatusData`;
                 return srv.CallPostNewService(url, model[0]);
+                break;
+            default:
+        }
+    }
+
+    manageQuesImage(model, type) {
+        // 
+        let url = '';
+        console.log(model)
+        switch (type) {
+            case 'R':
+                url = `GetTaskQuestionImage?TaskId=${model[0].TaskId}&QuestId=${model[0].QuestId}&UpdatedOn=${model[0].UpdatedOn}`;
+                return srv.getComplaint(url, model[0]);
                 break;
             default:
         }

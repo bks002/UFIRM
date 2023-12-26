@@ -26,18 +26,20 @@ export default class ViewTask extends Component {
       editQuesId :'',
       editQuesName :'',
       PageMode: "Home",
-      supervisorRemarks:''
+      supervisorRemarks:'',
+      QuestImageData:[]
     };
     this.ApiProvider = new ApiProvider();
   }
 
-  getQuesModel = (type, Id) => {
+  getQuesModel = (type, Id , date) => {
     var model = [];
     switch (type) {
       case "R":
         model.push({
           CmdType: type,
           Id: Id,
+          date:date
         });
         break;
         case "U":
@@ -79,6 +81,7 @@ export default class ViewTask extends Component {
 
   manageQues = (model, type) => {
     this.ApiProvider.manageQues(model, type).then((resp) => {
+      console.log(resp)
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
           switch (type) {
@@ -152,11 +155,48 @@ export default class ViewTask extends Component {
     });
   };
 
+  manageQuestionImg = (model, type) => {
+    this.ApiProvider.manageQuesImage(model, type).then((resp) => {
+      if (resp.ok && resp.status == 200) {
+        return resp.json().then((rData) => {
+          console.log(rData)
+          switch (type) {
+            case "R":
+              let questImageData = rData.map((element) => ({
+                Image: element.Image,
+                Id: element.Id,
+              }));
+              this.setState({ QuestImageData: questImageData });
+              break;
+            default:
+          }
+        });
+      }
+    });
+  };
+
   getQuestion() {
     var type = "R";
     const taskId = this.props.rowData.TaskId;
-    var model = this.getQuesModel(type, taskId);
+    let date = this.props.rowData.UpdatedOn.split("-")
+    const updatedOn = `${date[2]}-${date[1]}-${date[0]}`;
+    var model = this.getQuesModel(type, taskId,updatedOn);
     this.manageQues(model, type);
+  }
+
+  getQuestionImage(quesId) {
+    var type = "R";
+    let model= []
+    const taskId = this.props.rowData.TaskId;
+    const date = this.props.rowData.DateFrom.split("-")
+    const updatedOn = `${date[0]}/${date[1]}/${date[2]}`;
+    const questId = quesId
+    model.push({
+     TaskId:taskId,
+     QuestId:questId,
+     UpdatedOn:updatedOn
+    })
+    this.manageQuestionImg(model, type);
   }
 
   componentDidMount() {
@@ -231,7 +271,11 @@ export default class ViewTask extends Component {
       }
     });
   };
-
+  ViewQuestionImg = (data) => {
+    console.log(data)
+    this.getQuestionImage(data.QuesId)
+    this.setState({ PageMode: "ViewQuestionImg",editQuesId:data.QuesId,editQuesName:data.QuesName});
+  };
   EditQuestion = (data) => {
     this.setState({ PageMode: "EditQuestion",editQuesId:data.QuesId,editQuesName:data.QuesName});
   };
@@ -363,7 +407,7 @@ export default class ViewTask extends Component {
                       <label>Status</label>
                       </div>
                       <div className="col-md-2" style={{ marginTop: "20px" }}>
-                      <label>Actiom</label>
+                      <label>Action</label>
                       </div>
                       </div>
                     </div>
@@ -409,6 +453,14 @@ export default class ViewTask extends Component {
                 >
                   <i className="fa fa-edit"></i>
                 </button>
+                {/* <button
+                  className="btn btn-sm btn-info"
+                  onClick={this.ViewQuestionImg.bind(this, element)}
+                  title="View"
+                  style={{ marginRight: "5px" }}
+                >
+                  <i className="fa fa-eye"></i>
+                </button> */}
                 <button
                   className="btn btn-sm btn-danger"
                   onClick={this.DeleteQuestion.bind(this, element)}
@@ -519,6 +571,49 @@ export default class ViewTask extends Component {
             </div>
           </div>
         )}
+                          {this.state.PageMode === "ViewQuestionImg" && (
+
+
+<div className="row">
+  <div className="col-12">
+    <div className="card card-primary">
+      <div className="card-header">
+        <h3 className="card-title">View Image</h3>
+        <div className="card-tools">
+          <button
+            className="btn btn-tool"
+            onClick={this.props.closeModal}
+          >
+            <i className="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+      <div
+        className="card-body"
+        style={{ height: "250px", overflowY: "scroll" }}
+      >
+        <div className="row">   
+        View Image
+        </div>
+        <div className="modal-footer">
+          <Button
+            Id="btnCancel"
+            Text="Close"
+            Action={this.handleCancelEditQuestion}
+            ClassName="btn btn-secondary"
+          />
+           <Button
+            Id="btnSave"
+            Text="Update"
+            Action={this.handleUpdateQuestion}
+            ClassName="btn btn-primary"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+)}
 
                           {this.state.PageMode === "SupervisorRemarks" && (
 
