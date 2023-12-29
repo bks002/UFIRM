@@ -177,16 +177,15 @@ export default class TaskAnalysis extends Component {
         //   TaskPriority:taskPriority
         // });
         let obj = {
-          CmdType: type,
-          CategoryId: categoryId,
-          SubCategoryId: subCategoryId,
-          AssignedTo: assignTo,
-          Occurrence: occurance,
-          DteFr : startDate,
-          DteTo : endDate,
-          TaskStatus : taskStatus,
-          PropertyId : propertyId,
-          TaskPriority:taskPriority
+          categoryId: categoryId,
+          subCategoryId: subCategoryId,
+          // AssignedTo: assignTo,
+          occurance: occurance,
+          dateFrom : startDate,
+          dateTo : endDate,
+          status : taskStatus,
+          propId : propertyId,
+          priorityId:taskPriority
         }
         for(let key in obj){
           if(obj[key] == '' || obj[key] == 0 ||obj[key] == undefined || obj[key] == null){
