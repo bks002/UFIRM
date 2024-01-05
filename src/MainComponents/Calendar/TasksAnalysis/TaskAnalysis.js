@@ -943,6 +943,7 @@ export default class TaskAnalysis extends Component {
             occurance={this.state.occurance}
             dateFrom={this.state.filterFromDate}
             dateTo={this.state.filterToDate}
+            propId= {this.state.propertyId}
           />
         )}
       </div>

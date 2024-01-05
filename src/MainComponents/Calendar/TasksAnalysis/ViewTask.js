@@ -28,7 +28,7 @@ export default class ViewTask extends Component {
     this.ApiProvider = new ApiProvider();
   }
 
-  getTaskModel = (type, catId,occurance,dateFrom,dateTo) => {
+  getTaskModel = (type, catId,occurance,dateFrom,dateTo,propertyId) => {
     var model = [];
     switch (type) {
       case "GetAllTaskWiseStatusFinalDash":
@@ -37,7 +37,8 @@ export default class ViewTask extends Component {
           catId: catId,
           occurance:occurance,
           dateFrom : dateFrom,
-          dateTo : dateTo
+          dateTo : dateTo,
+          propId : propertyId
         });
         break;
       default:
@@ -73,7 +74,8 @@ export default class ViewTask extends Component {
     const occurance = this.props.occurance
     const dateFrom = this.props.dateFrom
     const dateTo = this.props.dateTo
-    var model = this.getTaskModel(type, categoryId,occurance,dateFrom,dateTo);
+    const propertyId = this.props.propId
+    var model = this.getTaskModel(type, categoryId,occurance,dateFrom,dateTo,propertyId);
     this.manageTask(model, type);
   }
 
