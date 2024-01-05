@@ -941,6 +941,8 @@ export default class TaskAnalysis extends Component {
             closeModal={this.closeModal}
             rowData={this.state.rowData}
             occurance={this.state.occurance}
+            dateFrom={this.state.filterFromDate}
+            dateTo={this.state.filterToDate}
           />
         )}
       </div>

@@ -89,7 +89,7 @@ class DataProvider {
                 return srv.getComplaint(url);
                 break;
             case 'GetAllTaskWiseStatusFinalDash':
-                url = `GetAllTaskWiseStatusFinalDash?categoryId=${model[0].catId}&occurance=${model[0].occurance}`
+                url = `GetAllTaskWiseStatusFinalDash?categoryId=${model[0].catId}&occurance=${model[0].occurance}&dateFrom=${model[0].dateFrom}&dateTo=${model[0].dateTo}`
                 return srv.getComplaint(url);
             default:
         }
