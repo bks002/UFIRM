@@ -91,12 +91,7 @@ class Home extends React.Component {
                     <div className="container-fluid">
                         <div className="row mb-2">
                             <div className="col-sm-6">
-                                <h1 className="m-0 text-dark">Home</h1>
-                            </div>
-                            <div className="col-sm-6">
-                                <ol className="breadcrumb float-sm-right">
-                                    <li className="breadcrumb-item"><a href="#">Home</a></li>
-                                </ol>
+                                <h1 className="m-0 text-dark">Dashboard</h1>
                             </div>
                         </div>
                     </div>
@@ -117,7 +112,7 @@ class Home extends React.Component {
                                     HeaderClass="card card-info cardutline"
                                     ItemJson={this.state.totalFlats}
                                     Link="/Account/App/ManageResidentOwners" />
-                            </div>
+                            </div>                         
                         </div>
                     </div>
                 </section>

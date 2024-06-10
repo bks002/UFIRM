@@ -1,12 +1,5 @@
 import React, { Fragment } from "react";
-import ReactRouter from "./ReactRouter.jsx";
-import {
-  BrowserRouter as Router,
-  Switch,
-  Route,
-  Link,
-  Redirect,
-} from "react-router-dom";
+import {BrowserRouter as Router,Switch,Route,Link,Redirect,} from "react-router-dom";
 import TicketingDashboard from "../MainComponents/Ticket/TicketingDashboard";
 import DepartmentHome from "../MainComponents/Department/DepartmentHome";
 import Department from "../pages/Department";
@@ -248,29 +241,25 @@ class MainNav extends React.Component {
                 ></img>
               </span>
             </Link>
+
+            {/* side-navbar code */}
+            
             <div className="sidebar">
               <nav className="mt-2">
                 <ul
-                  className="nav nav-pills nav-sidebar flex-column"
-                  data-widget="treeview"
-                  role="menu"
-                  data-accordion="false"
-                >
+                  className="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                   <li className="nav-item has-treeview">
-                    <a href="#" className="nav-link">
+                    
+                  <li className="nav-item has-treeview">
+                    <a href="/" className="nav-link">
                       <i className="nav-icon fas fa-tachometer-alt"></i>
                       <p>
                         Dashboard
                         <i className="right fas fa-angle-left"></i>
                       </p>
                     </a>
+                  </li>
                     <ul className="nav nav-treeview">
-                      <li className="nav-item">
-                        <Link to="/" className="nav-link">
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Home</p>
-                        </Link>
-                      </li>
                       {/* <li className="nav-item">
                                                 <Link to="/Account/App/ticket" className="nav-link">
                                                     <i className=" fas fa-caret-right nav-icon"></i>
