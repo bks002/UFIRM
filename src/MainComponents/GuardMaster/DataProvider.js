@@ -7,24 +7,19 @@ class DataProvider {
             case 'C':
                 url = `CreateGuard`;
                 return srv.CallPostNewService(url, model[0]);
-                break;
             case 'U':
                 url = `CreateGuard`;
                 return srv.CallPostNewService(url, model[0]);
-                break;
             case 'D':
                 url = `Property/AmentiesAssignment/Delete/${model[0].propertyAmenitiesId}`
                 return srv.CallPostService(url);
-                break;
             case 'R':
                 url = `GuardList`;
                 return srv.getComplaint(url);
-                break; 
                 case 'AP':
                     console.log(model);
                 url = `KYCApprove?Id=${model[0].Id}`;
                 return srv.CallPostNewService(url, model[0]);
-                break;       
             default:
         }
     }

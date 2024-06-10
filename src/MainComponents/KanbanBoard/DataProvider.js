@@ -8,44 +8,34 @@ class DataProvider {
             case 'R':
                 url = `Ticket/TicketSystem`
                 return srv.CallPostService(url, model[0]);
-                break;
             case 'AU':
                 url = `Ticket/AssignedUser`
                 return srv.CallPostService(url, model[0]);
-                break;
             case 'TNUM':
                 url = `Ticket/TicketNumbers`
                 return srv.CallPostService(url, model[0]);
-                break;
             case 'C':
                 url = `Ticket/GenerateTicket`
                 return srv.CallPostService(url, model[0]);
-                break;
             case 'UT':
                 url = `Ticket/UpdateTicket`
                 return srv.CallPostService(url, model[0]);
-                break;
             case 'TOH':
                 url = `Ticket/HoldTicket`
                 return srv.CallPostService(url, model[0]);
-                break;
             case 'TRO':
                 url = `Ticket/Reopen`
                 return srv.CallPostService(url, model[0]);
-                break;
             case 'TC':
                 url = `Ticket/CreateTicketComment`
                 return srv.CallPostService(url, model[0]);
-                break;
             // Ticket log
             case 'CTL':
                 url = `Ticket/CreateTicketlog`
                 return srv.CallPostService(url, model[0]);
-                break;
             case 'Excel':
                 url = `Ticket/DownlaodTicketExcel`
                 return srv.CallPostService(url, model[0]);
-                break;
             default:
         }
     }

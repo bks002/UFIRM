@@ -8,15 +8,12 @@ class DataProvider {
             case 'U':
                 url = `Master/AmentiesMaster/Save`;
                 return srv.CallPostService(url, model[0]);
-                break;
             case 'D':
                 url = `MAster/AmentiesMaster/Delete/${model[0].amenityId}`
                 return srv.CallPostService(url);
-                break;
             case 'R':
                 url = `Master/AmentiesMaster`;
-                return srv.CallGetService(url);
-                break;  
+                return srv.CallGetService(url); 
             // case 'T':
             //     url = `Master/AmentiesMaster`;
             //     return srv.CallPostService(url, model[0]);

@@ -8,12 +8,12 @@ import ApiProvider from "../DataProvider";
 import * as appCommon from "../../../Common/AppCommon.js";
 import swal from "sweetalert";
 import { DELETE_CONFIRMATION_MSG } from "../../../Contants/Common";
-import { downloadExcel } from "react-export-table-to-excel";
-import { CSVLink } from 'react-csv'
 import { bindActionCreators } from "redux";
 import departmentActions from "../../../redux/department/action";
 import { connect } from "react-redux";
 import ReactDatePicker from "react-datepicker";
+// import { downloadExcel } from "react-export-table-to-excel";
+// import { CSVLink } from 'react-csv'
 
 const $ = window.$;
 class AttendanceSummary extends Component {
@@ -63,7 +63,6 @@ class AttendanceSummary extends Component {
       userIds: "",
       loading: false,
       showAddModal: false,
-      showEditModal: false,
       showEditModal: false,
       PageMode: "Home",
       showQuesModal: false,
@@ -150,7 +149,7 @@ class AttendanceSummary extends Component {
 
   manageEmployee = (model, type) => {
     this.ApiProvider.manageEmployee(model, type).then((resp) => {
-      if (resp.ok && resp.status == 200) {
+      if (resp.ok && resp.status === 200) {
         return resp.json().then((rData) => {
           let empData = [];
           rData.facilityMember.forEach((element) => {
@@ -173,7 +172,7 @@ class AttendanceSummary extends Component {
 
   manageFacilityMember = (model, type) => {
     this.ApiProvider.manageFacility(model, type).then((resp) => {
-      if (resp.ok && resp.status == 200) {
+      if (resp.ok && resp.status === 200) {
         return resp.json().then((rData) => {
           let FacilityData = [];
           rData.forEach((element) => {
@@ -195,7 +194,7 @@ class AttendanceSummary extends Component {
 
   manageAttendanceData = (model, type) => {
     this.ApiProvider.manageAttendanceData(model, type).then((resp) => {
-      if (resp.ok && resp.status == 200) {
+      if (resp.ok && resp.status === 200) {
         return resp.json().then((rData) => {
           switch (type) {
             case "R":
@@ -246,12 +245,16 @@ class AttendanceSummary extends Component {
   }
 
   findItem(id) {
-    return this.state.data.find((item) => {
-      if (item.TaskId == id) {
-        return item;
-      }
-    });
-  }
+    return this.state.data.find((item) => item.TaskId === id);
+}
+
+  // findItem(id) {
+  //   return this.state.data.find((item) => {
+  //     if (item.TaskId == id) {
+  //       return item;
+  //     }
+  //   });
+  // }
 
   DateRangeConfig(startDate, endDate) {
     let _this = this;

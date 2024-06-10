@@ -1,5 +1,3 @@
-import React from 'react';
-import { debug } from 'util';
 //import "babel-polyfill";
 import AppUrlProvider from "./ApiUrlProvider.js";
 // Global Declaration

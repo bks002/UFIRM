@@ -7,15 +7,15 @@ class DataProvider {
             case 'U':
                 url = `Property/AmentiesAssignment/Save`;
                 return srv.CallPostService(url, model[0]);
-                break;
+
             case 'D':
                 url = `Property/AmentiesAssignment/Delete/${model[0].propertyAmenitiesId}`
                 return srv.CallPostService(url);
-                break;
+
             case 'R':
                 url = `Property/AmentiesAssignment`;
                 return srv.CallPostService(url, model[0]);
-                break;       
+       
             default:
         }
     }

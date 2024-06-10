@@ -84,7 +84,7 @@ export default class DataGrid extends React.Component {
         var dr = this.props.ColumnCollection;
         let object = this;
         $('.tbl-loading').removeClass('hide');
-        let GridarrayMain = new Array();
+        let GridarrayMain = [];
         let Gridarray = [];
         if (this.props.GridData != null) {
             this.props.GridData.map((val, idx) => {
@@ -149,8 +149,8 @@ export default class DataGrid extends React.Component {
                     isApproved = IsBlocked[0].IsApproved;
                 }
                 if (bselectIndex != null) {
-                    if (val[isBlocked] == false) {
-                        if (val[isApproved] == true) {
+                    if (val[isBlocked] === false) {
+                        if (val[isApproved] === true) {
                             Gridarray[bselectIndex] = "Active";
                         } else {
                             Gridarray[bselectIndex] = "Pending";
@@ -164,7 +164,7 @@ export default class DataGrid extends React.Component {
                 //****END******/
 
                 let btnhtml = "";
-                if (actionButtons != undefined) {
+                if (actionButtons !== undefined) {
                     actionButtons.map((action, idx) => {
                         switch (action.Buttons[0]) {
                             case 'Edit&Delete':
@@ -252,8 +252,8 @@ export default class DataGrid extends React.Component {
                 if (selectIndex != null && statusindex == null) {
                     Gridarray[selectIndex] = `<input type="checkbox" value="14">`;
                 }
-                if (selectIndex != null && statusindex != null) {
-                    if (Gridarray[statusindex] == "Expired" || Gridarray[statusindex] == "Deactivated")
+                if (selectIndex !== null && statusindex !== null) {
+                    if (Gridarray[statusindex] === "Expired" || Gridarray[statusindex] === "Deactivated")
                         Gridarray[selectIndex] = `<input type="checkbox" disabled >`;
                     else {
                         Gridarray[selectIndex] = `<input type="checkbox" value="14">`;
@@ -263,19 +263,19 @@ export default class DataGrid extends React.Component {
                 if (statusColIndex != null) {
                     Gridarray[statusColIndex] = `<span class=${Gridarray[statusColIndex].toLowerCase()}>${Gridarray[statusColIndex]}</span>`;
                 }
-                if (statusColorColIndex != null) {
+                if (statusColorColIndex !== null) {
                     Gridarray[statusColorColIndex] = `<span>${val[statusValue]}</span>`;
                     // added by sanjay  jan 04 22
-                    if(StatusColorColumn[0].Value=='color'){
+                    if(StatusColorColumn[0].Value==='color'){
                         Gridarray[statusColorColIndex] = `<span style="background-color:${val[statusValue]}">${val[statusValue]}</span>`;
                     }
-                    if (val[statusValue] == "Vacant") {
+                    if (val[statusValue] === "Vacant") {
                         Gridarray[statusColorColIndex] = `<span class='setStatusbox btn-success'>${val[statusValue]}</span>`;
                     }
-                    if (val[statusValue] == "Tenant Residing") {
+                    if (val[statusValue] === "Tenant Residing") {
                         Gridarray[statusColorColIndex] = `<span class='setStatusbox btn-warning'>${val[statusValue]}</span>`;
                     }
-                    if (val[statusValue] == "Owner Residing") {
+                    if (val[statusValue] === "Owner Residing") {
                         Gridarray[statusColorColIndex] = `<span class='setStatusbox btn-danger'>${val[statusValue]}</span>`;
                     }
                 }
@@ -310,7 +310,7 @@ export default class DataGrid extends React.Component {
          
         //Enable hide column property
         dr.map((item, index) => {
-            if (item.visible != undefined && item.visible) {
+            if (item.visible !== undefined && item.visible) {
                 table.column(index).visible(false);
             }
         });
@@ -414,9 +414,9 @@ export default class DataGrid extends React.Component {
                     let deleteIndex = undefined;
                     let searchjson = returnSelectValues.find((item, idx) => {
                         deleteIndex = idx;
-                        return item.Value == returnVale
+                        return item.Value === returnVale
                     });
-                    if (deleteIndex != undefined) {
+                    if (deleteIndex !== undefined) {
                         returnSelectValues.splice(deleteIndex, 1);
                     }
                 }
@@ -485,7 +485,7 @@ export default class DataGrid extends React.Component {
                 }];
                 _this.ApiProviderr.manageDataGrid(model).then(
                     resp => {
-                        if (resp.ok && resp.status == 200) {
+                        if (resp.ok && resp.status === 200) {
                             return resp.json().then(rData => {
                                 if (rData) {
                                     x.type = "text";

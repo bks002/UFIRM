@@ -7,7 +7,7 @@ class Label extends React.Component {
     }
     render() { 
         
-        if(this.props.DisplayMode == 'view' ){
+        if(this.props.DisplayMode === 'view' ){
         return ( 
             
             <label  id={this.props.ID} className={this.props.Class}>{this.props.Value}</label>

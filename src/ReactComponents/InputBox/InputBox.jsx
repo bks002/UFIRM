@@ -7,24 +7,24 @@ class InputBox extends React.Component {
         };
     }
     componentDidMount() {
-        if (this.props.Value != '' & this.props.Value != null & this.props.Value != undefined) {
+        if (this.props.Value !== '' & this.props.Value !== null & this.props.Value !== undefined) {
             this.setState({ inputValue: this.props.Value });
         }
 
     }
     handleChangeForAll(evt) {
         this.setState({ inputValue: evt.target.value });
-        if (this.props.onChange != undefined) {
+        if (this.props.onChange !== undefined) {
             this.props.onChange(evt.target.value);
         }
 
     }
     componentWillReceiveProps(props) {
-        if (props.Value != '' & props.Value != null & props.Value != undefined) {
+        if (props.Value !== '' & props.Value !== null & props.Value !== undefined) {
             this.setState({ inputValue: props.Value });
         }
         else {
-            if (props.HandleClear == 'True')
+            if (props.HandleClear === 'True')
                 this.setState({ inputValue: '' });
         }
     }

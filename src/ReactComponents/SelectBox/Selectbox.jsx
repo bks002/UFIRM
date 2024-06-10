@@ -1,10 +1,10 @@
-import React, { Component } from 'react';
+import React from 'react';
 
 class SelectBoxComponent extends React.Component {
   constructor(props) {
     super(props);
     this.state = {}
-    Data: { }
+    // Data: { }
   }
   render() {
 
@@ -36,7 +36,7 @@ class SelectBox2 extends React.Component {
   }
 
   onChange(e) {
-    if (this.props.CallType != undefined && this.props.CallType == 'All') {
+    if (this.props.CallType !== undefined && this.props.CallType === 'All') {
       this.props.onSelected(e.target);
     }
     else {
@@ -58,7 +58,6 @@ class SelectBox2 extends React.Component {
         name={this.props.Name}
         value={this.props.Value}
         onChange={this.onChange.bind(this)}
-        id={this.props.ID}
         className={this.props.ClassName}
         disabled={this.props.disabled}
       >

@@ -7,7 +7,7 @@ class DataProvider {
             case 'R':
                 url = `Dashboard/Statistic/${model[0].PropertyId}`
                 return srv.get(url);
-                break;
+                // break;
             default:
         }
     }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 import 'react-responsive-modal/styles.css';
 import { Modal } from 'react-responsive-modal';
@@ -25,7 +25,7 @@ function AttachmentViewers(props) {
     }
 
     function Previous() {
-        if (pageNumber != 1) {
+        if (pageNumber !== 1) {
             let page = pageNumber - 1;
             setPageNumber(page);
         }

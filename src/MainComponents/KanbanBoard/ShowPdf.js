@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState} from 'react';
 import { Document, Page, pdfjs } from "react-pdf";
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -22,7 +22,7 @@ export const ShowPdfModal = (props) => {
     }
 
     function Previous() {
-        if (pageNumber != 1) {
+        if (pageNumber !== 1) {
             let page = pageNumber - 1;
             setPageNumber(page);
         }

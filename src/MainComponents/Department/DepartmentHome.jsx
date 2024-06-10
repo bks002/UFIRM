@@ -1,9 +1,7 @@
 import React from 'react'
-import { render } from 'react-dom'
 import HomeContainer from '../../AppContainers/home/homecontainer.jsx';
 //import HomeContainer from '../../containers/home/homecontainer.jsx';
 import Button from '../../ReactComponents/Button/Button.jsx';
-import CalendarJs from '../../ReactComponents/Calendar/Calendar.jsx';
 import DataGrid from '../../ReactComponents/DataGrid/DataGrid.jsx';
 //import '../../Scripts/plugins/bootstrap-multiselect.js';
 import '../../Style/bootstrap-multiselect.css';
@@ -22,9 +20,6 @@ import departmentActions from '../../redux/department/action';
 import { connect } from 'react-redux';
 import { promiseWrapper } from '../../utility/common';
 import { bindActionCreators } from 'redux';
-
-
-import DepartmentNew from './DepartmentNew.jsx';
 const $ = window.$;
 
 
@@ -63,7 +58,7 @@ class DepartmentHome extends React.Component {
     }
 
     ClearTyeahead = (type, event) => {
-        if (type == 'C') {
+        if (type === 'C') {
             var option = this.thaCustomer.props.options;
             if (!option.includes(event.target.value)) {
                 // 
@@ -75,8 +70,8 @@ class DepartmentHome extends React.Component {
 
 
     onCustomerList = (arg) => {
-        let searchVal;
-        if (arg == '' || arg == null) {
+        // let searchVal;
+        if (arg === '' || arg === null) {
             this.setState({ searchValue: null }, () => {
                 this.loadDepartment();
                 this.loadDepartmentTypeAhead(null);
@@ -156,12 +151,9 @@ class DepartmentHome extends React.Component {
         //this.props.actions.passData("medline");
     }
     findItem(departmentId) {
-        return this.state.gridData.find((item) => {
-            if (item.departmentId == departmentId) {
-                return item;
-            }
-        });
+        return this.state.gridData.find((item) => item.departmentId === departmentId);
     }
+    
 
     ongridedit(departmentId) {
         this.props.Action('Edit', this.findItem(departmentId));

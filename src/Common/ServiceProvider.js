@@ -1,10 +1,6 @@
-﻿import React from 'react';
-import { debug } from 'util';
-import Common from "./ServiceCommon.js";
-//import "babel-polyfill";
-import AppUrlProvider from "./ApiUrlProvider.js";
+﻿import AppUrlProvider from "./ApiUrlProvider.js";
 import * as appCommonJs from "../Common/AppCommon.js";
-import axios, { post } from 'axios';
+import axios from 'axios';
 // Global Declaration
 let urls = new AppUrlProvider();
 
@@ -378,7 +374,7 @@ class ServiceProvider {
                     'Accept': 'application/json'
                 }
             })
-            if (res.status == 200) {
+            if (res.status === 200) {
                 // test for status you want, etc
                 console.log(res.status)
             }

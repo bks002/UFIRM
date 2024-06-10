@@ -15,16 +15,16 @@ export default class GridPagination extends React.Component {
 
     OnPageChange(pageinfo) {
         let currentpageelement = $(pageinfo.currentTarget).parent();
-        let liindex = 0;
+        // let liindex = 0;
         let cpage = 0;
-        if (pageinfo.currentTarget.innerText == '»') // Next
+        if (pageinfo.currentTarget.innerText === '»') // Next
         {
             if (this.props.totalpages > this.state.currentpage) {
                 cpage = this.state.currentpage + 1;
                 currentpageelement = $('.pagination li.active').next();
             }
         }
-        else if (pageinfo.currentTarget.innerText == '«') // Previouse
+        else if (pageinfo.currentTarget.innerText === '«') // Previouse
         {
             if (this.state.currentpage > 0) {
                 cpage = this.state.currentpage - 1;
@@ -60,9 +60,18 @@ export default class GridPagination extends React.Component {
     onpagechangeevent(pagenumber) {
         //alert(pagenumber);
         $('.tbl-loading').removeClass('hide');
-        this.state.currentpage = pagenumber;
-        this.props.Onpagechanged(pagenumber);
+        this.setState({ currentpage: pagenumber }, () => {
+            this.props.Onpagechanged(pagenumber);
+        });
     }
+    
+
+    // onpagechangeevent(pagenumber) {
+    //     //alert(pagenumber);
+    //     $('.tbl-loading').removeClass('hide');
+    //     this.state.currentpage = pagenumber;
+    //     this.props.Onpagechanged(pagenumber);
+    // }
 
     componentWillReceiveProps(props) {
         $('.tbl-loading').removeClass('hide');

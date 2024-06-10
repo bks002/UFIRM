@@ -21,7 +21,7 @@ export const MyLane = props => {
     return (
         <div>
             <header>
-                <div style={style}>
+                <div style={{style}}>
                     {props.title}
                     <span className="badge badge-light float-right">{props.cards.length}</span>
                 </div>

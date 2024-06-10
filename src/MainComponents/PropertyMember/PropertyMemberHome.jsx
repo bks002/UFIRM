@@ -1,5 +1,4 @@
 import React from 'react'
-import { render } from 'react-dom';
 import Button from '../../ReactComponents/Button/Button.jsx';
 import DataGrid from '../../ReactComponents/DataGrid/DataGrid.jsx';
 import '../../Style/bootstrap-multiselect.css';
@@ -50,7 +49,7 @@ class PropertyMemberHome extends React.Component {
     }
 
     ClearTyeahead = (type, event) => {
-        if (type == 'C') {
+        if (type === 'C') {
             var option = this.thaCustomer.props.options;
             if (!option.includes(event.target.value)) {
             }

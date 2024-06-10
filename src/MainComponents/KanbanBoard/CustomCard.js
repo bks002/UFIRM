@@ -103,6 +103,7 @@ export const MyCard = props => {
                         width="30px"
                         height="30px"
                         className="img-circle"
+                        alt='profilepic'
                     />
                 </div>
             </div>
