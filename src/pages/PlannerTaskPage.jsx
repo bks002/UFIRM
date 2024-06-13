@@ -19,12 +19,6 @@ class PlannerTaskPage extends Component {
               <div className="col-sm-6">
                   <h1 className="m-0 text-dark"> Tasks</h1>
               </div>
-              <div className="col-sm-6">
-                  <ol className="breadcrumb float-sm-right">
-                      <li className="breadcrumb-item">Home</li>
-                      <li className="breadcrumb-item active">Tasks</li>
-                  </ol>
-              </div>
             </div>
           </div>
         </div>

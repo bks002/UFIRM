@@ -1060,45 +1060,33 @@ export default class TaskList extends Component {
                         </li>
                       )}
                       <li>
-                          {/* <Button
-                            id="btnNewTask"
-                            Action={this.handleDownloadExcel.bind(this)}
-                            ClassName="btn btn-info"
-                            Text="Export"
-                            Icon={
-                              <i
-                                className="fa fa-arrow-down"
-                                aria-hidden="true"
-                              ></i>
-                            }
-                          /> */}
-        <button
-                  className="btn btn-info"
-                  name="Export"
-                >
-            <CSVLink data={this.state.data} filename={'Tasklist'} style={{ color: "white" }}><i
+                         
+                            <button className="btn btn-info" name="Export">
+                              <CSVLink data={this.state.data} filename={'Tasklist'} style={{ color: "white" }}><i
                                 className="fa fa-arrow-down"
                                 aria-hidden="true"
                               ></i> Export</CSVLink>
-                </button>
-                        </li>
-                    </ul>
-                    <ul className="nav ml-auto tableFilterContainer">
-                      <li className="nav-item">
-                        <div className="input-group">
-                          <div className="input-group-prepend">
-                            <Button
+                              </button>
+
+                              <Button
                               id="btnNewTask"
                               Action={this.AddNew.bind(this)}
-                              ClassName="btn btn-success"
+                              ClassName="btn btn-success mx-2"
                               Icon={
                                 <i
                                   className="fa fa-plus"
                                   aria-hidden="true"
                                 ></i>
                               }
-                              Text=" Create New"
+                              Text="Add Task"
                             />
+                        </li>
+                    </ul>
+                    <ul className="nav ml-auto tableFilterContainer">
+                      <li className="nav-item">
+                        <div className="input-group">
+                          <div className="input-group-prepend">
+                            
                           </div>
                         </div>
                       </li>

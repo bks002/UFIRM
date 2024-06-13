@@ -6,6 +6,10 @@ import { connect } from 'react-redux';
 import departmentAction from '../../redux/department/action';
 import { bindActionCreators } from 'redux';
 
+import PieChart from '../../ReactComponents/Charts/PieChart';
+import ChartNavigator from '../../ReactComponents/Charts/ChartNavigator';
+import BarChart from '../../ReactComponents/Charts/BarChart';
+
 class Home extends React.Component {
     constructor(props) {
         super(props);
@@ -18,7 +22,7 @@ class Home extends React.Component {
         }
         this.ApiProviderr = new ApiProvider();
     }
-
+    
     componentDidMount() {
         this.loadDashboardData();
     }
@@ -40,20 +44,19 @@ class Home extends React.Component {
             resp => {
                 if (resp && resp.ok && resp.status == 200) {
                     return resp.json().then(rData => {
+                        console.log(rData);
                         switch (type) {
                             case 'R':
                                 if (rData !== null) {
                                     let totalFlats = [
                                         { Title: 'Owners Residing', Value: rData.dashbaordFlatCount.owner },
                                         { Title: 'Tenants', Value: rData.dashbaordFlatCount.tenant },
-                                        { Title: 'Vacant', Value: rData.dashbaordFlatCount.vacant },
-                                        { Title: 'Free', Value: rData.dashbaordFlatCount.free }
+                                        { Title: 'Vacant', Value: rData.dashbaordFlatCount.vacant }
                                     ];
                                     let complains = [
-                                        { Title: 'Open', Value: rData.dashbaordComplainCount.open },
-                                        { Title: 'In Progress', Value: rData.dashbaordComplainCount.inProgress },
-                                        { Title: 'Resolved', Value: rData.dashbaordComplainCount.resolved },
-                                        { Title: 'Closed', Value: rData.dashbaordComplainCount.completed }
+                                        { Title: 'Closed', Value: rData.dashbaordComplainCount.open },
+                                        { Title: 'Pending', Value: rData.dashbaordComplainCount.inProgress },
+                                        { Title: 'Actionable', Value: rData.dashbaordComplainCount.resolved },
                                     ];
                                     this.setState({
                                         totalFlats: totalFlats,
@@ -96,17 +99,48 @@ class Home extends React.Component {
                         </div>
                     </div>
                 </div>
-                <section className="content">
+               
+                
+                
+                {console.log(this.state.complains)}
+                <section className="content ">
+      <div className="container-fluid">
+        <div className="row">
+          <div className="col-md-6">
+            <div className="card mb-3 shadow-sm chart-boundary">
+              <div className="card-body">
+                <BarChart/>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-6">
+            <div className="card mb-3 shadow-sm chart-boundary">
+              <div className="card-body">
+                <PieChart/>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+                <section className="content  p-2">
+                    <div className="container-fluid card p-2 shadow-sm">
+                    <ChartNavigator/>
+                    </div>
+                </section>
+               
+                <section className="content ">
                     <div className="container-fluid">
                         <div className="row">
-                            <div className="col-md-3">
-                                <DashboardCard CardTitle="Complains"
+                            <div className="col-md-6 ">
+                                <DashboardCard CardTitle="Task Details"
                                     HeaderValue={this.state.complainsCnt}
                                     HeaderClass="card card-danger cardutline"
                                     ItemJson={this.state.complains}
                                     Link="/Account/App/TicketComplains" />
                             </div>
-                            <div className="col-md-3">
+                            <div className="col-md-6">
                                 <DashboardCard CardTitle="Total Flats"
                                     HeaderValue={this.state.totalFlatsCnt}
                                     HeaderClass="card card-info cardutline"
