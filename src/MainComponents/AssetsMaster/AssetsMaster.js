@@ -68,7 +68,7 @@ class AssetsMaster extends Component {
   }
 
   getModel = (type) => {
-    var mode = [
+    var model = [
       {
         Id: this.state.Id,
         Name: this.state.SelectedAssetName,
@@ -85,11 +85,10 @@ class AssetsMaster extends Component {
         Image: this.state.Image,
       },
     ];
-    return mode;
+    return model;
   };
 
   loadHomagePageData() {
-    //
     let model = this.getModel();
     this.ApiProviderr.manageDocumentTypeMaster(model, "R").then((resp) => {
       if (resp.ok && resp.status == 200) {
@@ -100,9 +99,11 @@ class AssetsMaster extends Component {
         })
           this.setState({ GridData: rData });
         });
+        
       }
     });
   }
+  
 
   onPagechange = (page) => {};
 
@@ -112,13 +113,10 @@ class AssetsMaster extends Component {
     });
   };
   findItem(id) {
-    //
-    return this.state.GridData.find((item) => {
-      if (item.Id == id) {
-        return item;
-      }
-    });
+    const foundItem = this.state.GridData.find(item => item.Id === id);
+    return foundItem || null; // Return found item or null if not found
   }
+  
 
   findBySno(id) {
     return this.state.GridData.find((item) => {
@@ -128,16 +126,27 @@ class AssetsMaster extends Component {
     });
   }
 
-  ongridedit = (Id) => {
+  ongridedit = (id) => {
     this.setState({ PageMode: "Edit" }, () => {
-      CreateValidator();
-      var rowData = this.findItem(Id);
-      this.setState({ Id: rowData.Id });
-      this.setState({ Name: rowData.Name });
-      this.setState({ Description: rowData.Description });
-      this.setState({ QRCode: rowData.QRCode });
+      CreateValidator(); // Ensure this function is defined and used correctly
+  
+      // Find the item by id in GridData
+      const rowData = this.findItem(id);
+  
+      // Check if rowData exists before setting state
+      if (rowData) {
+        this.setState({
+          Id: rowData.id,
+          Name: rowData.Name,
+          Description: rowData.Description,
+          QRCode: rowData.QRCode
+        });
+      } else {
+        console.error(`Item with id ${id} not found`); // Handle error if needed
+      }
     });
   };
+  
 
   onGridDelete = (Id) => {
     var rowData = this.findBySno(Id);
@@ -406,7 +415,7 @@ class AssetsMaster extends Component {
                     </div>
                     <div className="col-sm-4">
                       <div className="form-group">
-                      <label for="txtQRCodeL">Asset Name</label>
+                      <label htmlFor="txtQRCodeL">Asset Name</label>
                       <input type="text" id="manufacturer" placeholder="Asset Name" 
                           className="form-control"
                           onChange={(e) =>this.setState({SelectedAssetName: e.target.value})}
@@ -446,7 +455,7 @@ class AssetsMaster extends Component {
                   <div className="row">
                     <div className="col-sm-4">
                       <div className="form-group">
-                      <label for="txtQRCodeL">Asset Model</label>
+                      <label htmlFor="txtQRCodeL">Asset Model</label>
                       <input type="text" id="manufacturer" placeholder="Asset Name" 
                           className="form-control"
                           onChange={(e) =>this.setState({SelectedAssetModel: e.target.value})}
@@ -455,7 +464,7 @@ class AssetsMaster extends Component {
                     </div>
                     <div className="col-sm-4">
                       <div className="form-group">
-                      <label for="txtDescriptionL">Is Movable</label>
+                      <label htmlFor="txtDescriptionL">Is Movable</label>
                       <select
                         id="dllCategory"
                         className="form-control"
@@ -476,15 +485,15 @@ class AssetsMaster extends Component {
                   <div className="row">
                   <div className="col-sm-4">
                       <div className="form-group">
-                        <label for="txtDescriptionL">Description</label>
+                        <label htmlFor="txtDescriptionL">Description</label>
                                                    <textarea
-                          Id="txtQRCode"
+                          id="txtQRCode"
                           onChange={(e) =>
                             this.setState({
                                 Description: e.target.value,
                             })
                           }
-                          PlaceHolder="Description"
+                          placeholder="Description"
                           className="form-control form-control-sm"
                         rows="4"
                                     />
@@ -492,7 +501,7 @@ class AssetsMaster extends Component {
                     </div>
                     <div className="col-sm-4">
                       <div className="form-group">
-                        <label for="txtQRCodeL">QRCode</label>
+                        <label htmlFor="txtQRCodeL">QRCode</label>
                         <input type="text" id="manufacturer" placeholder="QR Code" 
                           className="form-control"
                           onChange={(e) =>this.setState({QRCode: e.target.value})}
@@ -505,7 +514,7 @@ class AssetsMaster extends Component {
                       <label>File Upload</label>
                       <DocumentUploader
                         Class={"form-control"}
-                        Id={"kycfileUploader"}
+                        id={"kycfileUploader"}
                         type={"file"}
                         value={this.state.ImageData}
                         onChange={this.onFileChange.bind(this)}
@@ -516,13 +525,13 @@ class AssetsMaster extends Component {
 
                 <div className="modal-footer">
                   <Button
-                    Id="btnSave"
+                    id="btnSave"
                     Text="Save"
                     Action={this.handleSave}
                     ClassName="btn btn-primary"
                   />
                   <Button
-                    Id="btnCancel"
+                    id="btnCancel"
                     Text="Cancel"
                     Action={this.handleCancel}
                     ClassName="btn btn-secondary"
@@ -562,7 +571,7 @@ class AssetsMaster extends Component {
 
                 <div className="modal-footer">
                   <Button
-                    Id="btnCancel"
+                    id="btnCancel"
                     Text="Close"
                     Action={this.handleCancel}
                     ClassName="btn btn-secondary"
