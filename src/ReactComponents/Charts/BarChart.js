@@ -23,10 +23,10 @@ ChartJS.register(
 const BarChart = () => {
   const [data, setData] = useState({
     "Today": {
-      "total": 10,
-      "pending": 3,
-      "completed": 5,
-      "actionable": 2
+      "total": 20,
+      "pending": 6,
+      "completed": 10,
+      "actionable": 4
     },
     "Week": {
       "total": 50,

@@ -89,7 +89,7 @@ class Home extends React.Component {
 
     render() {
         return (
-            <div className="content-wrapper">
+            <div className="content-wrapper mt-5">
                 <div className="content-header">
                     <div className="container-fluid">
                         <div className="row mb-2">

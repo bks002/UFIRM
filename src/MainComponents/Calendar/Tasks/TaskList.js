@@ -271,6 +271,7 @@ export default class TaskList extends Component {
         resp => {
             if (resp && resp.ok && resp.status == 200) {
                 return resp.json().then(rData => {
+                  
                     this.setState({ propertyData: rData });
                 });
             }

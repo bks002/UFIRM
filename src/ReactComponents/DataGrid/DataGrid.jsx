@@ -164,7 +164,7 @@ export default class DataGrid extends React.Component {
                 //****END******/
 
                 let btnhtml = "";
-                if (actionButtons !== undefined) {
+                if (actionButtons && actionButtons !== undefined) {
                     actionButtons.map((action, idx) => {
                         switch (action.Buttons[0]) {
                             case 'Edit&Delete':
