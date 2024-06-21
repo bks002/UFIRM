@@ -36,6 +36,8 @@ import ManageResidentOwnersPage from "../pages/ManageResidentOwnersPage";
 import ManageFlatPage from "../pages/ManageFlatPage";
 import DocumentTypeMasterPage from "../pages/DocumentTypeMasterPage";
 import AssetsMasterPage from "../pages/AssetsMasterPage";
+import CheckInCheckOut from "../pages/checkIn-checkOutPage.jsx";
+import RentalAssets from "../pages/RentalAssets.jsx";
 import EscalationGroupPage from "../pages/EscalationGroupPage";
 import EscalationMatrixPage from "../pages/EscalationMatrixPage";
 import NoticeBoardPage from "../pages/NoticeBoardPage";
@@ -394,15 +396,6 @@ class MainNav extends React.Component {
                             <p>Spot Visit Details</p>
                           </Link>
                         </li>
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/AssetTracking"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Asset Tracking</p>
-                          </Link>
-                        </li>
                         {/* <li className="nav-item">
                                                         <Link to="/Account/App/AttendanceSummary" className="nav-link">
                                                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -413,6 +406,53 @@ class MainNav extends React.Component {
                     </li>
                     // : null
                   }
+
+                    <li className="nav-item has-treeview">
+                      <a href="#" className="nav-link">
+                        <i className="nav-icon fas fa-wrench"></i>
+                        <p>
+                          Asset Management
+                          <i className="right fas fa-angle-left"></i>
+                        </p>
+                      </a>
+                      <ul className="nav nav-treeview">
+                          <li className="nav-item">
+                              <Link
+                                to="/Account/App/AssetsMaster"
+                                className="nav-link"
+                              >
+                                <i className=" fas fa-caret-right nav-icon"></i>
+                                <p>Assets Master</p>
+                              </Link>
+                            </li>
+                            <li className="nav-item">
+                              <Link
+                                to="/Account/App/CheckIn&CheckOut"
+                                className="nav-link"
+                              >
+                                <i className=" fas fa-caret-right nav-icon"></i>
+                                <p>Check-IN & Check-OUT</p>
+                              </Link>
+                            </li>
+
+                            <li className="nav-item">
+                              <Link to="/Account/App/RentalAssets" className="nav-link">
+                                <i className=" fas fa-caret-right nav-icon"></i>
+                                <p>Rental Assets</p>
+                              </Link>
+                            </li>
+
+                            <li className="nav-item">
+                              <Link
+                                to="/Account/App/AssetTracking"
+                                className="nav-link"
+                              >
+                                <i className=" fas fa-caret-right nav-icon"></i>
+                                <p>Asset Tracking</p>
+                              </Link>
+                            </li>
+                      </ul>
+                    </li>
 
                   {
                     // this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager")) ?
@@ -661,17 +701,7 @@ class MainNav extends React.Component {
                           </Link>
                         </li>
                       </ul>
-                      <ul className="nav nav-treeview">
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/AssetsMaster"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Assets Master</p>
-                          </Link>
-                        </li>
-                      </ul>
+                    
                     </li>
                     // : null
                   }
@@ -995,6 +1025,12 @@ class MainNav extends React.Component {
             </Route>
             <Route path="/Account/App/AssetsMaster">
               <AssetsMasterPage />
+            </Route>
+            <Route path="/Account/App/CheckIn&CheckOut">
+              <CheckInCheckOut/>
+            </Route>
+            <Route path="/Account/App/RentalAssets">
+              <RentalAssets/>
             </Route>
             <Route path="/Account/App/EscalationGroup">
               <EscalationGroupPage />
