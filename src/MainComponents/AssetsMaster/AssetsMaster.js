@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component, useState } from "react";
 import DataGrid from "../../ReactComponents/DataGrid/DataGrid.jsx";
 import Button from "../../ReactComponents/Button/Button";
 import ApiProvider from "./DataProvider.js";
@@ -7,7 +7,7 @@ import { ToastContainer, toast } from "react-toastify";
 import * as appCommon from "../../Common/AppCommon.js";
 import { DELETE_CONFIRMATION_MSG } from "../../Contants/Common";
 import swal from "sweetalert";
-import { CreateValidator, ValidateControls } from "./Validation.js";
+import { CreateValidator, ValidateControls } from "./Validation.js"
 import CommonDataProvider from "../../Common/DataProvider/CommonDataProvider.js";
 import DocumentUploader from "../../ReactComponents/FileUploader/DocumentUploader.jsx";
 import { ShowImageModal } from "../KanbanBoard/ImageModal.js";
@@ -57,7 +57,12 @@ class AssetsMaster extends Component {
       showImagefilename: '',
       showImagefiletype: null,
       showImagefile: [],
-      extension: ''
+      extension: '',
+      LastServiceDate:"",
+      NextServiceDate:"",
+      IsRentable: false,
+      AssetValue:"",
+      AMCdoc:"",
     };
     this.ApiProviderr = new ApiProvider();
     this.comdbprovider = new CommonDataProvider();
@@ -83,6 +88,12 @@ class AssetsMaster extends Component {
         IsMovable : this.state.IsMovable,
         Flag: type,
         Image: this.state.Image,
+        LastServiceDate: this.state.LastServiceDate,
+        NextServiceDate: this.state.NextServiceDate,
+        IsRentable: this.state.IsRentable,
+        AssetValue: this.state.AssetValue,
+        AMCdoc: this.state.AMCdoc,
+
       },
     ];
     return model;
@@ -93,6 +104,8 @@ class AssetsMaster extends Component {
     this.ApiProviderr.manageDocumentTypeMaster(model, "R").then((resp) => {
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
+          console.log(rData);
+          console.log(rData.Id)
           rData.sort((a, b) => (a.Id > b.Id ? 1 : -1))
           rData.map((item,index)=>{
             item['sNo']=index+1;
@@ -119,7 +132,9 @@ class AssetsMaster extends Component {
   
 
   findBySno(id) {
+    
     return this.state.GridData.find((item) => {
+      console.log("find by id"+item,id);
       if (item.sNo == id) {
         return item;
       }
@@ -127,6 +142,7 @@ class AssetsMaster extends Component {
   }
 
   ongridedit = (id) => {
+    console.log(id);
     this.setState({ PageMode: "Edit" }, () => {
       CreateValidator(); // Ensure this function is defined and used correctly
   
@@ -136,7 +152,7 @@ class AssetsMaster extends Component {
       // Check if rowData exists before setting state
       if (rowData) {
         this.setState({
-          Id: rowData.id,
+          Id: rowData.Id,
           Name: rowData.Name,
           Description: rowData.Description,
           QRCode: rowData.QRCode
@@ -182,11 +198,28 @@ class AssetsMaster extends Component {
   onGridView = (Id) => {
     this.setState({ PageMode: "View" }, () => {
     var rowData = this.findBySno(Id);
+    console.log(rowData);
     this.setState({
+
+        Id: rowData.Id,
+        Name: rowData.Name,
+        Description: rowData.Description,
+        QRCode: rowData.QRCode,
+        Manufacturer :rowData.ManufacturerName,
+        AssetModel : rowData.SelectedAssetModel,
+        IsMovable : rowData.IsMovable,
+        LastServiceDate:rowData.LastServiceDate,
+        NextServiceDate: rowData.NextServiceDate,
+        LastServiceDate: rowData.LastServiceDate,
+        NextServiceDate: rowData.NextServiceDate,
+        IsRentable: rowData.IsRentable,
+        AssetValue: rowData.AssetValue,
+        AssetType: rowData.AssetType,
+
       showImagefilename: rowData.Name,
       showImagefiletype: rowData.ImageExt,
       showImagefile: rowData.Image,
-      extension: rowData.ImageExt
+      extension: rowData.ImageExt,
     })})
   };
 
@@ -257,6 +290,7 @@ class AssetsMaster extends Component {
   mangaeSave = (model, type) => {
     //
     this.ApiProviderr.manageDocumentTypeMaster(model, type).then((resp) => {
+      console.log(model,type);
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
           //
@@ -290,255 +324,322 @@ class AssetsMaster extends Component {
     });
   };
 
-  render() {
-    return (
-      <div>
-        {this.state.PageMode == "Home" && (
-          <div className="row">
-            <div className="col-12">
-              <div className="card">
-                <div className="card-header d-flex p-0">
-                  <ul className="nav ml-auto tableFilterContainer">
-                    <li className="nav-item">
-                      <div className="input-group input-group-sm">
-                        <div className="input-group-prepend">
-                          <Button
-                            id="btnNewComplain"
-                            Action={this.Addnew.bind(this)}
-                            ClassName="btn btn-success btn-sm"
-                            Icon={
-                              <i className="fa fa-plus" aria-hidden="true"></i>
-                            }
-                            Text=" Create New"
+          render() {
+            return (
+              <div>
+                {this.state.PageMode == "Home" && (
+                  <div className="row">
+                    <div className="col-12">
+                      <div className="card">
+                        <div className="card-header d-flex p-0">
+                          <ul className="nav ml-auto tableFilterContainer">
+                            <li className="nav-item">
+                              <div className="input-group input-group-sm">
+                                <div className="input-group-prepend">
+                                  <Button
+                                    id="btnNewComplain"
+                                    Action={this.Addnew.bind(this)}
+                                    ClassName="btn btn-success btn-sm"
+                                    Icon={
+                                      <i className="fa fa-plus" aria-hidden="true"></i>
+                                    }
+                                    Text=" Create New Asset"
+                                  />
+                                </div>
+                              </div>
+                            </li>
+                          </ul>
+                        </div>
+                        <div className="card-body pt-2">
+                          <DataGrid
+                            Id="grdAssetsMaster"
+                            IsPagination={false}
+                            ColumnCollection={this.state.gridHeader}
+                            Onpageindexchanged={this.onPagechange.bind(this)}
+                            onEditMethod={this.ongridedit.bind(this)}
+                            onGridDeleteMethod={this.onGridDelete.bind(this)}
+                            onGridViewMethod={this.onGridView.bind(this)}
+                            DefaultPagination={false}
+                            IsSarching="true"
+                            GridData={this.state.GridData}
+                            pageSize="2000"
                           />
                         </div>
                       </div>
-                    </li>
-                  </ul>
-                </div>
-                <div className="card-body pt-2">
-                  <DataGrid
-                    Id="grdAssetsMaster"
-                    IsPagination={false}
-                    ColumnCollection={this.state.gridHeader}
-                    Onpageindexchanged={this.onPagechange.bind(this)}
-                    onEditMethod={this.ongridedit.bind(this)}
-                    onGridDeleteMethod={this.onGridDelete.bind(this)}
-                    onGridViewMethod={this.onGridView.bind(this)}
-                    DefaultPagination={false}
-                    IsSarching="true"
-                    GridData={this.state.GridData}
-                    pageSize="2000"
-                  />
+                    </div>
+                  </div>
+                )}
+              {(this.state.PageMode == "Add" || this.state.PageMode == "Edit") && (
+              <div>
+                <div className="modal-content p-2 rounded">
+                  <div className="modal-body">
+                    <div className="container-fluid">
+
+                      <div className="row bg-blue rounded p-2 mb-2 d-flex align-items-center">
+
+                        <div className="col-sm-3">
+                          <label >Choose Asset Type</label>
+                        </div>
+
+                        <div className="col-sm-3">
+                          <div className="form-group m-0">
+                            <label>
+                              <input
+                                id="radio1"
+                                type="radio"
+                                value="Machine/Equipment"
+                                name="assetType"
+                                className="form-check-input"
+                                onChange={(e) =>
+                                  this.setState({ AssetType: e.target.value })
+                                }
+                              />
+                              Machine/Equipment
+                            </label>
+                          </div>
+                        </div>
+                        <div className="col-sm-3">
+                          <div className="form-group m-0">
+                            <label>
+                              <input
+                                id="radio2"
+                                type="radio"
+                                value="MeasuringEnquipment"
+                                name="assetType"
+                              className="form-check-input"
+                                onChange={(e) =>
+                                  this.setState({ AssetType: e.target.value })
+                                }
+                              />
+                              Measuring Equipment
+                            </label>
+                          </div>
+                        </div>
+                        <div className="col-sm-3">
+                          <div className="form-group m-0">
+                            <label>
+                              <input
+                                id="radio3"
+                                type="radio"
+                                value="Facility"
+                                name="assetType"
+                                className="form-check-input"
+                                onChange={(e) =>
+                                  this.setState({ AssetType: e.target.value })
+                                }
+                              />
+                              Facility
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="row">
+                        <div className="col-sm-6">
+                          <div className="form-group">
+                            <label htmlFor="manufacturer">Manufacturer</label>
+                            <input
+                              type="text"
+                              id="manufacturer"
+                              placeholder="Manufacturer"
+                              className="form-control"
+                              onChange={(e) =>
+                                this.setState({ ManufacturerName: e.target.value })
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="col-sm-6">
+                          <div className="form-group">
+                            <label htmlFor="assetName">Asset Name</label>
+                            <input
+                              type="text"
+                              id="assetName"
+                              placeholder="Asset Name"
+                              className="form-control"
+                              onChange={(e) =>
+                                this.setState({ SelectedAssetName: e.target.value })
+                              }
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="row">
+                        <div className="col-sm-6">
+                          <div className="form-group">
+                            <label htmlFor="assetModel">Asset Model</label>
+                            <input
+                              type="text"
+                              id="assetModel"
+                              placeholder="Asset Model"
+                              className="form-control"
+                              onChange={(e) =>
+                                this.setState({ SelectedAssetModel: e.target.value })
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="col-sm-6">
+                          <div className="form-group">
+                            <label htmlFor="isMovable">Is Movable</label>
+                            <select
+                              id="isMovable"
+                              className="form-control"
+                              onChange={(e) =>
+                                this.setState({ IsMovable: e.target.value === "true" })
+                              }
+                            >
+                              <option value={0}>Is Movable</option>
+                              <option value={true}>Yes</option>
+                              <option value={false}>No</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="row">
+                        <div className="col-sm-6">
+                          <div className="form-group">
+                            <label htmlFor="lastServiceDate">Last Service Date</label>
+                            <input
+                              type="date"
+                              id="lastServiceDate"
+                              className="form-control"
+                              value={this.state.LastServiceDate}
+                              onChange={(e) =>
+                                this.setState({ LastServiceDate: e.target.value })
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="col-sm-6">
+                          <div className="form-group">
+                            <label htmlFor="nextServiceDate">Next Service Date</label>
+                            <input
+                              type="date"
+                              id="nextServiceDate"
+                              className="form-control"
+                              value={this.state.NextServiceDate}
+                              onChange={(e) =>
+                                this.setState({ NextServiceDate: e.target.value })
+                              }
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="row">
+                        <div className="col-sm-6">
+                          <div className="form-group ">
+                            <label>Is Rentable?</label>
+                            <input
+                              type="range"
+                              min="0"
+                              max="1"
+                              step="1"
+                              value={this.state.IsRentable ? 1 : 0}
+                              className="form-control-range"
+                              onChange={(e) =>
+                                this.setState({ IsRentable: parseInt(e.target.value) === 1 })
+                              }
+                            />
+                            <span>{this.state.IsRentable ? "Yes" : "No"}</span>
+                          </div>
+                        </div>
+                        <div className="col-sm-6">
+                <div className="form-group">
+                  <label htmlFor="assetValue">Asset Value</label>
+                  <div className="input-group">
+                    <div className="input-group-prepend">
+                      <span className="input-group-text">₹</span>
+                    </div>
+                    <input
+                      type="number"
+                      id="assetValue"
+                      className="form-control currency"
+                      value={this.state.AssetValue}
+                      onChange={(e) =>
+                        this.setState({ AssetValue: parseFloat(e.target.value) || 0 })
+                      }
+                      onKeyDown={(e) => e.key === 'e' && e.preventDefault()} // Prevents input of 'e'
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
-        {(this.state.PageMode == "Add" || this.state.PageMode == "Edit") && (
-          <div>
-            <div>
-              <div className="modal-content">
-                <div className="modal-body">
-                <div className="row">
-                  <div className="col-sm-6">
-                      <div className="form-group">
-                        <label htmlFor="radio1">Choose Asset Type</label>
                       </div>
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-sm-2">
-                      <div className="form-group">
-                        <label>
-                          <input
-                            id="radio1"
-                            type="radio"
-                            value="Machine/Equipment"
-                            name="assetType"
-                            onChange={(e) =>
-                                this.setState({
-                                    AssetType: e.target.value,
-                                })
+
+                      <div className="row">
+                        <div className="col-sm-6">
+                          <div className="form-group">
+                            <label htmlFor="description">Description</label>
+                            <textarea
+                              id="description"
+                              onChange={(e) =>
+                                this.setState({ Description: e.target.value })
                               }
-                          />
-                          Machine/Equipment
-                        </label>
+                              placeholder="Description"
+                              className="form-control form-control-sm"
+                              rows="2"
+                            />
+                          </div>
+                        </div>
+                        <div className="col-sm-6">
+                          <div className="form-group">
+                            <label htmlFor="QRCode">QRCode</label>
+                            <input
+                              type="text"
+                              id="QRCode"
+                              placeholder="QR Code"
+                              className="form-control"
+                              onChange={(e) => this.setState({ QRCode: e.target.value })}
+                            />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="col-sm-2">
-                      <div className="form-group">
-                        <label>
-                          <input
-                            id="radio1"
-                            type="radio"
-                            value="MeasuringEnquipment"
-                            name="assetType"
-                            onChange={(e) =>
-                                this.setState({
-                                    AssetType: e.target.value,
-                                })
-                              }
+
+                      <div className="row">
+                        <div className="col-sm-6">
+                          <label>Bill Upload</label>
+                          <DocumentUploader
+                            Class={"form-control"}
+                            id={"kycfileUploader"}
+                            type={"file"}
+                            value={this.state.ImageData}
+                            onChange={this.onFileChange.bind(this)}
                           />
-                          Measuring Enquipment
-                        </label>
-                      </div>
-                    </div>
-                    <div className="col-sm-2">
-                      <div className="form-group">
-                        <label>
-                          <input
-                            id="radio1"
-                            type="radio"
-                            value="Facility"
-                            name="assetType"
-                            onChange={(e) =>
-                                this.setState({
-                                    AssetType: e.target.value,
-                                })
-                              }
+                        </div>
+                        <div className="col-sm-6">
+                          <label>AMC Upload</label>
+                          <DocumentUploader
+                            Class={"form-control"}
+                            id={"kycfileUploader"}
+                            type={"file"}
+                            value={this.state.AMCdoc}
+                            onChange={this.onFileChange.bind(this)}
                           />
-                          Facility
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-sm-4">
-                      <div className="form-group">
-                      <label htmlFor="manufacturer">Manufacturer</label>
-                          <input type="text" id="manufacturer" placeholder="Manufacturer" 
-                          className="form-control"
-                          onChange={(e) =>this.setState({ManufacturerName: e.target.value})}
-                          />
-                      </div>
-                    </div>
-                    <div className="col-sm-4">
-                      <div className="form-group">
-                      <label htmlFor="txtQRCodeL">Asset Name</label>
-                      <input type="text" id="manufacturer" placeholder="Asset Name" 
-                          className="form-control"
-                          onChange={(e) =>this.setState({SelectedAssetName: e.target.value})}
-                          />
-                      </div>
-                    </div>
-                    {/* <div className="col-sm-4">
-                      <div className="form-group">
-                      <label for="txtQRCodeL">Category</label>
-                      <input type="text" id="manufacturer" placeholder="Category" 
-                          className="form-control"
-                          onChange={(e) =>this.setState({SelectedCategory: e.target.value})}
-                          />
-                      </div>
-                    </div> */}
-                  </div>
-                  <div className="row">
-                    {/* <div className="col-sm-4">
-                      <div className="form-group">
-                   <label for="txtQRCodeL">Sub Category</label>
-                   <input type="text" id="manufacturer" placeholder="Sub Category" 
-                          className="form-control"
-                          onChange={(e) =>this.setState({SelectedSubCategory: e.target.value})}
-                          />
-                      </div>
-                    </div> */}
-                    {/* <div className="col-sm-4">
-                      <div className="form-group">
-                      <label for="txtQRCodeL">Asset Name</label>
-                      <input type="text" id="manufacturer" placeholder="Asset Name" 
-                          className="form-control"
-                          onChange={(e) =>this.setState({SelectedAssetName: e.target.value})}
-                          />
-                      </div>
-                    </div> */}
-                  </div>
-                  <div className="row">
-                    <div className="col-sm-4">
-                      <div className="form-group">
-                      <label htmlFor="txtQRCodeL">Asset Model</label>
-                      <input type="text" id="manufacturer" placeholder="Asset Name" 
-                          className="form-control"
-                          onChange={(e) =>this.setState({SelectedAssetModel: e.target.value})}
-                          />
-                      </div>
-                    </div>
-                    <div className="col-sm-4">
-                      <div className="form-group">
-                      <label htmlFor="txtDescriptionL">Is Movable</label>
-                      <select
-                        id="dllCategory"
-                        className="form-control"
-                        onChange={(e) =>
-                            this.setState({
-                                IsMovable: e.target.value,
-                            })
-                          }
-                      >
-                        <option value={0}>Is Movable</option>
-                        <option value={true}>Yes</option>
-                        <option value={false}>No</option>
-                      </select>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="row">
-                  <div className="col-sm-4">
-                      <div className="form-group">
-                        <label htmlFor="txtDescriptionL">Description</label>
-                                                   <textarea
-                          id="txtQRCode"
-                          onChange={(e) =>
-                            this.setState({
-                                Description: e.target.value,
-                            })
-                          }
-                          placeholder="Description"
-                          className="form-control form-control-sm"
-                        rows="4"
-                                    />
-                      </div>
-                    </div>
-                    <div className="col-sm-4">
-                      <div className="form-group">
-                        <label htmlFor="txtQRCodeL">QRCode</label>
-                        <input type="text" id="manufacturer" placeholder="QR Code" 
-                          className="form-control"
-                          onChange={(e) =>this.setState({QRCode: e.target.value})}
-                          />
-                    </div>
-                  </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-sm-2">
-                      <label>File Upload</label>
-                      <DocumentUploader
-                        Class={"form-control"}
-                        id={"kycfileUploader"}
-                        type={"file"}
-                        value={this.state.ImageData}
-                        onChange={this.onFileChange.bind(this)}
-                      />
-                    </div>
-                  </div>
-                </div>
+                  <div className="modal-footer m-2">
 
-                <div className="modal-footer">
-                  <Button
-                    id="btnSave"
-                    Text="Save"
-                    Action={this.handleSave}
-                    ClassName="btn btn-primary"
-                  />
-                  <Button
-                    id="btnCancel"
-                    Text="Cancel"
-                    Action={this.handleCancel}
-                    ClassName="btn btn-secondary"
-                  />
+                    <Button
+                      id="btnSave"
+                      Text="Save"
+                      Action={this.handleSave}
+                      ClassName="btn btn-primary "
+                    />
+
+                    <Button
+                      id="btnCancel"
+                      Text="Cancel"
+                      Action={this.handleCancel}
+                      ClassName="btn btn-secondary"
+                    />
+                  </div>
                 </div>
-              </div>
-            </div>
             <ToastContainer
               position="top-right"
               autoClose={5000}
@@ -554,44 +655,108 @@ class AssetsMaster extends Component {
           </div>
         )}
                 {(this.state.PageMode == "View") && (
-          <div>
-            <div>
-              <div className="modal-content">
-                <div className="modal-body">
-                  <h3>Assets Images</h3>
-                <div className="row">
-                  <div className="col-sm-6">
-                      <div className="form-group">
-                        {/* <img src={this.state.showImagefile} alt="Image" width="100" height="100" /> */}
-                        <img src={`data:image/jpeg;base64,${this.state.showImagefile}`} style={{"height":"400px","width":"400px"}} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
+    <div className="modal-dialog rounded" role="document">
+      <div className="modal-content rounded ">
+        <div className="modal-header bg-blue rounded-top p-1">
+        <h5 class="modal-title p-1">Viewing Asset Details</h5>
+        <button type="button" className="close " data-dismiss="modal" aria-label="Close" onClick={this.handleCancel}>
+          <span aria-hidden="true">&times;</span>
+        </button>
+        </div>
 
-                <div className="modal-footer">
-                  <Button
-                    id="btnCancel"
-                    Text="Close"
-                    Action={this.handleCancel}
-                    ClassName="btn btn-secondary"
-                  />
-                </div>
-              </div>
+        <div className="modal-body p-2">
+          <form>
+            <div className="row"><div className="form-group col-sm-6">
+              <label htmlFor="id">ID:</label>
+              <input type="text" className="form-control" id="id" value={this.state.Id} readOnly />
             </div>
-            <ToastContainer
-              position="top-right"
-              autoClose={5000}
-              hideProgressBar={false}
-              newestOnTop={false}
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-            />
-            <ToastContainer />
-          </div>
+            <div className="form-group col-sm-6">
+              <label htmlFor="name">Asset Type:</label>
+              <input type="text" className="form-control" id="name" value={this.state.AssetType} readOnly />
+            </div>
+            </div>
+            
+            <div className="row">
+            <div className="form-group col-sm-6">
+              <label htmlFor="name">Name:</label>
+              <input type="text" className="form-control" id="name" value={this.state.Name} readOnly />
+            </div>
+            <div className="form-group col-sm-6">
+              <label htmlFor="name">Asset Model:</label>
+              <input type="text" className="form-control" id="name" value={this.state.AssetModel} readOnly />
+            </div>
+            </div>
+
+            <div className="row">
+            <div className="form-group col-sm-6">
+              <label htmlFor="isMovable">Is Movable:</label>
+              <input type="text" className="form-control" id="isMovable" value={this.state.IsMovable} readOnly />
+            </div>
+            <div className="form-group col-sm-6">
+              <label htmlFor="isRentable">Is Rentable:</label>
+              <input type="text" className="form-control" id="isRentable" value={this.state.IsRentable ? "Yes" : "No"} readOnly />
+            </div></div>
+
+            <div className="row">
+            <div className="form-group col-sm-6">
+              <label htmlFor="description">Description:</label>
+              <textarea className="form-control" id="description" value={this.state.Description} readOnly />
+            </div>
+            <div className="form-group col-sm-6">
+              <label htmlFor="qrCode">QR Code:</label>
+              <input type="text" className="form-control" id="qrCode" value={this.state.QRCode} readOnly />
+            </div>
+            
+            </div>
+
+            <div className="row">
+            <div className="form-group col-sm-6">
+              <label htmlFor="lastServiceDate">Last Service Date:</label>
+              <input type="text" className="form-control" id="lastServiceDate" value={this.state.LastServiceDate} readOnly />
+            </div>
+            <div className="form-group  col-sm-6">
+              <label htmlFor="nextServiceDate">Next Service Date:</label>
+              <input type="text" className="form-control" id="nextServiceDate" value={this.state.NextServiceDate} readOnly />
+            </div>
+            
+            </div>
+
+            <div className="row">
+            <div className="form-group col-sm-6">
+              <label htmlFor="assetValue">Manufacturer:</label>
+              <input type="text" className="form-control" id="assetValue" value={this.state.ManufacturerName} readOnly />
+            </div>
+            <div className="form-group col-sm-6">
+              <label htmlFor="assetValue">Asset Value:</label>
+              <input type="text" className="form-control" id="assetValue" value={`₹${this.state.AssetValue}`} readOnly />
+            </div>
+            </div> 
+
+            <div className="row">
+              <div className="form-group col-sm-6">
+              <label htmlFor="assetImage">Asset Image:</label>
+              <img
+                src={`data:image/jpeg;base64,${this.state.showImagefile}`}
+                alt="Asset"
+                className="img-fluid"
+                style={{ height: "400px", width: "400px" }}
+              />
+              </div>
+              <div className="form-group col-sm-6">
+              <label htmlFor="assetImage">AMC Contract:</label>
+              <img
+                src={`data:image/jpeg;base64,${this.state.showImagefile}`}
+                alt="AMC Document"
+                className="img-fluid"
+                style={{ height: "400px", width: "400px" }}
+              />
+              </div>
+            
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
         )}
       </div>
     );

@@ -8,7 +8,7 @@ class DocumentUploader extends React.Component {
         return (
             <div>
                 <input
-                    style={{padding: "2px"}}
+                    style={{padding: "5px"}}
                     className={this.props.Class}
                     id={this.props.Id} 
                     type={this.props.type} 

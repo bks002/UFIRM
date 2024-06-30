@@ -1,0 +1,8 @@
+.modal {
+    pointer-events: auto;
+  }
+  
+  .modal-backdrop {
+    pointer-events: none;
+  }
+  

@@ -431,7 +431,7 @@ class MainNav extends React.Component {
                                 className="nav-link"
                               >
                                 <i className=" fas fa-caret-right nav-icon"></i>
-                                <p>Check-IN & Check-OUT</p>
+                                <p>Check IN & OUT</p>
                               </Link>
                             </li>
 
@@ -448,7 +448,7 @@ class MainNav extends React.Component {
                                 className="nav-link"
                               >
                                 <i className=" fas fa-caret-right nav-icon"></i>
-                                <p>Asset Tracking</p>
+                                <p>Asset Log</p>
                               </Link>
                             </li>
                       </ul>
