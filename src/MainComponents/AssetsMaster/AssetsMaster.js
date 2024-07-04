@@ -370,7 +370,7 @@ class AssetsMaster extends Component {
                         <div className="card-body pt-2">
                           <DataGrid
                             Id="grdAssetsMaster"
-                            IsPagination={flase}
+                            IsPagination={false}
                             ColumnCollection={this.state.gridHeader}
                             Onpageindexchanged={this.onPagechange.bind(this)}
                             onEditMethod={this.ongridedit.bind(this)}
