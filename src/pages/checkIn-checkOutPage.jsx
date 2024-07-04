@@ -46,6 +46,7 @@ const CheckInCheckOut = () => {
   };
 
   const handleCloseModal = () => {
+
     setViewModal(false);
     setCurrentAsset(null);
     setActionType("");
@@ -137,13 +138,13 @@ const CheckInCheckOut = () => {
             </div>
           )}
         </div>
-        <PopUp 
+        {viewModal?<PopUp 
           show={viewModal} 
           handleClose={handleCloseModal} 
           asset={currentAsset} 
           actionType={actionType} 
           handleSubmit={handleSubmit} 
-        />
+        />:undefined}
       </section>
     </div>
   );

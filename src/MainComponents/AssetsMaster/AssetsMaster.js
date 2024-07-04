@@ -25,7 +25,7 @@ class AssetsMaster extends Component {
     this.state = {
       GridData: [],
       gridHeader: [
-        { sTitle: "Id", titleValue: "sNo", orderable: false },
+        { sTitle: "S No.", titleValue: "sNo", orderable: false },
         { sTitle: "Assets Name", titleValue: "Name" },
         { sTitle: "Description", titleValue: "Description" },
         { sTitle: "QRCode", titleValue: "QRCode" },
@@ -45,7 +45,7 @@ class AssetsMaster extends Component {
       SelectedSubCategory: "",
       SelectedAssetName: "",
       SelectedAssetModel: "",
-      IsMovable: false,
+      IsMoveable: null,
       Name: "",
       Description: "",
       QRCode: "",
@@ -60,7 +60,7 @@ class AssetsMaster extends Component {
       extension: '',
       LastServiceDate:"",
       NextServiceDate:"",
-      IsRentable: false,
+      IsRentable: null,
       AssetValue:"",
       AMCdoc:"",
     };
@@ -85,7 +85,7 @@ class AssetsMaster extends Component {
         SubCategory : this.state.SelectedSubCategory,
         AssetName : this.state.SelectedAssetName,
         AssetModel : this.state.SelectedAssetModel,
-        IsMovable : this.state.IsMovable,
+        IsMoveable : this.state.IsMoveable,
         Flag: type,
         Image: this.state.Image,
         LastServiceDate: this.state.LastServiceDate,
@@ -111,6 +111,7 @@ class AssetsMaster extends Component {
             item['sNo']=index+1;
         })
           this.setState({ GridData: rData });
+          
         });
         
       }
@@ -134,7 +135,6 @@ class AssetsMaster extends Component {
   findBySno(id) {
     
     return this.state.GridData.find((item) => {
-      console.log("find by id"+item,id);
       if (item.sNo == id) {
         return item;
       }
@@ -147,21 +147,38 @@ class AssetsMaster extends Component {
       CreateValidator(); // Ensure this function is defined and used correctly
   
       // Find the item by id in GridData
-      const rowData = this.findItem(id);
+      const rowData = this.findBySno(id);
+      console.log(rowData);
   
       // Check if rowData exists before setting state
       if (rowData) {
         this.setState({
           Id: rowData.Id,
-          Name: rowData.Name,
-          Description: rowData.Description,
-          QRCode: rowData.QRCode
+        Name: rowData.Name,
+        Description: rowData.Description,
+        QRCode: rowData.QRCode,
+        ManufacturerName :rowData.ManufacturerName,
+        AssetModel : rowData.SelectedAssetModel,
+        IsMoveable : rowData.IsMoveable,
+        LastServiceDate:rowData.LastServiceDate,
+        NextServiceDate: rowData.NextServiceDate,
+        LastServiceDate: rowData.LastServiceDate,
+        NextServiceDate: rowData.NextServiceDate,
+        IsRentable: rowData.IsRentable,
+        AssetValue: rowData.AssetValue,
+        AssetType: rowData.AssetType,
         });
+        console.log(JSON.stringify(rowData)+"xcv");
+        
+        console.log(rowData.Id);
       } else {
         console.error(`Item with id ${id} not found`); // Handle error if needed
       }
-    });
+    });console.log(this.state.Id);
+    console.log(this.state.Name);
+    console.log(this.state.IsMoveable);
   };
+  
   
 
   onGridDelete = (Id) => {
@@ -207,7 +224,7 @@ class AssetsMaster extends Component {
         QRCode: rowData.QRCode,
         Manufacturer :rowData.ManufacturerName,
         AssetModel : rowData.SelectedAssetModel,
-        IsMovable : rowData.IsMovable,
+        IsMoveable : rowData.IsMoveable,
         LastServiceDate:rowData.LastServiceDate,
         NextServiceDate: rowData.NextServiceDate,
         LastServiceDate: rowData.LastServiceDate,
@@ -327,7 +344,7 @@ class AssetsMaster extends Component {
           render() {
             return (
               <div>
-                {this.state.PageMode == "Home" && (
+                {this.state.PageMode === "Home" && (
                   <div className="row">
                     <div className="col-12">
                       <div className="card">
@@ -353,7 +370,7 @@ class AssetsMaster extends Component {
                         <div className="card-body pt-2">
                           <DataGrid
                             Id="grdAssetsMaster"
-                            IsPagination={false}
+                            IsPagination={flase}
                             ColumnCollection={this.state.gridHeader}
                             Onpageindexchanged={this.onPagechange.bind(this)}
                             onEditMethod={this.ongridedit.bind(this)}
@@ -369,16 +386,15 @@ class AssetsMaster extends Component {
                     </div>
                   </div>
                 )}
-              {(this.state.PageMode == "Add" || this.state.PageMode == "Edit") && (
+              {(this.state.PageMode === "Add" || this.state.PageMode == "Edit") && (
               <div>
                 <div className="modal-content p-2 rounded">
                   <div className="modal-body">
                     <div className="container-fluid">
 
                       <div className="row bg-blue rounded p-2 mb-2 d-flex align-items-center">
-
                         <div className="col-sm-3">
-                          <label >Choose Asset Type</label>
+                          <label >Choose Asset Type </label>
                         </div>
 
                         <div className="col-sm-3">
@@ -442,6 +458,7 @@ class AssetsMaster extends Component {
                               type="text"
                               id="manufacturer"
                               placeholder="Manufacturer"
+                              value={this.state.ManufacturerName||""}
                               className="form-control"
                               onChange={(e) =>
                                 this.setState({ ManufacturerName: e.target.value })
@@ -451,12 +468,13 @@ class AssetsMaster extends Component {
                         </div>
                         <div className="col-sm-6">
                           <div className="form-group">
-                            <label htmlFor="assetName">Asset Name</label>
+                            <label htmlFor="assetName">Enter Asset Name</label>
                             <input
                               type="text"
                               id="assetName"
                               placeholder="Asset Name"
                               className="form-control"
+                              value={this.state.Name || ""}
                               onChange={(e) =>
                                 this.setState({ SelectedAssetName: e.target.value })
                               }
@@ -473,6 +491,7 @@ class AssetsMaster extends Component {
                               type="text"
                               id="assetModel"
                               placeholder="Asset Model"
+                              value={this.state.AssetModel||""}
                               className="form-control"
                               onChange={(e) =>
                                 this.setState({ SelectedAssetModel: e.target.value })
@@ -480,22 +499,25 @@ class AssetsMaster extends Component {
                             />
                           </div>
                         </div>
-                        <div className="col-sm-6">
-                          <div className="form-group">
-                            <label htmlFor="isMovable">Is Movable</label>
-                            <select
-                              id="isMovable"
-                              className="form-control"
-                              onChange={(e) =>
-                                this.setState({ IsMovable: e.target.value === "true" })
-                              }
-                            >
-                              <option value={0}>Is Movable</option>
-                              <option value={true}>Yes</option>
-                              <option value={false}>No</option>
-                            </select>
-                          </div>
-                        </div>
+                        <div className="form-group col-sm-6">
+  <label htmlFor="isMovable">Is Movable</label>
+  <select
+    id="isMovable"
+    className="form-control"
+    value={this.state.IsMoveable === null ? "" : (this.state.IsMoveable ? "true" : "false")}
+    onChange={(e) =>
+      this.setState({ IsMoveable: e.target.value === "true" })
+    }
+  >
+    <option value="" disabled>
+      Select an option
+    </option>
+    <option value="true">Yes</option>
+    <option value="false">No</option>
+  </select>
+</div>
+
+
                       </div>
 
                       <div className="row">
@@ -506,7 +528,7 @@ class AssetsMaster extends Component {
                               type="date"
                               id="lastServiceDate"
                               className="form-control"
-                              value={this.state.LastServiceDate}
+                              value={this.state.LastServiceDate || ""}
                               onChange={(e) =>
                                 this.setState({ LastServiceDate: e.target.value })
                               }
@@ -558,7 +580,7 @@ class AssetsMaster extends Component {
                       type="number"
                       id="assetValue"
                       className="form-control currency"
-                      value={this.state.AssetValue}
+                      value={this.state.AssetValue || ""}
                       onChange={(e) =>
                         this.setState({ AssetValue: parseFloat(e.target.value) || 0 })
                       }
@@ -579,6 +601,7 @@ class AssetsMaster extends Component {
                                 this.setState({ Description: e.target.value })
                               }
                               placeholder="Description"
+                              value={this.state.Description||""}
                               className="form-control form-control-sm"
                               rows="2"
                             />
@@ -591,6 +614,7 @@ class AssetsMaster extends Component {
                               type="text"
                               id="QRCode"
                               placeholder="QR Code"
+                              value={this.state.QRCode||""}
                               className="form-control"
                               onChange={(e) => this.setState({ QRCode: e.target.value })}
                             />
@@ -689,8 +713,8 @@ class AssetsMaster extends Component {
 
             <div className="row">
             <div className="form-group col-sm-6">
-              <label htmlFor="isMovable">Is Movable:</label>
-              <input type="text" className="form-control" id="isMovable" value={this.state.IsMovable} readOnly />
+              <label htmlFor="isMovable">Is Moveable:</label>
+              <input type="text" className="form-control" id="isMovable" value={this.state.IsMoveable?"Yes":"No"} readOnly />
             </div>
             <div className="form-group col-sm-6">
               <label htmlFor="isRentable">Is Rentable:</label>
