@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 import './PopUp.css';
@@ -6,6 +6,7 @@ import CheckIn from '../../pages/CheckInPage';
 import CheckOut from '../../pages/CheckOutPage';
 
 function PopUp({ show, handleClose, asset, actionType, handleSubmit }) {
+  const [formData, setFormData]=useState({});
   return (
     <Modal
       show={show}
