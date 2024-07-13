@@ -18,12 +18,16 @@ class Home extends React.Component {
             complainsCnt: 0,
 
             totalFlats: [],
-            totalFlatsCnt: 0
-        }
+            totalFlatsCnt: 0,
+
+            taskStatus:[],
+            totalTAsks:0
+        };
         this.ApiProviderr = new ApiProvider();
     }
     
     componentDidMount() {
+        this.taskStatusCount();
         this.loadDashboardData();
     }
 
@@ -31,6 +35,7 @@ class Home extends React.Component {
         var type = 'R';
         var model = this.getModel(type);
         this.manageDashboardCnt(model, type);
+        
     }
 
     componentDidUpdate(prevProps) {
@@ -38,6 +43,27 @@ class Home extends React.Component {
             this.loadDashboardData();
         }
     }
+
+    taskStatusCount = async () => {
+        try {
+            const response = await fetch("https://api.urest.in:8096/GetAllTaskWiseStatusFinalCountDash");
+            const data = await response.json();
+            if(data !== null){
+            let taskStatus = [
+                { Title: 'Completed', Value: data[0].Count},
+                { Title: 'Actionable', Value: data[1].Count },
+                { Title: 'Pending', Value: data[2].Count }
+            ];
+            this.setState({ taskStatus: taskStatus ,
+                totalTAsks :data.reduce((total, item) => total + item.Count, 0)
+            }); 
+        }
+            console.log(data);
+            console.log(data[0].Count);
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        }
+    };
 
     manageDashboardCnt = (model, type) => {
         this.ApiProviderr.manageDashboardCnt(model, type).then(
@@ -51,12 +77,15 @@ class Home extends React.Component {
                                     let totalFlats = [
                                         { Title: 'Owners Residing', Value: rData.dashbaordFlatCount.owner },
                                         { Title: 'Tenants', Value: rData.dashbaordFlatCount.tenant },
-                                        { Title: 'Vacant', Value: rData.dashbaordFlatCount.vacant }
+                                        { Title: 'Vacant', Value: rData.dashbaordFlatCount.vacant },
+                                        { Title: 'Free', Value: rData.dashbaordFlatCount.free }
+
                                     ];
                                     let complains = [
-                                        { Title: 'Closed', Value: rData.dashbaordComplainCount.open },
-                                        { Title: 'Pending', Value: rData.dashbaordComplainCount.inProgress },
-                                        { Title: 'Actionable', Value: rData.dashbaordComplainCount.resolved },
+                                        { Title: 'Open', Value: rData.dashbaordComplainCount.open },
+                                        { Title: 'In Progress', Value: rData.dashbaordComplainCount.inProgress },
+                                        { Title: 'Resolved', Value: rData.dashbaordComplainCount.resolved },
+                                        {Title: 'Closed', Value: rData.dashbaordComplainCount.completed },
                                     ];
                                     this.setState({
                                         totalFlats: totalFlats,
@@ -105,7 +134,7 @@ class Home extends React.Component {
                 {console.log(this.state.complains)}
                 <section className="content ">
       <div className="container-fluid">
-        <div className="row">
+        <div className="row equal-height">
           <div className="col-md-6">
             <div className="card mb-3 shadow-sm chart-boundary">
               <div className="card-body">
@@ -113,7 +142,7 @@ class Home extends React.Component {
               </div>
             </div>
           </div>
-          <div className="col-md-6">
+          <div className="col-md-6 ">
             <div className="card mb-3 shadow-sm chart-boundary">
               <div className="card-body">
                 <PieChart/>
@@ -133,14 +162,21 @@ class Home extends React.Component {
                 <section className="content ">
                     <div className="container-fluid">
                         <div className="row">
-                            <div className="col-md-6 ">
-                                <DashboardCard CardTitle="Task Details"
+                        <div className="col-md-4 ">
+                                <DashboardCard CardTitle="Task Status"
+                                    HeaderValue={this.state.totalTAsks}
+                                    HeaderClass="card card-danger cardutline"
+                                    ItemJson={this.state.taskStatus}
+                                    Link="/Account/App/TicketComplains" />
+                            </div>
+                            <div className="col-md-4 ">
+                                <DashboardCard CardTitle="Complains"
                                     HeaderValue={this.state.complainsCnt}
                                     HeaderClass="card card-danger cardutline"
                                     ItemJson={this.state.complains}
                                     Link="/Account/App/TicketComplains" />
                             </div>
-                            <div className="col-md-6">
+                            <div className="col-md-4">
                                 <DashboardCard CardTitle="Total Flats"
                                     HeaderValue={this.state.totalFlatsCnt}
                                     HeaderClass="card card-info cardutline"

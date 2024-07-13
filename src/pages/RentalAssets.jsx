@@ -4,6 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 
 const CheckInCheckOut = () => {
   const [assetData, setAssetData] = useState([]);
+  const [rentalAssets, setRentalAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewModal, setViewModal] = useState(false);
   const [currentAsset, setCurrentAsset] = useState(null);
@@ -23,7 +24,11 @@ const CheckInCheckOut = () => {
           throw new Error('Network response was not ok');
         }
         const data = await response.json();
+        console.log(data);
         setAssetData(data);
+        const filteredAssets = data.filter(asset=> asset.IsRentable.includes("true")||asset.IsRentable.includes("1"));
+        setRentalAssets(filteredAssets);
+        console.log(filteredAssets);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -111,20 +116,20 @@ const CheckInCheckOut = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {assetData.map((asset, index) => (
+                  {rentalAssets.map((asset, index) => (
                     <tr key={asset.Id}>
                       <td>{index + 1}</td>
                       <td>{asset.Id}</td>
                       <td>{asset.Name}</td>
                       <td className="align-middle">
                       <button
-                        className="btn btn-primary btn-sm m-1 px-3 mr-2"
+                        className="btn btn-warning btn-sm m-1 px-3 mr-2"
                         onClick={() => handleCheckIn(asset)}
                       >
                         Return
                       </button>
                       <button
-                        className="btn btn-secondary btn-sm m-1"
+                        className="btn-lg btn-success btn-sm px-3 m-1"
                         onClick={() => handleCheckOut(asset)}
                       >
                         Rent Out
@@ -137,13 +142,13 @@ const CheckInCheckOut = () => {
             </div>
           )}
         </div>
-        <PopUp 
+        {viewModal?<PopUp 
           show={viewModal} 
           handleClose={handleCloseModal} 
           asset={currentAsset} 
           actionType={actionType} 
           handleSubmit={handleSubmit} 
-        />
+        />:undefined}
       </section>
     </div>
   );

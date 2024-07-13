@@ -26,9 +26,11 @@ class AssetsMaster extends Component {
       GridData: [],
       gridHeader: [
         { sTitle: "S No.", titleValue: "sNo", orderable: false },
+        { sTitle: "Id", titleValue: "Id", orderable: true },
         { sTitle: "Assets Name", titleValue: "Name" },
         { sTitle: "Description", titleValue: "Description" },
         { sTitle: "QRCode", titleValue: "QRCode" },
+        { sTitle: "Service Due Date", titleValue: "NextServiceDate" },
         {
           sTitle: "Action",
           titleValue: "Action",
@@ -45,7 +47,7 @@ class AssetsMaster extends Component {
       SelectedSubCategory: "",
       SelectedAssetName: "",
       SelectedAssetModel: "",
-      IsMoveable: null,
+      IsMoveable: false,
       Name: "",
       Description: "",
       QRCode: "",
@@ -60,9 +62,10 @@ class AssetsMaster extends Component {
       extension: '',
       LastServiceDate:"",
       NextServiceDate:"",
-      IsRentable: null,
-      AssetValue:"",
-      AMCdoc:"",
+      IsRentable: 0,
+      AssetValue:0,
+      AMCdoc:[],
+      AMCimage:"",
     };
     this.ApiProviderr = new ApiProvider();
     this.comdbprovider = new CommonDataProvider();
@@ -92,7 +95,7 @@ class AssetsMaster extends Component {
         NextServiceDate: this.state.NextServiceDate,
         IsRentable: this.state.IsRentable,
         AssetValue: this.state.AssetValue,
-        AMCdoc: this.state.AMCdoc,
+        AMCdoc: this.state.AMCimage,
 
       },
     ];
@@ -102,16 +105,14 @@ class AssetsMaster extends Component {
   loadHomagePageData() {
     let model = this.getModel();
     this.ApiProviderr.manageDocumentTypeMaster(model, "R").then((resp) => {
-      if (resp.ok && resp.status == 200) {
+      if (resp.ok && resp.status === 200) {
         return resp.json().then((rData) => {
           console.log(rData);
-          console.log(rData.Id)
           rData.sort((a, b) => (a.Id > b.Id ? 1 : -1))
           rData.map((item,index)=>{
             item['sNo']=index+1;
         })
           this.setState({ GridData: rData });
-          
         });
         
       }
@@ -135,7 +136,7 @@ class AssetsMaster extends Component {
   findBySno(id) {
     
     return this.state.GridData.find((item) => {
-      if (item.sNo == id) {
+      if (item.sNo === id) {
         return item;
       }
     });
@@ -154,11 +155,11 @@ class AssetsMaster extends Component {
       if (rowData) {
         this.setState({
           Id: rowData.Id,
-        Name: rowData.Name,
+        SelectedAssetName: rowData.Name,
         Description: rowData.Description,
         QRCode: rowData.QRCode,
-        ManufacturerName :rowData.ManufacturerName,
-        AssetModel : rowData.SelectedAssetModel,
+        ManufacturerName :rowData.Manufacturer,
+        SelectedAssetModel : rowData.AssetModel,
         IsMoveable : rowData.IsMoveable,
         LastServiceDate:rowData.LastServiceDate,
         NextServiceDate: rowData.NextServiceDate,
@@ -222,8 +223,8 @@ class AssetsMaster extends Component {
         Name: rowData.Name,
         Description: rowData.Description,
         QRCode: rowData.QRCode,
-        Manufacturer :rowData.ManufacturerName,
-        AssetModel : rowData.SelectedAssetModel,
+        ManufacturerName:rowData.Manufacturer,
+        AssetModel : rowData.AssetModel,
         IsMoveable : rowData.IsMoveable,
         LastServiceDate:rowData.LastServiceDate,
         NextServiceDate: rowData.NextServiceDate,
@@ -242,6 +243,7 @@ class AssetsMaster extends Component {
 
     // Document change
     onFileChange(event) {
+      console.log("gdfg"+event.target);
       let _validFileExtensions = ["jpg", "jpeg", "png", "pdf"];
       if (event.target.files[0]) {
         let extension = event.target.files[0].name.substring(event.target.files[0].name.lastIndexOf('.') + 1);
@@ -259,6 +261,25 @@ class AssetsMaster extends Component {
       }
     };
 
+    onAMCFileChange=(event)=>{
+      console.log("gdfg"+JSON.stringify(event.target.files));
+      let _validFileExtensions = ["jpg", "jpeg", "png", "pdf"];
+      if (event.target.files[0]) {
+        let extension = event.target.files[0].name.substring(event.target.files[0].name.lastIndexOf('.') + 1);
+        let isvalidFiletype = _validFileExtensions.some(x => x === extension.toLowerCase());
+        if (isvalidFiletype) {
+  
+          this.state.AMCdoc = event.target.files[0];
+  
+        }
+        else {
+          this.setState({ documentVal: '', currentSelectedFile: null })
+          let temp_validFileExtensions = _validFileExtensions.join(',');
+          appCommon.showtextalert(`${event.target.files[0].name.filename} Invalid file type, Please Select only ${temp_validFileExtensions} `, "", "error");
+        }
+      }
+    }
+
   updatetextmodel = (ctrl, val) => {
     if (ctrl == "Name") {
       this.setState({ Name: val });
@@ -269,48 +290,137 @@ class AssetsMaster extends Component {
     }
   };
 
-  handleSave = async () => {
-    let UpFile = this.state.ImageData;
-    let res = null
-    if (UpFile) {
-      if (UpFile!=""){
-      let fileD = await toBase64(UpFile);
-      var imgbytes = UpFile.size; // Size returned in bytes.        
-      var imgkbytes = Math.round(parseInt(imgbytes) / 1024); // Size returned in KB.    
-      let extension = UpFile.name.substring(UpFile.name.lastIndexOf('.') + 1);
-      res = {
-        filename: UpFile.name,
-        filepath: fileD[1],
-        sizeinKb: imgkbytes,
-        fileType: fileD[0],
-        extension: extension.toLowerCase()
-      }
-      this.state.Image = fileD[1];
-      this.state.ImageExt = extension;
-    };
-  };
-    if (ValidateControls()) {
-      var type = "";
-      if (this.state.PageMode == "Add") {
-        type = "I";
-      } else if (this.state.PageMode == "Edit") {
-        type = "U";
-      }
-      var model = this.getModel(type);
-      this.mangaeSave(model, type);
-    }
+//   handleSave = async () => {
+//     let UpFile = this.state.ImageData;
+//     let res = null
+//     if (UpFile) {
+//       if (UpFile!=""){
+//       let fileD = await toBase64(UpFile);
+//       var imgbytes = UpFile.size; // Size returned in bytes.        
+//       var imgkbytes = Math.round(parseInt(imgbytes) / 1024); // Size returned in KB.    
+//       let extension = UpFile.name.substring(UpFile.name.lastIndexOf('.') + 1);
+//       res = {
+//         filename: UpFile.name,
+//         filepath: fileD[1],
+//         sizeinKb: imgkbytes,
+//         fileType: fileD[0],
+//         extension: extension.toLowerCase()
+//       }
+//       this.state.Image = fileD[1];
+//       this.state.ImageExt = extension;
+//     };
+//   };
+
+//   let AMCUpFile = this.state.AMCdoc;
+//   let AMCres = null
+//   if (AMCUpFile) {
+//     if (AMCUpFile!=""){
+//     let fileD = await toBase64(AMCUpFile);
+//     var imgbytes = AMCUpFile.size; // Size returned in bytes.        
+//     var imgkbytes = Math.round(parseInt(imgbytes) / 1024); // Size returned in KB.    
+//     let extension = AMCUpFile.name.substring(AMCUpFile.name.lastIndexOf('.') + 1);
+//     res = {
+//       filename: AMCUpFile.name,
+//       filepath: fileD[1],
+//       sizeinKb: imgkbytes,
+//       fileType: fileD[0],
+//       extension: extension.toLowerCase()
+//     }
+//     this.state.AMCimage = fileD[1];
+//     this.state.ImageExt = extension;
+//   };
+// };
+
+//     if (ValidateControls()) {
+//       var type = "";
+//       if (this.state.PageMode == "Add") {
+//         type = "I";
+//       } else if (this.state.PageMode == "Edit") {
+//         type = "U";
+//       }
+//       var model = this.getModel(type);
+//       this.mangaeSave(model, type);
+//     }
     
-    this.state.ImageData="";
-    this.state.Image="";
-    this.state.ImageExt="";
-  };
+//     this.state.ImageData="";
+//     this.state.Image="";
+//     this.state.ImageExt="";
+//   };
+
+handleSave = async () => {
+  let UpFile = this.state.ImageData;
+  let AMCUpFile = this.state.AMCdoc;
+  
+  let res = null;
+  let AMCres = null;
+  console.log(UpFile);
+  if (UpFile && UpFile.name && UpFile.size) {
+    console.log(UpFile);
+      let fileD = await toBase64(UpFile);
+      let imgbytes = UpFile.size; // Size returned in bytes.
+      let imgkbytes = Math.round(parseInt(imgbytes) / 1024); // Size returned in KB.
+      let extension = UpFile.name.substring(UpFile.name.lastIndexOf('.') + 1);
+      
+      res = {
+          filename: UpFile.name,
+          filepath: fileD,
+          sizeinKb: imgkbytes,
+          fileType: UpFile.type,
+          extension: extension.toLowerCase()
+      };
+      
+      this.setState({
+          Image: fileD[1],
+          ImageExt: extension
+      });
+  }
+  console.log(AMCUpFile);
+  if (AMCUpFile && AMCUpFile.name && AMCUpFile.size) {
+    console.log(AMCUpFile);
+      let fileD = await toBase64(AMCUpFile);
+      let imgbytes = AMCUpFile.size; // Size returned in bytes.
+      let imgkbytes = Math.round(parseInt(imgbytes) / 1024); // Size returned in KB.
+      let extension = AMCUpFile.name.substring(AMCUpFile.name.lastIndexOf('.') + 1);
+      
+      AMCres = {
+          filename: AMCUpFile.name,
+          filepath: fileD,
+          sizeinKb: imgkbytes,
+          fileType: AMCUpFile.type,
+          extension: extension.toLowerCase()
+      };
+      
+      this.setState({
+          AMCimage: fileD[1],
+          AMCImageExt: extension
+      });
+  }
+
+  if (ValidateControls()) {
+      let type = this.state.PageMode === "Add" ? "I" : "U";
+      let model = this.getModel(type);
+      this.mangaeSave(model, type);
+  }
+
+  this.setState({
+      ImageData: null,
+      Image: "",
+      ImageExt: "",
+      AMCdoc: null,
+      AMCimage: "",
+      AMCImageExt: ""
+  });
+};
+
+
+ 
+
   mangaeSave = (model, type) => {
     //
     this.ApiProviderr.manageDocumentTypeMaster(model, type).then((resp) => {
       console.log(model,type);
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
-          //
 
           if (rData === 0) {
             const val = model[0].Id.trim();
@@ -474,7 +584,7 @@ class AssetsMaster extends Component {
                               id="assetName"
                               placeholder="Asset Name"
                               className="form-control"
-                              value={this.state.Name || ""}
+                              value={this.state.SelectedAssetName || ""}
                               onChange={(e) =>
                                 this.setState({ SelectedAssetName: e.target.value })
                               }
@@ -491,7 +601,7 @@ class AssetsMaster extends Component {
                               type="text"
                               id="assetModel"
                               placeholder="Asset Model"
-                              value={this.state.AssetModel||""}
+                              value={this.state.SelectedAssetModel||""}
                               className="form-control"
                               onChange={(e) =>
                                 this.setState({ SelectedAssetModel: e.target.value })
@@ -560,13 +670,13 @@ class AssetsMaster extends Component {
                               min="0"
                               max="1"
                               step="1"
-                              value={this.state.IsRentable ? 1 : 0}
+                              value={this.state.IsRentable}
                               className="form-control-range"
                               onChange={(e) =>
-                                this.setState({ IsRentable: parseInt(e.target.value) === 1 })
+                                this.setState({ IsRentable: parseInt(e.target.value)})
                               }
                             />
-                            <span>{this.state.IsRentable ? "Yes" : "No"}</span>
+                            <span>{this.state.IsRentable ===1? "Yes" : "No"}</span>
                           </div>
                         </div>
                         <div className="col-sm-6">
@@ -629,7 +739,7 @@ class AssetsMaster extends Component {
                             Class={"form-control"}
                             id={"kycfileUploader"}
                             type={"file"}
-                            value={this.state.ImageData}
+                            // value={this.state.ImageData.name}
                             onChange={this.onFileChange.bind(this)}
                           />
                         </div>
@@ -637,10 +747,10 @@ class AssetsMaster extends Component {
                           <label>AMC Upload</label>
                           <DocumentUploader
                             Class={"form-control"}
-                            id={"kycfileUploader"}
+                            id={"AMCfileUploader"}
                             type={"file"}
-                            value={this.state.AMCdoc}
-                            onChange={this.onFileChange.bind(this)}
+                            // value={this.state.AMCdoc.name}
+                            onChange={(this.onAMCFileChange.bind(this))}
                           />
                         </div>
                       </div>
@@ -718,7 +828,7 @@ class AssetsMaster extends Component {
             </div>
             <div className="form-group col-sm-6">
               <label htmlFor="isRentable">Is Rentable:</label>
-              <input type="text" className="form-control" id="isRentable" value={this.state.IsRentable ? "Yes" : "No"} readOnly />
+              <input type="text" className="form-control" id="isRentable" value={this.state.IsRentable===1 ? "Yes" : "No"} readOnly />
             </div></div>
 
             <div className="row">

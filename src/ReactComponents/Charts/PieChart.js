@@ -47,7 +47,7 @@ const PieChart = () => {
   ];
 
   return (
-    <div className="w-100 h-100">
+    <div style={{height:350 }} >
       <Pie
         data={{
           labels: ["Total", "Closed", "Pending", "Actionable"],
@@ -61,8 +61,11 @@ const PieChart = () => {
           legend: {
             display: true
           },
-          responsive: true
+          responsive: true,
+          maintainAspectRatio: false 
+          
         }}
+        
       />
     </div>
   );

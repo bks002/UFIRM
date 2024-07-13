@@ -63,7 +63,7 @@ const BarChart = () => {
   const actionableData = labels.map(label => data[label].actionable);
 
   return (
-    <div>
+    <div  style={{height:350 }} >
       <Bar data={{
         labels,
         datasets: [
@@ -88,7 +88,15 @@ const BarChart = () => {
             backgroundColor: '#8dd1e1'
           }
         ]
-      }} />
+      }}  options={{
+        legend: {
+          display: true
+        },
+        responsive: true,
+        maintainAspectRatio: false 
+        
+      }}
+      />
     </div>
   );
 };

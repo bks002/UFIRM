@@ -101,7 +101,7 @@ const CheckInCheckOut = () => {
           {loading ? (
             <p>Loading...</p>
           ) : (
-            <div className="table-responsive">
+            <div className="table-responsive table-bordered table-hover table-sm">
               <table className="table table-striped">
                 <thead>
                   <tr>
@@ -119,13 +119,13 @@ const CheckInCheckOut = () => {
                       <td>{asset.Name}</td>
                       <td className="align-middle">
                       <button
-                        className="btn btn-primary btn-sm m-1 px-2 mr-2"
+                        className="btn-lg btn-warning btn-sm m-1 px-3 mr-2"
                         onClick={() => handleCheckIn(asset)}
                       >
                         Check In
                       </button>
                       <button
-                        className="btn btn-secondary btn-sm m-1"
+                        className="btn-lg btn-success btn-sm px-3 m-1"
                         onClick={() => handleCheckOut(asset)}
                       >
                         Check Out
