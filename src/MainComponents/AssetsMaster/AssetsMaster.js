@@ -60,8 +60,8 @@ class AssetsMaster extends Component {
       showImagefiletype: null,
       showImagefile: [],
       extension: '',
-      LastServiceDate:"",
-      NextServiceDate:"",
+      LastServiceDate:"1999-10-20",
+      NextServiceDate:"1999-10-20",
       IsRentable: 0,
       AssetValue:0,
       AMCdoc:[],
@@ -108,11 +108,18 @@ class AssetsMaster extends Component {
       if (resp.ok && resp.status === 200) {
         return resp.json().then((rData) => {
           console.log(rData);
-          rData.sort((a, b) => (a.Id > b.Id ? 1 : -1))
-          rData.map((item,index)=>{
+          const updatedData = rData.map(asset => {
+            return {
+                ...asset,
+                NextServiceDate: asset.NextServiceDate.substr(0, 10)
+            };
+        });
+        console.log(updatedData);
+          updatedData.sort((a, b) => (a.Id > b.Id ? 1 : -1))
+          updatedData.map((item,index)=>{
             item['sNo']=index+1;
         })
-          this.setState({ GridData: rData });
+          this.setState({ GridData: updatedData });
         });
         
       }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import PopUp from "../ReactComponents/CheckIn&OutModal/PopUp";
+import RentalPopUp from "../ReactComponents/RentalModal/RentalPopUp"
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const CheckInCheckOut = () => {
@@ -38,15 +38,15 @@ const CheckInCheckOut = () => {
     fetchData();
   }, []);
 
-  const handleCheckIn = (asset) => {
+  const handleReturn = (asset) => {
     setCurrentAsset(asset);
-    setActionType("checkin");
+    setActionType("return");
     setViewModal(true);
   };
 
-  const handleCheckOut = (asset) => {
+  const handleRentOut = (asset) => {
     setCurrentAsset(asset);
-    setActionType("checkout");
+    setActionType("rentout");
     setViewModal(true);
   };
 
@@ -124,13 +124,13 @@ const CheckInCheckOut = () => {
                       <td className="align-middle">
                       <button
                         className="btn btn-warning btn-sm m-1 px-3 mr-2"
-                        onClick={() => handleCheckIn(asset)}
+                        onClick={() => handleReturn(asset)}
                       >
                         Return
                       </button>
                       <button
                         className="btn-lg btn-success btn-sm px-3 m-1"
-                        onClick={() => handleCheckOut(asset)}
+                        onClick={() => handleRentOut(asset)}
                       >
                         Rent Out
                       </button>
@@ -142,7 +142,7 @@ const CheckInCheckOut = () => {
             </div>
           )}
         </div>
-        {viewModal?<PopUp 
+        {viewModal?<RentalPopUp
           show={viewModal} 
           handleClose={handleCloseModal} 
           asset={currentAsset} 
