@@ -60,8 +60,8 @@ class AssetsMaster extends Component {
       showImagefiletype: null,
       showImagefile: [],
       extension: '',
-      LastServiceDate:"1999-10-20",
-      NextServiceDate:"1999-10-20",
+      LastServiceDate:"",
+      NextServiceDate:"",
       IsRentable: 0,
       AssetValue:0,
       AMCdoc:[],
@@ -111,7 +111,7 @@ class AssetsMaster extends Component {
           const updatedData = rData.map(asset => {
             return {
                 ...asset,
-                NextServiceDate: asset.NextServiceDate.substr(0, 10)
+                NextServiceDate: asset.NextServiceDate? asset.NextServiceDate.substr(0, 10):""
             };
         });
         console.log(updatedData);
@@ -241,7 +241,8 @@ class AssetsMaster extends Component {
         AssetValue: rowData.AssetValue,
         AssetType: rowData.AssetType,
 
-      showImagefilename: rowData.Name,
+      Image: rowData.Image,
+      AMCimage:rowData.AMCdoc,
       showImagefiletype: rowData.ImageExt,
       showImagefile: rowData.Image,
       extension: rowData.ImageExt,
@@ -249,16 +250,14 @@ class AssetsMaster extends Component {
   };
 
     // Document change
-    onFileChange(event) {
+    onFileChange(event) { 
       console.log("gdfg"+event.target);
       let _validFileExtensions = ["jpg", "jpeg", "png", "pdf"];
       if (event.target.files[0]) {
         let extension = event.target.files[0].name.substring(event.target.files[0].name.lastIndexOf('.') + 1);
         let isvalidFiletype = _validFileExtensions.some(x => x === extension.toLowerCase());
         if (isvalidFiletype) {
-  
           this.state.ImageData = event.target.files[0];
-  
         }
         else {
           this.setState({ documentVal: '', currentSelectedFile: null })
@@ -877,7 +876,7 @@ handleSave = async () => {
               <div className="form-group col-sm-6">
               <label htmlFor="assetImage">Asset Image:</label>
               <img
-                src={`data:image/jpeg;base64,${this.state.showImagefile}`}
+                src={`data:image/png;base64,${this.state.Image}`}
                 alt="Asset"
                 className="img-fluid"
                 style={{ height: "400px", width: "400px" }}
@@ -886,7 +885,7 @@ handleSave = async () => {
               <div className="form-group col-sm-6">
               <label htmlFor="assetImage">AMC Contract:</label>
               <img
-                src={`data:image/jpeg;base64,${this.state.showImagefile}`}
+                src={`data:image/png;base64,${this.state.AMCimage}`}
                 alt="AMC Document"
                 className="img-fluid"
                 style={{ height: "400px", width: "400px" }}

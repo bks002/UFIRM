@@ -19,7 +19,7 @@ const CheckInCheckOut = () => {
             'Content-Type': 'application/json',
           },
         });
-        if (!response.ok) {
+        if (!response.ok) { 
           throw new Error('Network response was not ok');
         }
         const data = await response.json();
@@ -52,7 +52,7 @@ const CheckInCheckOut = () => {
     setActionType("");
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (formData) => {
     // const url = actionType === "checkin" 
     //   ? "https://api.urest.in:8096/CheckInAsset" 
     //   : "https://api.urest.in:8096/CheckOutAsset";
@@ -78,6 +78,7 @@ const CheckInCheckOut = () => {
     //       : asset
     //   );
     //   setAssetData(updatedData);
+    console.log(formData);
       handleCloseModal();
     // } catch (error) {
     //   console.error(`Error during ${actionType}:`, error);
@@ -143,7 +144,7 @@ const CheckInCheckOut = () => {
           handleClose={handleCloseModal} 
           asset={currentAsset} 
           actionType={actionType} 
-          handleSubmit={handleSubmit} 
+          handleSubmit={handleSubmit}
         />:undefined}
       </section>
     </div>

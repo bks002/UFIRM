@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 
-const CheckIn = () => {
+const CheckIn = ({sendData , close}) => {
   const [checkoutType, setCheckoutType] = useState("asset");
   const [formData, setFormData] = useState({
     returnedBy: "",
@@ -52,8 +52,18 @@ const CheckIn = () => {
   // Handle form submission
   const handleSubmit = (event) => {
     event.preventDefault();
-    console.log(formData); // Replace with actual form submission logic
+    sendData(formData);
+    console.log({formData}); // Replace with actual form submission logic
     // Example: Send formData to server, reset form, etc.
+    setFormData({
+      returnedBy: "",
+      returnDateTime: "",
+      returnedFrom: "",
+      uploadImage: null,
+      spareFields: [{ id: 1, spareName: "", returnDateTime: "" }],
+    });
+    close();
+
   };
 
   return (
@@ -214,14 +224,18 @@ const CheckIn = () => {
             </Form.Group>
           </>
         )}
-
-        <Form.Group controlId="submit">
-          <Button variant="primary" type="submit" className="mt-3">
-            Submit
-          </Button>
-        </Form.Group>
+      <div className="form-footer mt-3 d-flex justify-content-between ">
+      <Button variant="primary" type="submit" className="mt-3 px-3 ">
+          Check In
+        </Button>
+        <Button variant="secondary" className="mt-3 px-4" onClick={close}>
+          Close
+        </Button></div>
+ 
       </Form>
     </div>
+    
+    
   );
 };
 
