@@ -5,7 +5,16 @@ import ReturnAsset from '../../pages/ReturnAssetPage';
 import RentOut from '../../pages/RentOutAssetPage';
 
 function RentalPopUp({ show, handleClose, asset, actionType, handleSubmit }) {
-  const [formData, setFormData]=useState({});
+  const handleRentOutData = (rentOutData) => {
+    console.log(rentOutData);
+    handleSubmit(rentOutData);
+  }
+  
+  const handleReturnData = (returnData) => {
+    console.log(returnData);
+    handleSubmit(returnData);
+  }
+  
   return (
     <Modal
       show={show}
@@ -25,16 +34,8 @@ function RentalPopUp({ show, handleClose, asset, actionType, handleSubmit }) {
         ) : (
           <p>Loading asset information...</p>
         )}
-        {actionType === "return" ? <ReturnAsset/> : <RentOut/>}
+        {actionType === "return" ? <ReturnAsset  Close={handleClose}  setData={handleReturnData}/> : <RentOut Close={handleClose} setData={handleRentOutData}/>}
       </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" onClick={handleClose}>
-          Close
-        </Button>
-        <Button variant="primary" onClick={handleSubmit}>
-          {actionType === "return" ? "Return" : "Rent Out"}
-        </Button>
-      </Modal.Footer>
     </Modal>
   );
 }

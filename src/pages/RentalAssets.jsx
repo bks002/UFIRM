@@ -2,8 +2,7 @@ import React, { useEffect, useState } from "react";
 import RentalPopUp from "../ReactComponents/RentalModal/RentalPopUp"
 import "bootstrap/dist/css/bootstrap.min.css";
 
-const CheckInCheckOut = () => {
-  const [assetData, setAssetData] = useState([]);
+const RentAssetPage = () => {
   const [rentalAssets, setRentalAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewModal, setViewModal] = useState(false);
@@ -25,7 +24,6 @@ const CheckInCheckOut = () => {
         }
         const data = await response.json();
         console.log(data);
-        setAssetData(data);
         const filteredAssets = data.filter(asset=> asset.IsRentable.includes("true")||asset.IsRentable.includes("1"));
         setRentalAssets(filteredAssets);
         console.log(filteredAssets);
@@ -56,7 +54,7 @@ const CheckInCheckOut = () => {
     setActionType("");
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (formData) => {
     // const url = actionType === "checkin" 
     //   ? "https://api.urest.in:8096/CheckInAsset" 
     //   : "https://api.urest.in:8096/CheckOutAsset";
@@ -82,6 +80,7 @@ const CheckInCheckOut = () => {
     //       : asset
     //   );
     //   setAssetData(updatedData);
+    console.log(formData);
       handleCloseModal();
     // } catch (error) {
     //   console.error(`Error during ${actionType}:`, error);
@@ -154,4 +153,4 @@ const CheckInCheckOut = () => {
   );
 };
 
-export default CheckInCheckOut;
+export default RentAssetPage;
