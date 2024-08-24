@@ -9,11 +9,15 @@ const CheckOut = ({sendData, close} ) => {
     purpose: "",
     checkOutDateTime: "",
     outFrom: "",
+    
     sentTo: "",
     tentativeReturnDate: "",
-    uploadImage: null,
+    imageOut: null,
     spareFields: [{ id: 1, spareName: "",tentativeReturnDate:"" }],
-    approvedBy:""
+    approvedBy:"",
+    // Description:"",
+    // assetImage:"",
+    // flag:"I"
   });
 
   const handleSelectionChange = (event) => {
@@ -46,6 +50,21 @@ const CheckOut = ({sendData, close} ) => {
     setFormData({ ...formData, spareFields: updatedSpareFields });
   };
 
+  const handleImageChange = (event) => {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+  
+    reader.onloadend = () => {
+      const imageString = reader.result;
+      const base64String = imageString.split(',')[1]; // remove the "data:image/png;base64," part
+      setFormData({ ...formData, imageOut: base64String });
+    };
+  
+    reader.readAsDataURL(file); // start reading the file
+  };
+
+ 
+
   const handleSubmit = (event) => {
     event.preventDefault();
     console.log(formData);
@@ -59,7 +78,7 @@ const CheckOut = ({sendData, close} ) => {
       outFrom: "",
       sentTo: "",
       tentativeReturnDate: "",
-      uploadImage: null,
+      imageOut: null,
       spareFields: [{ id: 1, spareName: "", tentativeReturnDate: "" }],
       approvedBy: ""
     });
@@ -154,14 +173,15 @@ const CheckOut = ({sendData, close} ) => {
               />
             </Form.Group>
 
-            <Form.Group controlId="uploadImage">
+            <Form.Group controlId="imageOut">
               <Form.Label>Upload Image</Form.Label>
               <Form.Control
                 type="file"
-                name="uploadImage"
-                onChange={(e) =>
-                  setFormData({ ...formData, uploadImage: e.target.files[0] })
-                }
+                name="imageOut"
+                onChange={handleImageChange}
+                // onChange={(e) =>
+                //   setFormData({ ...formData, imageOut: e.target.files[0] })
+                // }
                 accept="image/*"
                 
               />
@@ -276,14 +296,15 @@ const CheckOut = ({sendData, close} ) => {
       />
     </Form.Group>
 
-    <Form.Group controlId="uploadImage">
+    <Form.Group controlId="imageOut">
       <Form.Label>Upload Image</Form.Label>
       <Form.Control
         type="file"
-        name="uploadImage"
-        onChange={(e) =>
-          setFormData({ ...formData, uploadImage: e.target.files[0] })
-        }
+        name="imageOut"
+        onChange={handleImageChange}
+        // onChange={(e) =>
+        //   setFormData({ ...formData, imageOut: e.target.files[0] })
+        // }
         accept="image/*"
       />
     </Form.Group>

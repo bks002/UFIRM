@@ -8,11 +8,10 @@ const ReturnAsset = ({ Close, setData }) => {
     returnedBy: "",
     returnDateTime: "",
     returnedFrom: "",
-    uploadImage: null,
-    // spareFields: [{ id: 1, spareName: "", returnDateTime: "" }],
+    imageIn: null,
   });
 
-  // Handle input change for both asset and spare
+  
   const handleInputChange = (index, event) => {
     const { name, value } = event.target;
     if (index !== null) {
@@ -24,6 +23,19 @@ const ReturnAsset = ({ Close, setData }) => {
     }
   };
 
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+  
+    reader.onloadend = () => {
+      const imageString = reader.result;
+      const base64String = imageString.split(',')[1]; // remove the "data:image/png;base64," part
+      setFormData({ ...formData, imageIn: base64String });
+    };
+  
+    reader.readAsDataURL(file); // start reading the file
+  };
+
   // Handle form submission
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -33,7 +45,7 @@ const ReturnAsset = ({ Close, setData }) => {
       returnedBy: "",
       returnDateTime: "",
       returnedFrom: "",
-      uploadImage: null,
+      imageIn: null,
     });
     if (Close) Close();
   };
@@ -74,14 +86,15 @@ const ReturnAsset = ({ Close, setData }) => {
               />
             </Form.Group>
 
-            <Form.Group controlId="uploadImage">
+            <Form.Group controlId="imageIn">
               <Form.Label>Upload Image</Form.Label>
               <Form.Control
                 type="file"
-                name="uploadImage"
-                onChange={(e) =>
-                  setFormData({ ...formData, uploadImage: e.target.files[0] })
-                }
+                name="imageIn"
+                onChange={handleFileChange}
+                // onChange={(e) =>
+                //   setFormData({ ...formData, imageIn: e.target.files[0] })
+                // }
                 accept="image/*"
               />
             </Form.Group>

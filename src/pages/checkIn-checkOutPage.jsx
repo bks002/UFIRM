@@ -53,23 +53,27 @@ const CheckInCheckOut = () => {
   };
 
   const handleSubmit = async (formData) => {
-    // const url = actionType === "checkin" 
-    //   ? "https://api.urest.in:8096/CheckInAsset" 
-    //   : "https://api.urest.in:8096/CheckOutAsset";
-    
-    // try {
-    //   const response = await fetch(url, {
-    //     method: "POST",
-    //     headers: {
-    //       'Accept': 'application/json',
-    //       'Content-Type': 'application/json',
-    //     },
-    //     body: JSON.stringify({ assetId: currentAsset.Id }),
-    //   });
+    // console.log(currentAsset);
 
-    //   if (!response.ok) {
-    //     throw new Error('Network response was not ok');
-    //   }
+    const url = actionType === "checkin" 
+      ? "http://localhost:62929/ManageCheckIn" 
+      : "http://localhost:62929/ManageCheckOut"
+    
+    try {
+      const payload={AssetId: currentAsset.Id,AssetName: currentAsset.Name, ...formData};
+      console.log("xvb"+JSON.stringify(payload)+payload);
+      const response = await fetch(url, {
+        method: actionType === "checkin"?"PUT":"POST",
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
 
     //   // Update the asset data after successful check-in/check-out
     //   const updatedData = assetData.map(asset =>
@@ -80,9 +84,9 @@ const CheckInCheckOut = () => {
     //   setAssetData(updatedData);
     console.log(formData);
       handleCloseModal();
-    // } catch (error) {
-    //   console.error(`Error during ${actionType}:`, error);
-    // }
+    } catch (error) {
+      console.error(`Error during ${actionType}:`, error);
+    }
   };
 
   return (

@@ -7,7 +7,7 @@ const RentAssetPage = () => {
   const [loading, setLoading] = useState(true);
   const [viewModal, setViewModal] = useState(false);
   const [currentAsset, setCurrentAsset] = useState(null);
-  const [actionType, setActionType] = useState(""); // "checkin" or "checkout"
+  const [actionType, setActionType] = useState(""); // "return" or "checkout"
 
   useEffect(() => {
     const fetchData = async () => {
@@ -55,36 +55,37 @@ const RentAssetPage = () => {
   };
 
   const handleSubmit = async (formData) => {
-    // const url = actionType === "checkin" 
-    //   ? "https://api.urest.in:8096/CheckInAsset" 
-    //   : "https://api.urest.in:8096/CheckOutAsset";
+    const url = actionType === "return" 
+      ? "http://localhost:62929/ManageRentInAsset" 
+      : "http://localhost:62929/ManageRentOutAsset";
     
-    // try {
-    //   const response = await fetch(url, {
-    //     method: "POST",
-    //     headers: {
-    //       'Accept': 'application/json',
-    //       'Content-Type': 'application/json',
-    //     },
-    //     body: JSON.stringify({ assetId: currentAsset.Id }),
-    //   });
+    try {
+      const response = await fetch(url, {
+        method: actionType === "return"?"PUT":"POST",
+        // mode: 'cors',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ assetId: currentAsset.Id, assetName: currentAsset.Name,...formData }),
+      });
 
-    //   if (!response.ok) {
-    //     throw new Error('Network response was not ok');
-    //   }
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
 
     //   // Update the asset data after successful check-in/check-out
     //   const updatedData = assetData.map(asset =>
     //     asset.Id === currentAsset.Id 
-    //       ? { ...asset, status: actionType === "checkin" ? "Checked In" : "Checked Out" }
+    //       ? { ...asset, status: actionType === "return" ? "Checked In" : "Checked Out" }
     //       : asset
     //   );
     //   setAssetData(updatedData);
     console.log(formData);
       handleCloseModal();
-    // } catch (error) {
-    //   console.error(`Error during ${actionType}:`, error);
-    // }
+    } catch (error) {
+      console.error(`Error during ${actionType}:`, error);
+    }
   };
 
   return (

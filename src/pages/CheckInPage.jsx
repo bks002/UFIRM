@@ -8,7 +8,7 @@ const CheckIn = ({sendData , close}) => {
     returnedBy: "",
     returnDateTime: "",
     returnedFrom: "",
-    uploadImage: null,
+    imageIn: null,
     spareFields: [{ id: 1, spareName: "", returnDateTime: "" }],
   });
 
@@ -48,6 +48,20 @@ const CheckIn = ({sendData , close}) => {
     );
     setFormData({ ...formData, spareFields: updatedSpareFields });
   };
+
+  const handleImageChange = (event) => {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+  
+    reader.onloadend = () => {
+      const imageString = reader.result;
+      const base64String = imageString.split(',')[1]; // remove the "data:image/png;base64," part
+      setFormData({ ...formData, imageIn: base64String });
+    };
+  
+    reader.readAsDataURL(file); // start reading the file
+  };
+
 
   // Handle form submission
   const handleSubmit = (event) => {
@@ -129,9 +143,10 @@ const CheckIn = ({sendData , close}) => {
               <Form.Control
                 type="file"
                 name="uploadImage"
-                onChange={(e) =>
-                  setFormData({ ...formData, uploadImage: e.target.files[0] })
-                }
+                onChange={handleImageChange}
+                // onChange={(e) =>
+                //   setFormData({ ...formData, uploadImage: e.target.files[0] })
+                // }
                 accept="image/*"
               />
             </Form.Group>
@@ -216,9 +231,10 @@ const CheckIn = ({sendData , close}) => {
               <Form.Control
                 type="file"
                 name="uploadImage"
-                onChange={(e) =>
-                  setFormData({ ...formData, uploadImage: e.target.files[0] })
-                }
+                onChange={handleImageChange}
+                // onChange={(e) =>
+                //   setFormData({ ...formData, uploadImage: e.target.files[0] })
+                // }
                 accept="image/*"
               />
             </Form.Group>

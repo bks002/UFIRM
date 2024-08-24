@@ -8,9 +8,9 @@ const RentOut = ({ Close, setData }) => {  // Destructure Close from props
     assigneeName: "",
     rentOutDateTime: "",
     outFrom: "",
-    sentTo: "",
+    rentedTo: "",
     tentativeReturnDate: "",
-    uploadImage: null,
+    imageOut: null,
     approvedBy: "",
     rentalCharges: ""
   });
@@ -21,8 +21,20 @@ const RentOut = ({ Close, setData }) => {  // Destructure Close from props
   };
 
   const handleFileChange = (event) => {
-    setFormData({ ...formData, uploadImage: event.target.files[0] });
+    const file = event.target.files[0];
+    const reader = new FileReader();
+  
+    reader.onloadend = () => {
+      const imageString = reader.result;
+      const base64String = imageString.split(',')[1]; // remove the "data:image/png;base64," part
+      setFormData({ ...formData, imageOut: base64String });
+    };
+  
+    reader.readAsDataURL(file); // start reading the file
   };
+  // const handleFileChange = (event) => {
+  //   setFormData({ ...formData, imageOut: event.target.files[0] });
+  // };
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -32,9 +44,9 @@ const RentOut = ({ Close, setData }) => {  // Destructure Close from props
       assigneeName: "",
       rentOutDateTime: "",
       outFrom: "",
-      sentTo: "",
+      rentedTo: "",
       tentativeReturnDate: "",
-      uploadImage: null,
+      imageOut: null,
       approvedBy: "",
       rentalCharges: ""
     });
@@ -76,12 +88,12 @@ const RentOut = ({ Close, setData }) => {  // Destructure Close from props
           />
         </Form.Group>
 
-        <Form.Group controlId="sentTo">
+        <Form.Group controlId="rentedTo">
           <Form.Label>Rented To</Form.Label>
           <Form.Control
             type="text"
-            name="sentTo"
-            value={formData.sentTo}
+            name="rentedTo"
+            value={formData.rentedTo}
             onChange={handleInputChange}
           />
         </Form.Group>
@@ -107,11 +119,11 @@ const RentOut = ({ Close, setData }) => {  // Destructure Close from props
           />
         </Form.Group>
 
-        <Form.Group controlId="uploadImage">
+        <Form.Group controlId="imageOut">
           <Form.Label>Upload Image</Form.Label>
           <Form.Control
             type="file"
-            name="uploadImage"
+            name="imageOut"
             onChange={handleFileChange}
             accept="image/*"
           />
