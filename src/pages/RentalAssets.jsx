@@ -7,12 +7,14 @@ const RentAssetPage = () => {
   const [loading, setLoading] = useState(true);
   const [viewModal, setViewModal] = useState(false);
   const [currentAsset, setCurrentAsset] = useState(null);
-  const [actionType, setActionType] = useState(""); // "return" or "checkout"
+  const [actionType, setActionType] = useState("rentout"); // "return" or "rentout"
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("https://api.urest.in:8096/GetAssets", {
+        // const url="https://api.urest.in:8096/GetAssets";
+       const url="http://localhost:62929/GetRentalAssetData"
+        const response = await fetch(url, {
           method: "GET",
           headers: {
             'Accept': 'application/json',
@@ -24,9 +26,9 @@ const RentAssetPage = () => {
         }
         const data = await response.json();
         console.log(data);
-        const filteredAssets = data.filter(asset=> asset.IsRentable.includes("true")||asset.IsRentable.includes("1"));
-        setRentalAssets(filteredAssets);
-        console.log(filteredAssets);
+        // const filteredAssets = data.filter(asset=> asset.IsRentable.includes("true")||asset.IsRentable.includes("1"));
+        setRentalAssets(data);
+        // console.log(filteredAssets);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -34,7 +36,7 @@ const RentAssetPage = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [currentAsset, actionType]);
 
   const handleReturn = (asset) => {
     setCurrentAsset(asset);
@@ -122,18 +124,19 @@ const RentAssetPage = () => {
                       <td>{asset.Id}</td>
                       <td>{asset.Name}</td>
                       <td className="align-middle">
+                        {asset.ReturnDate===null?
                       <button
                         className="btn btn-warning btn-sm m-1 px-3 mr-2"
                         onClick={() => handleReturn(asset)}
                       >
                         Return
-                      </button>
+                      </button>:
                       <button
                         className="btn-lg btn-success btn-sm px-3 m-1"
                         onClick={() => handleRentOut(asset)}
                       >
                         Rent Out
-                      </button>
+                      </button>}
                     </td>
                     </tr>
                   ))}

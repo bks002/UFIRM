@@ -12,7 +12,9 @@ const CheckInCheckOut = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("https://api.urest.in:8096/GetAssets", {
+        // const url ="https://api.urest.in:8096/GetAssets";
+        const url ="http://localhost:62929/GetAssetCheckOutData";
+        const response = await fetch(url, {
           method: "GET",
           headers: {
             'Accept': 'application/json',
@@ -23,6 +25,7 @@ const CheckInCheckOut = () => {
           throw new Error('Network response was not ok');
         }
         const data = await response.json();
+        console.log(data);
         setAssetData(data);
         setLoading(false);
       } catch (error) {
@@ -31,7 +34,7 @@ const CheckInCheckOut = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [currentAsset, actionType ]);
 
   const handleCheckIn = (asset) => {
     setCurrentAsset(asset);
@@ -75,13 +78,15 @@ const CheckInCheckOut = () => {
         throw new Error('Network response was not ok');
       }
 
-    //   // Update the asset data after successful check-in/check-out
-    //   const updatedData = assetData.map(asset =>
-    //     asset.Id === currentAsset.Id 
-    //       ? { ...asset, status: actionType === "checkin" ? "Checked In" : "Checked Out" }
-    //       : asset
-    //   );
-    //   setAssetData(updatedData);
+        // Update the asset data after successful check-in/check-out
+      // const updatedData = await fetch("http://localhost:62929/GetAssetCheckOutData", {
+      //   method: "GET",
+      //   headers: {
+      //     'Accept': 'application/json',
+      //     'Content-Type': 'application/json',
+      //   },
+      // });
+      // setAssetData(updatedData);
     console.log(formData);
       handleCloseModal();
     } catch (error) {
@@ -123,18 +128,21 @@ const CheckInCheckOut = () => {
                       <td>{asset.Id}</td>
                       <td>{asset.Name}</td>
                       <td className="align-middle">
+                        {asset.ReturnDate===null?
+                        
                       <button
-                        className="btn-lg btn-warning btn-sm m-1 px-3 mr-2"
+                        className="btn-lg btn-warning btn-sm m-1 px-4 "
                         onClick={() => handleCheckIn(asset)}
                       >
                         Check In
-                      </button>
+                      </button>:
                       <button
                         className="btn-lg btn-success btn-sm px-3 m-1"
                         onClick={() => handleCheckOut(asset)}
                       >
                         Check Out
                       </button>
+                      }
                     </td>
                     </tr>
                   ))}
