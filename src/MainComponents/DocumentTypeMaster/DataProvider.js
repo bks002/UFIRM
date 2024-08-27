@@ -8,15 +8,12 @@ class DataProvider {
             case 'U':
                 url = `Master/DocumentTypesMaster/Save`;
                 return srv.CallPostService(url, model[0]);
-                break;
             case 'D':
                 url = `Master/DocumentTypesMaster/Delete/${model[0].documentTypeId}`
                 return srv.CallPostService(url);
-                break;
             case 'R':
                 url = `Master/DocumentTypesMaster`;
-                return srv.get(url);   
-                break;       
+                return srv.get(url);     
             default:
         }
     }   

@@ -22,7 +22,7 @@ class ApiService {
       // JSON Request Body
       if (checkIfObject(this.config.data)) {
         //this.apiConfig.data = { ...this.apiConfig.headers, ...this.config.data };
-        this.apiConfig.data = { ... this.config.data };
+        this.apiConfig.data = { ...this.config.data };
       }
 
       // URL Path Variables
@@ -98,7 +98,7 @@ class ApiService {
             this.handleSessionTimout(error);
             this.completeCallBack(error);
             reject(error);
-            var reponse = error.response;
+            // var reponse = error.response;
             // if (error.response != undefined) {
             //   var status = error.response.status == undefined ? 500 : error.response.status;
             //   if (window.location.href.indexOf("errorpage") <= -1) {

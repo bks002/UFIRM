@@ -340,7 +340,7 @@ export default class TaskStatusList extends Component {
 
   manageAssign = (model, type) => {
     this.ApiProvider.manageAssign(model, type).then((resp) => {
-      if (resp.ok && resp.status == 200) {
+      if (resp && resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
           let assignData = [];
           rData.forEach((element) => {

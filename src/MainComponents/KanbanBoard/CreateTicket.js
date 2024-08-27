@@ -1,13 +1,11 @@
-import React, { Component, Fragment } from 'react';
+import React, { Component } from 'react';
 import Button from '../../ReactComponents/Button/Button';
 import ApiProvider from './DataProvider';
-import { CreateValidator, ValidateControls } from './Validation';
-import { ToastContainer, toast } from 'react-toastify';
+import {  ValidateControls } from './Validation';
+import { ToastContainer } from 'react-toastify';
 import * as appCommon from '../../Common/AppCommon.js';
-import swal from 'sweetalert';
 import CommonDataProvider from '../../Common/DataProvider/CommonDataProvider.js';
 import InputBox from '../../ReactComponents/InputBox/InputBox.jsx';
-import { DELETE_CONFIRMATION_MSG } from '../../Contants/Common';
 import SelectBox from '../../ReactComponents/SelectBox/Selectbox.jsx';
 import MultiSelectInline from '../../ReactComponents/MultiSelectInline/MultiSelectInline.jsx';
 import { connect } from 'react-redux';

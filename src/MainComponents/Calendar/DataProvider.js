@@ -8,35 +8,28 @@ class DataProvider {
             case 'C':
                 url = `Calendar/Category/Save`;
                 return srv.CallPostService(url, model[0]);
-                break;
             case 'U':
                 url = `Calendar/Category/Save`;
                 return srv.CallPostService(url, model[0]);
-                break;
             case 'D':
                 url = `Calendar/Category/Delete/${model[0].CatId}/${model[0].CmdType}`;
                 return srv.CallPostService(url);
-                break;
             case 'R':
                 url = `Calendar/Category/List/${model[0].CmdType}`;
                 return srv.get(url);
-                break;
             default:
         }
     }
 
     manageSubCategory(model, type,categoryId) {
-        // 
         let url = '';
         switch (type) {
             case 'C':
                 url = `CreateSubCategory`;
                 return srv.CallPostNewService(url, model[0]);
-                break;
             case 'R':
                 url = `GetCategory?categoryId=${categoryId}`;
                 return srv.getComplaint(url);
-                break;
             default:
         }
     }
@@ -47,31 +40,24 @@ class DataProvider {
             case 'C':
                 url = `CreateTask`;
                 return srv.CallPostNewService(url, model[0]);
-                break;
             case 'U':
                 url = `Calendar/Category/Save`;
                 return srv.CallPostService(url, model[0]);
-                break;
             case 'D':
                 url = `DeleteTask?taskID=${model[0].TaskId}`;
                 return srv.CallDeleteNewService(url,model[0]);
-                break;
             case 'R':
                 url = `TaskDetails?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}&dteFr=${model[0].DteFr}&dteTo=${model[0].DteTo}&taskstatus=${model[0].TaskStatus}&propID=${model[0].PropertyId}&taskPriorityId=${model[0].TaskPriority}`;
                 return srv.getComplaint(url);
-                break;
             case 'SR':
                 url = `TaskDetailsWithQuestion?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}&dteFr=${model[0].DteFr}&dteTo=${model[0].DteTo}`;
                 return srv.getComplaint(url);
-                break;
                 case 'T':
                 url = `TaskDetails?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}`;
                 return srv.getComplaint(url);
-                break;
             case 'TaskWithQuestionName':
                     url = `TaskDetailsWithQuestion?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}`;
                     return srv.getComplaint(url);
-                    break;
             case 'GetAllTaskWiseSummary':
                 // url = `GetAllTaskWiseSummary?categoryId=${model[0].CategoryId}&subCategoryId=${model[0].SubCategoryId}&occurrence=${model[0].Occurrence}&dateFrom=${model[0].DteFr}&dateTo=${model[0].DteTo}&status=${model[0].TaskStatus}&priorityId=${model[0].TaskPriority}`;
                 let url = 'GetAllTaskWiseSummary?';

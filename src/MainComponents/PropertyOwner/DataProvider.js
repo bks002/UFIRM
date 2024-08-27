@@ -7,15 +7,12 @@ class DataProvider {
             case 'OC':
                 url = `Property/Owner/Save`
                 return srv.CallPostService(url, model[0]);
-                break;
             case 'I':
                 url = `Property/ViewPersonalInformation/Save`
                 return srv.CallPostService(url, model[0]);
-                break;
             case 'V':
                 url = `Property/ViewPersonalInformation/Save`
                 return srv.CallPostService(url, model[0]);
-                break;
             default:
         }
     }

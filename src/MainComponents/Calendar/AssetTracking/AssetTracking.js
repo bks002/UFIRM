@@ -104,7 +104,6 @@ export default class AssetTracking extends Component {
       loading: false,
       showAddModal: false,
       showEditModal: false,
-      showEditModal: false,
       PageMode: "Home",
       showQuesModal: false,
       showTaskModal: false,
@@ -184,7 +183,7 @@ export default class AssetTracking extends Component {
 
   manageAssets = (model, type) => {
     this.ApiProvider.manageAssets(model, type).then((resp) => {
-      if (resp.ok && resp.status == 200) {
+      if (resp.ok && resp.status === 200) {
         return resp.json().then((rData) => {
           let assetData = [];
           rData.forEach((element) => {
@@ -207,7 +206,7 @@ export default class AssetTracking extends Component {
   manageAssetTracking = (model, type) => {
     console.log(model);
     this.ApiProvider.manageAssetTracking(model, type).then((resp) => {
-      if (resp.ok && resp.status == 200) {
+      if (resp.ok && resp.status === 200) {
         return resp.json().then((rData) => {
           switch (type) {
             case "R":
@@ -264,16 +263,16 @@ export default class AssetTracking extends Component {
   }
 
   modifyOccurence = (Occurrence)=>{
-    if(Occurrence == 'W'){
+    if(Occurrence === 'W'){
       return 'Weekly'
     }
-    if(Occurrence == 'Y'){
+    if(Occurrence === 'Y'){
       return 'Yearly'
     }
-    if(Occurrence == 'D'){
+    if(Occurrence === 'D'){
       return 'Daily'
     }
-    if(Occurrence == 'M'){
+    if(Occurrence === 'M'){
       return 'Monthly'
     }
   }
@@ -298,12 +297,16 @@ export default class AssetTracking extends Component {
   }
 
   findItem(id) {
-    return this.state.data.find((item) => {
-      if (item.TaskId == id) {
-        return item;
-      }
-    });
+    return this.state.data.find((item) => item.TaskId === id);
   }
+  
+  // findItem(id) {
+  //   return this.state.data.find((item) => {
+  //     if (item.TaskId == id) {
+  //       return item;
+  //     }
+  //   });
+  // }
 
   DateRangeConfig(startDate, endDate) {
     let _this = this;

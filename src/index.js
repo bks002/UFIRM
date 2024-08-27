@@ -1,8 +1,10 @@
 import React from 'react';
 //import { Provider } from 'react-redux';
 import ReactDOM from 'react-dom';
-// import './index.css';
 import App from './App';
+import 'bootstrap/dist/css/bootstrap.min.css';
+// Put any other imports below so that CSS from your
+// components takes precedence over default styles.
 //import { store, history } from './redux/store';
 // import * as serviceWorker from './serviceWorker';
 

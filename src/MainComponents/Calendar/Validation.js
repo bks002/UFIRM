@@ -12,7 +12,7 @@ export function CreateValidator() {
 export function ValidateControls() {
     let error = '';
     error = ValidateCommon.ValidateControl(validateAllControls);
-    if (error != '') {
+    if (error !== '') {
         AppCommon.ShownotifyError("Please Resolve validation error before submit");
         return false;
     }
@@ -35,7 +35,7 @@ export function CreateAddEventValidator() {
 export function ValidateEventControls() {
     let error = '';
     error = ValidateCommon.ValidateControl(validateEventControls);
-    if (error != '') {
+    if (error !== '') {
         AppCommon.ShownotifyError("Please Resolve validation error before submit");
         return false;
     }
@@ -78,7 +78,7 @@ export function CreateDeleteEventValidator() {
 export function ValidateDeleteEventControls() {
     let error = '';
     error = ValidateCommon.ValidateControl(validateDeleteEventControls);
-    if (error != '') {
+    if (error !== '') {
         AppCommon.ShownotifyError("Please Resolve validation error before submit");
         return false;
     }
@@ -97,7 +97,7 @@ export function CreateCompleteEventValidator() {
 export function ValidateCompleteEventControls() {
     let error = '';
     error = ValidateCommon.ValidateControl(validateCompleteEventControls);
-    if (error != '') {
+    if (error !== '') {
         AppCommon.ShownotifyError("Please Resolve validation error before submit");
         return false;
     }

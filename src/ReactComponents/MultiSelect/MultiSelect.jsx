@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import ReactMultiSelectCheckboxes from "react-multiselect-checkboxes";
 class MultiSelect extends React.Component {
     constructor(props) {

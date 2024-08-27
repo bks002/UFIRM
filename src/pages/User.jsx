@@ -7,7 +7,7 @@ import { connect } from 'react-redux';
 import departmentAction from '../redux/department/action';
 import { promiseWrapper } from '../utility/common';
 import { bindActionCreators } from 'redux';
-import { CheckIsMandatory } from '../Common/Validation/ValidationCommon.js';
+// import { CheckIsMandatory } from '../Common/Validation/ValidationCommon.js';
 
 class User extends React.Component {
     constructor(props) {
@@ -161,12 +161,12 @@ class User extends React.Component {
                 <section className="content">
                     <div className="container-fluid">
                         <div className="container-fluid">
-                            {this.state.PageMode == 'Home' &&
+                            {this.state.PageMode === 'Home' &&
                                 <UserHome
                                     Id="AddNewDepartment"
                                     Action={this.managepagemode.bind(this)} />
                             }
-                            {this.state.PageMode == 'Add' &&
+                            {this.state.PageMode === 'Add' &&
                                 <UserNew
 
                                     Id="AddNewDepartment"
@@ -177,7 +177,7 @@ class User extends React.Component {
                                     Action={this.managepagemode.bind(this)}
                                     Title={this.state.PageMode} />
                             }
-                            {this.state.PageMode == 'View' &&
+                            {this.state.PageMode === 'View' &&
                                 <UserView
                                     Id="viewDepartment"
                                     Data={this.state.Data}
@@ -185,7 +185,7 @@ class User extends React.Component {
                                     Action={this.managepagemode.bind(this)}
                                     Title={this.state.PageMode} />
                             }
-                            {this.state.PageMode == 'Edit' &&
+                            {this.state.PageMode === 'Edit' &&
                                 <UserNew
                                     Id="AddNewDepartment"
                                     PageMode={this.state.PageMode}

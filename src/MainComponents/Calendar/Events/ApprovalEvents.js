@@ -164,7 +164,7 @@ class ApprovalEvents extends Component {
     manageEventApproval = (model, type) => {
         this.ApiProviderr.manageEventApproval(model, type).then(
             resp => {
-                if (resp.ok && resp.status == 200) {
+                if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
                         switch (type) {
                             case 'R':

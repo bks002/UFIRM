@@ -1,15 +1,13 @@
-import React, { useDebugValue } from 'react'
-import { render } from 'react-dom';
+import React from 'react';
 import Button from '../../ReactComponents/Button/Button.jsx';
 import InputBox from '../../ReactComponents/InputBox/InputBox.jsx';
 import { CreateValidator, ValidateControls } from '../ManageFlat/Validation.js';
 import ApiProvider from '../ManageFlat/DataProvider.js';
 import swal from 'sweetalert';
-import { DELETE_CONFIRMATION_MSG } from '../../Contants/Common';
+// import { DELETE_CONFIRMATION_MSG } from '../../Contants/Common';
 import * as appCommon from '../../Common/AppCommon';
 import departmentActions from '../../redux/department/action';
 import { connect } from 'react-redux';
-import { promiseWrapper } from '../../utility/common';
 import { bindActionCreators } from 'redux';
 
 class FlatDetails extends React.Component {
@@ -75,7 +73,7 @@ class FlatDetails extends React.Component {
                 });
                 this.ApiProviderr.manageManageFlat(model, 'U').then(
                     resp => {
-                        if (resp.ok && resp.status == 200) {
+                        if (resp.ok && resp.status === 200) {
                             return resp.json().then(rData => {
                                 appCommon.showtextalert("Flat Details Update Successfully!", "", "success");
                                 //this.handleCancel();

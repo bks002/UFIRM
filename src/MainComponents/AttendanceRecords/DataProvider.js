@@ -7,20 +7,16 @@ class DataProvider {
             case 'U':
                 url = `KYCUpate`;
                 return srv.CallPostNewService(url, model[0]);
-                break;
             case 'D':
                 url = `Property/AmentiesAssignment/Delete/${model[0].propertyAmenitiesId}`
                 return srv.CallPostService(url);
-                break;
             case 'R':
                 url = `AttendanceLogs`;
                 return srv.getComplaint(url);
-                break; 
                 case 'AP':
                     console.log(model);
                 url = `KYCApprove?Id=${model[0].Id}`;
-                return srv.CallPostNewService(url, model[0]);
-                break;       
+                return srv.CallPostNewService(url, model[0]);    
             default:
         }
     }

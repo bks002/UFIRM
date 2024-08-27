@@ -1,21 +1,15 @@
-import React, { Component, Fragment } from 'react';
+import React, { Component } from 'react';
 import Button from '../../ReactComponents/Button/Button';
 import ApiProvider from './DataProvider';
-import { CreateValidator, ValidateControls } from './Validation';
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer} from 'react-toastify';
 import * as appCommon from '../../Common/AppCommon.js';
 import CommonDataProvider from '../../Common/DataProvider/CommonDataProvider.js';
-import InputBox from '../../ReactComponents/InputBox/InputBox.jsx';
 import SelectBox from '../../ReactComponents/SelectBox/Selectbox.jsx';
 import MultiSelectInline from '../../ReactComponents/MultiSelectInline/MultiSelectInline.jsx';
 import FileUpload from '../NoticeBoard/FileUpload';
 import { ShowImageModal } from './ImageModal'
 import { ShowPdfModal } from './ShowPdf'
 import PDFIcon from './AttachmentIcons/pdficon.png';
-
-import { connect } from 'react-redux';
-import departmentAction from '../../redux/department/action';
-import { bindActionCreators } from 'redux';
 import TicketReopen from './TicketReopen';
 import TicketOnhold from './TicketOnhold';
 import TicketComment from './TicketComment';
@@ -94,7 +88,7 @@ class TicketDetails extends Component {
         // debugger
         this.ApiProviderr.GetTeamMember(StatementType, Category, PropertyId).then(
             resp => {
-                if (resp.ok && resp.status == 200) {
+                if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
                         let CategoryWiseTeamMemberData = [];
                         rData.forEach(element => {
@@ -117,7 +111,7 @@ class TicketDetails extends Component {
     loadPropertyDetailsComplainLocationWise = (towerid) => {
         this.ApiProviderr.GetDropdownData("PD", this.props.PropertyId, 0, towerid).then(
             resp => {
-                if (resp.ok && resp.status == 200) {
+                if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
                         let Data = [];
                         rData.forEach(element => {
@@ -138,7 +132,7 @@ class TicketDetails extends Component {
     loadComplainbyAccordingPropertyDT = (propertyDTId) => {
         this.ApiProviderr.GetDropdownData("CB", this.props.PropertyId, propertyDTId, 0).then(
             resp => {
-                if (resp.ok && resp.status == 200) {
+                if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
                         let Data = [{ Id: 0, Name: "Select Reporter" }];
                         rData.forEach(element => {
@@ -340,7 +334,7 @@ class TicketDetails extends Component {
     manageTickets = (model, type) => {
         this.ApiProviderr.manageTickets(model, type).then(
             resp => {
-                if (resp.ok && resp.status == 200) {
+                if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
                         switch (type) {
                             case 'TC':

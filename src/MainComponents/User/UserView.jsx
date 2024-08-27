@@ -158,7 +158,7 @@ class UserView extends React.Component {
                                     <div className="form-group">
                                         <label for="lbProfilePic">Profile Picture</label>
                                         <div>
-                                            <img className="ImageView" src={this.props.Data.profileImageUrl} style={{ height: "90px" }} />
+                                            <img className="ImageView" alt='profilepic' src={this.props.Data.profileImageUrl} style={{ height: "90px" }} />
                                         </div>
                                     </div>
                                 </div>

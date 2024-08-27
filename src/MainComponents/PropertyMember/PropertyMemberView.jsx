@@ -25,9 +25,6 @@ class PropertyMemberView extends React.Component {
     handleCancel = () => {
         this.props.Action("Home");
     };
-    onDocumentGridData(gridLink) {
-        window.open(gridLink);
-    }
     
     render() {
         return (
@@ -40,7 +37,7 @@ class PropertyMemberView extends React.Component {
                                     <div className="form-group">
                                         <label for="lbProfilePic">Profile Picture</label>
                                         <div style={{ marginRight: "15px" }}>
-                                            <img className="ImageView" src={this.props.Data.profileImageUrl} style={{ height: "90px" }} />
+                                            <img className="ImageView" alt='profilepic' src={this.props.Data.profileImageUrl} style={{ height: "90px" }} />
                                         </div>
                                     </div>
                                 </div>

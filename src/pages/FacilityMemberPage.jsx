@@ -14,7 +14,7 @@ class FacilityMemberPage extends React.Component {
     render() {
         return (
             <div className="content-wrapper">
-            <div className="content-header">
+            <div className="content-header mt-5">
                 <div className="container-fluid">
                     <div className="row mb-2">
                         <div className="col-sm-6">

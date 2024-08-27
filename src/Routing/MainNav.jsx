@@ -1,12 +1,5 @@
 import React, { Fragment } from "react";
-import ReactRouter from "./ReactRouter.jsx";
-import {
-  BrowserRouter as Router,
-  Switch,
-  Route,
-  Link,
-  Redirect,
-} from "react-router-dom";
+import {BrowserRouter as Router,Switch,Route,Link,Redirect,} from "react-router-dom";
 import TicketingDashboard from "../MainComponents/Ticket/TicketingDashboard";
 import DepartmentHome from "../MainComponents/Department/DepartmentHome";
 import Department from "../pages/Department";
@@ -43,6 +36,8 @@ import ManageResidentOwnersPage from "../pages/ManageResidentOwnersPage";
 import ManageFlatPage from "../pages/ManageFlatPage";
 import DocumentTypeMasterPage from "../pages/DocumentTypeMasterPage";
 import AssetsMasterPage from "../pages/AssetsMasterPage";
+import CheckInCheckOut from "../pages/checkIn-checkOutPage.jsx";
+import RentalAssets from "../pages/RentalAssets.jsx";
 import EscalationGroupPage from "../pages/EscalationGroupPage";
 import EscalationMatrixPage from "../pages/EscalationMatrixPage";
 import NoticeBoardPage from "../pages/NoticeBoardPage";
@@ -68,8 +63,8 @@ import ResidentEventPage from "../pages/ResidentEventPage.jsx";
 import PlannerTaskStatus from "../pages/PlannerTaskStatus.jsx";
 import GuardListPage from "../pages/GuardListPage.jsx";
 import AssetTrackingPage from "../pages/AssetTrackingPage.jsx";
-import AttendanceSummaryPage from "../pages/AttendanceSummaryPage.jsx";
 import PlannerTaskAnalysisPage from "../pages/PlannerTaskAnalysisPage.jsx";
+
 var currentpropertyid = 0;
 class MainNav extends React.Component {
   constructor(props) {
@@ -116,12 +111,11 @@ class MainNav extends React.Component {
   componentDidMount() {
     //var token ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
     var token = window.sessionStorage.getItem("userinfo_key")
-    if (window.sessionStorage.getItem("userinfo_key") == null) {
-    if (token == null) {
+    if (token === null) {
         const timerId = setTimeout(() => {
             this.componentDidMount()
         }, 1000);
-    }}
+    }
     else {
     this.loaduserRole();
     this.loadProperty();
@@ -161,26 +155,26 @@ class MainNav extends React.Component {
     return (
       <Router>
         <div className="wrapper">
-          <nav className="main-header navbar navbar-expand navbar-dark navbar-primary">
-            <ul className="navbar-nav">
-              <li className="nav-item">
-                <a
-                  className="nav-link"
-                  data-widget="pushmenu"
-                  href="#"
-                  role="button"
-                >
-                  <i className="fas fa-bars"></i>
-                </a>
-              </li>
-              {this.state.PropertyData.length == 1 && (
-                <li className="nav-item d-none d-sm-inline-block">
-                  <a href="#" className="nav-link">
-                    {this.state.PropertyData[0].Name}
-                  </a>
-                </li>
-              )}
-            </ul>
+          <nav className="main-header fixed-top navbar navbar-expand navbar-dark navbar-primary">
+            <div className="navbar-nav">
+                    <div className="nav-item">
+                      <a
+                        className="nav-link"
+                        data-widget="pushmenu"
+                        href="#"
+                        role="button"
+                      >
+                        <i className="fas fa-bars"></i>
+                      </a>
+                    </div>
+                   {this.state.PropertyData.length == 1 && (
+                      <div className="nav-item d-none d-sm-inline-block">
+                        <a href="#" className="nav-link">
+                          {this.state.PropertyData[0].Name}
+                        </a>
+                      </div>
+                    )}
+            </div>
             <form className="form-inline ml-3">
               {this.state.PropertyData.length > 1 && (
                 <div className="input-group input-group-sm">
@@ -192,122 +186,28 @@ class MainNav extends React.Component {
                 </div>
               )}
             </form>
+              
 
-            <ul className="navbar-nav ml-auto">
-              <li className="nav-item dropdown">
-                <div className="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                  <a href="#" className="dropdown-item">
-                    <div className="media">
+            
+            <div className="navbar-nav  ml-auto ">
+                {/* <div className="nav-item ">
+                    <a className="navbar-brand" href="#">
                       <img
-                        src="../../dist/img/user1-128x128.jpg"
-                        alt="User Avatar"
-                        className="img-size-50 mr-3 img-circle"
-                      ></img>
-                      <div className="media-body">
-                        <h3 className="dropdown-item-title">
-                          Brad Diesel
-                          <span className="float-right text-sm text-danger">
-                            <i className="fas fa-star"></i>
-                          </span>
-                        </h3>
-                        <p className="text-sm">Call me whenever you can...</p>
-                        <p className="text-sm text-muted">
-                          <i className="far fa-clock mr-1"></i> 4 Hours Ago
-                        </p>
-                      </div>
-                    </div>
-                  </a>
-                  <div className="dropdown-divider"></div>
-                  <a href="#" className="dropdown-item">
-                    <div className="media">
-                      <img
-                        src="../../dist/img/user8-128x128.jpg"
-                        alt="User Avatar"
-                        className="img-size-50 img-circle mr-3"
-                      ></img>
-                      <div className="media-body">
-                        <h3 className="dropdown-item-title">
-                          John Pierce
-                          <span className="float-right text-sm text-muted">
-                            <i className="fas fa-star"></i>
-                          </span>
-                        </h3>
-                        <p className="text-sm">I got your message bro</p>
-                        <p className="text-sm text-muted">
-                          <i className="far fa-clock mr-1"></i> 4 Hours Ago
-                        </p>
-                      </div>
-                    </div>
-                  </a>
-                  <div className="dropdown-divider"></div>
-                  <a href="#" className="dropdown-item">
-                    <div className="media">
-                      <img
-                        src="../../dist/img/user3-128x128.jpg"
-                        alt="User Avatar"
-                        className="img-size-50 img-circle mr-3"
-                      ></img>
-                      <div className="media-body">
-                        <h3 className="dropdown-item-title">
-                          Nora Silvester
-                          <span className="float-right text-sm text-warning">
-                            <i className="fas fa-star"></i>
-                          </span>
-                        </h3>
-                        <p className="text-sm">The subject goes here</p>
-                        <p className="text-sm text-muted">
-                          <i className="far fa-clock mr-1"></i> 4 Hours Ago
-                        </p>
-                      </div>
-                    </div>
-                    00
-                  </a>
-                  <div className="dropdown-divider"></div>
-                  <a href="#" className="dropdown-item dropdown-footer">
-                    See All Messages
-                  </a>
-                </div>
-              </li>
-              <li className="nav-item dropdown">
-                <div className="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                  <span className="dropdown-item dropdown-header">
-                    15 Notifications
-                  </span>
-                  <div className="dropdown-divider"></div>
-                  <a href="#" className="dropdown-item">
-                    <i className="fas fa-envelope mr-2"></i> 4 new messages
-                    <span className="float-right text-muted text-sm">
-                      3 mins
-                    </span>
-                  </a>
-                  <div className="dropdown-divider"></div>
-                  <a href="#" className="dropdown-item">
-                    <i className="fas fa-users mr-2"></i> 8 friend requests
-                    <span className="float-right text-muted text-sm">
-                      12 hours
-                    </span>
-                  </a>
-                  <div className="dropdown-divider"></div>
-                  <a href="#" className="dropdown-item">
-                    <i className="fas fa-file mr-2"></i> 3 new reports
-                    <span className="float-right text-muted text-sm">
-                      2 days
-                    </span>
-                  </a>
-                  <div className="dropdown-divider"></div>
-                  <a href="#" className="dropdown-item dropdown-footer">
-                    See All Notifications
-                  </a>
-                </div>
-              </li>
-              <li className="nav-item"></li>
-              {/* <li onLoad="setUserData();" className="nav-item dropdown"> */}
-              <li className="nav-item dropdown">
+                        src="https://ufirm.in/assets/cdn/public/img/Ufirm-fabicon.png"
+                        alt="Brand Logo"
+                        width="35"
+                        height="35"
+                      />
+                    </a>
+                  </div> */}
+
+              <div className="nav-item dropdown">
                 <a
                   href="#"
                   data-toggle="dropdown"
                   className="dropdown-toggle nav-link dropdown-user-link"
                 >
+                  
                   <span className="avatar avatar-online">
                     <img
                       src={this.state.UserProfileImg}
@@ -337,8 +237,8 @@ class MainNav extends React.Component {
                     Logout
                   </a>
                 </div>
-              </li>
-            </ul>
+              </div>
+            </div>
           </nav>
 
           <aside className="main-sidebar elevation-4 sidebar-light-primary">
@@ -355,29 +255,25 @@ class MainNav extends React.Component {
                 ></img>
               </span>
             </Link>
+
+            {/* side-navbar code */}
+            
             <div className="sidebar">
               <nav className="mt-2">
                 <ul
-                  className="nav nav-pills nav-sidebar flex-column"
-                  data-widget="treeview"
-                  role="menu"
-                  data-accordion="false"
-                >
+                  className="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                   <li className="nav-item has-treeview">
-                    <a href="#" className="nav-link">
+                    
+                  <li className="nav-item has-treeview">
+                    <a href="/" className="nav-link">
                       <i className="nav-icon fas fa-tachometer-alt"></i>
                       <p>
                         Dashboard
                         <i className="right fas fa-angle-left"></i>
                       </p>
                     </a>
+                  </li>
                     <ul className="nav nav-treeview">
-                      <li className="nav-item">
-                        <Link to="/" className="nav-link">
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Home</p>
-                        </Link>
-                      </li>
                       {/* <li className="nav-item">
                                                 <Link to="/Account/App/ticket" className="nav-link">
                                                     <i className=" fas fa-caret-right nav-icon"></i>
@@ -417,7 +313,7 @@ class MainNav extends React.Component {
                                 <p>Sub Category </p>
                               </Link>
                             </li>
-                            <li className="nav-item">
+                            {/* <li className="nav-item">
                               <Link
                                 to="/Account/App/EventApproval"
                                 className="nav-link"
@@ -425,7 +321,7 @@ class MainNav extends React.Component {
                                 <i className=" fas fa-caret-right nav-icon"></i>
                                 <p>Event Approval</p>
                               </Link>
-                            </li>
+                            </li> */}
                           </Fragment>
                           // : null
                         }
@@ -454,7 +350,7 @@ class MainNav extends React.Component {
                                                             <p>Tasks Audit</p>
                                                         </Link>
                                                     </li> */}
-                        <li className="nav-item">
+                        {/* <li className="nav-item">
                           <Link
                             to="/Account/App/TaskAnalysis"
                             className="nav-link"
@@ -462,17 +358,17 @@ class MainNav extends React.Component {
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Tasks Analysis</p>
                           </Link>
-                        </li>
+                        </li> */}
                         <li className="nav-item">
                           <Link
                             to="/Account/App/TaskEventsCalender"
                             className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Tasks Events</p>
+                            <p>Task Calendar</p>
                           </Link>
                         </li>
-                        <li className="nav-item">
+                        {/* <li className="nav-item">
                           <Link
                             to="/Account/App/ResidentEvents"
                             className="nav-link"
@@ -480,7 +376,7 @@ class MainNav extends React.Component {
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Resident Events</p>
                           </Link>
-                        </li>
+                        </li> */}
                         <li className="nav-item">
                           <Link
                             to="/Account/App/TaskStatus"
@@ -499,15 +395,6 @@ class MainNav extends React.Component {
                             <p>Spot Visit Details</p>
                           </Link>
                         </li>
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/AssetTracking"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Asset Tracking</p>
-                          </Link>
-                        </li>
                         {/* <li className="nav-item">
                                                         <Link to="/Account/App/AttendanceSummary" className="nav-link">
                                                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -518,6 +405,53 @@ class MainNav extends React.Component {
                     </li>
                     // : null
                   }
+
+                    <li className="nav-item has-treeview">
+                      <a href="#" className="nav-link">
+                        <i className="nav-icon fas fa-wrench"></i>
+                        <p>
+                          Asset Management
+                          <i className="right fas fa-angle-left"></i>
+                        </p>
+                      </a>
+                      <ul className="nav nav-treeview">
+                          <li className="nav-item">
+                              <Link
+                                to="/Account/App/AssetsMaster"
+                                className="nav-link"
+                              >
+                                <i className=" fas fa-caret-right nav-icon"></i>
+                                <p>Assets Master</p>
+                              </Link>
+                            </li>
+                            <li className="nav-item">
+                              <Link
+                                to="/Account/App/CheckIn&CheckOut"
+                                className="nav-link"
+                              >
+                                <i className=" fas fa-caret-right nav-icon"></i>
+                                <p>Check IN & OUT</p>
+                              </Link>
+                            </li>
+
+                            <li className="nav-item">
+                              <Link to="/Account/App/RentalAssets" className="nav-link">
+                                <i className=" fas fa-caret-right nav-icon"></i>
+                                <p>Rental Assets</p>
+                              </Link>
+                            </li>
+
+                            <li className="nav-item">
+                              <Link
+                                to="/Account/App/AssetTracking"
+                                className="nav-link"
+                              >
+                                <i className=" fas fa-caret-right nav-icon"></i>
+                                <p>Asset Log</p>
+                              </Link>
+                            </li>
+                      </ul>
+                    </li>
 
                   {
                     // this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager")) ?
@@ -766,17 +700,7 @@ class MainNav extends React.Component {
                           </Link>
                         </li>
                       </ul>
-                      <ul className="nav nav-treeview">
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/AssetsMaster"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Assets Master</p>
-                          </Link>
-                        </li>
-                      </ul>
+                    
                     </li>
                     // : null
                   }
@@ -1100,6 +1024,12 @@ class MainNav extends React.Component {
             </Route>
             <Route path="/Account/App/AssetsMaster">
               <AssetsMasterPage />
+            </Route>
+            <Route path="/Account/App/CheckIn&CheckOut">
+              <CheckInCheckOut/>
+            </Route>
+            <Route path="/Account/App/RentalAssets">
+              <RentalAssets/>
             </Route>
             <Route path="/Account/App/EscalationGroup">
               <EscalationGroupPage />

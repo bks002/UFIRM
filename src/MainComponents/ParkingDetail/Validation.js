@@ -14,7 +14,7 @@ export function CreateValidator() {
 export function ValidateControls() {
     let error = '';
     error = ValidateCommon.ValidateControl(validateAllControls);
-    if (error != '') {
+    if (error !== '') {
         AppCommon.ShownotifyError("Please Resolve validation error before submit");
         return false;
     }

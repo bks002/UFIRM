@@ -14,11 +14,11 @@ import UrlProvider from "../../Common/ApiUrlProvider.js";
 import ImageUploader from 'react-images-upload';
 import { connect } from 'react-redux';
 import departmentAction from '../../redux/department/action';
-import { promiseWrapper } from '../../utility/common';
+// import { promiseWrapper } from '../../utility/common';
 import { bindActionCreators } from 'redux';
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import { CreateValidator, ValidateControls, VehicleValidateControls } from '../ManageResidentOwners/Validation.js';
-import { DELETE_CONFIRMATION_MSG, BLOCK_CONFIRMATION_MSG, UNBLOCK_CONFIRMATION_MSG } from '../../Contants/Common';
+import { DELETE_CONFIRMATION_MSG } from '../../Contants/Common';
 import './ManageResidentOwners.css';
 const $ = window.$;
 const documentBL = new DocumentBL();
@@ -99,6 +99,7 @@ class ManageResidentOwners extends React.Component {
             case 'AllMember':
                 this.getPropertyMember(this.state.PropertyMemberTypeValue);
                 break;
+                default: break;
         };
         this.getFacilityType();
         this.getVehicleType();
@@ -155,22 +156,39 @@ class ManageResidentOwners extends React.Component {
             });
     }
 
-    getDocumentType() {
-        this.comdbprovider.getDocumentType(0).then(
-            resp => {
-                if (resp.ok && resp.status == 200) {
-                    return resp.json().then(rData => {
-                        rData = appCommon.changejsoncolumnname(rData, "documentTypeId", "Id");
-                        rData = appCommon.changejsoncolumnname(rData, "documentTypeName", "Name");
-                        let documentTypeData = [{ "Id": "0", "Name": "Select Document Type" }];
-                        rData.forEach(element => {
-                            documentTypeData.push({ Id: element.Id.toString(), Name: element.Name });
-                        });
-                        this.setState({ DocumentType: documentTypeData });
-                    });
-                }
-            });
+    async getDocumentType() {
+        try {
+            const resp = await this.comdbprovider.getDocumentType(0);
+            if (resp.ok && resp.status === 200) {
+                const rData = await resp.json();
+                let documentTypeData = [{ "Id": "0", "Name": "Select Document Type" }];
+                rData.forEach(element => {
+                    documentTypeData.push({ Id: element.Id.toString(), Name: element.Name });
+                });
+                this.setState({ DocumentType: documentTypeData });
+            }
+        } catch (error) {
+            console.error("Error fetching document types:", error);
+        }
     }
+    
+
+    // getDocumentType() {
+    //     this.comdbprovider.getDocumentType(0).then(
+    //         resp => {
+    //             if (resp.ok && resp.status == 200) {
+    //                 return resp.json().then(rData => {
+    //                     rData = appCommon.changejsoncolumnname(rData, "documentTypeId", "Id");
+    //                     rData = appCommon.changejsoncolumnname(rData, "documentTypeName", "Name");
+    //                     let documentTypeData = [{ "Id": "0", "Name": "Select Document Type" }];
+    //                     rData.forEach(element => {
+    //                         documentTypeData.push({ Id: element.Id.toString(), Name: element.Name });
+    //                     });
+    //                     this.setState({ DocumentType: documentTypeData });
+    //                 });
+    //             }
+    //         });
+    // }
 
     loadPropertyFlat(id) {
         this.comdbprovider.getPropertyFlat(id).then(

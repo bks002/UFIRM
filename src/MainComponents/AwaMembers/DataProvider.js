@@ -8,19 +8,15 @@ class DataProvider {
             case 'C':
                 url = `Property/RwaMember/Save`;
                 return srv.CallPostService(url, model[0]);
-                break;
             case 'U':
                 url = `Property/RwaMember/Save`;
                 return srv.CallPostService(url, model[0]);
-                break;
             case 'D':
                 url = `Property/RwaMember/Delete/${model[0].RwaMemberDetailsId}/${model[0].CmdType}`;
                 return srv.CallPostService(url);
-                break;
             case 'R':
                 url = `Property/RwaMember/List/${model[0].CmdType}/${model[0].PropertyId}/${model[0].IsActive}`;
                 return srv.get(url);
-                break;
             default:
         }
     }

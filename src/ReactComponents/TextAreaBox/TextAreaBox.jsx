@@ -10,7 +10,7 @@ class TextAreaBox extends React.Component {
     }
     componentDidMount() {
         //let d = this.props;
-        if (this.props.Value != '' & this.props.Value != null & this.props.Value != undefined) {
+        if (this.props.Value !== '' & this.props.Value !== null & this.props.Value !== undefined) {
             this.setState({ inputValue: this.props.Value });
         }
     }
@@ -20,11 +20,11 @@ class TextAreaBox extends React.Component {
     }
 
     componentWillReceiveProps(props) {
-        if (props.Value != '' & props.Value != null & props.Value != undefined) {
+        if (props.Value !== '' & props.Value !== null & props.Value !== undefined) {
             this.setState({ inputValue: props.Value });
         }
         else {
-            if (props.HandleClear == 'True')
+            if (props.HandleClear === 'True')
                 this.setState({ inputValue: '' });
         }
     }

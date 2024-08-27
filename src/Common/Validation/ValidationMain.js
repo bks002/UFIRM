@@ -21,7 +21,7 @@ export function ValidateNumeric(ControlID) {
     objvcommon.SetBorderDefault(ControlID);
     var ErrorMsg = '';
     var Num = $('#' + ControlID).val();
-    if (Num != undefined) {
+    if (Num !== undefined) {
         var MaxLen = $('#' + ControlID).attr('MaxLength');
         var MinVal = $('#' + ControlID).attr('MinValue');
         var MaxVal = $('#' + ControlID).attr('MaxValue');
@@ -35,7 +35,7 @@ export function ValidateNumeric(ControlID) {
         if (period.length > 1)                 // Check that there indeed is a decimal separator.
             AfterDecimal = period[1];          // This is the number after the decimal.
 
-        if (isNaN(Num) == true || $.trim($('#' + ControlID).val()) == '') {
+        if (isNaN(Num) === true || $.trim($('#' + ControlID).val()) === '') {
             $('#' + ControlID).val();
         }
         else {
@@ -54,7 +54,7 @@ export function ValidateNumeric(ControlID) {
         }
 
         ErrorMsg = ErrorMsg + objvcommon.CheckMaxLength(ControlID, Label, MaxLen, Num);
-        if (AfterDecimal != '')
+        if (AfterDecimal !== '')
             ErrorMsg = ErrorMsg + CheckScale(ControlID, Label, Scale, AfterDecimal);
 
         ErrorMsg = ErrorMsg + CheckNumericMaxValue(ControlID, Label, MaxVal, Num);
@@ -80,7 +80,7 @@ export function CheckScale(ControlID, Label, Scale, AfterDecimal) {
         return Error;
     }
 
-    if ($('#' + ControlID).attr('Scale') == "0") {
+    if ($('#' + ControlID).attr('Scale') === "0") {
 
         if ($('#' + ControlID).val().indexOf('.') > -1) {
             Error = 'Invalid ' + Label + ', decimal point not allowed  ';
@@ -89,8 +89,8 @@ export function CheckScale(ControlID, Label, Scale, AfterDecimal) {
         }
     }
 
-    if ($('#' + ControlID).attr('Scale') != "0") {
-        if ($('#' + ControlID).val() != "" && $('#' + ControlID).val() != "0") {
+    if ($('#' + ControlID).attr('Scale') !== "0") {
+        if ($('#' + ControlID).val() != "" && $('#' + ControlID).val() !== "0") {
             if ((parseInt(AfterDecimal.length)) > parseInt(Scale)) {
                 Error = ' For ' + Label + ' number of digits after decimals cannot be more than ' + Scale;
                 Error = objvcommon.AppendErrorMessage(Error, ControlID);
@@ -104,7 +104,7 @@ export function CheckScale(ControlID, Label, Scale, AfterDecimal) {
 export function CheckNumericMaxValue(ControlID, Label, MaxVal, Num) {
     var Error = '';
 
-    if (MaxVal != null && MaxVal != "0") {
+    if (MaxVal !== null && MaxVal !== "0") {
         if ($('#' + ControlID).val() != "" || $('#' + ControlID).val() != "0") {
             if ((parseFloat(Num)) > parseFloat(MaxVal)) {
                 Error = Label + ' value cannot be more than ' + MaxVal;
@@ -118,8 +118,8 @@ export function CheckNumericMaxValue(ControlID, Label, MaxVal, Num) {
 export function CheckNumericMinValue(ControlID, Label, MinVal, Num) {
     var Error = '';
 
-    if (MinVal != null) {
-        if ($('#' + ControlID).val() != "" || $('#' + ControlID).val() != "0") {
+    if (MinVal !== null) {
+        if ($('#' + ControlID).val() !== "" || $('#' + ControlID).val() !== "0") {
             if ((parseFloat(Num)) < parseFloat(MinVal)) {
                 Error = Label + ' value cannot be less than ' + MinVal;
                 Error = objvcommon.AppendErrorMessage(Error, ControlID);
@@ -181,7 +181,7 @@ export function ValidatePassword(ControlID) {
     var ErrorMsg = '';
     var password = $('#' + ControlID).val();
     ErrorMsg = objvcommon.CheckIsMandatory(ControlID);
-    if (password != "") {
+    if (password !== "") {
         ErrorMsg = ValidatePasswordReg(ControlID);
     }
     ResetBubbleMessage(ControlID);
@@ -204,7 +204,7 @@ export function ValidatePasswordReg(ControlID, Label) {
     if (password.length > 50) {
         ErrorMsg = objvcommon.AppendErrorMessage("Your " + Label + " must be less than 50 characters", ControlID);
     }
-    if (ErrorMsg != '') {
+    if (ErrorMsg !== '') {
         objvcommon.SetBorderDefault(ControlID);
         ErrorMsg = objvcommon.AppendErrorMessage(ErrorMsg, ControlID);
     }
@@ -225,7 +225,7 @@ export function ValidateEmail(ControlID) {
     var Emailvalue = $('#' + ControlID).val();
     objvcommon.SetBorderDefault(ControlID);
     objvcommon.CheckIsMandatory(ControlID);
-    if (Emailvalue != "") {
+    if (Emailvalue !== "") {
         Error = ValidateEmailReg(ControlID);
     }
     ResetBubbleMessage(ControlID);
@@ -237,7 +237,7 @@ export function ValidateEmailReg(ControlID, Label) {
     var Label = $('#' + ControlID).attr('LabelMessage');
     var Error = '';
     var regex = /^([a-zA-Z0-9_\.\-\+])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/;
-    if (regex.test(Emailvalue) == false) {
+    if (regex.test(Emailvalue) === false) {
         Error = 'Invalid ' + Label;
         objvcommon.SetBorderDefault(ControlID);
         Error = objvcommon.AppendErrorMessage(Error, ControlID);
@@ -425,7 +425,7 @@ export function ValidateTime(ControlID) {
     objvcommon.CheckIsMandatory(ControlID)
     // Error = objvcommon.CheckTimeFormat(ControlID);
     Error = Error + CompareTime(ControlID);
-    if (Error != "") {
+    if (Error !== "") {
         objvcommon.SetBorderRed(ControlID);
     }
     return Error;

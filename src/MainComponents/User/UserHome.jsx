@@ -1,5 +1,4 @@
 import React from 'react'
-import { render } from 'react-dom'
 //import HomeContainer from '../../containers/home/homecontainer.jsx';
 import Button from '../../ReactComponents/Button/Button.jsx';
 import DataGrid from '../../ReactComponents/DataGrid/DataGrid.jsx';
@@ -49,7 +48,7 @@ class UserHome extends React.Component {
     }
 
     ClearTyeahead = (type, event) => {
-        if (type == 'C') {
+        if (type === 'C') {
             var option = this.thaCustomer.props.options;
             if (!option.includes(event.target.value)) {
             }
@@ -59,7 +58,7 @@ class UserHome extends React.Component {
 
     onCustomerList = (arg) => {
         let searchVal;
-        if (arg == '' || arg == null) {
+        if (arg === '' || arg === null) {
             this.setState({ searchValue: null }, () => {
                 this.loadUser();
                 this.loadUserTypeAhead(null);
@@ -138,7 +137,7 @@ class UserHome extends React.Component {
 
     findItem(userId) {
         return this.state.gridData.find((item) => {
-            if (item.userId == userId) {
+            if (item.userId === userId) {
                 return item;
             }
         });
