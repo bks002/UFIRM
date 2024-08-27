@@ -12,8 +12,8 @@ const CheckInCheckOut = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // const url ="https://api.urest.in:8096/GetAssets";
-        const url ="http://localhost:62929/GetAssetCheckOutData";
+        const url ="https://api.urest.in:8096/GetAssetCheckOutData";
+        // const url ="http://localhost:62929/GetAssetCheckOutData";
         const response = await fetch(url, {
           method: "GET",
           headers: {
@@ -59,8 +59,8 @@ const CheckInCheckOut = () => {
     // console.log(currentAsset);
 
     const url = actionType === "checkin" 
-      ? "http://localhost:62929/ManageCheckIn" 
-      : "http://localhost:62929/ManageCheckOut"
+      ? "https://api.urest.in:8096/ManageCheckIn" 
+      : "https://api.urest.in:8096/ManageCheckOut"
     
     try {
       const payload={AssetId: currentAsset.Id,AssetName: currentAsset.Name, ...formData};
@@ -72,11 +72,13 @@ const CheckInCheckOut = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
+        
       });
 
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
+    
 
         // Update the asset data after successful check-in/check-out
       // const updatedData = await fetch("http://localhost:62929/GetAssetCheckOutData", {

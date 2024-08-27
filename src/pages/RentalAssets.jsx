@@ -13,7 +13,7 @@ const RentAssetPage = () => {
     const fetchData = async () => {
       try {
         // const url="https://api.urest.in:8096/GetAssets";
-       const url="http://localhost:62929/GetRentalAssetData"
+       const url="https://api.urest.in:8096/GetRentalAssetData"
         const response = await fetch(url, {
           method: "GET",
           headers: {
@@ -58,8 +58,8 @@ const RentAssetPage = () => {
 
   const handleSubmit = async (formData) => {
     const url = actionType === "return" 
-      ? "http://localhost:62929/ManageRentInAsset" 
-      : "http://localhost:62929/ManageRentOutAsset";
+      ? "https://api.urest.in:8096/ManageRentInAsset" 
+      : "https://api.urest.in:8096/ManageRentOutAsset";
     
     try {
       const response = await fetch(url, {
