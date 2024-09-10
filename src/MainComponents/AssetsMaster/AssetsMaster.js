@@ -11,6 +11,7 @@ import { CreateValidator, ValidateControls } from "./Validation.js"
 import CommonDataProvider from "../../Common/DataProvider/CommonDataProvider.js";
 import DocumentUploader from "../../ReactComponents/FileUploader/DocumentUploader.jsx";
 import { ShowImageModal } from "../KanbanBoard/ImageModal.js";
+import ExportToCSV from "../../ReactComponents/ExportToCSV/ExportToCSV.js";
 
 const $ = window.$;
 const toBase64 = file => new Promise((resolve, reject) => {
@@ -380,7 +381,7 @@ handleSave = async () => {
           ImageExt: extension
       });
   }
-  console.log(AMCUpFile);
+  // console.log(AMCUpFile);
   if (AMCUpFile && AMCUpFile.name && AMCUpFile.size) {
     console.log(AMCUpFile);
       let fileD = await toBase64(AMCUpFile);
@@ -417,9 +418,6 @@ handleSave = async () => {
       AMCImageExt: ""
   });
 };
-
-
- 
 
   mangaeSave = (model, type) => {
     //
@@ -469,10 +467,13 @@ handleSave = async () => {
                             <li className="nav-item">
                               <div className="input-group input-group-sm">
                                 <div className="input-group-prepend">
+                                  
+                                  <ExportToCSV data={this.state.GridData} 
+                                  className="btn btn-success btn-sm rounded mr-2"/>
                                   <Button
                                     id="btnNewComplain"
                                     Action={this.Addnew.bind(this)}
-                                    ClassName="btn btn-success btn-sm"
+                                    ClassName="btn btn-success btn-sm rounded"
                                     Icon={
                                       <i className="fa fa-plus" aria-hidden="true"></i>
                                     }
