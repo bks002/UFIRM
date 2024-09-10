@@ -381,11 +381,7 @@ handleSave = async () => {
           ImageExt: extension
       });
   }
-<<<<<<< HEAD
-  console.log(AMCUpFile);
-=======
   // console.log(AMCUpFile);
->>>>>>> bhavesh
   if (AMCUpFile && AMCUpFile.name && AMCUpFile.size) {
     console.log(AMCUpFile);
       let fileD = await toBase64(AMCUpFile);
@@ -423,12 +419,6 @@ handleSave = async () => {
   });
 };
 
-<<<<<<< HEAD
-
- 
-
-=======
->>>>>>> bhavesh
   mangaeSave = (model, type) => {
     //
     this.ApiProviderr.manageDocumentTypeMaster(model, type).then((resp) => {
