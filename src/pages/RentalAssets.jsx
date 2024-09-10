@@ -12,8 +12,8 @@ const RentAssetPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const url="https://api.urest.in:8096/GetRentalAssetData";
-      //  const url="http://localhost:62929/GetRentalAssetData"
+        // const url="https://api.urest.in:8096/GetAssets";
+       const url="https://api.urest.in:8096/GetRentalAssetData"
         const response = await fetch(url, {
           method: "GET",
           headers: {
