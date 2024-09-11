@@ -919,14 +919,16 @@ class MainNav extends React.Component {
             </div>
           </aside>
           <Switch>
-            <Route
+            {/* <Route
               exact
               path="/"
               render={() => <Redirect to="/Account/App" />}
             />
 
-            <Route exact path="/Account/App" component={Home} />
-
+            <Route exact path="/Account/App" component={Home} /> */}
+            <Route exact path="/">
+              <Home />
+            </Route>
             <Route exact path="/Account/App/ticket">
               <TicketingDashboard />
             </Route>
