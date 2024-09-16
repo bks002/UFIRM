@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import PopUp from "../ReactComponents/CheckIn&OutModal/PopUp";
 import "bootstrap/dist/css/bootstrap.min.css";
+import ExportToCSV from "../ReactComponents/ExportToCSV/ExportToCSV"
 
 const CheckInCheckOut = () => {
   const [assetData, setAssetData] = useState([]);
@@ -108,8 +109,11 @@ const CheckInCheckOut = () => {
         </div>
       </div>
       <section className="content">
-        <div className="container-fluid">
-          <h2>Asset List</h2>
+        <div className="card container-fluid">
+          <div className="d-flex justify-content-between align-items-center m-2">
+            <h2 className="mb-0">Asset List</h2>
+            <ExportToCSV data={assetData} className="btn btn-success btn-sm rounded px-3" />
+          </div>
           {loading ? (
             <p>Loading...</p>
           ) : (

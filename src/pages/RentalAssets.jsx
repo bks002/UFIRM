@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import RentalPopUp from "../ReactComponents/RentalModal/RentalPopUp"
 import "bootstrap/dist/css/bootstrap.min.css";
-
+import ExportToCSV from "../ReactComponents/ExportToCSV/ExportToCSV";
 const RentAssetPage = () => {
   const [rentalAssets, setRentalAssets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -102,8 +102,11 @@ const RentAssetPage = () => {
         </div>
       </div>
       <section className="content">
-        <div className="container-fluid">
-          <h2>Asset List</h2>
+        <div className="card container-fluid">
+          <div className="d-flex justify-content-between align-items-center m-2">
+            <h2 className="mb-0">Rental Asset List</h2>
+            <ExportToCSV data={rentalAssets} className="btn btn-success btn-sm rounded px-3" />
+          </div>
           {loading ? (
             <p>Loading...</p>
           ) : (
