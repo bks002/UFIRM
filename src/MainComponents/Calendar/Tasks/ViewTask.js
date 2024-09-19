@@ -163,7 +163,8 @@ export default class ViewTask extends Component {
         if (resp && resp.ok && resp.status === 200) {
           return resp.json().then((rData) => {
             console.log(rData);
-            // ...
+            let questImageData = rData;
+            this.setState({ QuestImageData: questImageData.Image });
           });
         } else {
           console.log('API call failed:', resp); // Add this line to log API call failures
@@ -505,9 +506,7 @@ export default class ViewTask extends Component {
             </div>
           </div>
         )}
-                  {this.state.PageMode === "EditQuestion" && (
-
-
+        {this.state.PageMode === "EditQuestion" && (
           <div className="row">
             <div className="col-12">
               <div className="card card-primary">
@@ -590,9 +589,8 @@ export default class ViewTask extends Component {
             </div>
           </div>
         )}
-                          {this.state.PageMode === "ViewQuestionImg" && (
 
-
+{this.state.PageMode === "ViewQuestionImg" && (
 <div className="row">
   <div className="col-12">
     <div className="card card-primary">
@@ -609,10 +607,10 @@ export default class ViewTask extends Component {
       </div>
       <div
         className="card-body"
-        style={{ height: "250px", overflowY: "scroll" }}
+        // style={{ height: "250px", overflowY: "scroll" }}
       >
-        <div className="row">   
-        View Image
+        <div>
+        <img src={this.state.QuestImageData} alt="Task Question Image" />;
         </div>
         <div className="modal-footer">
           <Button
@@ -634,10 +632,8 @@ export default class ViewTask extends Component {
 </div>
 )}
 
-                          {this.state.PageMode === "SupervisorRemarks" && (
-
-
-          <div className="row">
+{this.state.PageMode === "SupervisorRemarks" && (
+  <div className="row">
             <div className="col-12">
               <div className="card card-primary">
                 <div className="card-header">
