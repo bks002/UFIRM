@@ -13,7 +13,7 @@ class PlannerTaskPage extends Component {
   render() {
     return (
       <div className='content-wrapper'>
-        <div className='content-header mt-5'>
+        {/* <div className='content-header mt-5'>
           <div className='container-fluid'>
             <div className='row mb-2'>
               <div className="col-sm-6">
@@ -21,8 +21,8 @@ class PlannerTaskPage extends Component {
               </div>
             </div>
           </div>
-        </div>
-        <section className="content">
+        </div> */}
+        <section className="content mt-4">
             <div className="container-fluid">
                 <div className="container-fluid">
                   <TaskList />

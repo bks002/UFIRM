@@ -184,38 +184,28 @@ class Home extends React.Component {
 
     render() {
         return (
-            <div className="content-wrapper mt-5">
-                <div className="content-header">
-                    <div className="container-fluid">
-                        <div className="row mb-2">
-                            <div className="col-sm-6">
-                                <h1 className="m-0 text-dark">Dashboard</h1>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {console.log(this.state.complains)}
+            <div className="content-wrapper mt-2">
                 <section className="content ">
                 <div className="container-fluid">
                 <div className="row equal-height">
-                <div className="col-md-6">
-                <div className="card mb-3 shadow-sm chart-boundary">
+                <div className="col-md-3">
+                <div className="card mb-2 shadow-sm chart-boundary">
                 <div className="card-body">
-                <BarChart/>
+                <BarChart chartData={this.state.taskStatus}/>
                 </div>
                 </div>
                 </div>
-                <div className="col-md-6 ">
-                <div className="card mb-3 shadow-sm chart-boundary">
+                <div className="col-md-3 ">
+                <div className="card mb-2 shadow-sm chart-boundary">
                 <div className="card-body">
-                <PieChart/>
+                <PieChart chartData={this.state.taskStatus}/>
                 </div>
             </div>
           </div>
         </div>
       </div>
-    </section>
-                <section className="content  p-2">
+                 </section>
+                <section className="content  px-2">
                     <div className="container-fluid card p-2 shadow-sm">
                     <ChartNavigator onPeriodChange={this.getDates}/>
                     </div>

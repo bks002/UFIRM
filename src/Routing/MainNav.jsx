@@ -158,7 +158,7 @@ class MainNav extends React.Component {
     return (
       <Router>
         <div className="wrapper">
-          <nav className="main-header fixed-top navbar navbar-expand navbar-dark navbar-primary">
+          <nav className="main-header sticky-top navbar navbar-expand navbar-dark navbar-primary">
             <div className="navbar-nav">
                     <div className="nav-item">
                       <a
@@ -261,12 +261,11 @@ class MainNav extends React.Component {
 
             {/* side-navbar code */}
             
-            <div className="sidebar">
+            <div className="sidebar ">
               <nav className="mt-2">
                 <ul
                   className="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                   <li className="nav-item has-treeview">
-                    
                   <li className="nav-item has-treeview">
                     <a href="/" className="nav-link">
                       <i className="nav-icon fas fa-tachometer-alt"></i>
