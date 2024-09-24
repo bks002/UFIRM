@@ -198,7 +198,7 @@ class Home extends React.Component {
                 <div className="col-md-3 ">
                 <div className="card mb-2 shadow-sm chart-boundary">
                 <div className="card-body">
-                <PieChart chartData={this.state.taskStatus}/>
+                <PieChart chartData={this.state.taskPriority}/>
                 </div>
             </div>
           </div>

@@ -219,6 +219,7 @@ export default class TaskList extends Component {
       usersList: [],
       userIds: "",
       loading: false,
+      dataLoading: false,
       showAddModal: false,
       showEditModal: false,
       showEditModal: false,
@@ -343,7 +344,7 @@ export default class TaskList extends Component {
 
   manageCategory = (model, type) => {
     this.ApiProvider.manageCategory(model, type).then((resp) => {
-      if (resp.ok && resp.status == 200) {
+      if (resp.ok && resp.status === 200) {
         return resp.json().then((rData) => {
           let catData = [];
           rData.forEach((element) => {
@@ -364,61 +365,66 @@ export default class TaskList extends Component {
   };
 
   manageTask = (model, type) => {
-    this.ApiProvider.manageTask(model, type).then((resp) => {
-      if (resp.ok && resp.status == 200) {
-        return resp.json().then((rData) => {
-          switch (type) {
-            case "R":
-              let taskData = [];
-              rData.forEach((element) => {
-                taskData.push({
-                  Id: element.Id,
-                  TaskId: element.TaskId,
-                  TaskCategoryId: element.TaskCategoryId,
-                  TaskSubCategoryId: element.TaskSubCategoryId,
-                  Name: element.Name,
-                  Description: element.Description,
-                  DateFrom: element.DateFrom.split("T")[0],
-                  DateTo: element.DateTo.split("T")[0],
-                  TimeFrom: element.TimeFrom.split("T")[1],
-                  TimeTo: element.TimeTo.split("T")[1],
-                  Remarks: element.Remarks,
-                  TaskStatus:element.TaskStatus,
-                  Occurence: element.Occurence.split(" ")[0] ,
-                  OccurenceView: this.modifyOccurence(element.Occurence.split(" ")[0]) ,
-                  CategoryName: element.CategoryName,
-                  SubCategoryName: element.SubCategoryName,
-                  Location:element.Location,
-                  EntryType: element.EntryType,
-                  AssignedTo: element.AssignedTo,
-                  AssignedToId:element.AssignedToId,
-                  QRcode: element.QRCode,
-                  UpdatedOn : element.UpdatedOn,
-                  PropertyId:element.PropertyId,
-                  AssetId:element.AssetId,
-                  TaskPriority : element.TaskPriority
+    console.log(this.state.filtered)
+    if(this.state.filtered){
+      this.setState({ dataLoading: true });
+      this.ApiProvider.manageTask(model, type).then((resp) => {
+        if (resp.ok && resp.status === 200) {
+          return resp.json().then((rData) => {
+            switch (type) {
+              case "R":
+                let taskData = [];
+                rData.forEach((element) => {
+                  taskData.push({
+                    Id: element.Id,
+                    TaskId: element.TaskId,
+                    TaskCategoryId: element.TaskCategoryId,
+                    TaskSubCategoryId: element.TaskSubCategoryId,
+                    Name: element.Name,
+                    Description: element.Description,
+                    DateFrom: element.DateFrom.split("T")[0],
+                    DateTo: element.DateTo.split("T")[0],
+                    TimeFrom: element.TimeFrom.split("T")[1],
+                    TimeTo: element.TimeTo.split("T")[1],
+                    Remarks: element.Remarks,
+                    TaskStatus:element.TaskStatus,
+                    Occurence: element.Occurence.split(" ")[0] ,
+                    OccurenceView: this.modifyOccurence(element.Occurence.split(" ")[0]) ,
+                    CategoryName: element.CategoryName,
+                    SubCategoryName: element.SubCategoryName,
+                    Location:element.Location,
+                    EntryType: element.EntryType,
+                    AssignedTo: element.AssignedTo,
+                    AssignedToId:element.AssignedToId,
+                    QRcode: element.QRCode,
+                    UpdatedOn : element.UpdatedOn,
+                    PropertyId:element.PropertyId,
+                    AssetId:element.AssetId,
+                    TaskPriority : element.TaskPriority
+                  });
                 });
-              });
-              this.countTasksByStatus(taskData)
-              this.setState({ data: taskData});
-              break;
-            case "D":
-              if (rData === "Deleted !") {
-                appCommon.showtextalert(
-                  "Task Deleted Successfully!",
-                  "",
-                  "success"
-                );
-              } else {
-                appCommon.showtextalert("Someting went wrong !", "", "error");
-              }
-              this.getTasks();
-              break;
-            default:
-          }
-        });
-      }
-    });
+                this.countTasksByStatus(taskData)
+                this.setState({ data: taskData, dataLoading: false });
+                break;
+              case "D":
+                if (rData === "Deleted !") {
+                  appCommon.showtextalert(
+                    "Task Deleted Successfully!",
+                    "",
+                    "success"
+                  );
+                } else {
+                  appCommon.showtextalert("Someting went wrong !", "", "error");
+                }
+                this.getTasks();
+                break;
+              default:
+            }
+          });
+        }
+      });
+    }
+    
   };
 
   modifyOccurence = (Occurrence)=>{
@@ -570,6 +576,7 @@ export default class TaskList extends Component {
   }
 
   getTasks() {
+    console.log(this.state.filtered);
     var type = "R";
     var categoryId = this.state.selectedCategoryId
       ? this.state.selectedCategoryId
@@ -636,33 +643,68 @@ export default class TaskList extends Component {
       var startDate = picker.startDate;
       var endDate = picker.endDate;
       console.log(startDate , endDate);
-      _this.setState({ filterFromDate: startDate.format('YYYY-MM-DD'), filterToDate: endDate.format('YYYY-MM-DD') })
+      _this.setState({ filterFromDate: startDate.format('YYYY-MM-DD'), filterToDate: endDate.format('YYYY-MM-DD') });
   });
   }
 
   componentDidMount() {
-    const startDate = this.state.startDate;
-    const endDate = this.state.endDate;
-    this.DateRangeConfig(startDate, endDate);
-
-    this.getCategory();
-    this.getTasks();
-    this.getTasksPriority();
-    this.getAssign()
-    this.getDashboardAssignList()
-    // this.getAllProperties();
-    this.loadProperty()
-    // this.TaskStatusConfig();
+    const today = moment();
+  this.setState({
+    filterFromDate: today.format('YYYY-MM-DD'),
+    filterToDate: today.format('YYYY-MM-DD'),
+    filtered: true
+  },
+    // const startDate = moment().clone().startOf("month");
+    // const endDate = moment().clone().endOf("month");
+    // this.setState({
+    //   filterFromDate: startDate.format('YYYY-MM-DD'),
+    //   filterToDate: endDate.format('YYYY-MM-DD'),
+    //   filtered: true
+    // }, 
+    () => {
+      this.DateRangeConfig(today, today);
+      // this.DateRangeConfig(startDate, endDate);
+      this.getCategory();
+      this.getTasks();
+      this.getTasksPriority();
+      this.getAssign()
+      this.getDashboardAssignList()
+      // this.getAllProperties();
+      this.loadProperty()
+      // this.TaskStatusConfig();
+    });
   }
+
+  // componentDidMount() {
+  //   const startDate = this.state.startDate;
+  //   const endDate = this.state.endDate;
+  //   this.DateRangeConfig(startDate, endDate);
+  //   this.setState({filtered: true},()=>{
+  //   console.log(this.state.filterFromDate,this.state.filterToDate);
+  //   this.getCategory();
+  //   this.getTasks();
+  //   this.getTasksPriority();
+  //   this.getAssign()
+  //   this.getDashboardAssignList()
+  //   // this.getAllProperties();
+  //   this.loadProperty()
+  //   // this.TaskStatusConfig();
+  //   })
+    
+  // }
 
   AddNew = () => {
     this.setState({ PageMode: "Add", showAddModal: true });
   };
 
   Filter = () => {
-    if (this.state.selectedCategoryId > 0 ||this.state.assignTo > 0 || this.state.occurance !="" || this.state.taskStatus != "None") {
-      this.setState({ filtered: true });
-      this.getTasks();
+    if (this.state.propertyId > 0 ||this.state.assignTo > 0 || this.state.occurance !="" || this.state.taskStatus != "None") 
+      {
+      this.setState({ filtered: true }, () => {
+        console.log(this.state.filtered); 
+        this.getTasks();
+      });
+      
     } else {
       appCommon.showtextalert("", "Please Select Any Filter Attribute", "warning");
     }
@@ -680,7 +722,8 @@ export default class TaskList extends Component {
       completedTasks:0,
       pendingTasks:0,
       actionableTasks:0,
-      taskPriority:0
+      taskPriority:0,
+      data:[]
     });
     //this.getTasks();
   };
@@ -738,6 +781,7 @@ export default class TaskList extends Component {
         const startDate = moment().clone().startOf("month");
         const endDate = moment().clone().endOf("month");
         this.DateRangeConfig(startDate, endDate);
+        this.setState({pendingTasks:0, actionableTasks:0, completedTasks:0})
 
         this.getCategory();
         this.getTasks();
@@ -765,6 +809,7 @@ export default class TaskList extends Component {
       this.getAssign();
       this.getDashboardAssignList()
     }
+    
   }
   onCategorySelected = (val) => {};
 
@@ -1095,7 +1140,7 @@ export default class TaskList extends Component {
                   </div>
                   <div className="card-body pt-2">
                     <LoadingOverlay
-                      active={this.state.loading}
+                      active={this.state.dataLoading}
                       spinner={<PropagateLoader color="#336B93" size={30} />}
                     >
                       <DataTable
