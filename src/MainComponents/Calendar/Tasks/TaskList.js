@@ -1,11 +1,12 @@
 import React, { Component } from "react";
+import { connect } from 'react-redux';
+import departmentAction from "../../../../src/redux/department/action.js"
+import { bindActionCreators } from 'redux';
 import moment from "moment";
 import LoadingOverlay from "react-loading-overlay";
 import { PropagateLoader } from "react-spinners";
 import Button from "../../../ReactComponents/Button/Button";
 import DataTable from "../../../ReactComponents/ReactTable/DataTable";
-import DropdownList from "../../../ReactComponents/SelectBox/DropdownList";
-import MultiSelectDropdown from "../../KanbanBoard/MultiSelectDropdown";
 import ApiProvider from "../DataProvider";
 import AddTask from "./AddTask";
 import AddQuestion from "./AddQuestion";
@@ -20,7 +21,7 @@ import LayoutDataProvider from '../../../Routing/LayoutDataProvider'
 
 const $ = window.$;
 
-export default class TaskList extends Component {
+ class TaskList extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -648,12 +649,21 @@ export default class TaskList extends Component {
   }
 
   componentDidMount() {
+    const { PropertyVal } = this.props;
+    const status = this.props.status==='Completed'?'Complete':this.props.status;
+    const priority = this.props.priority;
+    const initialDate=this.props.dashDates;
+    console.log(status,priority,initialDate);
+
     const today = moment();
-  this.setState({
-    filterFromDate: today.format('YYYY-MM-DD'),
-    filterToDate: today.format('YYYY-MM-DD'),
-    filtered: true
-  },
+    this.setState({
+      filterFromDate:(status===null && priority===null)? today.format('YYYY-MM-DD'):initialDate,
+      filterToDate: today.format('YYYY-MM-DD'),
+      filtered: true,
+      propertyId:PropertyVal,
+      taskStatus: status===null?0:status,
+      taskPriority:priority===null?0:priority,
+    },
     // const startDate = moment().clone().startOf("month");
     // const endDate = moment().clone().endOf("month");
     // this.setState({
@@ -662,7 +672,9 @@ export default class TaskList extends Component {
     //   filtered: true
     // }, 
     () => {
-      this.DateRangeConfig(today, today);
+      const dateTo= new Date(this.state.filterToDate)
+      const dateFrom= new Date(this.state.filterFromDate)
+      this.DateRangeConfig(dateFrom,dateTo);
       // this.DateRangeConfig(startDate, endDate);
       this.getCategory();
       this.getTasks();
@@ -674,24 +686,6 @@ export default class TaskList extends Component {
       // this.TaskStatusConfig();
     });
   }
-
-  // componentDidMount() {
-  //   const startDate = this.state.startDate;
-  //   const endDate = this.state.endDate;
-  //   this.DateRangeConfig(startDate, endDate);
-  //   this.setState({filtered: true},()=>{
-  //   console.log(this.state.filterFromDate,this.state.filterToDate);
-  //   this.getCategory();
-  //   this.getTasks();
-  //   this.getTasksPriority();
-  //   this.getAssign()
-  //   this.getDashboardAssignList()
-  //   // this.getAllProperties();
-  //   this.loadProperty()
-  //   // this.TaskStatusConfig();
-  //   })
-    
-  // }
 
   AddNew = () => {
     this.setState({ PageMode: "Add", showAddModal: true });
@@ -808,6 +802,14 @@ export default class TaskList extends Component {
     if (prevState.propertyId !== this.state.propertyId) {
       this.getAssign();
       this.getDashboardAssignList()
+    }
+
+    if (prevProps.PropertyVal !== this.props.PropertyVal) {
+      const { PropertyVal } = this.props;
+      if (PropertyVal !== null && PropertyVal !== undefined) {
+        this.setState({ localPropertyValue: PropertyVal });
+        this.componentDidMount();
+      }
     }
     
   }
@@ -1191,3 +1193,16 @@ export default class TaskList extends Component {
     );
   }
 }
+const mapStateToProps = (state,props) => {
+  return {
+    PropertyVal: state.Commonreducer.puidn,
+    Entrolval: state.Commonreducer.entrolval,
+    dashDates: state.Commonreducer.dashDates,
+  };
+};
+const mapDispatchToProps = (dispatch) => {
+    const actions = bindActionCreators(departmentAction, dispatch);
+    return { actions };
+};
+
+export default connect(mapStateToProps,mapDispatchToProps)(TaskList);

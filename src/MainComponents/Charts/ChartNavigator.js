@@ -3,8 +3,11 @@ import React, { useState ,useEffect} from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import BarChart from './BarChart';
 import PieChart from './PieChart';
+import { connect } from 'react-redux';
+import departmentActions from '../../redux/department/action';
+import { bindActionCreators } from 'redux';
 
-const ChartNavigator = ({onPeriodChange}) => {
+const ChartNavigator = ({dashDates,actions,onPeriodChange}) => {
   const [selectedPeriod, setSelectedPeriod] = useState("Today");
   const [initialDate, setInitialDate] = useState (new Date().toJSON().slice(0, 10));
   const [finalDate, setFinalDate] = useState (new Date().toJSON().slice(0, 10));
@@ -13,6 +16,7 @@ const ChartNavigator = ({onPeriodChange}) => {
   //   console.log("Initial Date:", initialDate);
   //   console.log("Final Date:", finalDate);
   onPeriodChange(initialDate,finalDate);
+  actions.fetchDashDates(initialDate);
   }, [initialDate, finalDate]);
 
 
@@ -74,5 +78,14 @@ const ChartNavigator = ({onPeriodChange}) => {
     </>
   );
 };
-
-export default ChartNavigator;
+function mapStateToProps(state,props)
+{
+  return{
+  dashDates: state.Commonreducer.dashDates,
+}
+}
+function mapDispatchToProps(dispatch) {
+  const actions = bindActionCreators(departmentActions, dispatch);
+  return { actions };
+}
+export default connect( mapStateToProps,mapDispatchToProps)(ChartNavigator);

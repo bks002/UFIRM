@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import DashboardCard from '../Dashboards/DashboardCard';
 import ApiProvider from './DataProvider';
 import { connect } from 'react-redux';
-import departmentAction from '../../redux/department/action';
+import departmentActions from '../../redux/department/action';
 import { bindActionCreators } from 'redux';
 import PieChart from '../Charts/PieChart';
 import ChartNavigator from '../Charts/ChartNavigator';
@@ -28,10 +28,12 @@ class Home extends React.Component {
         };
         this.ApiProviderr = new ApiProvider();
     }
+
     
     componentDidMount() {
         this.taskStatusCount();
         this.loadDashboardData();
+        
     }
 
     loadDashboardData(value, id) {
@@ -255,11 +257,12 @@ function mapStoreToprops(state, props) {
     return {
         PropertyId: state.Commonreducer.puidn,
         Entrolval: state.Commonreducer.entrolval,
+        dashDates: state.Commonreducer.dashDates,
     }
 }
 
 function mapDispatchToProps(dispatch) {
-    const actions = bindActionCreators(departmentAction, dispatch);
+    const actions = bindActionCreators(departmentActions, dispatch);
     return { actions };
 }
 export default connect(mapStoreToprops, mapDispatchToProps)(Home);

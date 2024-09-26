@@ -25,7 +25,8 @@ import {
     FETCH_VENDOR,
     FETCH_COMPANY,
     ON_PROPERTY_CHANGED,
-    ON_USER_ROLE_CHANGED
+    ON_USER_ROLE_CHANGED,
+    FETCH_DASHBOARDDATES
 } from './constants';
 
 
@@ -226,6 +227,13 @@ const updateproperty = ({ CompanyId }) => (
             UserRole
         });
 
+        const fetchDashDates = ( dashboardDates ) => {
+            return {
+              type: FETCH_DASHBOARDDATES,
+              dashboardDates,
+            };
+          };
+
     
 
 const departmentActions = {
@@ -255,7 +263,8 @@ const departmentActions = {
     fetchVendor,
     fetchCompany,
     updateproperty,
-    updateuserrole
+    updateuserrole,
+    fetchDashDates
 };
 
 export default departmentActions;

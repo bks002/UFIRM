@@ -189,9 +189,6 @@ class MainNav extends React.Component {
                 </div>
               )}
             </form>
-              
-
-            
             <div className="navbar-nav  ml-auto ">
                 {/* <div className="nav-item ">
                     <a className="navbar-brand" href="#">

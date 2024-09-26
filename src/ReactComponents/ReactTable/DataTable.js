@@ -51,7 +51,7 @@ function DataTable(props) {
                 props.hideGridSearchAndSize &&
                 <div className="row justify-content-between">
                     <div className="col-2">
-                        <label>Show</label>
+                        {/* <label>Show</label> */}
                         <select
                             className="form-control"
                             value={pageSize}
