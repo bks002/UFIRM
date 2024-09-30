@@ -17,7 +17,7 @@ class DataProvider {
                 return srv.CallPostNewService(url, model[0]);
 
             case 'R':
-                url = `GetAssets`;
+                url = `GetAssets?propertyId=${model[0].propertyId}`;
                 return srv.CallGetNewService(url);   
       
             default:
