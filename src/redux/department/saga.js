@@ -43,7 +43,8 @@ import {
   FETCH_DEPARTMENTS,
   FETCH_VENDOR,
   FETCH_COMPANY,
-  ON_PROPERTY_CHANGED
+  ON_PROPERTY_CHANGED,
+  FETCH_DASHBOARDDATES
 
 } from './constants';
 
@@ -281,6 +282,17 @@ export function* fetchCompanyAll(actions) {
   const response = yield call(fetchCompany, actions.CompanyId);
   if (response) {
     actions.promise.resolve(response.data);
+  }
+}
+
+export function* fetchDashDatesSaga(action) {
+  try {
+    const response = yield call( action.dashboardDates);
+    if (response) {
+      yield put({ type: FETCH_DASHBOARDDATES, dashboardDates: response.data });
+    }
+  } catch (error) {
+    yield put({ type: FETCH_DASHBOARDDATES, error });
   }
 }
 // export function* onPropertyChangeEvent(actions) {

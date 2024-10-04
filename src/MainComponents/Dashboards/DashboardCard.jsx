@@ -1,6 +1,5 @@
 import React from 'react'
 import { Link } from "react-router-dom";
-
 import { connect } from 'react-redux';
 import departmentAction from '../../redux/department/action';
 import { bindActionCreators } from 'redux';
@@ -30,13 +29,34 @@ class DashboardCard extends React.Component {
                     <ul className="nav flex-column">
                         {this.props.ItemJson.map((item, idx) => (
                             <li className="nav-item" key={idx}>
-                                <Link to={this.props.Link} className="nav-link"
+                                {(this.props.CardTitle==="Task Status"&& 
+                                    <Link to={`${this.props.Link}?status=${item.Title}`}  className="nav-link"
                                     style={
                                         this.props.Entrolval.includes("Admin") || this.props.Entrolval.includes("Property Manager") ?
                                             null : { pointerEvents: 'none', cursor: "no-drop" }
                                     }>
                                     {item.Title} <span className="float-right badge bg-primary">{item.Value}</span>
                                 </Link>
+                                )}
+                                {(this.props.CardTitle==="Priority Tasks"&& 
+                                    <Link to={`${this.props.Link}?priority=${idx + 1}`}  className="nav-link"
+                                    style={
+                                        this.props.Entrolval.includes("Admin") || this.props.Entrolval.includes("Property Manager") ?
+                                            null : { pointerEvents: 'none', cursor: "no-drop" }
+                                    }>
+                                    {item.Title} <span className="float-right badge bg-primary">{item.Value}</span>
+                                </Link>
+                                )}
+                                {(this.props.CardTitle==="Complains"||this.props.CardTitle==="Total Flats") && 
+                                    (
+                                        <Link to={this.props.Link} className="nav-link"
+                                    style={
+                                        this.props.Entrolval.includes("Admin") || this.props.Entrolval.includes("Property Manager") ?
+                                            null : { pointerEvents: 'none', cursor: "no-drop" }
+                                    }>
+                                    {item.Title} <span className="float-right badge bg-primary">{item.Value}</span>
+                                </Link>
+                                )}
                             </li>
                         ))}
                     </ul>
