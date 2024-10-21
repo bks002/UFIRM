@@ -174,16 +174,23 @@ export default class AddTask extends Component {
   };
 
   manageAssets = (model, type) => {
-    this.ApiProvider.manageAssets(model, type).then((resp) => {
+       this.ApiProvider.manageAssets(model, type).then((resp) => {
+        console.log(resp)
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
           let assetsData = [];
-          rData.forEach((element) => {
-            assetsData.push({
-              assetId: element.Id,
-              assetName: element.Name,
-            });
-          });
+          console.log(rData)
+          assetsData = [...rData.PassedServiceDates, ...rData.UpcomingServiceDates].map((element) => ({
+            assetId: element.Id,
+            assetName: element.Name,
+          }));
+          console.log(assetsData)
+          // rData.forEach((element) => {
+          //   assetsData.push({
+          //     assetId: element.Id,
+          //     assetName: element.Name,
+          //   });
+          // });
           switch (type) {
             case "R":
               this.setState({ assets: assetsData });
@@ -248,9 +255,11 @@ export default class AddTask extends Component {
     this.manageSubCategory(model, type, categoryId);
   }
 
-  getAssets() {
+  getAssets(propId) {
     var type = "R";
     var model = this.getModel(type);
+    model.propertyId=propId;
+    console.log(model);
     this.manageAssets(model, type);
   }
 
@@ -283,11 +292,12 @@ export default class AddTask extends Component {
 
     if (prevState.propertyId !== this.state.propertyId) {
       this.getAssign();
+      this.getAssets(this.state.propertyId);
     }
   }
 
   componentDidMount() {
-    this.getAssets();
+   
     this.getAssign();
     this.getAllProperties();
   }
@@ -567,7 +577,7 @@ export default class AddTask extends Component {
                     <div className="col-6">
                       <label>Assets</label>
                       <select
-                        iid="ddlAssignee"
+                        id="ddlAssignee"
                         className="form-control"
                         onChange={(e) => {
                           this.setState({ assetId: e.target.value });

@@ -56,7 +56,7 @@ class AssetsMaster extends Component {
       Description: "",
       QRCode: "",
       ImageData:[],
-      Image: "",
+      AssetImage: "",
       ImageExt: "",
       documentVal: '',
       currentSelectedFile: null,
@@ -101,7 +101,7 @@ class AssetsMaster extends Component {
         AssetModel : this.state.SelectedAssetModel,
         IsMoveable : this.state.IsMoveable,
         Flag: type,
-        Image: this.state.Image,
+        AssetImage: this.state.AssetImage,
         LastServiceDate: this.state.LastServiceDate,
         NextServiceDate: this.state.NextServiceDate,
         IsRentable: this.state.IsRentable,
@@ -282,7 +282,7 @@ class AssetsMaster extends Component {
         AssetValue: rowData.AssetValue,
         AssetType: rowData.AssetType,
 
-      Image: rowData.Image,
+      AssetImage: rowData.AssetImage,
       AMCimage:rowData.AMCdoc,
       showImagefiletype: rowData.ImageExt,
       showImagefile: rowData.Image,
@@ -417,7 +417,7 @@ handleSave = async () => {
       };
       
       this.setState({
-          Image: fileD[1],
+          AssetImage: fileD[1],
           ImageExt: extension
       });
   }
@@ -451,7 +451,7 @@ handleSave = async () => {
 
   this.setState({
       ImageData: null,
-      Image: "",
+      AssetImage: "",
       ImageExt: "",
       AMCdoc: null,
       AMCimage: "",
@@ -929,7 +929,7 @@ handleSave = async () => {
               <div className="form-group col-sm-6">
               <label htmlFor="assetImage">Asset Image:</label>
               <img
-                src={`data:image/png;base64,${this.state.Image}`}
+                src={`data:image/png;base64,${this.state.AssetImage}`}
                 alt="Asset"
                 className="img-fluid"
                 style={{ height: "400px", width: "400px" }}
