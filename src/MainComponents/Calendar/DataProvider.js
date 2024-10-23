@@ -151,7 +151,7 @@ class DataProvider {
         let url = '';
         switch (type) {
             case 'R':
-                url = `GetAssets`;
+                url = `GetAssets?propertyId=${model.propertyId}`;
                 return srv.getComplaint(url);
                 break;
             default:

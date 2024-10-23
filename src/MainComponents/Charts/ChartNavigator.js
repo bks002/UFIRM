@@ -3,29 +3,20 @@ import React, { useState ,useEffect} from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import BarChart from './BarChart';
 import PieChart from './PieChart';
+import { connect } from 'react-redux';
+import departmentActions from '../../redux/department/action';
+import { bindActionCreators } from 'redux';
 
-const ChartNavigator = () => {
+const ChartNavigator = ({dashDates,actions,onPeriodChange}) => {
   const [selectedPeriod, setSelectedPeriod] = useState("Today");
   const [initialDate, setInitialDate] = useState (new Date().toJSON().slice(0, 10));
   const [finalDate, setFinalDate] = useState (new Date().toJSON().slice(0, 10));
-  const [chartData, setChartData] = useState ([{}]);
 
   useEffect(() => {
-    console.log("Initial Date:", initialDate);
-    console.log("Final Date:", finalDate);
-    const fetchData = async () => {
-      try {
-        const response = await fetch(`https://api.urest.in:8096/GetAllTaskWiseStatusFinalCountDash?dateFrom=${initialDate}&dateTo=${finalDate}`);
-        const data = await response.json();
-        console.log("API Response:", data);
-        setChartData(data);
-        // Handle data processing or state updates as needed
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-
-    fetchData();
+  //   console.log("Initial Date:", initialDate);
+  //   console.log("Final Date:", finalDate);
+  onPeriodChange(initialDate,finalDate);
+  actions.fetchDashDates(initialDate);
   }, [initialDate, finalDate]);
 
 
@@ -56,8 +47,6 @@ const ChartNavigator = () => {
 
   return (
     <>
-    {/* <BarChart data={chartData} />
-    <PieChart data={chartData}/> */}
     <div className="chart-navigator">
       <div className="btn-group w-100">
         <button
@@ -89,5 +78,14 @@ const ChartNavigator = () => {
     </>
   );
 };
-
-export default ChartNavigator;
+function mapStateToProps(state,props)
+{
+  return{
+  dashDates: state.Commonreducer.dashDates,
+}
+}
+function mapDispatchToProps(dispatch) {
+  const actions = bindActionCreators(departmentActions, dispatch);
+  return { actions };
+}
+export default connect( mapStateToProps,mapDispatchToProps)(ChartNavigator);

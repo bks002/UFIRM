@@ -1,8 +1,10 @@
 import React, { Component, useState } from "react";
+import { connect } from "react-redux";
+import { bindActionCreators } from "redux";
+import departmentActions from "../../redux/department/action.js";
 import DataGrid from "../../ReactComponents/DataGrid/DataGrid.jsx";
 import Button from "../../ReactComponents/Button/Button";
 import ApiProvider from "./DataProvider.js";
-import InputBox from "../../ReactComponents/InputBox/InputBox.jsx";
 import { ToastContainer, toast } from "react-toastify";
 import * as appCommon from "../../Common/AppCommon.js";
 import { DELETE_CONFIRMATION_MSG } from "../../Contants/Common";
@@ -10,7 +12,6 @@ import swal from "sweetalert";
 import { CreateValidator, ValidateControls } from "./Validation.js"
 import CommonDataProvider from "../../Common/DataProvider/CommonDataProvider.js";
 import DocumentUploader from "../../ReactComponents/FileUploader/DocumentUploader.jsx";
-import { ShowImageModal } from "../KanbanBoard/ImageModal.js";
 import ExportToCSV from "../../ReactComponents/ExportToCSV/ExportToCSV.js";
 
 const $ = window.$;
@@ -24,9 +25,11 @@ class AssetsMaster extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      isLoading: false,
       GridData: [],
+      DueGridData:[],
       gridHeader: [
-        { sTitle: "S No.", titleValue: "sNo", orderable: false },
+        // { sTitle: "S No.", titleValue: "sNo", orderable: false },
         { sTitle: "Id", titleValue: "Id", orderable: true },
         { sTitle: "Assets Name", titleValue: "Name" },
         { sTitle: "Description", titleValue: "Description" },
@@ -53,7 +56,7 @@ class AssetsMaster extends Component {
       Description: "",
       QRCode: "",
       ImageData:[],
-      Image: "",
+      AssetImage: "",
       ImageExt: "",
       documentVal: '',
       currentSelectedFile: null,
@@ -73,8 +76,15 @@ class AssetsMaster extends Component {
   }
 
   componentDidMount() {
+    console.log(this.props.PropertyId)
     this.loadHomagePageData();
   }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.PropertyId !== this.props.PropertyId) {
+        this.loadHomagePageData();
+    }
+}
 
   getModel = (type) => {
     var model = [
@@ -91,12 +101,13 @@ class AssetsMaster extends Component {
         AssetModel : this.state.SelectedAssetModel,
         IsMoveable : this.state.IsMoveable,
         Flag: type,
-        Image: this.state.Image,
+        AssetImage: this.state.AssetImage,
         LastServiceDate: this.state.LastServiceDate,
         NextServiceDate: this.state.NextServiceDate,
         IsRentable: this.state.IsRentable,
         AssetValue: this.state.AssetValue,
         AMCdoc: this.state.AMCimage,
+        propertyId: this.props.PropertyId
 
       },
     ];
@@ -105,27 +116,56 @@ class AssetsMaster extends Component {
 
   loadHomagePageData() {
     let model = this.getModel();
+    this.setState({ isLoading: true });
     this.ApiProviderr.manageDocumentTypeMaster(model, "R").then((resp) => {
       if (resp.ok && resp.status === 200) {
         return resp.json().then((rData) => {
+          console.log(this.props.PropertyId)
           console.log(rData);
-          const updatedData = rData.map(asset => {
-            return {
-                ...asset,
-                NextServiceDate: asset.NextServiceDate? asset.NextServiceDate.substr(0, 10):""
-            };
+          const dueServiceAssets = rData.PassedServiceDates;
+          const upcomingServiceAssets = rData.UpcomingServiceDates;
+          console.log(dueServiceAssets,upcomingServiceAssets)
+          this.setState({ 
+            GridData: [...dueServiceAssets, ...upcomingServiceAssets], 
+            DueGridData: dueServiceAssets,
+            isLoading: false 
+          });
         });
-        console.log(updatedData);
-          updatedData.sort((a, b) => (a.Id > b.Id ? 1 : -1))
-          updatedData.map((item,index)=>{
-            item['sNo']=index+1;
-        })
-          this.setState({ GridData: updatedData });
-        });
-        
+      } else {
+        console.error('Error:', resp.status);
+        this.setState({ isLoading: false });
       }
+    }).catch((error) => {
+      console.error('Error:', error);
+      this.setState({ isLoading: false });
     });
+    console.log(this.state.GridData)
   }
+
+  // loadHomagePageData() {
+  //   let model = this.getModel();
+  //   this.ApiProviderr.manageDocumentTypeMaster(model, "R").then((resp) => {
+  //     if (resp.ok && resp.status === 200) {
+  //       return resp.json().then((rData) => {
+  //         console.log(this.props.PropertyId)
+  //         console.log(rData);
+  //         const updatedData = rData.map(asset => {
+  //           return {
+  //               ...asset,
+  //               NextServiceDate: asset.NextServiceDate? asset.NextServiceDate.substr(0, 10):""
+  //           };
+  //       });
+  //       console.log(updatedData);
+  //         updatedData.sort((a, b) => (a.Id > b.Id ? 1 : -1))
+  //         updatedData.map((item,index)=>{
+  //           item['sNo']=index+1;
+  //       })
+  //         this.setState({ GridData: updatedData });
+  //       });
+        
+  //     }
+  //   });
+  // }
   
 
   onPagechange = (page) => {};
@@ -156,7 +196,7 @@ class AssetsMaster extends Component {
       CreateValidator(); // Ensure this function is defined and used correctly
   
       // Find the item by id in GridData
-      const rowData = this.findBySno(id);
+      const rowData = this.findItem(id);
       console.log(rowData);
   
       // Check if rowData exists before setting state
@@ -191,7 +231,7 @@ class AssetsMaster extends Component {
   
 
   onGridDelete = (Id) => {
-    var rowData = this.findBySno(Id);
+    var rowData = this.findItem(Id);
     console.log(rowData);
     let myhtml = document.createElement("div");
     myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
@@ -223,7 +263,7 @@ class AssetsMaster extends Component {
 
   onGridView = (Id) => {
     this.setState({ PageMode: "View" }, () => {
-    var rowData = this.findBySno(Id);
+    var rowData = this.findItem(Id);
     console.log(rowData);
     this.setState({
 
@@ -242,7 +282,7 @@ class AssetsMaster extends Component {
         AssetValue: rowData.AssetValue,
         AssetType: rowData.AssetType,
 
-      Image: rowData.Image,
+      AssetImage: rowData.AssetImage,
       AMCimage:rowData.AMCdoc,
       showImagefiletype: rowData.ImageExt,
       showImagefile: rowData.Image,
@@ -377,7 +417,7 @@ handleSave = async () => {
       };
       
       this.setState({
-          Image: fileD[1],
+          AssetImage: fileD[1],
           ImageExt: extension
       });
   }
@@ -411,7 +451,7 @@ handleSave = async () => {
 
   this.setState({
       ImageData: null,
-      Image: "",
+      AssetImage: "",
       ImageExt: "",
       AMCdoc: null,
       AMCimage: "",
@@ -458,6 +498,21 @@ handleSave = async () => {
           render() {
             return (
               <div>
+                {/* <div>
+                  {this.state.DueGridData && <DataGrid
+                            Id="grdDueAssetsMaster"
+                            IsPagination={false}
+                            ColumnCollection={this.state.gridHeader}
+                            Onpageindexchanged={this.onPagechange.bind(this)}
+                            onEditMethod={this.ongridedit.bind(this)}
+                            onGridDeleteMethod={this.onGridDelete.bind(this)}
+                            onGridViewMethod={this.onGridView.bind(this)}
+                            DefaultPagination={false}
+                            IsSarching="false"
+                            GridData={this.state.DueGridData}
+                            pageSize="2000"
+                          />}
+                  </div> */}
                 {this.state.PageMode === "Home" && (
                   <div className="row">
                     <div className="col-12">
@@ -467,7 +522,6 @@ handleSave = async () => {
                             <li className="nav-item">
                               <div className="input-group input-group-sm">
                                 <div className="input-group-prepend">
-                                  
                                   <ExportToCSV data={this.state.GridData} 
                                   className="btn btn-success btn-sm rounded mr-2"/>
                                   <Button
@@ -633,8 +687,6 @@ handleSave = async () => {
     <option value="false">No</option>
   </select>
 </div>
-
-
                       </div>
 
                       <div className="row">
@@ -831,7 +883,7 @@ handleSave = async () => {
             <div className="row">
             <div className="form-group col-sm-6">
               <label htmlFor="isMovable">Is Moveable:</label>
-              <input type="text" className="form-control" id="isMovable" value={this.state.IsMoveable?"Yes":"No"} readOnly />
+              <input type="text" className="form-control" id="isMovable" value={this.state.IsMoveable?"No":"Yes"} readOnly />
             </div>
             <div className="form-group col-sm-6">
               <label htmlFor="isRentable">Is Rentable:</label>
@@ -877,7 +929,7 @@ handleSave = async () => {
               <div className="form-group col-sm-6">
               <label htmlFor="assetImage">Asset Image:</label>
               <img
-                src={`data:image/png;base64,${this.state.Image}`}
+                src={`data:image/png;base64,${this.state.AssetImage}`}
                 alt="Asset"
                 className="img-fluid"
                 style={{ height: "400px", width: "400px" }}
@@ -903,5 +955,13 @@ handleSave = async () => {
     );
   }
 }
-
-export default AssetsMaster;
+function mapStoreToprops(state, props) {
+  return {
+      PropertyId: state.Commonreducer.puidn,
+  }
+}
+function mapDispatchToProps(dispatch) {
+  const actions = bindActionCreators(departmentActions, dispatch);
+  return { actions };
+}
+export default connect (mapStoreToprops,mapDispatchToProps)(AssetsMaster) ;

@@ -1,0 +1,52 @@
+/* notification.css */
+.notification-list-container {
+    position: absolute;
+    top: 46px;
+    right: 70px;
+    z-index: 1;
+    background-color: #336B93;
+    padding: 10px;
+    border: 1px solid #000000;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    max-height: 500px;
+    overflow-y: auto;
+  }
+  
+  .notification-list-container::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+  
+  .no-notification {
+    padding: 10px;
+    text-align: center;
+    font-size: 14px;
+    color: #666;
+  }
+  
+  .notification-item-card {
+    background-color: #f7f7f7;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 300px;
+    margin-bottom: 10px; /* Add margin bottom to separate items */
+  }
+  
+  .notification-item-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .notification-item-content span {
+    font-size: 14px;
+  }
+  
+  .close-button {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+  }

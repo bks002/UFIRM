@@ -24,6 +24,7 @@ import ParkingAssignmentPage from "../pages/ParkingAssignmentsPage";
 import EmergencyContactPage from "../pages/EmergencyContactPage";
 import LayoutDataProvider from "./LayoutDataProvider.js";
 import * as appCommon from "../Common/AppCommon.js";
+import Notification from "../MainComponents/Notification Center/Notification.jsx";
 //redux
 import departmentActions from "../redux/department/action";
 import { connect } from "react-redux";
@@ -65,10 +66,11 @@ import GuardListPage from "../pages/GuardListPage.jsx";
 import AssetTrackingPage from "../pages/AssetTrackingPage.jsx";
 import PlannerTaskAnalysisPage from "../pages/PlannerTaskAnalysisPage.jsx";
 
-var currentpropertyid = 0;
+var currentpropertyid;
 class MainNav extends React.Component {
   constructor(props) {
     super(props);
+    console.log(props);
     this.state = {
       UserName: "Test User",
       UserProfileImg:
@@ -84,7 +86,7 @@ class MainNav extends React.Component {
     this.comdbprovider.getUserRoles().then((resp) => {
       if (resp && resp.ok && resp.status == 200) {
         resp.json().then((rData) => {
-          // console.log(rData);
+          console.log(rData);
           this.onUpdateUserRole(rData);
           this.setState({ userRoles: rData });
         });
@@ -95,6 +97,7 @@ class MainNav extends React.Component {
   loadProperty() {
     this.comdbprovider.getUserAssignedproperty().then((resp) => {
       if (resp && resp.ok && resp.status == 200) {
+        console.log(resp);
         return resp.json().then((rData) => {
           rData = appCommon.changejsoncolumnname(rData, "id", "Value");
           rData = appCommon.changejsoncolumnname(rData, "text", "Name");
@@ -109,8 +112,9 @@ class MainNav extends React.Component {
   }
 
   componentDidMount() {
-    //var token ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
-    var token = window.sessionStorage.getItem("userinfo_key")
+    var token ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
+    // var token = window.sessionStorage.getItem("userinfo_key")
+    console.log(token)
     if (token === null) {
         const timerId = setTimeout(() => {
             this.componentDidMount()
@@ -139,23 +143,23 @@ class MainNav extends React.Component {
     promiseWrapper(this.props.actions.updateproperty, {
       CompanyId: value,
     }).then((data) => {
-      // this.setState({ customerData: data.departmentModel, });
+      this.setState({ customerData: data.departmentModel, });
     });
     currentpropertyid = value;
   };
   onUpdateUserRole = (value) => {
     promiseWrapper(this.props.actions.updateuserrole, { UserRole: value }).then(
       (data) => {
-        // this.setState({ customerData: data.departmentModel, });
+        this.setState({ customerData: data.departmentModel, });
       }
     );
-    //currentpropertyid = value;
+    currentpropertyid = value;
   };
   render() {
     return (
       <Router>
         <div className="wrapper">
-          <nav className="main-header fixed-top navbar navbar-expand navbar-dark navbar-primary">
+          <nav className="main-header sticky-top navbar navbar-expand navbar-dark navbar-primary">
             <div className="navbar-nav">
                     <div className="nav-item">
                       <a
@@ -186,9 +190,6 @@ class MainNav extends React.Component {
                 </div>
               )}
             </form>
-              
-
-            
             <div className="navbar-nav  ml-auto ">
                 {/* <div className="nav-item ">
                     <a className="navbar-brand" href="#">
@@ -200,7 +201,7 @@ class MainNav extends React.Component {
                       />
                     </a>
                   </div> */}
-
+                <Notification/>
               <div className="nav-item dropdown">
                 <a
                   href="#"
@@ -258,12 +259,11 @@ class MainNav extends React.Component {
 
             {/* side-navbar code */}
             
-            <div className="sidebar">
+            <div className="sidebar ">
               <nav className="mt-2">
                 <ul
                   className="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                   <li className="nav-item has-treeview">
-                    
                   <li className="nav-item has-treeview">
                     <a href="/" className="nav-link">
                       <i className="nav-icon fas fa-tachometer-alt"></i>
@@ -919,14 +919,16 @@ class MainNav extends React.Component {
             </div>
           </aside>
           <Switch>
-            <Route
+            {/* <Route
               exact
               path="/"
               render={() => <Redirect to="/Account/App" />}
             />
 
-            <Route exact path="/Account/App" component={Home} />
-
+            <Route exact path="/Account/App" component={Home} /> */}
+            <Route exact path="/">
+              <Home />
+            </Route>
             <Route exact path="/Account/App/ticket">
               <TicketingDashboard />
             </Route>
