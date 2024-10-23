@@ -24,6 +24,7 @@ import ParkingAssignmentPage from "../pages/ParkingAssignmentsPage";
 import EmergencyContactPage from "../pages/EmergencyContactPage";
 import LayoutDataProvider from "./LayoutDataProvider.js";
 import * as appCommon from "../Common/AppCommon.js";
+import Notification from "../MainComponents/Notification Center/Notification.jsx";
 //redux
 import departmentActions from "../redux/department/action";
 import { connect } from "react-redux";
@@ -85,7 +86,7 @@ class MainNav extends React.Component {
     this.comdbprovider.getUserRoles().then((resp) => {
       if (resp && resp.ok && resp.status == 200) {
         resp.json().then((rData) => {
-          // console.log(rData);
+          console.log(rData);
           this.onUpdateUserRole(rData);
           this.setState({ userRoles: rData });
         });
@@ -200,7 +201,7 @@ class MainNav extends React.Component {
                       />
                     </a>
                   </div> */}
-
+                <Notification/>
               <div className="nav-item dropdown">
                 <a
                   href="#"
