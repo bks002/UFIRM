@@ -81,9 +81,7 @@ const NotificationList = ({ nList, apiCall }) => {
         >
           <div className="notification-item-content">
             <span>
-              {notification.TaskId} : {notification.QuestionId} : {notification.SupName} : 
-              {notification.TaskName} : {notification.SupRemark} : {notification.SUPdateTime} : 
-              {notification.PropertyId}
+              {notification.SupName} : {notification.SupRemark}
             </span>
           </div>
         </div>
