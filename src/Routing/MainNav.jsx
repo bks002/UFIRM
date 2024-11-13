@@ -65,6 +65,7 @@ import PlannerTaskStatus from "../pages/PlannerTaskStatus.jsx";
 import GuardListPage from "../pages/GuardListPage.jsx";
 import AssetTrackingPage from "../pages/AssetTrackingPage.jsx";
 import PlannerTaskAnalysisPage from "../pages/PlannerTaskAnalysisPage.jsx";
+import UploaderPage from "../pages/UploaderPage";
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -80,7 +81,6 @@ class MainNav extends React.Component {
     };
     this.comdbprovider = new LayoutDataProvider();
   }
-
   loaduserRole() {
     // debugger
     this.comdbprovider.getUserRoles().then((resp) => {
@@ -115,6 +115,8 @@ class MainNav extends React.Component {
     var token ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
     // var token = window.sessionStorage.getItem("userinfo_key")
     console.log(token)
+    console.log(this.state.UserName, "moni")
+
     if (token === null) {
         const timerId = setTimeout(() => {
             this.componentDidMount()
@@ -269,7 +271,7 @@ class MainNav extends React.Component {
                       <i className="nav-icon fas fa-tachometer-alt"></i>
                       <p>
                         Dashboard
-                        <i className="right fas fa-angle-left"></i>
+                        {/*<i className="right fas fa-angle-left"></i>*/}
                       </p>
                     </a>
                   </li>
@@ -914,6 +916,21 @@ class MainNav extends React.Component {
                     </li>
                     // : null
                   }
+
+                  {
+                    // this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager")) ?
+                    <li className="nav-item has-treeview">
+                      <Link
+                          to="/Account/App/UploaderPage"
+                          className="nav-link"
+                      >
+                        <i className="nav-icon fas fa-cloud-upload-alt "></i>
+                        <p>Uploader </p>
+                      </Link>
+
+                    </li>
+                    // : null
+                  }
                 </ul>
               </nav>
             </div>
@@ -1087,13 +1104,16 @@ class MainNav extends React.Component {
             <Route path="/Account/App/GuardList">
               <GuardListPage />
             </Route>
+            <Route path="/Account/App/UploaderPage">
+              <UploaderPage/>
+            </Route>
             {/* <Route path="/Account/App/AttendanceSummary">
                             <AttendanceSummaryPage />
                         </Route> */}
           </Switch>
           <footer className="main-footer">
             <div className="float-right d-none d-sm-block">
-              <b>Version</b> 3.0.3-pre
+              <b>Version</b> 3.0.4-pre
             </div>
             <strong>
               Copyright &copy; 2020-2021{" "}
