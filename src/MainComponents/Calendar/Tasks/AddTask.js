@@ -415,6 +415,7 @@ export default class AddTask extends Component {
                         showYearDropdown
                         dropdownMode="select"
                         id="textStartDate"
+                        openToDate={this.state.startDate || new Date()}
                       />
                     </div>
                     <div className="col-6">
@@ -429,6 +430,7 @@ export default class AddTask extends Component {
                         showYearDropdown
                         dropdownMode="select"
                         id="textEndDate"
+                        openToDate={this.state.endDate || new Date()}
                       />
                     </div>
                     <div className="col-3 mt-2">
