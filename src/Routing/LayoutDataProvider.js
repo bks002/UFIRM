@@ -5,11 +5,11 @@ class DataProvider {
          let url = '';
          url = `Property/UserAssignedProperty`;
      
-         return srv.get(url);;
+         return srv.get(url);
     }
     getUserRoles() {
         let url = `Users/UserRole`;
-        return srv.get(url);;
+        return srv.get(url);
    }
 
 }
