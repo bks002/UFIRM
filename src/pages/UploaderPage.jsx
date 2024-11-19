@@ -51,6 +51,7 @@ const UploaderPage = () => {
             }));
 
             const response = await fetch(`http://localhost:62929/Upload${type}`, {
+
                 method: 'POST',
                 body: formData,
 
