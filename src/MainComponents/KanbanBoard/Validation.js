@@ -4,17 +4,19 @@ import * as AppCommon from '../../Common/AppCommon.js';
 
 let validateAllControls = [
     { Id: 'txttitle', IsMandatory: true, MaxLength: '32', LabelMessage: 'Title', Type: "TextBox" },
-    // { Id: 'txtDescription', IsMandatory: true, MaxLength: '100', LabelMessage: 'Description', Type: "TextBox" },
+     { Id: 'txtDescription', IsMandatory: false, MaxLength: '100', LabelMessage: 'Description', Type: "TextBox" },
     { Id: 'ddlticketType', IsMandatory: true, ValidationType: 'DropDown', LabelMessage: 'Ticekt Type', InitialValue: "Select Ticket Type", Type: "DropDown" },
     { Id: 'ddlPriority', IsMandatory: true, ValidationType: 'DropDown', LabelMessage: 'Priority', InitialValue: "Select Priority", Type: "DropDown" },
-    { Id: 'ddlComplainBy', IsMandatory: true, ValidationType: 'DropDown', LabelMessage: 'Reporter', InitialValue: "Select Reporter", Type: "DropDown" },
+    { Id: 'ddlComplainBy', IsMandatory: false, ValidationType: 'DropDown', LabelMessage: 'Reporter', InitialValue: "Select Reporter", Type: "DropDown" },
     { Id: 'ddlComplainVisibility', IsMandatory: true, ValidationType: 'DropDown', LabelMessage: 'Visibility', InitialValue: "Select Visibility", Type: "DropDown" },
 ];
 
 export function CreateValidator() {
+    console.log(validateAllControls);
     ValidationProvider.InitializeValidation(validateAllControls);
 }
 export function ValidateControls() {
+    console.log("v triggered"+validateAllControls)
     let error = '';
     error = ValidateCommon.ValidateControl(validateAllControls);
     if (error !== '') {

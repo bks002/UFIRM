@@ -10,6 +10,7 @@ class ApiService {
     const { apiKey } = config;
     this.config = config || {};
     if (apiKey) {
+      console.log(apiKey);
       this.apiConfig = getAxiosApiConfig(apiKey);
       // Header Config
       if (checkIfObject(this.config.headers)) {
@@ -28,6 +29,7 @@ class ApiService {
         this.apiConfig.url = mfUrl(this.config.pathVariables);
       }
       // URL Params
+
       if (checkIfObject(this.config.urlParams)) {
         const url = new URL(this.apiConfig.url, window.location.origin);
         const params = this.config.urlParams;

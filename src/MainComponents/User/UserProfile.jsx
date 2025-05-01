@@ -82,6 +82,7 @@ class UserProfile extends React.Component {
                     const formData = new FormData();
                     formData.append('imageFile', this.state.pictures != null ? this.state.pictures[0] : null);
                     formData.append('userId', this.state.data.userId);
+
                     formData.append('firstName', $('#txtFirstName').val());
                     formData.append('lastName', $('#txtLastName').val());
                     formData.append('address', $('#txtAddress').val());

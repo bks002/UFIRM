@@ -16,12 +16,6 @@ class PropertyDetailsPage extends React.Component {
                         <div className="col-sm-6">
                             <h1 className="m-0 text-dark">Property Details Page</h1>
                         </div>
-                        <div className="col-sm-6">
-                            <ol className="breadcrumb float-sm-right">
-                                <li className="breadcrumb-item"><a href="/">Home</a></li>
-                                <li className="breadcrumb-item active"><a href="/department">Property Details</a> </li>
-                            </ol>
-                        </div>
                     </div>
                 </div>
             </div>

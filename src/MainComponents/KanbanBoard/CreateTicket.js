@@ -15,12 +15,14 @@ import FileUpload from '../NoticeBoard/FileUpload';
 import { ShowImageModal } from './ImageModal'
 import { ShowPdfModal } from './ShowPdf'
 import PDFIcon from './AttachmentIcons/pdficon.png';
+import {ticketIntimation} from "../../Services/smsService";
 
 const $ = window.$;
 
 class CreateTicket extends Component {
     constructor(props) {
         super(props);
+        console.log(props)
         this.state = {
             complainLocation: null, complainLocationList: [],
             propertyDetailsId: 0, propertyName: null, propertyNameList: [],
@@ -45,11 +47,8 @@ class CreateTicket extends Component {
 
     componentDidMount() {
         let Data = [];
-
         Data = [{ Id: 0, Name: "Select Reporter" }];
-
         this.setState({ complainByList: Data });
-
         Data = [
             { Id: '', Name: "Select Visibility" },
             { Id: "Community", Name: 'Community' },
@@ -57,9 +56,7 @@ class CreateTicket extends Component {
         ];
         this.setState({ complainVisibilityList: Data });
         this.setState({ complainVisibilityId: "Personal" });
-
         this.setState({ complainLocationList: this.props.complainLocationList })
-
         this.setState({ tickettype: this.props.tickettype })
         this.getPropertyManager(parseInt(this.props.PropertyId));
     }
@@ -67,7 +64,7 @@ class CreateTicket extends Component {
     loadCategoryWiseAssignee = (StatementType, Category, PropertyId) => {
         this.ApiProviderr.GetTeamMember(StatementType, Category, PropertyId).then(
             resp => {
-                if (resp.ok && resp.status == 200) {
+                if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
                         let CategoryWiseTeamMemberData = [];
                         rData.forEach(element => {
@@ -96,7 +93,7 @@ class CreateTicket extends Component {
     loadComplainLocationData = () => {
         this.ApiProviderr.GetDropdownData("CL", this.props.PropertyId, 0, 0).then(
             resp => {
-                if (resp.ok && resp.status == 200) {
+                if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
                         let Data = [];
                         rData.forEach(element => {
@@ -118,7 +115,7 @@ class CreateTicket extends Component {
     loadPropertyDetailsComplainLocationWise = (towerid) => {
         this.ApiProviderr.GetDropdownData("PD", this.props.PropertyId, 0, towerid).then(
             resp => {
-                if (resp.ok && resp.status == 200) {
+                if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
                         let Data = [];
                         rData.forEach(element => {
@@ -139,7 +136,7 @@ class CreateTicket extends Component {
     loadComplainbyAccordingPropertyDT = (propertyDTId) => {
         this.ApiProviderr.GetDropdownData("CB", this.props.PropertyId, propertyDTId, 0).then(
             resp => {
-                if (resp.ok && resp.status == 200) {
+                if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
                         let Data = [{ Id: 0, Name: "Select Reporter" }];
                         rData.forEach(element => {
@@ -268,6 +265,29 @@ class CreateTicket extends Component {
         this.setState({ selectedFileName: newList })
     }
 
+    logSMS = async (model, ticketId) => {
+        try {
+            if (!model || !model[0]) {
+                throw new Error("Invalid model data: Model is undefined or empty");
+            }
+
+            const smsModel = {
+                propertyId: model[0].PropertyId,
+                supervisorId: model[0].Assignee || 0,
+                TicketId: parseInt(ticketId),
+            };
+
+            console.log("SMS Model:", smsModel);
+
+            const response = await ticketIntimation(smsModel);
+            console.log("Ticket Intimation Response:", response);
+
+        } catch (error) {
+            console.error("Error in logSMS:", error);
+        }
+    };
+
+
     onCancel = () => {
         this.props.handleCancel();
         this.setState({
@@ -291,11 +311,13 @@ class CreateTicket extends Component {
     manageTickets = (model, type) => {
         this.ApiProviderr.manageTickets(model, type).then(
             resp => {
-                if (resp.ok && resp.status == 200) {
+                if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
+                        console.log(rData);
                         switch (type) {
                             case 'C':
                                 if (rData >= 1) {
+                                    this.logSMS(model,rData);
                                     appCommon.showtextalert("Ticket Generated Successfully!", "", "success");
                                     this.onCancel();
                                 }
@@ -336,7 +358,7 @@ class CreateTicket extends Component {
     getPropertyManager = (PropertyId) => {
         this.ApiProviderr.GetPropertyManager(PropertyId).then(
             resp => {
-                if (resp.ok && resp.status == 200) {
+                if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
                         this.setState({ propertyManger: rData })
                     });
@@ -345,15 +367,16 @@ class CreateTicket extends Component {
     }
 
     handleSave = () => {
-        if (ValidateControls()) {
+        //if (ValidateControls()) {
+            if (true) {
             if (this.state.propertyManger != null) {
                 if (this.state.propertyManger.length > 0) {
                     const { complainLocation, complainCategory, assignee, propertyDetailsId } = this.state;
                     if (this.state.tickettype === "Property") {
-                        if (complainLocation !== null && complainCategory !== null && assignee !== null && propertyDetailsId != 0) {
+                        if (complainLocation !== null && complainCategory !== null && assignee !== null && propertyDetailsId !== 0) {
                             let type = 'C';
                             var model = this.getModel(type);
-                            // console.log(model);
+                            console.log(model);
                             this.manageTickets(model, type);
                         }
                         else {
@@ -364,7 +387,6 @@ class CreateTicket extends Component {
                         if (complainCategory !== null) {
                             let type = 'C';
                             var model = this.getModel(type);
-                            // console.log(model);
                             this.manageTickets(model, type);
                         }
                         else {
@@ -381,6 +403,7 @@ class CreateTicket extends Component {
             }
         }
     }
+
 
     showImage = (filename, src, type, extension) => {
         this.setState({ showImagefilename: filename, showImagefile: src, showImagefiletype: type, extension: extension },
@@ -518,7 +541,7 @@ class CreateTicket extends Component {
                                         Value={this.state.complainVisibilityId}
                                         onSelected={this.onSelected.bind(this, "ComplaoinVisibiltiy")}
                                         Options={this.state.complainVisibilityList}
-                                        ClassName="form-control "
+                                        ClassName="form-control"
                                     />
                                 </div>
                             </div>

@@ -630,7 +630,7 @@ class UserNew extends React.Component {
                             <div className="col-sm-6">
                                 <div className="form-group">
                                     <label for="lbUserType">User Type</label>
-                                    {this.props.PageMode == "Edit" && this.props.Data != undefined &&
+                                    {this.props.PageMode === "Edit" && this.props.Data !== undefined &&
                                         <SelectBox
                                             ID="ddlUserType"
                                             Value={this.state.Value.userTypeId}
@@ -638,7 +638,7 @@ class UserNew extends React.Component {
                                             Options={this.props.Value.UserType}
                                             ClassName="form-control form-control-sm" />
                                     }
-                                    {this.props.PageMode == "Add" &&
+                                    {this.props.PageMode === "Add" &&
                                         <SelectBox
                                             ID="ddlUserType"
                                             Value={this.state.Value.userTypeId}
@@ -651,7 +651,7 @@ class UserNew extends React.Component {
                             <div className="col-sm-6">
                                 <div className="form-group">
                                     <label for="lbVendor">Vendor</label>
-                                    {this.props.PageMode == "Edit" && this.props.Data != undefined &&
+                                    {this.props.PageMode === "Edit" && this.props.Data !== undefined &&
                                         <SelectBox
                                             ID="ddlVendor"
                                             Value={this.state.Value.vendorId}
@@ -659,7 +659,7 @@ class UserNew extends React.Component {
                                             Options={this.props.Value.Vendor}
                                             ClassName="form-control form-control-sm" />
                                     }
-                                    {this.props.PageMode == "Add" &&
+                                    {this.props.PageMode === "Add" &&
                                         <SelectBox
                                             ID="ddlVendor"
                                             Value={this.state.Value.vendorId}
@@ -673,7 +673,7 @@ class UserNew extends React.Component {
                         <div className="row">
                             <div className="col-sm-6">
                                 <div className="form-group">
-                                    {(this.state.Showimguploader == true || this.props.PageMode == "Add") &&
+                                    {(this.state.Showimguploader === true || this.props.PageMode === "Add") &&
                                         <div className="form-group">
                                             <label for="lbPictureUpload">Profile Image</label>
 
@@ -698,21 +698,21 @@ class UserNew extends React.Component {
                                         </div>
                                     }
 
-                                    {this.props.PageMode == "Edit" && this.props.Data != undefined && this.state.Showimguploader == false &&
+                                    {this.props.PageMode === "Edit" && this.props.Data !== undefined && this.state.Showimguploader === false &&
                                         <div style={{ marginRight: "15px" }}>
                                             <img className="ImageView" src={this.props.Data.profileImageUrl} style={{ height: "90px" }} />
 
                                         </div>
 
                                     }
-                                    {this.state.Showimguploader == false && this.props.PageMode != "Add" &&
+                                    {this.state.Showimguploader === false && this.props.PageMode !== "Add" &&
                                         <Button
                                             Id="bntShowimage"
                                             Text="Upload Image"
                                             Action={this.handleImagechange}
                                             ClassName="btn btn-link" />
                                     }
-                                    {this.state.Showimguploader == true && this.props.PageMode != "Add" &&
+                                    {this.state.Showimguploader === true && this.props.PageMode !== "Add" &&
                                         <Button
                                             Id="bnthideimage"
                                             Text="Cancel"
@@ -729,7 +729,7 @@ class UserNew extends React.Component {
                                         <div className="col-sm-6">
                                             <div className="form-group">
                                                 <label for="lbDocumentType">Document Type</label>
-                                                {this.props.PageMode == "Edit" && this.props.Data != undefined &&
+                                                {this.props.PageMode === "Edit" && this.props.Data !== undefined &&
                                                     <SelectBox
                                                         ID="ddlDocumentType"
                                                         Value={this.state.documentTypeId}
@@ -737,7 +737,7 @@ class UserNew extends React.Component {
                                                         Options={this.state.documentType}
                                                         ClassName="form-control form-control-sm" />
                                                 }
-                                                {this.props.PageMode == "Add" &&
+                                                {this.props.PageMode === "Add" &&
                                                     <SelectBox
                                                         ID="ddlDocumentType"
                                                         Value={this.state.documentTypeId}
@@ -750,7 +750,7 @@ class UserNew extends React.Component {
                                         <div className="col-sm-6">
                                             <div className="form-group">
                                                 <label for="lbDocumentNumber">Document Number</label>
-                                                {this.props.PageMode == "Edit" && this.props.Data != undefined &&
+                                                {this.props.PageMode === "Edit" && this.props.Data !== undefined &&
                                                     <InputBox Id="txtDocumentNumber"
                                                         onChange={this.updateDocumentNumber.bind(this)}
                                                         PlaceHolder="Document Number"
@@ -758,7 +758,7 @@ class UserNew extends React.Component {
                                                         Class="form-control form-control-sm"
                                                     />
                                                 }
-                                                {this.props.PageMode == "Add" &&
+                                                {this.props.PageMode === "Add" &&
                                                     <InputBox Id="txtDocumentNumber"
                                                         onChange={this.updateDocumentNumber.bind(this)}
                                                         PlaceHolder="Document Number"
@@ -774,7 +774,7 @@ class UserNew extends React.Component {
                                             <div className="form-group">
                                                 <label for="lbDocumentUpload">Select Upload</label>
                                                 <div className="pr-inner-block mar-bottom-zero-cover">
-                                                    {this.props.PageMode == "Edit" && this.props.Data != undefined &&
+                                                    {this.props.PageMode === "Edit" && this.props.Data !== undefined &&
                                                         <DocumentUploader
                                                             Class={"form-control form-control-sm"}
                                                             Id={"fileDocumentUploader"}
@@ -782,7 +782,7 @@ class UserNew extends React.Component {
                                                             value={this.state.value}
                                                             onChange={this.onFileChange.bind(this)} />
                                                     }
-                                                    {this.props.PageMode == "Add" &&
+                                                    {this.props.PageMode === "Add" &&
                                                         <DocumentUploader
                                                             Class={"form-control form-control-sm"}
                                                             Id={"fileDocumentUploader"}

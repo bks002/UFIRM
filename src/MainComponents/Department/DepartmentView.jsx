@@ -16,28 +16,28 @@ class DepartmentView extends React.Component {
         return (
             <div>
                 <div >
-                    <div class="modal-content">
-                        <div class="modal-body">
-                            <div class="row">
-                                <div class="col-sm-6">
-                                    <div class="form-group">
+                    <div className="modal-content">
+                        <div className="modal-body">
+                            <div className="row">
+                                <div className="col-sm-6">
+                                    <div className="form-group">
                                         <label for="ticketType">Department Name</label>
-                                        <div class="dummyBox">
+                                        <div className="dummyBox">
                                             {this.props.Data.departmentName}
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-sm-6">
-                                    <div class="form-group">
+                                <div className="col-sm-6">
+                                    <div className="form-group">
                                         <label for="ticketTitle">Description</label>
-                                        <div class="dummyBox">
+                                        <div className="dummyBox">
                                             {this.props.Data.description}
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="modal-footer">
+                        <div className="modal-footer">
                             <Button
                                 Id="btnCancel"
                                 Text="Cancel"

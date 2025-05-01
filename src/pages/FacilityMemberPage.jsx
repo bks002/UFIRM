@@ -32,7 +32,7 @@ class FacilityMemberPage extends React.Component {
             <section className="content">
                 <div className="container-fluid">
                     <div className="container-fluid">
-                            {this.state.PageMode == 'Home' &&
+                            {this.state.PageMode === 'Home' &&
                                 <FacilityMember
                                     PageMode={this.state.PageMode}
                                     Action={this.managepagemode.bind(this)} />

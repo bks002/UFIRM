@@ -19,9 +19,7 @@ export default class DataGrid extends React.Component {
         super(props);
         this.state = {
         }
-
     }
-
     componentDidMount() {
         // 
         $(`#${this.props.Id}`).DataTable({
@@ -98,15 +96,11 @@ export default class DataGrid extends React.Component {
                     statusColorColIndex = StatusColorColumn[0].Index;
                     statusValue = StatusColorColumn[0].Value;
                 }
-
-
                 const StatusColumn = gridBL.GetStatusColumn(this.props.ColumnCollection);
                 let statusColIndex = null;
                 if (StatusColumn != null) {
                     statusColIndex = StatusColumn[0].Index;
                 }
-
-
                 const SelectButton = gridBL.GetSelectOption(this.props.ColumnCollection);
                 let selectIndex = null;
                 let statusindex = null;
@@ -119,7 +113,6 @@ export default class DataGrid extends React.Component {
                 if (actionButtons != null) {
                     actionButtonIndex = actionButtons[0].Index;
                 }
-
                 //****Start******//ravindra 08-feb-2021
                 const SelectImage = gridBL.GetImageIndexForUrl(this.props.ColumnCollection);
                 let iselectIndex = null;
@@ -314,8 +307,6 @@ export default class DataGrid extends React.Component {
                 table.column(index).visible(false);
             }
         });
-
-
 
         if (this.props.GridData != null) {
 

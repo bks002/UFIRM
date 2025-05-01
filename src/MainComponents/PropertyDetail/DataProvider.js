@@ -71,8 +71,8 @@ class DataProvider {
 
      managePropertyTowers(model) {
          let url = '';
-         url = `Property/ManagePropertyDetail`;
-         return srv.CallPostService(url, model[0]);
+         url = `api/Property/ManagePropertyDetails`;
+         return srv.CallPostNewService(url, model[0]);
     }
 
 }

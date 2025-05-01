@@ -26,7 +26,7 @@ import axios from "axios";
 import ImageUploader from "react-images-upload";
 import * as appCommonJs from "../../Common/AppCommon.js";
 import "./FacilityMember.css";
-
+import {withRouter} from "react-router-dom";
 import { connect } from "react-redux";
 import departmentAction from "../../redux/department/action";
 import { convertEsTojson, promiseWrapper } from "../../utility/common";
@@ -34,6 +34,7 @@ import { bindActionCreators } from "redux";
 
 const $ = window.$;
 const documentBL = new DocumentBL();
+
 
 const toBase64 = (file) =>
   new Promise((resolve, reject) => {
@@ -64,7 +65,6 @@ class FacilityMember extends React.Component {
       PropertyFlatId: "0",
       PropertyFlat: [],
       FacilityMemberDocumentId: "0",
-      FacilityMemberId: "0",
       documentTypeId: "0",
       DocumentTypeName: "",
       Gender: "0",
@@ -1458,11 +1458,16 @@ class FacilityMember extends React.Component {
     this.openInNewTab(data.documentUrl);
   }
 
-  //End
+  addUser (){
+    console.log("Add User Clicked");
+    console.log(this.props.history)
+    this.props.history.push('/about');
+  };
+
   render() {
     return (
       <div>
-        {this.state.PageMode == "Home" && (
+        {this.state.PageMode === "Home" && (
           <div className="row">
             <div className="col-12">
               <div className="card">
@@ -1517,16 +1522,16 @@ class FacilityMember extends React.Component {
                         <div className="input-group input-group-sm">
                           <div className="input-group-prepend">
                             <Button
-                              id="btnNewComplain"
-                              Action={this.addNew.bind(this)}
-                              ClassName="btn btn-success btn-sm"
-                              Icon={
-                                <i
-                                  className="fa fa-plus"
-                                  aria-hidden="true"
-                                ></i>
-                              }
-                              Text={`Add ${this.state.isServiceStaff}`}
+                                id="btnNewComplain"
+                                Action={this.addNew.bind(this)}
+                                ClassName="btn btn-success btn-sm"
+                                Icon={
+                                  <i
+                                      className="fa fa-plus"
+                                      aria-hidden="true"
+                                  ></i>
+                                }
+                                Text={`Add ${this.state.isServiceStaff}`}
                             />
                           </div>
                         </div>
@@ -1536,14 +1541,14 @@ class FacilityMember extends React.Component {
                 </div>
                 <div className="card-body pt-2">
                   <DataGrid
-                    Id="grdFacilityMember"
-                    IsPagination={true}
-                    ColumnCollection={this.state.gridFacilityMemberHeader}
-                    totalpages={this.state.grdTotalPages}
-                    totalrows={this.state.grdTotalRows}
-                    Onpageindexchanged={this.onPagechange.bind(this)}
-                    onEditMethod={this.ongridedit.bind(this)}
-                    onGridDeleteMethod={this.onGridDelete.bind(this)}
+                      Id="grdFacilityMember"
+                      IsPagination={true}
+                      ColumnCollection={this.state.gridFacilityMemberHeader}
+                      totalpages={this.state.grdTotalPages}
+                      totalrows={this.state.grdTotalRows}
+                      Onpageindexchanged={this.onPagechange.bind(this)}
+                      onEditMethod={this.ongridedit.bind(this)}
+                      onGridDeleteMethod={this.onGridDelete.bind(this)}
                     onGridBlockMethod={this.onGridBlock.bind(this)}
                     DefaultPagination={false}
                     IsSarching="true"
@@ -1555,7 +1560,7 @@ class FacilityMember extends React.Component {
             </div>
           </div>
         )}
-        {this.state.PageMode == "Add" && (
+        {this.state.PageMode === "Add" && (
           <div>
             <div>
               <div className="modal-content">
@@ -1632,7 +1637,7 @@ class FacilityMember extends React.Component {
                         />
                       </div>
                     </div>
-                    {this.state.FacilityTypeId == 1 && (
+                    {this.state.FacilityTypeId === 1 && (
                       <div class="col-sm-4">
                         <div class="form-group">
                           <label htmlFor="ddlTowerList">Tower/Wing</label>
@@ -1677,7 +1682,7 @@ class FacilityMember extends React.Component {
                     </div>
                   </div>
 
-                  {this.state.FacilityTypeId == 1 && (
+                  {this.state.FacilityTypeId === 1 && (
                     <div>
                       <div className="row">
                         <div class="col-sm-4">
@@ -1859,7 +1864,7 @@ class FacilityMember extends React.Component {
             <ToastContainer />
           </div>
         )}
-        {this.state.PageMode == "Edit" && (
+        {this.state.PageMode === "Edit" && (
           <div>
             <div>
               <div className="modal-content">
@@ -1927,7 +1932,7 @@ class FacilityMember extends React.Component {
                         />
                       </div>
                     </div>
-                    {this.state.FacilityTypeId == 1 && (
+                    {this.state.FacilityTypeId === 1 && (
                       <div class="col-sm-4">
                         <div class="form-group">
                           <label htmlFor="ddlTowerList">Tower/Wing</label>
@@ -1975,7 +1980,7 @@ class FacilityMember extends React.Component {
                     </div>
                   </div>
 
-                  {this.state.FacilityTypeId == 1 && (
+                  {this.state.FacilityTypeId === 1 && (
                     <div>
                       <div className="row">
                         <div class="col-sm-4">
@@ -2052,7 +2057,7 @@ class FacilityMember extends React.Component {
           </div>
         )}
 {/* While Creating New User */}
-      {this.state.PageMode == "UploadDocs" && (
+      {this.state.PageMode === "UploadDocs" && (
           <div>
             <div>
               <div className="modal-content">
@@ -2143,7 +2148,7 @@ class FacilityMember extends React.Component {
           </div>
         )}
 {/* While Editing User and adding new documents */}
-        {this.state.PageMode == "AddDocs" && (
+        {this.state.PageMode === "AddDocs" && (
           <div>
             <div>
               <div className="modal-content">
@@ -2262,7 +2267,7 @@ class FacilityMember extends React.Component {
           </div>
         )}
 {/* While Editing User and updating documents */}
-        {this.state.PageMode == "UpdateDocs" && (
+        {this.state.PageMode === "UpdateDocs" && (
           <div>
             <div>
               <div className="modal-content">
@@ -2306,11 +2311,11 @@ class FacilityMember extends React.Component {
                           Options={this.state.DocumentType}
                           ClassName="form-control "
                         />
-                        {/* <select className='form-control' onSelect={(e)=>{this.setState({documentTypeId:e.target.value})}}>
-                                                                {this.state.documentType.map((item, index) => {
-                                                                    return <option value={item.Id}>{item.Name}</option>
-                                                                })}
-                                                            </select> */}
+                         {/*<select className='form-control' onSelect={(e)=>{this.setState({documentTypeId:e.target.value})}}>*/}
+                         {/*                                       {this.state.documentType.map((item, index) => {*/}
+                         {/*                                           return <option value={item.Id}>{item.Name}</option>*/}
+                         {/*                                       })}*/}
+                         {/*                                   </select>*/}
                       </div>
                     </div>
                   </div>
@@ -2379,7 +2384,7 @@ class FacilityMember extends React.Component {
             <ToastContainer />
           </div>
         )}
-          {(this.state.PageMode == "docView") && (
+          {(this.state.PageMode === "docView") && (
           <div>
             <div>
               <div className="modal-content">

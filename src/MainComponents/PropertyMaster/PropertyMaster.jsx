@@ -7,7 +7,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import * as appCommon from '../../Common/AppCommon.js';
 import { DELETE_CONFIRMATION_MSG } from '../../Contants/Common';
 import swal from 'sweetalert';
-import  {CreateValidator,ValidateControls} from '../PropertyMaster/Validation.js';
+import  {CreateValidator,ValidateControls} from './Validation';
 import DropDownList from '../../ReactComponents/SelectBox/DropdownList'
 import CommonDataProvider from '../../Common/DataProvider/CommonDataProvider.js';
 const $ = window.$;
@@ -18,7 +18,7 @@ class PropertyMaster extends React.Component {
             CityData:[],
             GridData:[],
             gridHeader: [
-                { sTitle: 'Id', titleValue: 'id', "orderable": false },
+                { sTitle: 'SNo.', titleValue: 'id', "orderable": false },
                 { sTitle: 'property Name', titleValue: 'name',  },
                 { sTitle: 'Type', titleValue: 'propertyType',  },
                 { sTitle: 'Number', titleValue: 'contactNumber',  },
@@ -35,18 +35,15 @@ class PropertyMaster extends React.Component {
             CityId:'0',
             LandMark:'',
             PinCode:''
-
          };
          this.ApiProviderr = new ApiProvider();
          this.comdbprovider = new CommonDataProvider();
-         
-        
     }
     loadCity=()=>
     {
         this.comdbprovider.getCityMaster(0).then(
             resp => {          
-                if (resp.ok && resp.status == 200) {
+                if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
                         rData = appCommon.changejsoncolumnname(rData,"cityId","Value");
                         rData = appCommon.changejsoncolumnname(rData,"cityName","Name");
@@ -74,14 +71,12 @@ class PropertyMaster extends React.Component {
     componentDidMount(){
         this.loadCity();
         this.getPropertyMaster();
-        
     }
     getPropertyMaster() {
-        
         var model = this.getModel('R');
         this.ApiProviderr.managePropertyMaster(model).then(
              resp => {          
-                 if (resp.ok && resp.status == 200) {
+                 if (resp.ok && resp.status === 200) {
                      return resp.json().then(rData => {
                         rData.map((item,index)=>{
                             item['id']=index+1;
@@ -92,11 +87,11 @@ class PropertyMaster extends React.Component {
                  }
              });
      }
-
     onPagechange = (page) => {
-            
     }
     onGridDelete=(Id)=>{
+        console.log(Id);
+        var rowData = this.findItem(Id)
         let myhtml = document.createElement("div");
         myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>"
         alert: (
@@ -112,7 +107,7 @@ class PropertyMaster extends React.Component {
             }).then((value) => {
                 switch (value) {
                     case "ok":
-                        this.setState({PropertyId:  Id.toString()},()=>{
+                        this.setState({PropertyId: rowData.propertyId.toString()},()=>{
                             var type = 'D'
                             var model = this.getModel(type);
                             this.managePropertyMaster(model,type);
@@ -128,11 +123,11 @@ class PropertyMaster extends React.Component {
       
     }
     ongridedit=(Id) => {
-        
         this.setState({PageMode:'Edit'},()=>{
+            console.log("hi",this.state.PageMode)
             CreateValidator();
-            
             var rowData = this.findItem(Id)
+            console.log(rowData);
             this.setState({PropertyId:rowData.propertyId.toString()});
             //this.setState({PropertTypeyId:rowData.propertTypeyId});
             this.setState({Name:rowData.name});
@@ -143,11 +138,7 @@ class PropertyMaster extends React.Component {
             this.setState({PinCode:rowData.pinCode});
             $('#ddlCity').val(rowData.cityId);
         });
-      
     }
-    
-
- 
 
     Addnew=()=> {
         this.setState({PageMode:'Add'},()=>{
@@ -157,53 +148,46 @@ class PropertyMaster extends React.Component {
     }
     
     findItem(id) {
-        
-        return this.state.GridData.find((item) => {
-            if (item.propertyId == id) {
-                return item;
-            }
-        });
+        return this.state.GridData[--id];
     }
 updatetextmodel = (ctrl,val) => {
-    if(ctrl=='name')
+    if(ctrl==='name')
     {
         this.setState({Name:val});
     }
-    else if(ctrl=='address')
+    else if(ctrl==='address')
     {
         this.setState({Address:val});
     }
-    else if(ctrl=='landmark')
+    else if(ctrl==='landmark')
     {
         this.setState({LandMark:val});
     }
-    else if(ctrl=='pin')
+    else if(ctrl==='pin')
     {
         this.setState({PinCode:val});
     }
-    else if(ctrl=='contact')
+    else if(ctrl==='contact')
     {
         this.setState({ContactNumber:val});
     }
 }
 handleSave = () => {
-    
     if(ValidateControls()){
         var type = 'C'
-        if(this.state.PageMode=='Edit')
+        if(this.state.PageMode==='Edit')
         type='U'
         var model = this.getModel(type);
         this.managePropertyMaster(model,type);    
     }
 }
 managePropertyMaster=(model,type)=>{
-    
     this.ApiProviderr.managePropertyMaster(model).then(
         resp => {          
-            if (resp.ok && resp.status == 200) {
+            if (resp.ok && resp.status === 200) {
                 return resp.json().then(rData => {
                     
-                    if(type!='D')
+                    if(type!=='D')
                        appCommon.showtextalert("Property Saved Successfully!", "", "success");
                        else
                        appCommon.showtextalert("Property Deleted Successfully!", "", "success");
@@ -219,16 +203,13 @@ handleCancel = () => {
         this.getPropertyMaster();
     });
 };
-
 oncityChange=(value)=>{
         this.setState({CityId:value});
 }
-
-//End
     render() {
         return (
             <div>
-            {this.state.PageMode=='Home' &&
+            {this.state.PageMode==='Home' &&
             <div className="row">
             <div className="col-12">
                 <div className="card">
@@ -250,7 +231,7 @@ oncityChange=(value)=>{
                     </div>
                     <div className="card-body pt-2">
                         <DataGrid
-                            Id="grdPrakingZone"
+                            Id="grdPropertyMaster"
                             IsPagination={false}
                             ColumnCollection={this.state.gridHeader}
                             // totalpages={this.state.grdTotalPages}
@@ -267,15 +248,14 @@ oncityChange=(value)=>{
             </div>
         </div>
     }
-    {(this.state.PageMode=='Add' || this.state.PageMode=='Edit') &&
+    {(this.state.PageMode==='Add' || this.state.PageMode==='Edit') &&
       <div>
-      <div >
-          <div class="modal-content">
-          <div class="modal-body">
-                  <div class="row">
-                      <div class="col-sm-6">
-                          <div class="form-group">
-                              <label for="txtDepartmentName">Property Name</label>
+          <div className="modal-content">
+             <div className="modal-body">
+                  <div className="row">
+                      <div className="col-sm-6">
+                          <div className="form-group">
+                              <label htmlFor="txtDepartmentName">Property Name</label>
                                   <InputBox Id="txtPropertyName"
                                   Value={this.state.Name}
                                       onChange={this.updatetextmodel.bind(this,"name")}
@@ -284,9 +264,9 @@ oncityChange=(value)=>{
                                   />
                           </div>
                       </div>
-                      <div class="col-sm-6">
-                          <div class="form-group">
-                              <label for="txtAddress">Address</label>
+                      <div className="col-sm-6">
+                          <div className="form-group">
+                              <label htmlFor="txtAddress">Address</label>
                               <InputBox Id="txtAddress"
                               Value={this.state.Address}
                                       onChange={this.updatetextmodel.bind(this,"address")}
@@ -296,10 +276,10 @@ oncityChange=(value)=>{
                           </div>
                       </div>
                   </div>
-                  <div class="row">
-                      <div class="col-sm-6">
-                          <div class="form-group">
-                              <label for="txtLandMark">Land Mark</label>
+                  <div className="row">
+                      <div className="col-sm-6">
+                          <div className="form-group">
+                              <label htmlFor="txtLandMark">Land Mark</label>
                                   <InputBox Id="txtLandMark"
                                   Value={this.state.LandMark}
                                       onChange={this.updatetextmodel.bind(this,"landmark")}
@@ -308,19 +288,19 @@ oncityChange=(value)=>{
                                   />
                           </div>
                       </div>
-                      <div class="col-sm-6">
-                          <div class="form-group">
-                              <label for="ddlCity">City</label>
+                      <div className="col-sm-6">
+                          <div className="form-group">
+                              <label htmlFor="ddlCity">City</label>
                               <DropDownList Id="ddlCity"
                               onSelected={this.oncityChange.bind(this)}
                           Options={this.state.CityData} />
                           </div>
                       </div>
                   </div>
-                  <div class="row">
-                      <div class="col-sm-6">
-                          <div class="form-group">
-                              <label for="txtPinNumber">Pin number</label>
+                  <div className="row">
+                      <div className="col-sm-6">
+                          <div className="form-group">
+                              <label htmlFor="txtPinNumber">Pin number</label>
                                   <InputBox Id="txtPinNumber"
                                   Value={this.state.PinCode}
                                       onChange={this.updatetextmodel.bind(this,"pin")}
@@ -329,9 +309,9 @@ oncityChange=(value)=>{
                                   />                                  
                           </div>
                       </div>
-                      <div class="col-sm-6">
-                          <div class="form-group">
-                              <label for="txtAddress">Contact number</label>
+                      <div className="col-sm-6">
+                          <div className="form-group">
+                              <label htmlFor="txtAddress">Contact number</label>
                               <InputBox Id="txtContactNumber"
                               Value={this.state.ContactNumber}
                                       onChange={this.updatetextmodel.bind(this,"contact")}
@@ -341,9 +321,8 @@ oncityChange=(value)=>{
                           </div>
                       </div>
                   </div>
-              </div>
-                           
-              <div class="modal-footer">
+             </div>
+              <div className="modal-footer">
                   <Button
                       Id="btnSave"
                       Text="Save"
@@ -356,8 +335,6 @@ oncityChange=(value)=>{
                       ClassName="btn btn-secondary" />
               </div>
           </div>
-      
-      </div>
       <ToastContainer
           position="top-right"
           autoClose={5000}

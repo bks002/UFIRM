@@ -47,7 +47,7 @@ class DashboardCard extends React.Component {
                                     {item.Title} <span className="float-right badge bg-primary">{item.Value}</span>
                                 </Link>
                                 )}
-                                {(this.props.CardTitle==="Complains"||this.props.CardTitle==="Total Flats") && 
+                                {(this.props.CardTitle==="Complains"||this.props.CardTitle==="Total Flats"||this.props.CardTitle==="Total Assets") &&
                                     (
                                         <Link to={this.props.Link} className="nav-link"
                                     style={

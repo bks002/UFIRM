@@ -20,12 +20,6 @@ class KanbanBoardPage extends Component {
                             <div className="col-sm-6">
                                 <h1 className="m-0 text-dark">{this.state.PageTitle}</h1>
                             </div>
-                            <div className="col-sm-6">
-                                <ol className="breadcrumb float-sm-right">
-                                    <li className="breadcrumb-item"><a href="/">Ticket Management</a></li>
-                                    <li className="breadcrumb-item active"><a href="/Account/App/TicketComplains">{this.state.PageTitle}</a> </li>
-                                </ol>
-                            </div>
                         </div>
                     </div>
                 </div>

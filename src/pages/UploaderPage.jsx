@@ -50,12 +50,19 @@ const UploaderPage = () => {
                 [type]: 'Uploading...'
             }));
 
-            const response = await fetch(`http://localhost:62929/Upload${type}`, {
+            const response = await fetch(`https://api.urest.in:8096/Upload${type}`, {
 
                 method: 'POST',
                 body: formData,
 
             });
+
+            // const response = await fetch(`http://localhost:62929/Upload${type}`, {
+            //
+            //     method: 'POST',
+            //     body: formData,
+            //
+            // });
 
             // Check if the response is OK (status code in the range 200-299)
             if (!response.ok) {

@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import { SketchPicker } from 'react-color';
-// import { GetColorName } from 'hex-color-to-color-name';
 
 import swal from 'sweetalert';
 import { ToastContainer, toast } from 'react-toastify';
@@ -12,11 +11,6 @@ import { CreateValidator, ValidateControls } from './Validation.js';
 import * as appCommon from '../../Common/AppCommon.js';
 import CommonDataProvider from '../../Common/DataProvider/CommonDataProvider.js';
 import { DELETE_CONFIRMATION_MSG } from '../../Contants/Common';
-import UrlProvider from "../../Common/ApiUrlProvider.js";
-import { connect } from 'react-redux';
-import departmentAction from '../../redux/department/action';
-import { promiseWrapper } from '../../utility/common';
-import { bindActionCreators } from 'redux';
 
 const $ = window.$;
 
@@ -270,7 +264,7 @@ class Category extends Component {
                             </div>
                         </div>
                     }
-                    {(this.state.PageMode == 'Add' || this.state.PageMode == 'Edit') &&
+                    {(this.state.PageMode === 'Add' || this.state.PageMode === 'Edit') &&
                         <div>
                             <div>
                                 <div className="modal-content">

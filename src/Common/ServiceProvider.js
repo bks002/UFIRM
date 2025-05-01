@@ -4,8 +4,6 @@ import axios from 'axios';
 // Global Declaration
 let urls = new AppUrlProvider();
 
-//let appCommonJs = new AppCommonjs();
-// End
 
 class ServiceProvider {
     get(url) {
@@ -181,7 +179,6 @@ class ServiceProvider {
     }
 
     CallPostService(url, Pdata) {
-        //
         let resp;
         resp = fetch(urls.MainUrl + url, {
             method: "POST",
@@ -195,8 +192,20 @@ class ServiceProvider {
         return resp;
     }
 
+    CallPutService(url, Pdata) {
+        return fetch(urls.complaintUrl + url, {
+            method: "PUT",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                Authorization: 'Bearer ' + appCommonJs.getapitoken()
+            },
+            body: JSON.stringify(Pdata)
+        });
+    }
+
+
     CallPostNewService(url, Pdata) {
-        //
         let resp;
         resp = fetch(urls.complaintUrl + url, {
             method: "POST",
@@ -205,15 +214,13 @@ class ServiceProvider {
                 'Content-Type': 'application/json',
                 // Authorization: 'Bearer ' + appCommonJs.getapitoken()
             },
-            
             body: JSON.stringify(Pdata)
         });
-        console.log(resp);
         return resp;
     }
 
     CallGetNewService(url, Pdata) {
-        //
+
         let resp;
         resp = fetch(urls.complaintUrl + url, {
             method: "GET",
@@ -309,50 +316,6 @@ class ServiceProvider {
         return resp;
     }
 
-    getElasticSearch(url, json, method) {
-        console.log(JSON.stringify(json));
-        console.log(url);
-        console.log(method);
-        let jsonresponse = null;
-        jsonresponse = fetch(urls.ElasticUrl + url,
-            {
-                method: method,
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(json)
-            }).then(response => {
-                if (!response.ok) {
-                    return response.json().then(mes => {
-                        appCommonJs.showhtmlalert(mes.Message, 'Error', 'error');
-                    });
-                }
-                else {
-                    return response;
-                }
-            })
-            .catch(function (error, obj) {
-                appCommonJs.showhtmlalert('Unexpected Error... Please Try after some time...', 'Error', 'error');
-                console.log('Error occured ' + error.state);
-            });
-        return jsonresponse;
-    }
-    // New
-    makeGetRequest(url) {
-        return new Promise(function (resolve, reject) {
-            axios.get(urls.MainUrl + url).then(
-                (response) => {
-                    var result = response.data;
-                    // console.log('Processing Request'); 
-                    resolve(result);
-                },
-                (error) => {
-                    reject(error);
-                }
-            );
-        });
-    }
     getsynchronouse(url) {
         return fetch(urls.MainUrl + url, {
             headers: {
