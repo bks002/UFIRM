@@ -36,6 +36,7 @@ import DocumentTypeMasterPage from "../pages/DocumentTypeMasterPage";
 import AssetsMasterPage from "../pages/AssetsMasterPage";
 import CheckInCheckOut from "../pages/checkIn-checkOutPage.jsx";
 import RentalAssets from "../pages/RentalAssets.jsx";
+import CategoryPage from "../MainComponents/Inventory/CategoryPage.jsx";
 import EscalationGroupPage from "../pages/EscalationGroupPage";
 import EscalationMatrixPage from "../pages/EscalationMatrixPage";
 import NoticeBoardPage from "../pages/NoticeBoardPage";
@@ -463,11 +464,11 @@ class MainNav extends React.Component {
                     <ul className="nav nav-treeview">
                     <li className="nav-item">
                         <Link
-                            to="/Account/App/Inventory"
+                            to="/Account/App/Inventory/Category"
                             className="nav-link"
                         >
                           <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Assets Master</p>
+                          <p>Category</p>
                         </Link>
                       </li>
                       <li className="nav-item">
@@ -1123,8 +1124,8 @@ class MainNav extends React.Component {
             <Route path="/Account/App/AssetsMaster">
               <AssetsMasterPage />
             </Route>
-            <Route path="/Account/App/Inventory">
-              <AssetsMasterPage />
+            <Route path="/Account/App/Inventory/Category">
+              <CategoryPage />
             </Route>
             <Route path="/Account/App/CheckIn&CheckOut">
               <CheckInCheckOut/>
