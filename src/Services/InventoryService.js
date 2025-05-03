@@ -1,12 +1,13 @@
 import axios from 'axios';
 
-//const API_BASE_URL = 'https://api.urest.in:8096/';
-const API_BASE_URL = 'http://localhost:62929/';
+const API_BASE_URL = 'https://api.urest.in:8096/api/inventory';
+//const API_BASE_URL = 'http://localhost:62929/api/inventory';
 const api = axios.create({
     baseURL: API_BASE_URL,
     headers: {
         'Content-Type': 'application/json',
     },
+    withCredentials: false,
 });
 
 // Helper to extract error message
@@ -22,7 +23,7 @@ const handleApiError = (error) => {
 // ========== CATEGORY ==========
 export const getCategories = async (propertyId) => {
     try {
-        const response = await api.get(`/categories`, { params: { propertyId } });
+        const response = await api.get(`/categories?propertyId=${ propertyId }` );
         return response.data;
     } catch (error) {
         handleApiError(error);
