@@ -8,19 +8,28 @@ import * as appCommon from '../../Common/AppCommon.js';
 import { DELETE_CONFIRMATION_MSG } from '../../Contants/Common';
 import { getCategories, getCategoryById, createCategory, updateCategory, deleteCategory } from "../../Services/InventoryService";
 import { useSelector, useDispatch } from 'react-redux';
-import { get } from 'http';
 const $ = window.$;
 
 const Category = (props) => {
     const [pageMode, setPageMode] = useState("Home");
     const [cName, setCName] = useState("");
     const [cDescription, setCDescription] = useState("");
+    const [isApproved, setIsApproved] = useState(false);
+    const [openDropDown, setOpenDropDown] = useState(false);
     const [gridData, setGridData] = useState([]);
     const [gridHeader] = useState([
         { sTitle: 'Id', titleValue: 'Id', "orderable": true },
         { sTitle: 'Name', titleValue: 'Name' },
         { sTitle: 'Description', titleValue: 'Description' },
         { sTitle: 'Action', titleValue: 'Action', Action: "Edit&View&Delete", Index: '0', "orderable": false },
+    ]);
+    const [gridDataA, setGridDataA] = useState([]);
+    const [gridHeaderA] = useState([
+        { sTitle: 'Id', titleValue: 'Id', "orderable": true },
+        { sTitle: 'Name', titleValue: 'Name' },
+        { sTitle: 'Description', titleValue: 'Description' },
+        { sTitle: 'Is Approved', titleValue: 'IsApproved' },
+        { sTitle: 'Action', titleValue: 'Action', Action: "Delete", Index: '0', "orderable": false },
     ]);
     const [catId, setCatId] = useState(0);
     const [loading, setLoading] = useState(false);
@@ -31,25 +40,23 @@ const Category = (props) => {
         try {
             setLoading(true);
             const data = await getCategories(propertyId);
-            if (data.length === 0) {
-                appCommon.showtextalert("No Categories Found", "Please add categories.", "info");
-            }
             //console.log("Categories List:", data);
             setGridData(data);
             setLoading(false);
         } catch (error) {
             console.error('Error fetching Categories:', error);
             setLoading(false);
-            appCommon.showtextalert("Error Fetching Categories", error.message, "error");
         }
     }, []);
 
     useEffect(() => {
-        if (propertyId) { // Only fetch if propertyId is available
+        if (propertyId) {
+            setGridData([]); 
             getCategoriesList(propertyId);
+        } else {
+            setGridData([]); 
         }
     }, [getCategoriesList, propertyId]);
-
 
 
     const handleCreateCategory = async (newCategory) => {
@@ -76,7 +83,7 @@ const Category = (props) => {
 
     const handleViewCategory = async (id) => {
         try {
-            const data= await getCategoryById(id);
+            const data = await getCategoryById(id);
             //console.log("Category Data:", data);
             return data;
             //appCommon.showtextalert("Category Viewed Successfully!", "", "success");
@@ -95,8 +102,6 @@ const Category = (props) => {
             appCommon.showtextalert("Error Deleting Category", error.message, "error");
         }
     };
-
-
 
     const onPagechange = (page) => {
 
@@ -161,14 +166,16 @@ const Category = (props) => {
         }
     };
 
-
-
     const Addnew = () => {
         setPageMode('Add');
         CreateValidator();
         setCName("");
         setCDescription("");
         getCategoriesList(propertyId);
+    };
+
+    const DropDown = () => {
+        setOpenDropDown(!openDropDown);
     };
 
     const handleSave = () => {
@@ -198,10 +205,49 @@ const Category = (props) => {
         setCName("");
         setCDescription("");
         getCategoriesList(propertyId);
+        setOpenDropDown(false);
     };
 
     return (
         <>
+            <div className="row">
+                <div className="col-12">
+                    <div className="card">
+                        <div className="card-header d-flex p-0">
+                            <h5 className="ml-3 mt-2">Pending Approval</h5>
+                            <ul className="nav ml-auto tableFilterContainer">
+                                <li className="nav-item">
+                                    <div className="input-group input-group-sm">
+                                        <div className="input-group-prepend">
+                                            <button
+                                                id="dropdown"
+                                                className="btn btn-primary dropdown-toggle"
+                                                onClick={DropDown}
+                                            >
+                                            </button>
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                        <div className="card-body pt-2">
+                            {openDropDown && (
+                                <DataGrid
+                                    Id="ApprovalGrid"
+                                    IsPagination={false}
+                                    ColumnCollection={gridHeaderA}
+                                    Onpageindexchanged={onPagechange}
+                                    onEditMethod={onGridEdit}
+                                    onGridDeleteMethod={onGridDelete}
+                                    onGridViewMethod={onGridView}
+                                    IsSarching="false"
+                                    GridData={gridData}
+                                    pageSize="2000" />
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
             {pageMode === 'Home' && (
                 <div className="row">
                     <div className="col-12">
@@ -222,15 +268,13 @@ const Category = (props) => {
                                 </ul>
                             </div>
                             <div className="card-body pt-2">
+
                                 <DataGrid
                                     Id="grdCalendarFrequency"
                                     IsPagination={false}
                                     ColumnCollection={gridHeader}
                                     Onpageindexchanged={onPagechange}
-                                    onEditMethod={onGridEdit}
                                     onGridDeleteMethod={onGridDelete}
-                                    onGridViewMethod={onGridView}
-                                    DefaultPagination={false}
                                     IsSarching="false"
                                     GridData={gridData}
                                     pageSize="2000" />
