@@ -37,6 +37,7 @@ import AssetsMasterPage from "../pages/AssetsMasterPage";
 import CheckInCheckOut from "../pages/checkIn-checkOutPage.jsx";
 import RentalAssets from "../pages/RentalAssets.jsx";
 import CategoryPage from "../MainComponents/Inventory/CategoryPage.jsx";
+import VendorPage from "../MainComponents/Inventory/VendorPage.jsx";
 import EscalationGroupPage from "../pages/EscalationGroupPage";
 import EscalationMatrixPage from "../pages/EscalationMatrixPage";
 import NoticeBoardPage from "../pages/NoticeBoardPage";
@@ -482,9 +483,9 @@ class MainNav extends React.Component {
                       </li>
 
                       <li className="nav-item">
-                        <Link to="/Account/App/RentalAssets" className="nav-link">
+                        <Link to="/Account/App/Inventory/Vendors" className="nav-link">
                           <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Rental Assets</p>
+                          <p>Vendors</p>
                         </Link>
                       </li>
 
@@ -1129,6 +1130,9 @@ class MainNav extends React.Component {
             </Route>
             <Route path="/Account/App/CheckIn&CheckOut">
               <CheckInCheckOut/>
+            </Route>
+            <Route path="/Account/App/Inventory/Vendors">
+              <VendorPage/>
             </Route>
             <Route path="/Account/App/RentalAssets">
               <RentalAssets/>

@@ -6,45 +6,43 @@ import Button from '../../ReactComponents/Button/Button';
 import { CreateValidator, ValidateControls } from '../Calendar/Validation';
 import * as appCommon from '../../Common/AppCommon.js';
 import { DELETE_CONFIRMATION_MSG } from '../../Contants/Common';
-import { getCategories, getCategoryById, createCategory, updateCategory, deleteCategory } from "../../Services/InventoryService";
+import { getVendors, getVendorById, createVendor, updateVendor, deleteVendor } from "../../Services/InventoryService";
 import { useSelector, useDispatch } from 'react-redux';
 const $ = window.$;
 
-const Category = (props) => {
+const Vendor = (props) => {
     const [pageMode, setPageMode] = useState("Home");
-    const [cName, setCName] = useState("");
-    const [cDescription, setCDescription] = useState("");
+    const [vName, setvName] = useState("");
+    const [vContactPerson, setvContactPerson] = useState("");
+    const [vContactNo, setvContactNo] = useState("");
+    const [vEmail, setvEmail] = useState("");
+    const [vGSTNo, setvGSTNo] = useState("");
     const [isApproved, setIsApproved] = useState(false);
     const [openDropDown, setOpenDropDown] = useState(false);
     const [gridData, setGridData] = useState([]);
     const [gridHeader] = useState([
         { sTitle: 'Id', titleValue: 'Id', "orderable": true },
         { sTitle: 'Name', titleValue: 'Name' },
-        { sTitle: 'Description', titleValue: 'Description' },
+        { sTitle: 'Contact Person', titleValue: 'ContactPerson' },
+        { sTitle: 'Contact Number', titleValue: 'ContactNo' },
+        { sTitle: 'Email', titleValue: 'Email' },
+        { sTitle: 'GST Number', titleValue: 'GSTNo' },
         { sTitle: 'Action', titleValue: 'Action', Action: "Edit&View&Delete", Index: '0', "orderable": false },
     ]);
-    const [gridDataA, setGridDataA] = useState([]);
-    const [gridHeaderA] = useState([
-        { sTitle: 'Id', titleValue: 'Id', "orderable": true },
-        { sTitle: 'Name', titleValue: 'Name' },
-        { sTitle: 'Description', titleValue: 'Description' },
-        { sTitle: 'Is Approved', titleValue: 'IsApproved' },
-        { sTitle: 'Action', titleValue: 'Action', Action: "Delete", Index: '0', "orderable": false },
-    ]);
-    const [catId, setCatId] = useState(0);
+    const [VenId, setVenId] = useState(0);
     const [loading, setLoading] = useState(false);
     const propertyId = useSelector((state) => state.Commonreducer.puidn);
     const dispatch = useDispatch();
 
-    const getCategoriesList = useCallback(async (propertyId) => {
+    const getVendorList = useCallback(async (propertyId) => {
         try {
             setLoading(true);
-            const data = await getCategories(propertyId);
+            const data = await getVendors(propertyId);
             //console.log("Categories List:", data);
             setGridData(data);
             setLoading(false);
         } catch (error) {
-            console.error('Error fetching Categories:', error);
+            console.error('Error fetching Vendors:', error);
             setLoading(false);
         }
     }, []);
@@ -52,54 +50,54 @@ const Category = (props) => {
     useEffect(() => {
         if (propertyId) {
             setGridData([]); 
-            getCategoriesList(propertyId);
+            getVendorList(propertyId);
         } else {
             setGridData([]); 
         }
-    }, [getCategoriesList, propertyId]);
+    }, [getVendorList, propertyId]);
 
 
-    const handleCreateCategory = async (newCategory) => {
+    const handleCreateVendor = async (newVendor) => {
         try {
-            await createCategory(newCategory);
-            appCommon.showtextalert("Category Saved Successfully!", "", "success");
+            await createVendor(newVendor);
+            appCommon.showtextalert("Vendor Saved Successfully!", "", "success");
             handleCancel();
-            await getCategoriesList(propertyId);
+            await getVendorList(propertyId);
         } catch (error) {
-            appCommon.showtextalert("Error Creating Category", error.message, "error");
+            appCommon.showtextalert("Error Creating Vendor", error.message, "error");
         }
     };
 
-    const handleUpdateCategory = async (id, updatedCategory) => {
+    const handleUpdateVendor = async (id, updatedVendor) => {
         try {
-            await updateCategory(id, updatedCategory);
-            appCommon.showtextalert("Category Updated Successfully!", "", "success");
+            await updateVendor(id, updatedVendor);
+            appCommon.showtextalert("Vendor Updated Successfully!", "", "success");
             handleCancel();
-            await getCategoriesList(propertyId);
+            await getVendorList(propertyId);
         } catch (error) {
-            appCommon.showtextalert("Error Updating Category", error.message, "error");
+            appCommon.showtextalert("Error Updating Vendor", error.message, "error");
         }
     };
 
-    const handleViewCategory = async (id) => {
+    const handleViewVendor = async (id) => {
         try {
-            const data = await getCategoryById(id);
-            //console.log("Category Data:", data);
+            const data = await getVendorById(id);
+            //console.log("Vendor Data:", data);
             return data;
-            //appCommon.showtextalert("Category Viewed Successfully!", "", "success");
+            //appCommon.showtextalert("Vendor Viewed Successfully!", "", "success");
             //handleCancel();
         } catch (error) {
-            appCommon.showtextalert("Error viewing Category", error.message, "error");
+            appCommon.showtextalert("Error viewing Vendor", error.message, "error");
         }
     };
 
-    const handleDeleteCategory = async (id) => {
+    const handleDeleteVendor = async (id) => {
         try {
-            await deleteCategory(id);
-            appCommon.showtextalert("Category Deleted Successfully!", "", "success");
-            await getCategoriesList(propertyId);
+            await deleteVendor(id);
+            appCommon.showtextalert("Vendor Deleted Successfully!", "", "success");
+            await getVendorList(propertyId);
         } catch (error) {
-            appCommon.showtextalert("Error Deleting Category", error.message, "error");
+            appCommon.showtextalert("Error Deleting Vendor", error.message, "error");
         }
     };
 
@@ -122,8 +120,8 @@ const Category = (props) => {
         }).then((value) => {
             switch (value) {
                 case "ok":
-                    setCatId(Id);
-                    handleDeleteCategory(Id);
+                    setVenId(Id);
+                    handleDeleteVendor(Id);
                     break;
                 case "cancel":
                 default:
@@ -132,20 +130,23 @@ const Category = (props) => {
         });
     };
 
-    const onGridView = async (catId) => {
+    const onGridView = async (VenId) => {
         //console.log("catId", catId);
         setPageMode('View');
         CreateValidator();
         try {
-            handleViewCategory(catId).then((data) => {
-                setCName(data.Name);
-                setCDescription(data.Description);
+            handleViewVendor(VenId).then((data) => {
+                setvName(data.Name);
+                setvContactPerson(data.ContactPerson);
+                setvContactNo(data.ContactNo);
+                setvEmail(data.Email);
+                setvGSTNo(data.GSTNo);
             });
-            //console.log(handleViewCategory(catId));
+            //console.log(handleViewVendor(catId));
 
         } catch (error) {
-            console.error("Error fetching category details", error);
-            appCommon.showtextalert("Error", "Failed to fetch category details.", "error");
+            console.error("Error fetching Vendor details", error);
+            appCommon.showtextalert("Error", "Failed to fetch Vendor details.", "error");
         }
 
     };
@@ -154,24 +155,30 @@ const Category = (props) => {
         setPageMode('Edit');
         CreateValidator();
         try {
-            const categoryData = await getCategoryById(Id);
-            //console.log("Category Data:", categoryData);
-            setCatId(categoryData.Id);
-            setCName(categoryData.name);
-            setCDescription(categoryData.description);
+            const VendorData = await getVendorById(Id);
+            //console.log("Vendor Data:", VendorData);
+            setVenId(VendorData.Id);
+            setvName(VendorData.name);
+            setvContactPerson(VendorData.ContactPerson);
+            setvContactNo(VendorData.ContactNo);
+            setvEmail(VendorData.Email);
+            setvGSTNo(VendorData.GSTNo);
 
         } catch (error) {
-            console.error("Error fetching category details", error);
-            appCommon.showtextalert("Error", "Failed to fetch category details.", "error");
+            console.error("Error fetching Vendor details", error);
+            appCommon.showtextalert("Error", "Failed to fetch Vendor details.", "error");
         }
     };
 
     const Addnew = () => {
         setPageMode('Add');
         CreateValidator();
-        setCName("");
-        setCDescription("");
-        getCategoriesList(propertyId);
+        setvName("");
+        setvContactPerson("");
+        setvContactNo("");
+        setvEmail("");
+        setvGSTNo("");
+        getVendorList(propertyId);
     };
 
     const DropDown = () => {
@@ -181,30 +188,39 @@ const Category = (props) => {
     const handleSave = () => {
         if (ValidateControls()) {
             if (pageMode === "Add") {
-                const newCategory = {
-                    Name: cName,
-                    Description: cDescription,
+                const newVendor = {
+                    Name: vName,
+                    ContactPerson: vContactPerson,
+                    ContactNo: vContactNo,
+                    Email: vEmail,
+                    GSTNo: vGSTNo,
                     PropertyId: propertyId
                 }
-                handleCreateCategory(newCategory);
+                handleCreateVendor(newVendor);
             } else if (pageMode === "Edit") {
-                const updatedCategory = {
-                    Id: catId,
-                    Name: cName,
-                    Description: cDescription,
+                const updatedVendor = {
+                    Id: VenId,
+                    Name: vName,
+                    ContactPerson: vContactPerson,
+                    ContactNo: vContactNo,
+                    Email: vEmail,
+                    GSTNo: vGSTNo,
                     PropertyId: propertyId
                 }
-                //console.log("Updated Category:", updatedCategory);
-                handleUpdateCategory(catId, updatedCategory);
+                //console.log("Updated Vendor:", updatedVendor);
+                handleUpdateVendor(VenId, updatedVendor);
             }
         }
     };
 
     const handleCancel = () => {
         setPageMode('Home');
-        setCName("");
-        setCDescription("");
-        getCategoriesList(propertyId);
+        setvName("");
+        setvContactPerson("");
+        setvContactNo("");
+        setvEmail("");
+        setvGSTNo("");
+        getVendorList(propertyId);
         setOpenDropDown(false);
     };
 
@@ -259,7 +275,7 @@ const Category = (props) => {
                                                     Action={Addnew}
                                                     ClassName="btn btn-success btn-sm"
                                                     Icon={<i className="fa fa-plus" aria-hidden="true"></i>}
-                                                    Text="Add Category" />
+                                                    Text="Add Vendor" />
                                             </div>
                                         </div>
                                     </li>
@@ -290,33 +306,69 @@ const Category = (props) => {
                         <div className="modal-content">
                             <div className="modal-header">
                                 <h5 className="modal-title" id="exampleModalToggleLabel">
-                                    {pageMode === 'Add' ? "Add Category" : "Edit Category"}
+                                    {pageMode === 'Add' ? "Add Vendor" : "Edit Vendor"}
                                 </h5>
                             </div>
                             <div className="modal-body">
                                 <div className="row">
                                     <div className="col-12">
-                                        <label>Category Name</label>
+                                        <label>Vendor Name</label>
                                         <input
-                                            id="CName"
+                                            id="vName"
                                             required
-                                            placeholder="Enter Category Name"
+                                            placeholder="Enter Vendor Name"
                                             type="text"
                                             className="form-control"
-                                            value={cName}
-                                            onChange={(e) => setCName(e.target.value)}
+                                            value={vName}
+                                            onChange={(e) => setvName(e.target.value)}
                                         />
                                     </div>
                                     <div className="col-12 mt-3">
-                                        <label>Description</label>
+                                        <label>Contact Person</label>
                                         <input
-                                            id="CDescription"
+                                            id="vContactPerson"
                                             required
                                             placeholder="Enter Description"
                                             type="text"
                                             className="form-control"
-                                            value={cDescription}
-                                            onChange={(e) => setCDescription(e.target.value)}
+                                            value={vContactPerson}
+                                            onChange={(e) => setvContactPerson(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="col-12 mt-3">
+                                        <label>Contact Number</label>
+                                        <input
+                                            id="vContactNo"
+                                            required
+                                            placeholder="Enter Contact Number"
+                                            type="text"
+                                            className="form-control"
+                                            value={vContactNo}
+                                            onChange={(e) => setvContactNo(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="col-12 mt-3">
+                                        <label>Email</label>
+                                        <input
+                                            id="vEmail"
+                                            required
+                                            placeholder="Enter Email"
+                                            type="text"
+                                            className="form-control"
+                                            value={vEmail}
+                                            onChange={(e) => setvEmail(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="col-12 mt-3">
+                                        <label>GST Number</label>
+                                        <input
+                                            id="vGSTNo"
+                                            required
+                                            placeholder="Enter GST Number"
+                                            type="text"
+                                            className="form-control"
+                                            value={vGSTNo}
+                                            onChange={(e) => setvGSTNo(e.target.value)}
                                         />
                                     </div>
                                 </div>
@@ -347,18 +399,30 @@ const Category = (props) => {
                     <div className="modal-dialog modal-lg" role="document">
                         <div className="modal-content">
                             <div className="modal-header">
-                                <h5 className="modal-title" >View Category</h5>
+                                <h5 className="modal-title" >View Vendor</h5>
                             </div>
                             <div className="modal-body p-2">
                                 <form>
                                     <div className="row">
                                         <div className="form-group col-sm-6">
-                                            <label htmlFor="name">Name:</label>
-                                            <input type="text" className="form-control" id="CName" value={cName} readOnly />
+                                            <label htmlFor="name">Name</label>
+                                            <input type="text" className="form-control" id="vName" value={vName} readOnly />
                                         </div>
                                         <div className="form-group col-sm-6">
-                                            <label htmlFor="name">Description:</label>
-                                            <input type="text" className="form-control" id="CDescription" value={cDescription} readOnly />
+                                            <label htmlFor="name">Contact Person</label>
+                                            <input type="text" className="form-control" id="vContactPerson" value={vContactPerson} readOnly />
+                                        </div>
+                                        <div className="form-group col-sm-6">
+                                            <label htmlFor="name">Contact Number</label>
+                                            <input type="text" className="form-control" id="vContactNo" value={vContactNo} readOnly />
+                                        </div>
+                                        <div className="form-group col-sm-6">
+                                            <label htmlFor="name">Email</label>
+                                            <input type="text" className="form-control" id="vEmail" value={vEmail} readOnly />
+                                        </div>
+                                        <div className="form-group col-sm-6">
+                                            <label htmlFor="name">GST Number</label>
+                                            <input type="text" className="form-control" id="vGSTNo" value={vGSTNo} readOnly />
                                         </div>
                                     </div>
                                 </form>
@@ -376,5 +440,4 @@ const Category = (props) => {
     );
 };
 
-export default Category;
-
+export default Vendor;

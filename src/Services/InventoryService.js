@@ -106,7 +106,7 @@ export const updateItem = async (id, item) => {
 // ========== VENDOR ==========
 export const getVendors = async (propertyId) => {
     try {
-        const response = await api.get('/vendors', { params: { propertyId } });
+        const response = await api.get(`/vendors?propertyId=${propertyId}`);
         return response.data;
     } catch (error) {
         handleApiError(error);
