@@ -122,6 +122,7 @@ const Vendor = (props) => {
         });
     };
 
+
     const onGridView = async (VendorData) => {
         setPageMode('View');
         CreateValidator();
