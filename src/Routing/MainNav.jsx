@@ -69,6 +69,7 @@ import AddNewUser from "../MainComponents/NewUser/AddNewUser";
 import ServiceRecords from "../pages/ManageAssets";
 import PPMSpreadsheet from "../pages/PPMSpreadsheet";
 import FrequencyMasterPage from "../pages/FrequencyMasterPage";
+import ItemMasterPage from "../MainComponents/Inventory/itemPage";
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -470,6 +471,16 @@ class MainNav extends React.Component {
                         >
                           <i className=" fas fa-caret-right nav-icon"></i>
                           <p>Category</p>
+                        </Link>
+                      </li>
+
+                      <li className="nav-item">
+                        <Link
+                            to="/Account/App/Inventory/Item"
+                            className="nav-link"
+                        >
+                          <i className=" fas fa-caret-right nav-icon"></i>
+                          <p>Items</p>
                         </Link>
                       </li>
 
@@ -1101,6 +1112,9 @@ class MainNav extends React.Component {
             </Route>
             <Route path="/Account/App/Inventory/Category">
               <CategoryPage />
+               </Route>
+            <Route path="/Account/App/Inventory/Item">
+              <ItemMasterPage />
             </Route>
             <Route path="/Account/App/CheckIn&CheckOut">
               <CheckInCheckOut/>

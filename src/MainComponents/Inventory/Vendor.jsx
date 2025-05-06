@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, ChangeEvent } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import swal from 'sweetalert';
 import { ToastContainer, toast } from 'react-toastify';
 import DataGrid from '../../ReactComponents/DataGrid/DataGrid.jsx';
@@ -126,8 +126,7 @@ const Vendor = (props) => {
         setPageMode('View');
         CreateValidator();
         try {
-            handleViewVendor(VendorData);;
-
+            handleViewVendor(VendorData);
         } catch (error) {
             console.error("Error fetching Vendor details", error);
             appCommon.showtextalert("Error", "Failed to fetch Vendor details.", "error");
@@ -182,8 +181,6 @@ const Vendor = (props) => {
             [id]: value
         }));
     };
-
-    const files = VendorData.KYC_DocumentPath ? [...VendorData.KYC_DocumentPath] : [];
 
     return (
         <>
@@ -248,7 +245,7 @@ const Vendor = (props) => {
                             <div className="card-body pt-2">
 
                                 <DataGrid
-                                    Id="VendorDataGrid"
+                                    Id="VendorDataGrid"             
                                     IsPagination={false}
                                     ColumnCollection={gridHeader}
                                     Onpageindexchanged={onPagechange}
@@ -257,7 +254,7 @@ const Vendor = (props) => {
                                     onGridViewMethod={onGridView}
                                     IsSarching="false"
                                     GridData={gridData}
-                                    pageSize="3000" />
+                                    pageSize="2000" />
                             </div>
                         </div>
                     </div>

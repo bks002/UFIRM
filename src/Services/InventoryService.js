@@ -10,7 +10,6 @@ const api = axios.create({
     withCredentials: false,
 });
 
-// Helper to extract error message
 const handleApiError = (error) => {
     if (error.response && error.response.data && error.response.data.message) {
         throw new Error(error.response.data.message);
@@ -97,6 +96,15 @@ export const createItem = async (item) => {
 export const updateItem = async (id, item) => {
     try {
         const response = await api.put(`/item/${id}`, item);
+        return response.data;
+    } catch (error) {
+        handleApiError(error);
+    }
+};
+
+export const deleteItem = async (id) => {
+    try {
+        const response = await api.delete(`/item/${id}`);
         return response.data;
     } catch (error) {
         handleApiError(error);
