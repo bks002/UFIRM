@@ -204,8 +204,6 @@ const Category = (props) => {
                             </div>
                             <div className="card-body">
                                 {openDropDown && (
-                                    //console.log("gridHeader", gridHeader),
-                                    //console.log("gridData", gridData),
                                     <DataGrid
                                         Id="CategoryGridApproval"
                                         IsPagination={false}
