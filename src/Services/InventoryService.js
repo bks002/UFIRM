@@ -22,7 +22,7 @@ const handleApiError = (error) => {
 // ========== CATEGORY ==========
 export const getCategories = async (propertyId) => {
     try {
-        const response = await api.get(`/categories`, { params: { propertyId } });
+        const response = await api.get(`/categories?propertyId=${ propertyId }` );
         return response.data;
     } catch (error) {
         handleApiError(error);
@@ -114,7 +114,7 @@ export const deleteItem = async (id) => {
 // ========== VENDOR ==========
 export const getVendors = async (propertyId) => {
     try {
-        const response = await api.get('/vendors', { params: { propertyId } });
+        const response = await api.get(`/vendors?propertyId=${propertyId}`);
         return response.data;
     } catch (error) {
         handleApiError(error);
