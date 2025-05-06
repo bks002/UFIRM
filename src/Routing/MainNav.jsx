@@ -67,6 +67,7 @@ import AddNewUser from "../MainComponents/NewUser/AddNewUser";
 import ServiceRecords from "../pages/ManageAssets";
 import PPMSpreadsheet from "../pages/PPMSpreadsheet";
 import FrequencyMasterPage from "../pages/FrequencyMasterPage";
+import ItemMasterPage from "../MainComponents/Inventory/itemPage";
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -461,46 +462,13 @@ class MainNav extends React.Component {
                       </p>
                     </a>
                     <ul className="nav nav-treeview">
-                    <li className="nav-item">
+                      <li className="nav-item">
                         <Link
-                            to="/Account/App/Inventory"
+                            to="/Account/App/Inventory/Item"
                             className="nav-link"
                         >
                           <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Assets Master</p>
-                        </Link>
-                      </li>
-                      <li className="nav-item">
-                        <Link
-                            to="/Account/App/CheckIn&CheckOut"
-                            className="nav-link"
-                        >
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Check IN & OUT</p>
-                        </Link>
-                      </li>
-
-                      <li className="nav-item">
-                        <Link to="/Account/App/RentalAssets" className="nav-link">
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Rental Assets</p>
-                        </Link>
-                      </li>
-
-                      <li className="nav-item">
-                        <Link to="/Account/App/ServiceRecords" className="nav-link">
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Service Records</p>
-                        </Link>
-                      </li>
-
-                      <li className="nav-item">
-                        <Link
-                            to="/Account/App/AssetTracking"
-                            className="nav-link"
-                        >
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Asset Log</p>
+                          <p>Items</p>
                         </Link>
                       </li>
                     </ul>
@@ -1123,8 +1091,8 @@ class MainNav extends React.Component {
             <Route path="/Account/App/AssetsMaster">
               <AssetsMasterPage />
             </Route>
-            <Route path="/Account/App/Inventory">
-              <AssetsMasterPage />
+            <Route path="/Account/App/Inventory/Item">
+              <ItemMasterPage />
             </Route>
             <Route path="/Account/App/CheckIn&CheckOut">
               <CheckInCheckOut/>

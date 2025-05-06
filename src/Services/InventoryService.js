@@ -1,15 +1,15 @@
 import axios from 'axios';
 
-//const API_BASE_URL = 'https://api.urest.in:8096/';
-const API_BASE_URL = 'http://localhost:62929/';
+const API_BASE_URL = 'https://api.urest.in:8096/api/inventory';
+//const API_BASE_URL = 'http://localhost:62929/api/inventory';
 const api = axios.create({
     baseURL: API_BASE_URL,
     headers: {
         'Content-Type': 'application/json',
     },
+    withCredentials: false,
 });
 
-// Helper to extract error message
 const handleApiError = (error) => {
     if (error.response && error.response.data && error.response.data.message) {
         throw new Error(error.response.data.message);
@@ -96,6 +96,15 @@ export const createItem = async (item) => {
 export const updateItem = async (id, item) => {
     try {
         const response = await api.put(`/item/${id}`, item);
+        return response.data;
+    } catch (error) {
+        handleApiError(error);
+    }
+};
+
+export const deleteItem = async (id) => {
+    try {
+        const response = await api.delete(`/item/${id}`);
         return response.data;
     } catch (error) {
         handleApiError(error);
