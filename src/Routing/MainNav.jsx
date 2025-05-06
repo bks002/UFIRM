@@ -472,37 +472,11 @@ class MainNav extends React.Component {
                           <p>Category</p>
                         </Link>
                       </li>
-                      <li className="nav-item">
-                        <Link
-                            to="/Account/App/CheckIn&CheckOut"
-                            className="nav-link"
-                        >
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Check IN & OUT</p>
-                        </Link>
-                      </li>
 
                       <li className="nav-item">
                         <Link to="/Account/App/Inventory/Vendors" className="nav-link">
                           <i className=" fas fa-caret-right nav-icon"></i>
                           <p>Vendors</p>
-                        </Link>
-                      </li>
-
-                      <li className="nav-item">
-                        <Link to="/Account/App/ServiceRecords" className="nav-link">
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Service Records</p>
-                        </Link>
-                      </li>
-
-                      <li className="nav-item">
-                        <Link
-                            to="/Account/App/AssetTracking"
-                            className="nav-link"
-                        >
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Asset Log</p>
                         </Link>
                       </li>
                     </ul>
