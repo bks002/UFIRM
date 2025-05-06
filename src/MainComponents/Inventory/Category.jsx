@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import swal from 'sweetalert';
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import DataGrid from '../../ReactComponents/DataGrid/DataGrid.jsx';
 import Button from '../../ReactComponents/Button/Button';
 import { CreateValidator, ValidateControls } from '../Calendar/Validation';
@@ -8,40 +8,31 @@ import * as appCommon from '../../Common/AppCommon.js';
 import { DELETE_CONFIRMATION_MSG } from '../../Contants/Common';
 import { getCategories, getCategoryById, createCategory, updateCategory, deleteCategory } from "../../Services/InventoryService";
 import { useSelector, useDispatch } from 'react-redux';
+import ExportToCSV from '../../ReactComponents/ExportToCSV/ExportToCSV.js';
 const $ = window.$;
 
 const Category = (props) => {
     const [pageMode, setPageMode] = useState("Home");
-    const [cName, setCName] = useState("");
-    const [cDescription, setCDescription] = useState("");
-    const [isApproved, setIsApproved] = useState(false);
     const [openDropDown, setOpenDropDown] = useState(false);
     const [gridData, setGridData] = useState([]);
-    const [gridHeader] = useState([
+    const gridHeader = [
         { sTitle: 'Id', titleValue: 'Id', "orderable": true },
         { sTitle: 'Name', titleValue: 'Name' },
         { sTitle: 'Description', titleValue: 'Description' },
         { sTitle: 'Action', titleValue: 'Action', Action: "Edit&View&Delete", Index: '0', "orderable": false },
-    ]);
-    const [gridDataA, setGridDataA] = useState([]);
-    const [gridHeaderA] = useState([
-        { sTitle: 'Id', titleValue: 'Id', "orderable": true },
-        { sTitle: 'Name', titleValue: 'Name' },
-        { sTitle: 'Description', titleValue: 'Description' },
-        { sTitle: 'Is Approved', titleValue: 'IsApproved' },
-        { sTitle: 'Action', titleValue: 'Action', Action: "Delete", Index: '0', "orderable": false },
-    ]);
-    const [catId, setCatId] = useState(0);
-    const [loading, setLoading] = useState(false);
+    ];
     const propertyId = useSelector((state) => state.Commonreducer.puidn);
+    const [loading, setLoading] = useState(false);
+    const emptycategorydata = { Id: 0, Name: '', Description: '', propertyId: propertyId };
+    const [categoryData, setCategoryData] = useState(emptycategorydata);
     const dispatch = useDispatch();
 
     const getCategoriesList = useCallback(async (propertyId) => {
         try {
             setLoading(true);
             const data = await getCategories(propertyId);
-            //console.log("Categories List:", data);
             setGridData(data);
+            setCategoryData(data);
             setLoading(false);
         } catch (error) {
             console.error('Error fetching Categories:', error);
@@ -51,10 +42,11 @@ const Category = (props) => {
 
     useEffect(() => {
         if (propertyId) {
-            setGridData([]); 
+            setGridData([]);
             getCategoriesList(propertyId);
         } else {
-            setGridData([]); 
+            setGridData([]);
+            appCommon.showtextalert("Error", "Please Select a Property.", "error");
         }
     }, [getCategoriesList, propertyId]);
 
@@ -84,10 +76,7 @@ const Category = (props) => {
     const handleViewCategory = async (id) => {
         try {
             const data = await getCategoryById(id);
-            //console.log("Category Data:", data);
-            return data;
-            //appCommon.showtextalert("Category Viewed Successfully!", "", "success");
-            //handleCancel();
+            setCategoryData(data);
         } catch (error) {
             appCommon.showtextalert("Error viewing Category", error.message, "error");
         }
@@ -104,10 +93,10 @@ const Category = (props) => {
     };
 
     const onPagechange = (page) => {
-
+        // Handle page change logic if needed
     };
 
-    const onGridDelete = (Id) => {
+    const onGridDelete = (categoryData) => {
         let myhtml = document.createElement("div");
         myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
         swal({
@@ -122,8 +111,7 @@ const Category = (props) => {
         }).then((value) => {
             switch (value) {
                 case "ok":
-                    setCatId(Id);
-                    handleDeleteCategory(Id);
+                    handleDeleteCategory(categoryData);
                     break;
                 case "cancel":
                 default:
@@ -132,34 +120,24 @@ const Category = (props) => {
         });
     };
 
-    const onGridView = async (catId) => {
-        //console.log("catId", catId);
+    const onGridView = async (categoryData) => {
         setPageMode('View');
         CreateValidator();
         try {
-            handleViewCategory(catId).then((data) => {
-                setCName(data.Name);
-                setCDescription(data.Description);
-            });
-            //console.log(handleViewCategory(catId));
-
+            const categoryDetails = handleViewCategory(categoryData);
+            setCategoryData(categoryDetails);
         } catch (error) {
             console.error("Error fetching category details", error);
             appCommon.showtextalert("Error", "Failed to fetch category details.", "error");
         }
-
     };
 
-    const onGridEdit = async (Id) => {
+    const onGridEdit = async (categoryData) => {
         setPageMode('Edit');
         CreateValidator();
         try {
-            const categoryData = await getCategoryById(Id);
-            //console.log("Category Data:", categoryData);
-            setCatId(categoryData.Id);
-            setCName(categoryData.name);
-            setCDescription(categoryData.description);
-
+            const categoryDetails = await getCategoryById(categoryData);
+            setCategoryData(categoryDetails);
         } catch (error) {
             console.error("Error fetching category details", error);
             appCommon.showtextalert("Error", "Failed to fetch category details.", "error");
@@ -169,9 +147,7 @@ const Category = (props) => {
     const Addnew = () => {
         setPageMode('Add');
         CreateValidator();
-        setCName("");
-        setCDescription("");
-        getCategoriesList(propertyId);
+        setCategoryData(emptycategorydata);
     };
 
     const DropDown = () => {
@@ -181,71 +157,72 @@ const Category = (props) => {
     const handleSave = () => {
         if (ValidateControls()) {
             if (pageMode === "Add") {
-                const newCategory = {
-                    Name: cName,
-                    Description: cDescription,
-                    PropertyId: propertyId
-                }
-                handleCreateCategory(newCategory);
+                handleCreateCategory(categoryData);
             } else if (pageMode === "Edit") {
-                const updatedCategory = {
-                    Id: catId,
-                    Name: cName,
-                    Description: cDescription,
-                    PropertyId: propertyId
-                }
-                //console.log("Updated Category:", updatedCategory);
-                handleUpdateCategory(catId, updatedCategory);
+                handleUpdateCategory(categoryData.Id, categoryData);
             }
         }
     };
 
     const handleCancel = () => {
         setPageMode('Home');
-        setCName("");
-        setCDescription("");
+        setCategoryData(emptycategorydata);
         getCategoriesList(propertyId);
         setOpenDropDown(false);
+    };
+
+    const handleInputChange = (e) => {
+        const { id, value } = e.target;
+        setCategoryData(prevState => ({
+            ...prevState,
+            [id]: value
+        }));
     };
 
     return (
         <>
             <div className="row">
                 <div className="col-12">
-                    <div className="card">
-                        <div className="card-header d-flex p-0">
-                            <h5 className="ml-3 mt-2">Pending Approval</h5>
-                            <ul className="nav ml-auto tableFilterContainer">
-                                <li className="nav-item">
-                                    <div className="input-group input-group-sm">
-                                        <div className="input-group-prepend">
-                                            <button
-                                                id="dropdown"
-                                                className="btn btn-primary dropdown-toggle"
-                                                onClick={DropDown}
-                                            >
-                                            </button>
+                    {gridData && gridData.length > 0 && pageMode === 'Home' && (
+                        <div className="card">
+                            <div className="card-header d-flex p-0 bg" onClick={DropDown} style={{ cursor: 'pointer', backgroundColor: '#f1e7c3' }}>
+                                <h5 className="ml-3 mt-2">Pending Approval</h5>
+                                <ul className="nav ml-auto tableFilterContainer">
+                                    <li className="nav-item">
+                                        <div className="input-group input-group-sm">
+                                            <div className="input-group-prepend">
+                                                <span
+                                                    className="btn btn-primary"
+                                                    style={{ backgroundColor: '#f1e7c3', color: '#000000' }}
+                                                >
+                                                    {openDropDown ? '\u2191' : '\u2193'}
+                                                </span>
+                                            </div>
                                         </div>
-                                    </div>
-                                </li>
-                            </ul>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div className="card-body">
+                                {openDropDown && (
+                                    //console.log("gridHeader", gridHeader),
+                                    //console.log("gridData", gridData),
+                                    <DataGrid
+                                        Id="CategoryGridApproval"
+                                        IsPagination={false}
+                                        ColumnCollection={gridHeader}
+                                        Onpageindexchanged={onPagechange}
+                                        onEditMethod={onGridEdit}
+                                        onGridDeleteMethod={onGridDelete}
+                                        onGridViewMethod={onGridView}
+                                        IsSarching="false"
+                                        GridData={gridData}
+                                        pageSize="2000" />
+                                )}
+                            </div>
                         </div>
-                        <div className="card-body pt-2">
-                            {openDropDown && (
-                                <DataGrid
-                                    Id="ApprovalGrid"
-                                    IsPagination={false}
-                                    ColumnCollection={gridHeader}
-                                    Onpageindexchanged={onPagechange}
-                                    onGridDeleteMethod={onGridDelete}
-                                    IsSarching="false"
-                                    GridData={gridData}
-                                    pageSize="2000" />
-                            )}
-                        </div>
-                    </div>
+                    )}
                 </div>
-            </div>
+            </div >
             {pageMode === 'Home' && (
                 <div className="row">
                     <div className="col-12">
@@ -255,6 +232,7 @@ const Category = (props) => {
                                     <li className="nav-item">
                                         <div className="input-group input-group-sm">
                                             <div className="input-group-prepend">
+                                                <ExportToCSV data={gridData} classNam="btn btn-success btn-sm rounded mr-2" />
                                                 <Button id="btnaddCalendarFrequency"
                                                     Action={Addnew}
                                                     ClassName="btn btn-success btn-sm"
@@ -266,9 +244,8 @@ const Category = (props) => {
                                 </ul>
                             </div>
                             <div className="card-body pt-2">
-
                                 <DataGrid
-                                    Id="grdCalendarFrequency"
+                                    Id="CategoryGrid"
                                     IsPagination={false}
                                     ColumnCollection={gridHeader}
                                     Onpageindexchanged={onPagechange}
@@ -282,99 +259,102 @@ const Category = (props) => {
                         </div>
                     </div>
                 </div>
-            )}
+            )
+            }
 
-            {(pageMode === 'Add' || pageMode === 'Edit') && (
-                <div className="modal d-flex align-items-center justify-content-center show" tabIndex="-1" role="dialog">
-                    <div className="modal-dialog modal-lg" role="document">
-                        <div className="modal-content">
-                            <div className="modal-header">
-                                <h5 className="modal-title" id="exampleModalToggleLabel">
-                                    {pageMode === 'Add' ? "Add Category" : "Edit Category"}
-                                </h5>
-                            </div>
-                            <div className="modal-body">
-                                <div className="row">
-                                    <div className="col-12">
-                                        <label>Category Name</label>
-                                        <input
-                                            id="CName"
-                                            required
-                                            placeholder="Enter Category Name"
-                                            type="text"
-                                            className="form-control"
-                                            value={cName}
-                                            onChange={(e) => setCName(e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="col-12 mt-3">
-                                        <label>Description</label>
-                                        <input
-                                            id="CDescription"
-                                            required
-                                            placeholder="Enter Description"
-                                            type="text"
-                                            className="form-control"
-                                            value={cDescription}
-                                            onChange={(e) => setCDescription(e.target.value)}
-                                        />
+            {
+                (pageMode === 'Add' || pageMode === 'Edit') && (
+                    <div className="modal d-flex align-items-center justify-content-center show" tabIndex="-1" role="dialog">
+                        <div className="modal-dialog modal-lg" role="document">
+                            <div className="modal-content">
+                                <div className="modal-header">
+                                    <h5 className="modal-title" id="exampleModalToggleLabel">
+                                        {pageMode === 'Add' ? "Add Category" : "Edit Category"}
+                                    </h5>
+                                </div>
+                                <div className="modal-body">
+                                    <div className="row">
+                                        <div className="col-12">
+                                            <label htmlFor="Name">Category Name</label>
+                                            <input
+                                                id="Name"
+                                                required
+                                                placeholder="Enter Category Name"
+                                                type="text"
+                                                className="form-control"
+                                                value={categoryData.Name}
+                                                onChange={handleInputChange}
+                                            />
+                                        </div>
+                                        <div className="col-12 mt-3">
+                                            <label htmlFor="Description">Description</label>
+                                            <input
+                                                id="Description"
+                                                required
+                                                placeholder="Enter Description"
+                                                type="text"
+                                                className="form-control"
+                                                value={categoryData.Description}
+                                                onChange={handleInputChange}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div className="modal-footer justify-content-start">
-                                <Button Id="btnSave" Text="Save" Action={handleSave}
-                                    ClassName="btn btn-primary" />
-                                <Button Id="btnCancel" Text="Cancel" Action={handleCancel}
-                                    ClassName="btn btn-secondary" />
-                            </div>
-                            <ToastContainer
-                                position="top-right"
-                                autoClose={5000}
-                                hideProgressBar={false}
-                                newestOnTop={false}
-                                closeOnClick
-                                rtl={false}
-                                pauseOnFocusLoss
-                                draggable
-                                pauseOnHover
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
-            {pageMode === 'View' && (
-                <div className="modal d-flex align-items-center justify-content-center show" tabIndex="-1" role="dialog">
-                    <div className="modal-dialog modal-lg" role="document">
-                        <div className="modal-content">
-                            <div className="modal-header">
-                                <h5 className="modal-title" >View Category</h5>
-                            </div>
-                            <div className="modal-body p-2">
-                                <form>
-                                    <div className="row">
-                                        <div className="form-group col-sm-6">
-                                            <label htmlFor="name">Name:</label>
-                                            <input type="text" className="form-control" id="CName" value={cName} readOnly />
-                                        </div>
-                                        <div className="form-group col-sm-6">
-                                            <label htmlFor="name">Description:</label>
-                                            <input type="text" className="form-control" id="CDescription" value={cDescription} readOnly />
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                            <div className="modal-footer justify-content-start">
-                                <Button Id="btnCancel" Text="Close" Action={handleCancel}
-                                    ClassName="btn btn-secondary" />
+                                <div className="modal-footer justify-content-start">
+                                    <Button Id="btnSave" Text="Save" Action={handleSave}
+                                        ClassName="btn btn-primary" />
+                                    <Button Id="btnCancel" Text="Cancel" Action={handleCancel}
+                                        ClassName="btn btn-secondary" />
+                                    <ToastContainer
+                                        position="top-right"
+                                        autoClose={5000}
+                                        hideProgressBar={false}
+                                        newestOnTop={false}
+                                        closeOnClick
+                                        rtl={false}
+                                        pauseOnFocusLoss
+                                        draggable
+                                        pauseOnHover
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-
+                )
+            }
+            {
+                pageMode === 'View' && (
+                    <div className="modal d-flex align-items-center justify-content-center show" tabIndex="-1" role="dialog">
+                        <div className="modal-dialog modal-lg" role="document">
+                            <div className="modal-content">
+                                <div className="modal-header">
+                                    <h5 className="modal-title" >View Category</h5>
+                                </div>
+                                <div className="modal-body p-2">
+                                    <form>
+                                        <div className="row">
+                                            <div className="form-group col-sm-6">
+                                                <label htmlFor="viewName">Name:</label>
+                                                <input type="text" className="form-control" id="viewName" value={categoryData.Name} readOnly />
+                                            </div>
+                                            <div className="form-group col-sm-6">
+                                                <label htmlFor="viewDescription">Description:</label>
+                                                <input type="text" className="form-control" id="viewDescription" value={categoryData.Description} readOnly />
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div className="modal-footer justify-content-start">
+                                    <Button Id="btnClose" Text="Close" Action={handleCancel}
+                                        ClassName="btn btn-secondary" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
         </>
     );
 };
 
 export default Category;
-

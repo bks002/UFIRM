@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, ChangeEvent } from 'react';
 import swal from 'sweetalert';
 import { ToastContainer, toast } from 'react-toastify';
 import DataGrid from '../../ReactComponents/DataGrid/DataGrid.jsx';
@@ -8,28 +8,23 @@ import * as appCommon from '../../Common/AppCommon.js';
 import { DELETE_CONFIRMATION_MSG } from '../../Contants/Common';
 import { getVendors, getVendorById, createVendor, updateVendor, deleteVendor } from "../../Services/InventoryService";
 import { useSelector, useDispatch } from 'react-redux';
+import ExportToCSV from '../../ReactComponents/ExportToCSV/ExportToCSV.js';
 const $ = window.$;
 
 const Vendor = (props) => {
     const [pageMode, setPageMode] = useState("Home");
-    const [vName, setvName] = useState("");
-    const [vContactPerson, setvContactPerson] = useState("");
-    const [vContactNo, setvContactNo] = useState("");
-    const [vEmail, setvEmail] = useState("");
-    const [vGSTNo, setvGSTNo] = useState("");
-    const [isApproved, setIsApproved] = useState(false);
     const [openDropDown, setOpenDropDown] = useState(false);
     const [gridData, setGridData] = useState([]);
-    const [gridHeader] = useState([
+    const gridHeader = [
         { sTitle: 'Id', titleValue: 'Id', "orderable": true },
         { sTitle: 'Name', titleValue: 'Name' },
         { sTitle: 'Contact Person', titleValue: 'ContactPerson' },
-        { sTitle: 'Contact Number', titleValue: 'ContactNo' },
+        { sTitle: 'Contact Number', titleValue: 'ContactNumber' },
         { sTitle: 'Email', titleValue: 'Email' },
-        { sTitle: 'GST Number', titleValue: 'GSTNo' },
         { sTitle: 'Action', titleValue: 'Action', Action: "Edit&View&Delete", Index: '0', "orderable": false },
-    ]);
-    const [VenId, setVenId] = useState(0);
+    ];
+    const emptyVendorData = { Id: 0, Name: '', ContactPerson: '', ContactNumber: '', Email: '', Address: '', GSTNumber: '', PANNumber: '', KYC_DocumentPath: '', PropertyId: propertyId };
+    const [VendorData, setVendorData] = useState(emptyVendorData);
     const [loading, setLoading] = useState(false);
     const propertyId = useSelector((state) => state.Commonreducer.puidn);
     const dispatch = useDispatch();
@@ -38,8 +33,8 @@ const Vendor = (props) => {
         try {
             setLoading(true);
             const data = await getVendors(propertyId);
-            //console.log("Categories List:", data);
             setGridData(data);
+            setVendorData(data);
             setLoading(false);
         } catch (error) {
             console.error('Error fetching Vendors:', error);
@@ -49,10 +44,11 @@ const Vendor = (props) => {
 
     useEffect(() => {
         if (propertyId) {
-            setGridData([]); 
+            setGridData([]);
             getVendorList(propertyId);
         } else {
-            setGridData([]); 
+            setGridData([]);
+            appCommon.showtextalert("Error", "Please select a Property.", "error");
         }
     }, [getVendorList, propertyId]);
 
@@ -82,10 +78,7 @@ const Vendor = (props) => {
     const handleViewVendor = async (id) => {
         try {
             const data = await getVendorById(id);
-            //console.log("Vendor Data:", data);
-            return data;
-            //appCommon.showtextalert("Vendor Viewed Successfully!", "", "success");
-            //handleCancel();
+            setVendorData(data);
         } catch (error) {
             appCommon.showtextalert("Error viewing Vendor", error.message, "error");
         }
@@ -105,7 +98,7 @@ const Vendor = (props) => {
 
     };
 
-    const onGridDelete = (Id) => {
+    const onGridDelete = (VendorData) => {
         let myhtml = document.createElement("div");
         myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
         swal({
@@ -120,8 +113,7 @@ const Vendor = (props) => {
         }).then((value) => {
             switch (value) {
                 case "ok":
-                    setVenId(Id);
-                    handleDeleteVendor(Id);
+                    handleDeleteVendor(VendorData);
                     break;
                 case "cancel":
                 default:
@@ -130,19 +122,11 @@ const Vendor = (props) => {
         });
     };
 
-    const onGridView = async (VenId) => {
-        //console.log("catId", catId);
+    const onGridView = async (VendorData) => {
         setPageMode('View');
         CreateValidator();
         try {
-            handleViewVendor(VenId).then((data) => {
-                setvName(data.Name);
-                setvContactPerson(data.ContactPerson);
-                setvContactNo(data.ContactNo);
-                setvEmail(data.Email);
-                setvGSTNo(data.GSTNo);
-            });
-            //console.log(handleViewVendor(catId));
+            handleViewVendor(VendorData);;
 
         } catch (error) {
             console.error("Error fetching Vendor details", error);
@@ -151,19 +135,13 @@ const Vendor = (props) => {
 
     };
 
-    const onGridEdit = async (Id) => {
+    const onGridEdit = async (VendorData) => {
         setPageMode('Edit');
         CreateValidator();
         try {
-            const VendorData = await getVendorById(Id);
-            //console.log("Vendor Data:", VendorData);
-            setVenId(VendorData.Id);
-            setvName(VendorData.name);
-            setvContactPerson(VendorData.ContactPerson);
-            setvContactNo(VendorData.ContactNo);
-            setvEmail(VendorData.Email);
-            setvGSTNo(VendorData.GSTNo);
-
+            const VendorDatails = await getVendorById(VendorData);
+            console.log("VendorDatails", VendorDatails);
+            setVendorData(VendorDatails);
         } catch (error) {
             console.error("Error fetching Vendor details", error);
             appCommon.showtextalert("Error", "Failed to fetch Vendor details.", "error");
@@ -173,12 +151,7 @@ const Vendor = (props) => {
     const Addnew = () => {
         setPageMode('Add');
         CreateValidator();
-        setvName("");
-        setvContactPerson("");
-        setvContactNo("");
-        setvEmail("");
-        setvGSTNo("");
-        getVendorList(propertyId);
+        setVendorData(emptyVendorData);
     };
 
     const DropDown = () => {
@@ -188,80 +161,70 @@ const Vendor = (props) => {
     const handleSave = () => {
         if (ValidateControls()) {
             if (pageMode === "Add") {
-                const newVendor = {
-                    Name: vName,
-                    ContactPerson: vContactPerson,
-                    ContactNo: vContactNo,
-                    Email: vEmail,
-                    GSTNo: vGSTNo,
-                    PropertyId: propertyId
-                }
-                handleCreateVendor(newVendor);
+                handleCreateVendor(VendorData);
             } else if (pageMode === "Edit") {
-                const updatedVendor = {
-                    Id: VenId,
-                    Name: vName,
-                    ContactPerson: vContactPerson,
-                    ContactNo: vContactNo,
-                    Email: vEmail,
-                    GSTNo: vGSTNo,
-                    PropertyId: propertyId
-                }
-                //console.log("Updated Vendor:", updatedVendor);
-                handleUpdateVendor(VenId, updatedVendor);
+                handleUpdateVendor(VendorData.Id, VendorData);
             }
         }
     };
 
     const handleCancel = () => {
         setPageMode('Home');
-        setvName("");
-        setvContactPerson("");
-        setvContactNo("");
-        setvEmail("");
-        setvGSTNo("");
+        setVendorData(emptyVendorData);
         getVendorList(propertyId);
         setOpenDropDown(false);
     };
+
+    const handleInputChange = (e) => {
+        const { id, value } = e.target;
+        setVendorData(prevState => ({
+            ...prevState,
+            [id]: value
+        }));
+    };
+
+    const files = VendorData.KYC_DocumentPath ? [...VendorData.KYC_DocumentPath] : [];
 
     return (
         <>
             <div className="row">
                 <div className="col-12">
-                    <div className="card">
-                        <div className="card-header d-flex p-0">
-                            <h5 className="ml-3 mt-2">Pending Approval</h5>
-                            <ul className="nav ml-auto tableFilterContainer">
-                                <li className="nav-item">
-                                    <div className="input-group input-group-sm">
-                                        <div className="input-group-prepend">
-                                            <button
-                                                id="dropdown"
-                                                className="btn btn-primary dropdown-toggle"
-                                                onClick={DropDown}
-                                            >
-                                            </button>
+                    {gridData && gridData.length > 0 && pageMode === 'Home' && (
+                        <div className="card">
+                            <div className="card-header d-flex p-0 bg" onClick={DropDown} style={{ cursor: 'pointer', backgroundColor: '#f1e7c3' }}>
+                                <h5 className="ml-3 mt-2">Pending Approval</h5>
+                                <ul className="nav ml-auto tableFilterContainer">
+                                    <li className="nav-item">
+                                        <div className="input-group input-group-sm">
+                                            <div className="input-group-prepend">
+                                                <span
+                                                    className="btn btn-primary"
+                                                    style={{ backgroundColor: '#f1e7c3', color: '#000000' }}
+                                                >
+                                                    {openDropDown ? '\u2191' : '\u2193'}
+                                                </span>
+                                            </div>
                                         </div>
-                                    </div>
-                                </li>
-                            </ul>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div className="card-body">
+                                {openDropDown && (
+                                    <DataGrid
+                                        Id="ApprovalVendorGrid"
+                                        IsPagination={false}
+                                        ColumnCollection={gridHeader}
+                                        Onpageindexchanged={onPagechange}
+                                        onGridDeleteMethod={onGridDelete}
+                                        IsSarching="false"
+                                        GridData={gridData}
+                                        pageSize="2000" />
+                                )}
+                            </div>
                         </div>
-                        <div className="card-body pt-2">
-                            {openDropDown && (
-                                <DataGrid
-                                    Id="ApprovalGrid"
-                                    IsPagination={false}
-                                    ColumnCollection={gridHeader}
-                                    Onpageindexchanged={onPagechange}
-                                    onGridDeleteMethod={onGridDelete}
-                                    IsSarching="false"
-                                    GridData={gridData}
-                                    pageSize="2000" />
-                            )}
-                        </div>
-                    </div>
+                    )}
                 </div>
-            </div>
+            </div >
             {pageMode === 'Home' && (
                 <div className="row">
                     <div className="col-12">
@@ -271,6 +234,7 @@ const Vendor = (props) => {
                                     <li className="nav-item">
                                         <div className="input-group input-group-sm">
                                             <div className="input-group-prepend">
+                                                <ExportToCSV data={gridData} classNam="btn btn-success btn-sm rounded mr-2" />
                                                 <Button id="btnaddCalendarFrequency"
                                                     Action={Addnew}
                                                     ClassName="btn btn-success btn-sm"
@@ -284,7 +248,7 @@ const Vendor = (props) => {
                             <div className="card-body pt-2">
 
                                 <DataGrid
-                                    Id="grdCalendarFrequency"
+                                    Id="VendorDataGrid"
                                     IsPagination={false}
                                     ColumnCollection={gridHeader}
                                     Onpageindexchanged={onPagechange}
@@ -293,107 +257,147 @@ const Vendor = (props) => {
                                     onGridViewMethod={onGridView}
                                     IsSarching="false"
                                     GridData={gridData}
-                                    pageSize="2000" />
+                                    pageSize="3000" />
                             </div>
                         </div>
                     </div>
                 </div>
             )}
-
-            {(pageMode === 'Add' || pageMode === 'Edit') && (
-                <div className="modal d-flex align-items-center justify-content-center show" tabIndex="-1" role="dialog">
-                    <div className="modal-dialog modal-lg" role="document">
-                        <div className="modal-content">
-                            <div className="modal-header">
-                                <h5 className="modal-title" id="exampleModalToggleLabel">
-                                    {pageMode === 'Add' ? "Add Vendor" : "Edit Vendor"}
-                                </h5>
-                            </div>
-                            <div className="modal-body">
-                                <div className="row">
-                                    <div className="col-12">
-                                        <label>Vendor Name</label>
-                                        <input
-                                            id="vName"
-                                            required
-                                            placeholder="Enter Vendor Name"
-                                            type="text"
-                                            className="form-control"
-                                            value={vName}
-                                            onChange={(e) => setvName(e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="col-12 mt-3">
-                                        <label>Contact Person</label>
-                                        <input
-                                            id="vContactPerson"
-                                            required
-                                            placeholder="Enter Description"
-                                            type="text"
-                                            className="form-control"
-                                            value={vContactPerson}
-                                            onChange={(e) => setvContactPerson(e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="col-12 mt-3">
-                                        <label>Contact Number</label>
-                                        <input
-                                            id="vContactNo"
-                                            required
-                                            placeholder="Enter Contact Number"
-                                            type="text"
-                                            className="form-control"
-                                            value={vContactNo}
-                                            onChange={(e) => setvContactNo(e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="col-12 mt-3">
-                                        <label>Email</label>
-                                        <input
-                                            id="vEmail"
-                                            required
-                                            placeholder="Enter Email"
-                                            type="text"
-                                            className="form-control"
-                                            value={vEmail}
-                                            onChange={(e) => setvEmail(e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="col-12 mt-3">
-                                        <label>GST Number</label>
-                                        <input
-                                            id="vGSTNo"
-                                            required
-                                            placeholder="Enter GST Number"
-                                            type="text"
-                                            className="form-control"
-                                            value={vGSTNo}
-                                            onChange={(e) => setvGSTNo(e.target.value)}
-                                        />
-                                    </div>
+            {
+                (pageMode === 'Add' || pageMode === 'Edit') && (
+                    <div className="modal d-flex align-items-center justify-content-center show" tabIndex="-1" role="dialog">
+                        <div className="modal-dialog modal-lg" role="document">
+                            <div className="modal-content">
+                                <div className="modal-header">
+                                    <h5 className="modal-title" id="exampleModalToggleLabel">
+                                        {pageMode === 'Add' ? "Add Vendor" : "Edit Vendor"}
+                                    </h5>
                                 </div>
+                                <div className="modal-body p-2">
+                                    <form>
+                                        <div className="row">
+                                            <div className="col-sm-6">
+                                                <label htmlFor="Name">Vendor Name</label>
+                                                <input
+                                                    id="Name"
+                                                    required
+                                                    placeholder="Enter Vendor Name"
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={VendorData.Name}
+                                                    onChange={handleInputChange}
+                                                />
+                                            </div>
+                                            <div className="col-sm-6">
+                                                <label>Contact Person</label>
+                                                <input
+                                                    id="ContactPerson"
+                                                    required
+                                                    placeholder="Enter Description"
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={VendorData.ContactPerson}
+                                                    onChange={handleInputChange}
+                                                />
+                                            </div>
+                                            <div className="col-sm-6">
+                                                <label>Contact Number</label>
+                                                <input
+                                                    id="ContactNumber"
+                                                    required
+                                                    placeholder="Enter Contact Number"
+                                                    type="number"
+                                                    maxLength="10"
+                                                    className="form-control"
+                                                    value={VendorData.ContactNumber}
+                                                    onChange={handleInputChange}
+                                                />
+                                            </div>
+                                            <div className="col-sm-6">
+                                                <label>Email</label>
+                                                <input
+                                                    id="Email"
+                                                    required
+                                                    placeholder="Enter Email"
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={VendorData.Email}
+                                                    onChange={handleInputChange}
+                                                />
+                                            </div>
+                                            <div className="col-sm-6">
+                                                <label>Address</label>
+                                                <input
+                                                    id="Address"
+                                                    required
+                                                    placeholder="Enter Address"
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={VendorData.Address}
+                                                    onChange={handleInputChange}
+                                                />
+                                            </div>
+                                            <div className="col-sm-6">
+                                                <label>GST Number</label>
+                                                <input
+                                                    id="GSTNumber"
+                                                    required
+                                                    placeholder="Enter GST Number"
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={VendorData.GSTNumber}
+                                                    onChange={handleInputChange}
+                                                />
+                                            </div>
+                                            <div className="col-sm-6">
+                                                <label>PAN Number</label>
+                                                <input
+                                                    id="PANNumber"
+                                                    required
+                                                    placeholder="Enter PAN Number"
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={VendorData.PANNumber}
+                                                    onChange={handleInputChange}
+                                                />
+                                            </div>
+                                            <div className="col-sm-6">
+                                                <label>KYC Document</label>
+                                                <input
+                                                    id="KYC_DocumentPath"
+                                                    required
+                                                    placeholder="Enter KYC Document Path"
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={VendorData.KYC_DocumentPath}
+                                                    onChange={handleInputChange}
+                                                    multiple
+                                                />
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div className="modal-footer justify-content-start">
+                                    <Button Id="btnSave" Text="Save" Action={handleSave}
+                                        ClassName="btn btn-primary" />
+                                    <Button Id="btnCancel" Text="Cancel" Action={handleCancel}
+                                        ClassName="btn btn-secondary" />
+                                </div>
+                                <ToastContainer
+                                    position="top-right"
+                                    autoClose={5000}
+                                    hideProgressBar={false}
+                                    newestOnTop={false}
+                                    closeOnClick
+                                    rtl={false}
+                                    pauseOnFocusLoss
+                                    draggable
+                                    pauseOnHover
+                                />
                             </div>
-                            <div className="modal-footer justify-content-start">
-                                <Button Id="btnSave" Text="Save" Action={handleSave}
-                                    ClassName="btn btn-primary" />
-                                <Button Id="btnCancel" Text="Cancel" Action={handleCancel}
-                                    ClassName="btn btn-secondary" />
-                            </div>
-                            <ToastContainer
-                                position="top-right"
-                                autoClose={5000}
-                                hideProgressBar={false}
-                                newestOnTop={false}
-                                closeOnClick
-                                rtl={false}
-                                pauseOnFocusLoss
-                                draggable
-                                pauseOnHover
-                            />
                         </div>
                     </div>
-                </div>
-            )}
+                )}
             {pageMode === 'View' && (
                 <div className="modal d-flex align-items-center justify-content-center show" tabIndex="-1" role="dialog">
                     <div className="modal-dialog modal-lg" role="document">
@@ -406,23 +410,35 @@ const Vendor = (props) => {
                                     <div className="row">
                                         <div className="form-group col-sm-6">
                                             <label htmlFor="name">Name</label>
-                                            <input type="text" className="form-control" id="vName" value={vName} readOnly />
+                                            <input type="text" className="form-control" id="Name" value={VendorData.Name} readOnly />
                                         </div>
                                         <div className="form-group col-sm-6">
                                             <label htmlFor="name">Contact Person</label>
-                                            <input type="text" className="form-control" id="vContactPerson" value={vContactPerson} readOnly />
+                                            <input type="text" className="form-control" id="ContactPerson" value={VendorData.ContactPerson} readOnly />
                                         </div>
                                         <div className="form-group col-sm-6">
                                             <label htmlFor="name">Contact Number</label>
-                                            <input type="text" className="form-control" id="vContactNo" value={vContactNo} readOnly />
+                                            <input type="text" className="form-control" id="ContactNumber" value={VendorData.ContactNumber} readOnly />
                                         </div>
                                         <div className="form-group col-sm-6">
                                             <label htmlFor="name">Email</label>
-                                            <input type="text" className="form-control" id="vEmail" value={vEmail} readOnly />
+                                            <input type="text" className="form-control" id="Email" value={VendorData.Email} readOnly />
+                                        </div>
+                                        <div className="form-group col-sm-6">
+                                            <label htmlFor="name">Address</label>
+                                            <input type="text" className="form-control" id="Address" value={VendorData.Address} readOnly />
                                         </div>
                                         <div className="form-group col-sm-6">
                                             <label htmlFor="name">GST Number</label>
-                                            <input type="text" className="form-control" id="vGSTNo" value={vGSTNo} readOnly />
+                                            <input type="text" className="form-control" id="GSTNumber" value={VendorData.GSTNumber} readOnly />
+                                        </div>
+                                        <div className="form-group col-sm-6">
+                                            <label htmlFor="name">PAN Number</label>
+                                            <input type="text" className="form-control" id="PANNumber" value={VendorData.PANNumber} readOnly />
+                                        </div>
+                                        <div className="form-group col-sm-6">
+                                            <label htmlFor="name">KYC Document</label>
+                                            <input type="text" className="form-control" id="KYC_DocumentPath" value={VendorData.KYC_DocumentPath} readOnly />
                                         </div>
                                     </div>
                                 </form>
