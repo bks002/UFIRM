@@ -230,10 +230,10 @@ const Category = (props) => {
                                     <li className="nav-item">
                                         <div className="input-group input-group-sm">
                                             <div className="input-group-prepend">
-                                                <ExportToCSV data={gridData} classNam="btn btn-success btn-sm rounded mr-2" />
+                                                <ExportToCSV data={gridData} className="btn btn-success btn-sm rounded mr-2" />
                                                 <Button id="btnaddCalendarFrequency"
                                                     Action={Addnew}
-                                                    ClassName="btn btn-success btn-sm"
+                                                    ClassName="btn btn-success btn-sm rounded"
                                                     Icon={<i className="fa fa-plus" aria-hidden="true"></i>}
                                                     Text="Add Category" />
                                             </div>
