@@ -7,21 +7,21 @@ import { CreateValidator, ValidateControls } from '../Calendar/Validation';
 import * as appCommon from '../../Common/AppCommon.js';
 import { DELETE_CONFIRMATION_MSG } from '../../Contants/Common';
 import { useSelector, useDispatch } from 'react-redux';
-import { createItem, deleteItem, getAllItems, getCategories, getItemById, updateItem } from "../../Services/InventoryService";
+import {  createItem,  deleteItem,  getAllItems,  getCategories,  getItemById,  updateItem} from "../../Services/InventoryService";
 import ExportToCSV from "../../ReactComponents/ExportToCSV/ExportToCSV";
 const $ = window.$;
 
 const ReadOnlyField = ({ label, value }) => (
-  <div className="form-group col-12">
-    <label>{label}</label>
-    <input type="text" className="form-control" value={value || 'N/A'} readOnly />
-  </div>
+    <div className="form-group col-12">
+      <label>{label}</label>
+      <input type="text" className="form-control" value={value || 'N/A'} readOnly />
+    </div>
 );
 
 const ItemMaster = (props) => {
   const [pageMode, setPageMode] = useState("Home");
   const [gridData, setGridData] = useState([]);
-  const gridHeader = [
+  const gridHeader =[
     { sTitle: 'Id', titleValue: 'Id', "orderable": true },
     { sTitle: 'Name', titleValue: 'Name' },
     { sTitle: 'Description', titleValue: 'Description' },
@@ -48,7 +48,7 @@ const ItemMaster = (props) => {
       console.error('Error fetching Items:', error);
       setError(error);
       appCommon.showtextalert("Error Fetching Items", error.message, "error");
-    } finally {
+    }finally {
       setLoading(false);
     }
   };
@@ -62,7 +62,7 @@ const ItemMaster = (props) => {
       console.error('Error fetching Categories:', error);
       setError(error);
       appCommon.showtextalert("Error Fetching Categories", error.message, "error");
-    } finally {
+    }finally {
       setLoading(false);
     }
   };

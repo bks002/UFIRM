@@ -223,7 +223,6 @@ const Vendor = (props) => {
         }
     };
 
-
     return (
         <>
             <div className="row">
