@@ -1,3 +1,4 @@
+import axios from 'axios';
 import React, { useState, useEffect, useCallback } from 'react';
 import swal from 'sweetalert';
 import { ToastContainer, toast } from 'react-toastify';
@@ -139,9 +140,9 @@ const Vendor = (props) => {
         setPageMode('Edit');
         CreateValidator();
         try {
-            const VendorDatails = await getVendorById(VendorData);
-            console.log("VendorDatails", VendorDatails);
-            setVendorData(VendorDatails);
+            const VendorDetails = await getVendorById(VendorData);
+            console.log("VendorDetails", VendorDetails);
+            setVendorData(VendorDetails);
         } catch (error) {
             console.error("Error fetching Vendor details", error);
             appCommon.showtextalert("Error", "Failed to fetch Vendor details.", "error");
@@ -158,16 +159,6 @@ const Vendor = (props) => {
         setOpenDropDown(!openDropDown);
     };
 
-    const handleSave = () => {
-        if (ValidateControls()) {
-            if (pageMode === "Add") {
-                handleCreateVendor(VendorData);
-            } else if (pageMode === "Edit") {
-                handleUpdateVendor(VendorData.Id, VendorData);
-            }
-        }
-    };
-
     const handleCancel = () => {
         setPageMode('Home');
         setVendorData(emptyVendorData);
@@ -182,6 +173,56 @@ const Vendor = (props) => {
             [id]: value
         }));
     };
+
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setVendorData(prevState => ({
+                ...prevState,
+                KYC_DocumentPath: file
+            }));
+        }
+    };
+
+    const handleSave = async () => {
+        if (ValidateControls()) {
+            const formData = new FormData();
+            for (const key in VendorData) {
+                formData.append(key, VendorData[key]);
+            }
+            if (VendorData.KYC_DocumentPath) {
+                formData.append('KYC_DocumentPath', VendorData.KYC_DocumentPath);
+            }
+
+            try {
+                const response = await axios.post('http://localhost:3000/upload', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                });
+
+                const persistentUrl = response.data.fileUrl;
+                setVendorData(prevState => ({
+                    ...prevState,
+                    KYC_DocumentPath: persistentUrl
+                }));
+
+                handleCreateOrUpdateVendor(VendorData);
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                appCommon.showtextalert("Error", "Failed to upload document.", "error");
+            }
+        }
+    };
+
+    const handleCreateOrUpdateVendor = async (dataWithDocUrl) => {
+        if (pageMode === "Add") {
+            await handleCreateVendor(dataWithDocUrl);
+        } else if (pageMode === "Edit") {
+            await handleUpdateVendor(dataWithDocUrl.Id, dataWithDocUrl);
+        }
+    };
+
 
     return (
         <>
@@ -232,10 +273,10 @@ const Vendor = (props) => {
                                     <li className="nav-item">
                                         <div className="input-group input-group-sm">
                                             <div className="input-group-prepend">
-                                                <ExportToCSV data={gridData} classNam="btn btn-success btn-sm rounded mr-2" />
+                                                <ExportToCSV data={gridData} className="btn btn-success btn-sm rounded mr-2" />
                                                 <Button id="btnaddCalendarFrequency"
                                                     Action={Addnew}
-                                                    ClassName="btn btn-success btn-sm"
+                                                    ClassName="btn btn-success btn-sm rounded"
                                                     Icon={<i className="fa fa-plus" aria-hidden="true"></i>}
                                                     Text="Add Vendor" />
                                             </div>
@@ -246,7 +287,7 @@ const Vendor = (props) => {
                             <div className="card-body pt-2">
 
                                 <DataGrid
-                                    Id="VendorDataGrid"             
+                                    Id="VendorDataGrid"
                                     IsPagination={false}
                                     ColumnCollection={gridHeader}
                                     Onpageindexchanged={onPagechange}
@@ -365,10 +406,11 @@ const Vendor = (props) => {
                                                     id="KYC_DocumentPath"
                                                     required
                                                     placeholder="Enter KYC Document Path"
-                                                    type="text"
+                                                    type="file"
                                                     className="form-control"
-                                                    value={VendorData.KYC_DocumentPath}
-                                                    onChange={handleInputChange}
+                                                    //value={VendorData.KYC_DocumentPath}
+                                                    onChange={handleFileChange}
+                                                    accept=".pdf, .doc, .docx, .jpg, .jpeg, .png"
                                                     multiple
                                                 />
                                             </div>
