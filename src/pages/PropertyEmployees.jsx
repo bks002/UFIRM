@@ -20,7 +20,7 @@ class PropertyEmployees extends Component {
                             <div className="col-sm-6">
                                 <ol className="breadcrumb float-sm-right">
                                     <li className="breadcrumb-item"><a href="/">Home</a></li>
-                                    <li className="breadcrumb-item active"><a href="/Account/App/PropertyEmployees">Property Employees </a> </li>
+                                    <li className="breadcrumb-item active"><a href="/PropertyEmployees">Property Employees </a> </li>
                                 </ol>
                             </div>
                         </div>

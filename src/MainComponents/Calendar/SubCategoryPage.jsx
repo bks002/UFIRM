@@ -14,7 +14,7 @@ export default class SubCategoryPage extends Component {
                       <div className="col-sm-6">
                           <ol className="breadcrumb float-sm-right">
                               <li className="breadcrumb-item"><a href="/">Home</a></li>
-                              <li className="breadcrumb-item active"><a href="/Account/App/SubCategory">Sub Category</a> </li>
+                              <li className="breadcrumb-item active"><a href="/SubCategory">Sub Category</a> </li>
                           </ol>
                       </div>
                   </div>

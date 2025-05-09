@@ -22,7 +22,7 @@ class EventCalendarPage extends Component {
                             <div className="col-sm-6">
                                 <ol className="breadcrumb float-sm-right">
                                     <li className="breadcrumb-item"><a href="/">Home</a></li>
-                                    <li className="breadcrumb-item active"><a href="/Account/App/EventCalendar">Event Calendar</a> </li>
+                                    <li className="breadcrumb-item active"><a href="/EventCalendar">Event Calendar</a> </li>
                                 </ol>
                             </div>
                         </div>
