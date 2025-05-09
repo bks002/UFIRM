@@ -80,11 +80,11 @@
         <span id="lblusername" className="user-name">{this.state.UserName}</span>
     </a>
     <div className="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-        <Link to="/Account/App/UserProfile" className="dropdown-item">
+        <Link to="/UserProfile" className="dropdown-item">
             <p>My Profile</p>
         </Link>
         <div className="dropdown-divider"></div>
-        <Link to="/Account/App/ChangePassword" className="dropdown-item">
+        <Link to="/ChangePassword" className="dropdown-item">
             <p>Change Password </p>
         </Link>
         <div className="dropdown-divider"></div>

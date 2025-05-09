@@ -132,7 +132,11 @@ export const getVendorById = async (id) => {
 
 export const createVendor = async (vendor) => {
     try {
-        const response = await api.post('/vendor', vendor);
+        const response = await api.post('/vendor', vendor, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
         return response.data;
     } catch (error) {
         handleApiError(error);

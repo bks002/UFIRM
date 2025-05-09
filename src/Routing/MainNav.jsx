@@ -212,12 +212,12 @@ class MainNav extends React.Component {
                   </span>
                 </a>
                 <div className="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                  <Link to="/Account/App/UserProfile" className="dropdown-item">
+                  <Link to="/UserProfile" className="dropdown-item">
                     <p>My Profile</p>
                   </Link>
                   <div className="dropdown-divider"></div>
                   <Link
-                    to="/Account/App/ChangePassword"
+                    to="/ChangePassword"
                     className="dropdown-item"
                   >
                     <p>Change Password </p>
@@ -252,7 +252,7 @@ class MainNav extends React.Component {
                     className="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu"
                     data-accordion="false">
                   <li className="nav-item has-treeview">
-                    <a href="#" className="nav-link">
+                    <a href="/" className="nav-link">
                       <i className="nav-icon fas fa-tachometer-alt"></i>
                       <p>
                         Dashboard
@@ -274,7 +274,7 @@ class MainNav extends React.Component {
                           <Fragment>
                             <li className="nav-item">
                               <Link
-                                  to="/Account/App/CalendarCategory"
+                                  to="/CalendarCategory"
                                   className="nav-link"
                               >
                                 <i className=" fas fa-caret-right nav-icon"></i>
@@ -283,7 +283,7 @@ class MainNav extends React.Component {
                             </li>
                             <li className="nav-item">
                               <Link
-                                  to="/Account/App/CalendarSubCategory"
+                                  to="/CalendarSubCategory"
                                   className="nav-link"
                               >
                                 <i className=" fas fa-caret-right nav-icon"></i>
@@ -292,7 +292,7 @@ class MainNav extends React.Component {
                             </li>
                             <li className="nav-item">
                               <Link
-                                  to="/Account/App/FrequencyMaster"
+                                  to="/FrequencyMaster"
                                   className="nav-link"
                               >
                                 <i className=" fas fa-caret-right nav-icon"></i>
@@ -301,7 +301,7 @@ class MainNav extends React.Component {
                             </li>
                             {/* <li className="nav-item">
                               <Link
-                                to="/Account/App/EventApproval"
+                                to="/EventApproval"
                                 className="nav-link"
                               >
                                 <i className=" fas fa-caret-right nav-icon"></i>
@@ -314,7 +314,7 @@ class MainNav extends React.Component {
 
                         {/*<li className="nav-item">*/}
                         {/*  <Link*/}
-                        {/*    to="/Account/App/EventCalendar"*/}
+                        {/*    to="/EventCalendar"*/}
                         {/*    className="nav-link"*/}
                         {/*  >*/}
                         {/*    <i className=" fas fa-caret-right nav-icon"></i>*/}
@@ -323,7 +323,7 @@ class MainNav extends React.Component {
                         {/*</li>*/}
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/PlannerTask"
+                              to="/PlannerTask"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -331,14 +331,14 @@ class MainNav extends React.Component {
                           </Link>
                         </li>
                         {/* <li className="nav-item">
-                                                        <Link to="/Account/App/PlannerTaskAudit" className="nav-link">
+                                                        <Link to="/PlannerTaskAudit" className="nav-link">
                                                             <i className=" fas fa-caret-right nav-icon"></i>
                                                             <p>Tasks Audit</p>
                                                         </Link>
                                                     </li> */}
                         {/* <li className="nav-item">
                           <Link
-                            to="/Account/App/TaskAnalysis"
+                            to="/TaskAnalysis"
                             className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -347,7 +347,7 @@ class MainNav extends React.Component {
                         </li> */}
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/TaskEventsCalender"
+                              to="/TaskEventsCalender"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -356,7 +356,7 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/PPMSpreadsheet"
+                              to="/PPMSpreadsheet"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -365,7 +365,7 @@ class MainNav extends React.Component {
                         </li>
                         {/* <li className="nav-item">
                           <Link
-                            to="/Account/App/ResidentEvents"
+                            to="/ResidentEvents"
                             className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -374,7 +374,7 @@ class MainNav extends React.Component {
                         </li> */}
                         {/*<li className="nav-item">*/}
                         {/*  <Link*/}
-                        {/*    to="/Account/App/TaskStatus"*/}
+                        {/*    to="/TaskStatus"*/}
                         {/*    className="nav-link"*/}
                         {/*  >*/}
                         {/*    <i className=" fas fa-caret-right nav-icon"></i>*/}
@@ -383,7 +383,7 @@ class MainNav extends React.Component {
                         {/*</li>*/}
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/GuardList"
+                              to="/GuardList"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -391,7 +391,7 @@ class MainNav extends React.Component {
                           </Link>
                         </li>
                         {/* <li className="nav-item">
-                                                        <Link to="/Account/App/AttendanceSummary" className="nav-link">
+                                                        <Link to="/AttendanceSummary" className="nav-link">
                                                             <i className=" fas fa-caret-right nav-icon"></i>
                                                             <p>Attendance Summary</p>
                                                         </Link>
@@ -412,7 +412,7 @@ class MainNav extends React.Component {
                     <ul className="nav nav-treeview">
                       <li className="nav-item">
                         <Link
-                            to="/Account/App/AssetsMaster"
+                            to="/AssetsMaster"
                             className="nav-link"
                         >
                           <i className=" fas fa-caret-right nav-icon"></i>
@@ -421,7 +421,7 @@ class MainNav extends React.Component {
                       </li>
                       <li className="nav-item">
                         <Link
-                            to="/Account/App/CheckIn&CheckOut"
+                            to="/CheckIn&CheckOut"
                             className="nav-link"
                         >
                           <i className=" fas fa-caret-right nav-icon"></i>
@@ -430,14 +430,14 @@ class MainNav extends React.Component {
                       </li>
 
                       <li className="nav-item">
-                        <Link to="/Account/App/RentalAssets" className="nav-link">
+                        <Link to="/RentalAssets" className="nav-link">
                           <i className=" fas fa-caret-right nav-icon"></i>
                           <p>Rental Assets</p>
                         </Link>
                       </li>
 
                       <li className="nav-item">
-                        <Link to="/Account/App/ServiceRecords" className="nav-link">
+                        <Link to="/ServiceRecords" className="nav-link">
                           <i className=" fas fa-caret-right nav-icon"></i>
                           <p>Service Records</p>
                         </Link>
@@ -445,7 +445,7 @@ class MainNav extends React.Component {
 
                       <li className="nav-item">
                         <Link
-                            to="/Account/App/AssetTracking"
+                            to="/AssetTracking"
                             className="nav-link"
                         >
                           <i className=" fas fa-caret-right nav-icon"></i>
@@ -466,7 +466,7 @@ class MainNav extends React.Component {
                     <ul className="nav nav-treeview">
                     <li className="nav-item">
                         <Link
-                            to="/Account/App/Inventory/Category"
+                            to="/Category"
                             className="nav-link"
                         >
                           <i className=" fas fa-caret-right nav-icon"></i>
@@ -476,7 +476,7 @@ class MainNav extends React.Component {
 
                       <li className="nav-item">
                         <Link
-                            to="/Account/App/Inventory/Item"
+                            to="/Item"
                             className="nav-link"
                         >
                           <i className=" fas fa-caret-right nav-icon"></i>
@@ -485,7 +485,7 @@ class MainNav extends React.Component {
                       </li>
 
                       <li className="nav-item">
-                        <Link to="/Account/App/Inventory/Vendors" className="nav-link">
+                        <Link to="/Vendors" className="nav-link">
                           <i className=" fas fa-caret-right nav-icon"></i>
                           <p>Vendors</p>
                         </Link>
@@ -506,7 +506,7 @@ class MainNav extends React.Component {
                       <ul className="nav nav-treeview">
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/ManageResidentOwners"
+                              to="/ManageResidentOwners"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -515,7 +515,7 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/RwaMember"
+                              to="/RwaMember"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -524,14 +524,14 @@ class MainNav extends React.Component {
                         </li>
 
                         <li className="nav-item">
-                          <Link to="/Account/App/Notice" className="nav-link">
+                          <Link to="/Notice" className="nav-link">
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Notice Bord</p>
                           </Link>
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/EmergencyContact"
+                              to="/EmergencyContact"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -539,14 +539,14 @@ class MainNav extends React.Component {
                           </Link>
                         </li>
                         {/* <li className="nav-item">
-                                                <Link to="/Account/App/PendingApproval" className="nav-link">
+                                                <Link to="/PendingApproval" className="nav-link">
                                                     <i className=" fas fa-caret-right nav-icon"></i>
                                                     <p>Pending Approval</p>
                                                 </Link>
                                             </li> */}
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/Employeeassignment"
+                              to="/Employeeassignment"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -555,7 +555,7 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item ">
                           <Link
-                              to="/Account/App/PropertyMember"
+                              to="/PropertyMember"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -581,7 +581,7 @@ class MainNav extends React.Component {
                       <ul className="nav nav-treeview">
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/FacilityMember"
+                              to="/FacilityMember"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -592,7 +592,7 @@ class MainNav extends React.Component {
                         {this.state.userRoles && this.state.userRoles.includes("Admin") ?
                             <li className="nav-item">
                               <Link
-                                  to="/Account/App/CreateNewUser"
+                                  to="/CreateNewUser"
                                   className="nav-link"
                               >
                                 <i className=" fas fa-caret-right nav-icon"></i>
@@ -600,19 +600,19 @@ class MainNav extends React.Component {
                               </Link>
                             </li> : null}
                         {/* <li className="nav-item">
-                                        <Link to="/Account/App/FacilityMember" className="nav-link">
+                                        <Link to="/FacilityMember" className="nav-link">
                                             <i className=" fas fa-caret-right nav-icon"></i>
                                             <p>In Out Register</p>
                                         </Link>
                                     </li> */}
                         {/* <li className="nav-item">
-                                        <Link to="/Account/App/FacilityMember" className="nav-link">
+                                        <Link to="/FacilityMember" className="nav-link">
                                             <i className=" fas fa-caret-right nav-icon"></i>
                                             <p >Attendance</p>
                                         </Link>
                                     </li> */}
                         {/* <li className="nav-item">
-                                        <Link to="/Account/App/FacilityMember" className="nav-link">
+                                        <Link to="/FacilityMember" className="nav-link">
                                             <i className=" fas fa-caret-right nav-icon"></i>
                                             <p>Get Pass</p>
                                         </Link>
@@ -635,7 +635,7 @@ class MainNav extends React.Component {
                       <ul className="nav nav-treeview">
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/ParkingZone"
+                              to="/ParkingZone"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -644,7 +644,7 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/ParkingDetails"
+                              to="/ParkingDetails"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -653,7 +653,7 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/ParkingAssignment"
+                              to="/ParkingAssignment"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -674,56 +674,56 @@ class MainNav extends React.Component {
                                         </a>
                                         <ul className="nav nav-treeview">
                                             <li className="nav-item">
-                                                <Link to="/Account/App/ManageResidentOwners" className="nav-link">
+                                                <Link to="/ManageResidentOwners" className="nav-link">
                                                     <i className=" fas fa-caret-right nav-icon"></i>
                                                     <p>Manage Resident/Owners</p>
                                                 </Link>
                                             </li>
                                             <li className="nav-item">
-                                                <Link to="/Account/App/ManageFlat" className="nav-link">
+                                                <Link to="/ManageFlat" className="nav-link">
                                                     <i className=" fas fa-caret-right nav-icon"></i>
                                                     <p>Manage Flats</p>
                                                 </Link>
                                             </li>
                                             <li className="nav-item">
-                                                <Link to="/Account/App/PropertyMember" className="nav-link">
+                                                <Link to="/PropertyMember" className="nav-link">
                                                     <i className=" fas fa-caret-right nav-icon"></i>
                                                     <p>Change Ownership</p>
                                                 </Link>
                                             </li>
                                             <li className="nav-item">
-                                                <Link to="/Account/App/PropertyMember" className="nav-link">
+                                                <Link to="/PropertyMember" className="nav-link">
                                                     <i className=" fas fa-caret-right nav-icon"></i>
                                                     <p>Manage Flat/Property</p>
                                                 </Link>
                                             </li>
 
                                             <li className="nav-item">
-                                                <Link to="/Account/App/PropertyMember" className="nav-link">
+                                                <Link to="/PropertyMember" className="nav-link">
                                                     <i className=" fas fa-caret-right nav-icon"></i>
                                                     <p>Property Member</p>
                                                 </Link>
                                             </li>
                                             <li className="nav-item">
-                                                <Link to="/Account/App/PropertyOwner" className="nav-link">
+                                                <Link to="/PropertyOwner" className="nav-link">
                                                     <i className=" fas fa-caret-right nav-icon"></i>
                                                     <p>Property Owner</p>
                                                 </Link>
                                             </li>
                                             <li className="nav-item">
-                                                <Link to="/Account/App/Tenant" className="nav-link">
+                                                <Link to="/Tenant" className="nav-link">
                                                     <i className=" fas fa-caret-right nav-icon"></i>
                                                     <p>Property Tenant</p>
                                                 </Link>
                                             </li>
                                             <li className="nav-item">
-                                                <Link to="/Account/App/PropertyAssignment" className="nav-link">
+                                                <Link to="/PropertyAssignment" className="nav-link">
                                                     <i className=" fas fa-caret-right nav-icon"></i>
                                                     <p>Property Assignment </p>
                                                 </Link>
                                             </li>
                                             <li className="nav-item ">
-                                                <Link to="/Account/App/PropertyMember" className="nav-link">
+                                                <Link to="/PropertyMember" className="nav-link">
                                                     <i className=" fas fa-caret-right nav-icon"></i>
                                                     <p>Rent Agreement</p>
                                                 </Link>
@@ -743,7 +743,7 @@ class MainNav extends React.Component {
                       <ul className="nav nav-treeview">
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/DocumentType"
+                              to="/DocumentType"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -769,20 +769,20 @@ class MainNav extends React.Component {
                       <ul className="nav nav-treeview">
                         {this.state.userRoles && this.state.userRoles.includes("Admin") ?
                             <li className="nav-item">
-                              <Link to="/Account/App/AddNewUser" className="nav-link">
+                              <Link to="/AddNewUser" className="nav-link">
                                 <i className=" fas fa-caret-right nav-icon"></i>
                                 <p>Add New User </p>
                               </Link>
                             </li> : null}
                         <li className="nav-item">
-                          <Link to="/Account/App/user" className="nav-link">
+                          <Link to="/user" className="nav-link">
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>User </p>
                           </Link>
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/department"
+                              to="/department"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -790,14 +790,14 @@ class MainNav extends React.Component {
                           </Link>
                         </li>
                         <li className="nav-item">
-                          <Link to="/Account/App/KYC" className="nav-link">
+                          <Link to="/KYC" className="nav-link">
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>KYC</p>
                           </Link>
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/AttendanceRecords"
+                              to="/AttendanceRecords"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -805,13 +805,13 @@ class MainNav extends React.Component {
                           </Link>
                         </li>
                         <li className="nav-item">
-                          <Link to="/Account/App/Employee" className="nav-link">
+                          <Link to="/Employee" className="nav-link">
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Employee Master</p>
                           </Link>
                         </li>
                         <li className="nav-item">
-                          <Link to="/Account/App/Guard" className="nav-link">
+                          <Link to="/Guard" className="nav-link">
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Guard Master</p>
                           </Link>
@@ -837,7 +837,7 @@ class MainNav extends React.Component {
                       >
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/PropertyMaster"
+                              to="/PropertyMaster"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -846,7 +846,7 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/PropertyTower"
+                              to="/PropertyTower"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -855,7 +855,7 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/PropertyDetails"
+                              to="/PropertyDetails"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -883,7 +883,7 @@ class MainNav extends React.Component {
                           style={{display: "none"}}
                       >
                         {/*<li className="nav-item">*/}
-                        {/*  <Link to="/Account/App/Complain" className="nav-link">*/}
+                        {/*  <Link to="/Complain" className="nav-link">*/}
                         {/*    <i className=" fas fa-caret-right nav-icon"></i>*/}
                         {/*    <p>Open Tickets </p>*/}
                         {/*  </Link>*/}
@@ -891,7 +891,7 @@ class MainNav extends React.Component {
 
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/TicketComplains"
+                              to="/TicketComplains"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -900,7 +900,7 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/TicketCategories"
+                              to="/TicketCategories"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -909,7 +909,7 @@ class MainNav extends React.Component {
                         </li>
                         {/*<li className="nav-item">*/}
                         {/*  <Link*/}
-                        {/*      to="/Account/App/EscalationGroup"*/}
+                        {/*      to="/EscalationGroup"*/}
                         {/*      className="nav-link"*/}
                         {/*  >*/}
                         {/*    <i className=" fas fa-caret-right nav-icon"></i>*/}
@@ -918,7 +918,7 @@ class MainNav extends React.Component {
                         {/*</li>*/}
                         {/*<li className="nav-item">*/}
                         {/*  <Link*/}
-                        {/*      to="/Account/App/EscalationMatrix"*/}
+                        {/*      to="/EscalationMatrix"*/}
                         {/*      className="nav-link"*/}
                         {/*  >*/}
                         {/*    <i className=" fas fa-caret-right nav-icon"></i>*/}
@@ -926,7 +926,7 @@ class MainNav extends React.Component {
                         {/*  </Link>*/}
                         {/*</li>*/}
                         {/*<li className="nav-item">*/}
-                        {/*  <Link to="/Account/App/ticket" className="nav-link">*/}
+                        {/*  <Link to="/ticket" className="nav-link">*/}
                         {/*    <i className=" fas fa-caret-right nav-icon"></i>*/}
                         {/*    <p>Ticket</p>*/}
                         {/*  </Link>*/}
@@ -949,7 +949,7 @@ class MainNav extends React.Component {
                       <ul className="nav nav-treeview">
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/AmenitiesMaster"
+                              to="/AmenitiesMaster"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -958,7 +958,7 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/AmenitiesAssignment"
+                              to="/AmenitiesAssignment"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -967,7 +967,7 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/AmenitiesBooking"
+                              to="/AmenitiesBooking"
                               className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -983,7 +983,7 @@ class MainNav extends React.Component {
                     this.state.userRoles && this.state.userRoles.includes("Admin") ?
                         <li className="nav-item has-treeview">
                           <Link
-                              to="/Account/App/UploaderPage"
+                              to="/UploaderPage"
                               className="nav-link"
                           >
                             <i className="nav-icon fas fa-cloud-upload-alt "></i>
@@ -997,201 +997,201 @@ class MainNav extends React.Component {
             </div>
           </aside>
           <Switch>
-            <Route
+            {/* <Route
                 exact
                 path="/"
-                render={() => <Redirect to="/Account/App"/>}
-            />
-            <Route exact path="/Account/App" component={Home}/>
+                render={() => <Redirect to=" "/>}
+            /> */}
+            <Route exact path="/" component={Home}/>
             {/* <Route exact path="/">
               <Home />
             </Route> */}
-            <Route exact path="/Account/App/ticket">
+            <Route exact path="/ticket">
               <TicketingDashboard/>
             </Route>
-            <Route path="/Account/App/department">
+            <Route path="/department">
               <Department/>
             </Route>
-            <Route path="/Account/App/ChangePassword">
+            <Route path="/ChangePassword">
               <ChangePassword/>
             </Route>
-            <Route path="/Account/App/team"></Route>
-            <Route path="/Account/App/EmergencyContact">
+            <Route path="/team"></Route>
+            <Route path="/EmergencyContact">
               <EmergencyContactPage/>
             </Route>
-            <Route path="/Account/App/user">
+            <Route path="/user">
               <User/>
             </Route>
-            <Route path="/Account/App/UserProfile">
+            <Route path="/UserProfile">
               <UserProfile/>
             </Route>
-            <Route path="/Account/App/FacilityMember">
+            <Route path="/FacilityMember">
               <FacilityMemberPage/>
             </Route>
-            <Route path="/Account/App/CreateNewUser">
+            <Route path="/CreateNewUser">
               <CreateNewUser/>
             </Route>
-            <Route path="/Account/App/AddNewUser">
+            <Route path="/AddNewUser">
               <AddNewUser/>
             </Route>
-            <Route path="/Account/App/PropertyMember">
+            <Route path="/PropertyMember">
               <PropertyMember/>
             </Route>
-            <Route path="/Account/App/PropertyOwner">
+            <Route path="/PropertyOwner">
               <PropertyOwnerPage/>
             </Route>
-            <Route path="/Account/App/Tenant">
+            <Route path="/Tenant">
               <PropertyTenatsPage/>
             </Route>
-            {/* <Route path="/Account/App/Home">
+            {/* <Route path="/Home">
                             <PropertyDashboard />
                         </Route> */}
 
-            <Route path="/Account/App/Complain">
+            <Route path="/Complain">
               <ComplainManagement/>
             </Route>
-            <Route path="/Account/App/PropertyMaster">
+            <Route path="/PropertyMaster">
               <PropertyMaster/>
             </Route>
-            <Route path="/Account/App/PropertyDetails">
+            <Route path="/PropertyDetails">
               <PropertyDetailsPage/>
             </Route>
-            <Route path="/Account/App/ParkingDetails">
+            <Route path="/ParkingDetails">
               <ParkingDetailsPage/>
             </Route>
-            <Route path="/Account/App/ParkingZone">
+            <Route path="/ParkingZone">
               <ParkingZonePage />
             </Route>
-            <Route path="/Account/App/TicketCategories">
+            <Route path="/TicketCategories">
               <TicketCategoriesPage />
             </Route>
-            <Route path="/Account/App/PropertyTower">
+            <Route path="/PropertyTower">
               <PropertyTower />
             </Route>
-            <Route path="/Account/App/PropertyAssignment">
+            <Route path="/PropertyAssignment">
               <PropertyAssignmentPage />
             </Route>
-            <Route path="/Account/App/ParkingAssignment">
+            <Route path="/ParkingAssignment">
               <ParkingAssignmentPage />
             </Route>
-            <Route path="/Account/App/AmenitiesMaster">
+            <Route path="/AmenitiesMaster">
               <AmenitiesMasterPage />
             </Route>
-            <Route path="/Account/App/AmenitiesAssignment">
+            <Route path="/AmenitiesAssignment">
               <AmenitiesAssignmentPage />
             </Route>
-            <Route path="/Account/App/AmenitiesBooking">
+            <Route path="/AmenitiesBooking">
               <AmenitiesBookingPage />
             </Route>
-            <Route path="/Account/App/KYC">
+            <Route path="/KYC">
               <KYCPage />
             </Route>
-            <Route path="/Account/App/Employee">
+            <Route path="/Employee">
               <EmployeePage />
             </Route>
-            <Route path="/Account/App/Guard">
+            <Route path="/Guard">
               <GuardMasterPage />
             </Route>
-            <Route path="/Account/App/AttendanceRecords">
+            <Route path="/AttendanceRecords">
               <AttendanceRecordsPage />
             </Route>
-            <Route path="/Account/App/ManageResidentOwners">
+            <Route path="/ManageResidentOwners">
               <ManageResidentOwnersPage />
             </Route>
-            <Route path="/Account/App/RwaMember">
+            <Route path="/RwaMember">
               <RwaMemberPage />
             </Route>
-            <Route path="/Account/App/ManageFlat">
+            <Route path="/ManageFlat">
               <ManageFlatPage />
             </Route>
-            <Route path="/Account/App/DocumentType">
+            <Route path="/DocumentType">
               <DocumentTypeMasterPage />
             </Route>
-            <Route path="/Account/App/AssetsMaster">
+            <Route path="/AssetsMaster">
               <AssetsMasterPage />
             </Route>
-            <Route path="/Account/App/Inventory/Category">
+            <Route path="/Category">
               <CategoryPage />
                </Route>
-            <Route path="/Account/App/Inventory/Item">
+            <Route path="/Item">
               <ItemMasterPage />
             </Route>
-            <Route path="/Account/App/CheckIn&CheckOut">
+            <Route path="/CheckIn&CheckOut">
               <CheckInCheckOut/>
             </Route>
-            <Route path="/Account/App/Inventory/Vendors">
+            <Route path="/Vendors">
               <VendorPage/>
             </Route>
-            <Route path="/Account/App/RentalAssets">
+            <Route path="/RentalAssets">
               <RentalAssets/>
             </Route>
-            <Route path="/Account/App/ServiceRecords">
+            <Route path="/ServiceRecords">
               <ServiceRecords/>
             </Route>
-            <Route path="/Account/App/EscalationGroup">
+            <Route path="/EscalationGroup">
               <EscalationGroupPage />
             </Route>
-            <Route path="/Account/App/EscalationMatrix">
+            <Route path="/EscalationMatrix">
               <EscalationMatrixPage />
             </Route>
-            <Route path="/Account/App/Notice">
+            <Route path="/Notice">
               <NoticeBoardPage />
             </Route>
-            <Route path="/Account/App/Employeeassignment">
+            <Route path="/Employeeassignment">
               <PropertyEmployees />
             </Route>
-            <Route path="/Account/App/PendingApproval">
+            <Route path="/PendingApproval">
               <PendingApprovalPage />
             </Route>
-            <Route path="/Account/App/TicketComplains">
+            <Route path="/TicketComplains">
               <KanbanBoardPage />
             </Route>
-            <Route path="/Account/App/EventCalendar">
+            <Route path="/EventCalendar">
               <EventCalendarPage />
             </Route>
-            <Route path="/Account/App/CalendarCategory">
+            <Route path="/CalendarCategory">
               <CalendarCategoryPage />
             </Route>
-            <Route path="/Account/App/FrequencyMaster">
+            <Route path="/FrequencyMaster">
               <FrequencyMasterPage />
             </Route>
-            <Route path="/Account/App/CalendarSubCategory">
+            <Route path="/CalendarSubCategory">
               <CalendarSubCategoryPage />
             </Route>
-            <Route path="/Account/App/EventApproval">
+            <Route path="/EventApproval">
               <EventApproval />
             </Route>
-            <Route path="/Account/App/PlannerTask">
+            <Route path="/PlannerTask">
               <PlannerTaskPage />
             </Route>
-            <Route path="/Account/App/TaskAnalysis">
+            <Route path="/TaskAnalysis">
               <PlannerTaskAnalysisPage />
             </Route>
-            <Route path="/Account/App/PlannerTaskAudit">
+            <Route path="/PlannerTaskAudit">
               <PlannerTaskAuditPage />
             </Route>
-            <Route path="/Account/App/TaskEventsCalender">
+            <Route path="/TaskEventsCalender">
               <TaskEventCalendarPage />
             </Route>
-            <Route path="/Account/App/PPMSpreadsheet">
+            <Route path="/PPMSpreadsheet">
               <PPMSpreadsheet />
             </Route>
-            <Route path="/Account/App/ResidentEvents">
+            <Route path="/ResidentEvents">
               <ResidentEventPage />
             </Route>
-            <Route path="/Account/App/TaskStatus">
+            <Route path="/TaskStatus">
               <PlannerTaskStatus />
             </Route>
-            <Route path="/Account/App/AssetTracking">
+            <Route path="/AssetTracking">
               <AssetTrackingPage />
             </Route>
-            <Route path="/Account/App/GuardList">
+            <Route path="/GuardList">
               <GuardListPage />
             </Route>
-            <Route path="/Account/App/UploaderPage">
+            <Route path="/UploaderPage">
               <UploaderPage/>
             </Route>
-            {/* <Route path="/Account/App/AttendanceSummary">
+            {/* <Route path="/AttendanceSummary">
                             <AttendanceSummaryPage />
                         </Route> */}
           </Switch>
