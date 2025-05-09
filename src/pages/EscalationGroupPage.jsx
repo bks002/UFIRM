@@ -23,7 +23,7 @@ class EscalationGroupPage extends Component {
                             <div className="col-sm-6">
                                 <ol className="breadcrumb float-sm-right">
                                     <li className="breadcrumb-item"><a href="/">Home</a></li>
-                                    <li className="breadcrumb-item active"><a href="/Account/App/EscalationGroup">Escalation Group</a> </li>
+                                    <li className="breadcrumb-item active"><a href="/EscalationGroup">Escalation Group</a> </li>
                                 </ol>
                             </div>
                         </div>

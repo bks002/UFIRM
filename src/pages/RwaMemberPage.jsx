@@ -22,7 +22,7 @@ class RwaMemberPage extends Component {
                             <div className="col-sm-6">
                                 <ol className="breadcrumb float-sm-right">
                                     <li className="breadcrumb-item"><a href="/">{this.state.PageMode}</a></li>
-                                    <li className="breadcrumb-item active"><a href="/Account/App/RwaMember">{this.state.PageTitle}</a> </li>
+                                    <li className="breadcrumb-item active"><a href="/RwaMember">{this.state.PageTitle}</a> </li>
                                 </ol>
                             </div>
                         </div>
