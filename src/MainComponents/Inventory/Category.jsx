@@ -186,7 +186,7 @@ const Category = (props) => {
                     {gridData && gridData.length > 0 && pageMode === 'Home' && (
                         <div className="card">
                             <div className="card-header d-flex p-0 bg" onClick={DropDown} style={{ cursor: 'pointer', backgroundColor: '#f1e7c3' }}>
-                                <h5 className="ml-3 mt-2">Pending Approval</h5>
+                                <h5 className="ml-3 mt-2">Pending For Approval</h5>
                                 <ul className="nav ml-auto tableFilterContainer">
                                     <li className="nav-item">
                                         <div className="input-group input-group-sm">
@@ -230,10 +230,10 @@ const Category = (props) => {
                                     <li className="nav-item">
                                         <div className="input-group input-group-sm">
                                             <div className="input-group-prepend">
-                                                <ExportToCSV data={gridData} classNam="btn btn-success btn-sm rounded mr-2" />
+                                                <ExportToCSV data={gridData} className="btn btn-success btn-sm rounded mr-2"/>
                                                 <Button id="btnaddCalendarFrequency"
                                                     Action={Addnew}
-                                                    ClassName="btn btn-success btn-sm"
+                                                    ClassName="btn btn-success btn-sm rounded"
                                                     Icon={<i className="fa fa-plus" aria-hidden="true"></i>}
                                                     Text="Add Category" />
                                             </div>
