@@ -34,7 +34,7 @@ const ItemMaster = (props) => {
   const emptyItem = {
     Id: 0,
     Name: "",
-    Description: "", CategoryId: 0, MeasurementUnit: "", MinStockLevel: ""
+    Description: "", CategoryId: 0, MeasurementUnit: "", MinStockLevel: "", BrandName: "", HSN_Code: "",
   };
   const [item, setItem] = useState(emptyItem);
   const [categories, setCategories] = useState([]);
@@ -44,11 +44,10 @@ const ItemMaster = (props) => {
       setLoading(true);
       const data = await getAllItems(propertyId);
       setGridData(data);
+      setItem(data);
+      setLoading(false);
     } catch (error) {
-      console.error('Error fetching Items:', error);
-      setError(error);
-      appCommon.showtextalert("Error Fetching Items", error.message, "error");
-    } finally {
+      console.error('Error fetching Categories:', error);
       setLoading(false);
     }
   };
@@ -57,22 +56,22 @@ const ItemMaster = (props) => {
     try {
       setLoading(true);
       const data = await getCategories(propertyId);
+      setGridData(data);
       setCategories(data);
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching Categories:', error);
-      setError(error);
-      appCommon.showtextalert("Error Fetching Categories", error.message, "error");
-    } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (propertyId > 0) {
+    if (propertyId) {
+      setGridData([]);
       getItems(propertyId);
     } else {
       setGridData([]);
-      appCommon.showtextalert("Error", "Please select a property", "error");
+      appCommon.showtextalert("Error", "Please Select a Property.", "error");
     }
   }, [propertyId]);
 
@@ -342,6 +341,32 @@ const ItemMaster = (props) => {
                     />
                   </div>
                 </div>
+                <div className="row">
+                  <div className="col-12">
+                    <label>Brand Name</label>
+                    <input
+                      id="BrandName"
+                      required
+                      placeholder="Enter Brand Name"
+                      type="text"
+                      className="form-control"
+                      value={item.BrandName}
+                      onChange={(e) => setItem({ ...item, BrandName: e.target.value })}
+                    />
+                  </div>
+                  <div className="col-12 mt-3">
+                    <label>HSN Code</label>
+                    <input
+                      id="HSN_Code"
+                      required
+                      placeholder="Enter HSN Code"
+                      type="text"
+                      className="form-control"
+                      value={item.HSN_Code}
+                      onChange={(e) => setItem({ ...item, HSN_Code: e.target.value })}
+                    />
+                  </div>
+                </div>
               </div>
               <div className="modal-footer justify-content-start">
                 <Button
@@ -385,6 +410,8 @@ const ItemMaster = (props) => {
                     <ReadOnlyField label="Description" value={item.Description} />
                     <ReadOnlyField label="Measuring Unit" value={item.MeasurementUnit} />
                     <ReadOnlyField label="Minimum Stock Level" value={item.MinStockLevel} />
+                    <ReadOnlyField label="Brand Name" value={item.BrandName} />
+                    <ReadOnlyField label="HSN Code" value={item.HSN_Code} />
                   </div>
                 </form>
               </div>

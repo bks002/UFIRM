@@ -15,6 +15,8 @@ const Category = (props) => {
     const [pageMode, setPageMode] = useState("Home");
     const [openDropDown, setOpenDropDown] = useState(false);
     const [gridData, setGridData] = useState([]);
+    const gridDataApproval =
+        { Id: 100, Name: 'Category 1', Description: 'Description 1'};
     const gridHeader = [
         { sTitle: 'Id', titleValue: 'Id', "orderable": true },
         { sTitle: 'Name', titleValue: 'Name' },
@@ -32,7 +34,7 @@ const Category = (props) => {
             setLoading(true);
             const data = await getCategories(propertyId);
             setGridData(data);
-            setCategoryData(data);
+            //setCategoryData(data);
             setLoading(false);
         } catch (error) {
             console.error('Error fetching Categories:', error);
@@ -181,9 +183,10 @@ const Category = (props) => {
 
     return (
         <>
+            {gridDataApproval && pageMode === 'Home' && (
             <div className="row">
                 <div className="col-12">
-                    {gridData && gridData.length > 0 && pageMode === 'Home' && (
+                    {/*console.log("gridDataApproval", gridDataApproval)*/}
                         <div className="card">
                             <div className="card-header d-flex p-0 bg" onClick={DropDown} style={{ cursor: 'pointer', backgroundColor: '#f1e7c3' }}>
                                 <h5 className="ml-3 mt-2">Pending Approval</h5>
@@ -198,29 +201,34 @@ const Category = (props) => {
                                                     {openDropDown ? '\u2191' : '\u2193'}
                                                 </span>
                                             </div>
+                                            {/*console.log("gridDataApproval", gridDataApproval)*/}
                                         </div>
                                     </li>
                                 </ul>
                             </div>
-                            <div className="card-body">
+                            <div className="card-body pt-2">
+                                {/*console.log("gridDataApproval", gridDataApproval)*/}
+                                {console.log("openDropDown", openDropDown)}
+                                {console.log(gridHeader)}
                                 {openDropDown && (
                                     <DataGrid
-                                        Id="CategoryGridApproval"
-                                        IsPagination={false}
-                                        ColumnCollection={gridHeader}
-                                        Onpageindexchanged={onPagechange}
-                                        onEditMethod={onGridEdit}
-                                        onGridDeleteMethod={onGridDelete}
-                                        onGridViewMethod={onGridView}
-                                        IsSarching="false"
-                                        GridData={gridData}
-                                        pageSize="2000" />
+                                    Id="CategoryApproval"
+                                    IsPagination={false}
+                                    ColumnCollection={gridHeader}
+                                    Onpageindexchanged={onPagechange}
+                                    onEditMethod={onGridEdit}
+                                    onGridDeleteMethod={onGridDelete}
+                                    onGridViewMethod={onGridView}
+                                    IsSarching={true}
+                                    GridData={[{ Id: 70, Name: 'Category 1', Description: 'Description 1' }]}
+                                    pageSize="2000" />
                                 )}
+                                {console.log("gridDataApproval", gridDataApproval)}
                             </div>
                         </div>
-                    )}
                 </div>
             </div >
+            )}
             {pageMode === 'Home' && (
                 <div className="row">
                     <div className="col-12">
@@ -250,7 +258,7 @@ const Category = (props) => {
                                     onEditMethod={onGridEdit}
                                     onGridDeleteMethod={onGridDelete}
                                     onGridViewMethod={onGridView}
-                                    IsSarching="false"
+                                    IsSarching={true}
                                     GridData={gridData}
                                     pageSize="2000" />
                             </div>
