@@ -36,6 +36,8 @@ import DocumentTypeMasterPage from "../pages/DocumentTypeMasterPage";
 import AssetsMasterPage from "../pages/AssetsMasterPage";
 import CheckInCheckOut from "../pages/checkIn-checkOutPage.jsx";
 import RentalAssets from "../pages/RentalAssets.jsx";
+import CategoryPage from "../MainComponents/Inventory/CategoryPage.jsx";
+import VendorPage from "../MainComponents/Inventory/VendorPage.jsx";
 import EscalationGroupPage from "../pages/EscalationGroupPage";
 import EscalationMatrixPage from "../pages/EscalationMatrixPage";
 import NoticeBoardPage from "../pages/NoticeBoardPage";
@@ -462,6 +464,16 @@ class MainNav extends React.Component {
                       </p>
                     </a>
                     <ul className="nav nav-treeview">
+                    <li className="nav-item">
+                        <Link
+                            to="/Account/App/Inventory/Category"
+                            className="nav-link"
+                        >
+                          <i className=" fas fa-caret-right nav-icon"></i>
+                          <p>Category</p>
+                        </Link>
+                      </li>
+
                       <li className="nav-item">
                         <Link
                             to="/Account/App/Inventory/Item"
@@ -469,6 +481,13 @@ class MainNav extends React.Component {
                         >
                           <i className=" fas fa-caret-right nav-icon"></i>
                           <p>Items</p>
+                        </Link>
+                      </li>
+
+                      <li className="nav-item">
+                        <Link to="/Account/App/Inventory/Vendors" className="nav-link">
+                          <i className=" fas fa-caret-right nav-icon"></i>
+                          <p>Vendors</p>
                         </Link>
                       </li>
                     </ul>
@@ -1091,11 +1110,17 @@ class MainNav extends React.Component {
             <Route path="/Account/App/AssetsMaster">
               <AssetsMasterPage />
             </Route>
+            <Route path="/Account/App/Inventory/Category">
+              <CategoryPage />
+               </Route>
             <Route path="/Account/App/Inventory/Item">
               <ItemMasterPage />
             </Route>
             <Route path="/Account/App/CheckIn&CheckOut">
               <CheckInCheckOut/>
+            </Route>
+            <Route path="/Account/App/Inventory/Vendors">
+              <VendorPage/>
             </Route>
             <Route path="/Account/App/RentalAssets">
               <RentalAssets/>
