@@ -160,3 +160,23 @@ export const deleteVendor = async (id) => {
         handleApiError(error);
     }
 };
+
+// ========== Rate Card ==========
+
+export const getRateCard = async (propertyId) => {
+    try {
+        const response = await api.get(`/ratecards?propertyId=${propertyId}`);
+        return response.data;
+    } catch (error) {
+        handleApiError(error);
+    }
+};
+
+export const createRateCard = async (ratecard) => {
+    try {
+        const response = await api.post('/ratecard', ratecard);
+        return response.data;
+    } catch (error) {
+        handleApiError(error);
+    }
+};

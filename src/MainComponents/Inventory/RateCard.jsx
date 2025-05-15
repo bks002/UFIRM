@@ -1,438 +1,533 @@
-import React, { useState, useEffect } from 'react';
-import swal from 'sweetalert';
-import { ToastContainer } from 'react-toastify';
-import DataGrid from '../../ReactComponents/DataGrid/DataGrid.jsx';
-import Button from '../../ReactComponents/Button/Button';
-import { CreateValidator, ValidateControls } from '../Calendar/Validation';
-import * as appCommon from '../../Common/AppCommon.js';
-import { DELETE_CONFIRMATION_MSG } from '../../Contants/Common';
-import { getCategories, getAllItems, getVendors } from "../../Services/InventoryService";
-import { useSelector, useDispatch } from 'react-redux';
-import ExportToCSV from '../../ReactComponents/ExportToCSV/ExportToCSV.js';
-const $ = window.$;
+"use client"
 
-const ReadOnlyField = ({ label, value }) => (
-    <div className="form-group col-12">
-        <label>{label}</label>
-        <input type="text" className="form-control" value={value || 'N/A'} readOnly />
-    </div>
-);
+import React, { useState, useEffect, useRef } from "react"
+import { FilterMatchMode } from "primereact/api"
+import { DataTable } from "primereact/datatable"
+import { Column } from "primereact/column"
+import { InputText } from "primereact/inputtext"
+import { Dropdown } from "primereact/dropdown"
+import { Button } from "primereact/button"
+import { Toast } from "primereact/toast"
+import { getCategories, getAllItems, getVendors, createRateCard, getRateCard } from "../../Services/InventoryService"
+import { confirmDialog } from "primereact/confirmdialog"
+import { DELETE_CONFIRMATION_MSG } from "../../Contants/Common"
+import { Dialog } from "primereact/dialog"
+import { useSelector, useDispatch } from "react-redux"
+import "primereact/resources/themes/lara-light-blue/theme.css"
+import { Calendar } from "primereact/calendar"
+import ExportToCSV from "../../ReactComponents/ExportToCSV/ExportToCSV"
 
 const RateCard = (props) => {
-    const [pageMode, setPageMode] = useState('Home');
-    const [Loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const emptyRateCardData = {
-        Id: 0,
-        category: 0,
-        Item: 0,
-        Vendors: 0,
-        Rate: "",
-        propertyId: propertyId,
-    };
-    const propertyId = useSelector((state) => state.Commonreducer.puidn);
-    const [RateCardData, setRateCardData] = useState(emptyRateCardData);
-    const gridHeader = [
-        { sTitle: 'Id', titleValue: 'Id', "orderable": true },
-        { sTitle: 'Category', titleValue: 'category' },
-        { sTitle: 'Item', titleValue: 'Item' },
-        { sTitle: 'Vendor', titleValue: 'Vendors' },
-        { sTitle: 'Rate', titleValue: 'Rate' },
-        { sTitle: 'Action', titleValue: 'Action', Action: "Edit&View&Delete", Index: '0', "orderable": false }
-    ];
-    const dispatch = useDispatch();
-    const [gridData, setGridData] = useState([]);
-    const [categories, setCategories] = useState([]);
-    const [Items, setItems] = useState([]);
-    const [Vendor, setVendor] = useState([]);
-    //const [SelectedItemDetails,setSelectedItemDetails]= useState(null);
+    const [gridData, setGridData] = useState([])
+    const [loading, setLoading] = useState(false)
+    const propertyId = useSelector((state) => state.Commonreducer.puidn)
+    const dispatch = useDispatch()
+    const [categories, setCategories] = useState([])
+    const [items, setItems] = useState([])
+    const [vendors, setVendors] = useState([])
+    const [globalFilterValue, setGlobalFilterValue] = useState("")
+    const toast = useRef(null)
+    const [isDialogVisible, setIsDialogVisible] = useState(false)
+    const [rateCardData, setRateCardData] = useState({
+        CategoryId: 0,
+        ItemId: 0,
+        VendorId: 0,
+        Price: 0.0,
+        ValidTill: null,
+        CreatedBy: 0,
+        IsApproved: true,
+        CategoryName: "",
+        ItemName: "",
+        VendorName: "",
+    })
+    const [viewDialogVisible, setViewDialogVisible] = useState(false)
+    const [selectedRateCard, setSelectedRateCard] = useState(null)
+    const [pageMode, setPageMode] = useState("home")
+    const [filters, setFilters] = useState({
+        CategoryName: { value: null, matchMode: FilterMatchMode.EQUALS },
+        ItemName: { value: null, matchMode: FilterMatchMode.EQUALS },
+        VendorName: { value: null, matchMode: FilterMatchMode.EQUALS },
+    })
 
     useEffect(() => {
         if (propertyId) {
-            setGridData([]);
-            getRatecardList(emptyRateCardData);
+            setGridData([])
+            loadInitialData()
+        } else {
+            setGridData([])
+            toast.current.show({
+                severity: "error",
+                summary: "Error",
+                detail: <div className="flex items-center h-screen">Please select a property</div>,
+                life: 3000,
+            })
         }
-        else {
-            setGridData([]);
-            swal({
-                title: "Error",
-                text: "Please select a property",
-                icon: "error",
-                button: "OK",
-            });
-        }
-    }, []);
+    }, [propertyId])
 
-    const getRatecardList = async () => {
+    const loadInitialData = async () => {
+        setLoading(true)
         try {
-            setLoading(true);
-            setGridData(RateCardData);
-            setLoading(false);
+            await Promise.all([loadCategories(), loadItems(), loadVendors()])
+            await loadRateCardList()
         } catch (error) {
-            console.error('Error fetching Rate Card:', error);
-            setLoading(false);
-        }
-    };
-
-    const handleDeleteRateCard = async (RateCardData) => {
-        try {
-            setLoading(true);
-            //const response = await deleteRateCard(RateCardData);
-            appCommon.showtextalert("Success", "Item deleted successfully", "success");
-        } catch (error) {
-            console.error('Error updating Item:', error);
-            setError(error);
+            console.error("Error loading initial data:", error)
+            toast.current.show({ severity: "error", summary: "Error", detail: "Failed to load initial data", life: 3000 })
         } finally {
-            setLoading(false);
+            setLoading(false)
         }
     }
 
-    const onGridDelete = (RateCardData) => {
-        let myhtml = document.createElement("div");
-        myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
-        swal({
-            buttons: {
-                ok: "Yes",
-                cancel: "No",
-            },
-            content: myhtml,
-            icon: "warning",
-            closeOnClickOutside: false,
-            dangerMode: true
-        }).then((value) => {
-            switch (value) {
-                case "ok":
-                    handleDeleteRateCard(RateCardData);
-                    break;
-                case "cancel":
-                default:
-                    break;
+    const loadRateCardList = async () => {
+        try {
+            const data = await getRateCard(propertyId)
+            setGridData(data)
+            setSelectedRateCard(data)
+        } catch (error) {
+            console.error("Error fetching Rate Card:", error)
+            toast.current.show({ severity: "error", summary: "Error", detail: "Failed to load rate cards", life: 3000 })
+        }
+    }
+
+    const loadCategories = async () => {
+        const data = await getCategories(propertyId)
+        setCategories(data)
+    }
+
+    const loadItems = async () => {
+        const data = await getAllItems(propertyId)
+        setItems(data)
+    }
+
+    const loadVendors = async () => {
+        const data = await getVendors(propertyId)
+        setVendors(data)
+    }
+
+    useEffect(() => {
+        console.log("Categories:", categories)
+        console.log("Items:", items)
+        console.log("Vendors:", vendors)
+    }, [categories, items, vendors])
+
+    const openNew = async () => {
+        setRateCardData({
+            CategoryId: 0,
+            ItemId: 0,
+            VendorId: 0,
+            Price: 0.0,
+            ValidTill: null,
+            CreatedBy: 1,
+            IsApproved: true,
+        })
+        setPageMode("addAttachment")
+        setIsDialogVisible(true)
+    }
+
+    // const editRateCard = async (data) => {
+    //     setRateCardData({ ...data, ValidTill: data.ValidTill ? new Date(data.ValidTill) : null });
+    //     setPageMode('Edit');
+    //     setIsDialogVisible(true);
+    // };
+
+    const viewRateCard = async (data) => {
+        setSelectedRateCard({
+            ...data,
+            Category: data.CategoryName,
+            Item: data.ItemName,
+            Vendor: data.VendorName,
+            ValidTill: data.ValidTill,
+        })
+        setViewDialogVisible(true)
+    }
+
+    const hideDialog = () => {
+        setIsDialogVisible(false)
+    }
+
+    const hideViewDialog = () => {
+        setViewDialogVisible(false)
+    }
+
+    const saveRateCard = async () => {
+        setLoading(true)
+        try {
+            const payload = {
+                ...rateCardData,
+                PropertyId: propertyId,
+                ValidTill: rateCardData.ValidTill ? new Date(rateCardData.ValidTill).toISOString() : null,
             }
-        });
-    };
-
-    const getRateCardById = async (catId) => {
-        try {
-            setLoading(true);
-            console.log("Rate Card Got By Id");
-            //const data = await getCategories(catId);
-            //setGridData(data);
-            setLoading(false);
+            await createRateCard(payload)
+            toast.current.show({
+                severity: "success",
+                summary: "Success",
+                detail: `Rate Card ${rateCardData.Id === undefined ? "created" : "updated"} successfully`,
+                life: 3000,
+            })
+            setIsDialogVisible(false)
+            loadRateCardList()
         } catch (error) {
-            console.error('Error fetching Rate Card:', error);
-            setLoading(false);
-        }
-    };
-
-    const onGridView = async (catId) => {
-        await getCategoriesList(propertyId);
-        await getItems(propertyId);
-        await getAllVendors(propertyId);
-        //const selectedRateCard = await getViewRateCard(catId);
-        //setItem(selectedRateCard);
-        setPageMode("View");
-    };
-
-    const onGridEdit = async (Id) => {
-        setPageMode("Edit");
-        await getCategoriesList(propertyId);
-        await getItems(propertyId);
-        await getAllVendors(propertyId);
-        const selectedRateCard = await getRateCardById(Id);
-        // if (selectedRateCard && selectedRateCard.Item) {
-        //     const itemDetails = Items.find(item => item.Id === selectedRateCard.Item);
-        //     setSelectedItemDetails(itemDetails);
-        //     //console.log(SelectedItemDetails);
-        // } else {
-        //     setSelectedItemDetails(null);
-        //     //console.log(SelectedItemDetails);
-        // }
-        setRateCardData(selectedRateCard);
-    };
-
-    const handleUpdateRateCard = async () => {
-        try {
-            setLoading(true);
-            //const response = await updateRateCard(RateCardData.id, RateCardData);
-            appCommon.showtextalert("Success", "Rate Card updated successfully", "success");
-            //console.log(response);
-        } catch (error) {
-            console.error('Error updating Rate Card:', error);
-            setError(error);
+            console.error("Error saving Rate Card:", error)
+            toast.current.show({
+                severity: "error",
+                summary: "Error",
+                detail: `Failed to ${rateCardData.Id === undefined ? "create" : "update"} rate card`,
+                life: 3000,
+            })
         } finally {
-            setLoading(false);
-            handleClose();
+            setLoading(false)
         }
     }
 
-    const handleClose = () => {
-        setPageMode('Home');
-        setRateCardData(emptyRateCardData);
-        setGridData([]);
-        setLoading(false);
-        setError("");
+    const confirmDelete = (data) => {
+        confirmDialog({
+            message: DELETE_CONFIRMATION_MSG,
+            header: "Confirmation",
+            icon: "pi pi-exclamation-triangle",
+            accept: () => deleteRateCard(data),
+            reject: () => { },
+        })
     }
 
-    const handleCreateRateCard = async () => {
+    const deleteRateCard = async (data) => {
+        setLoading(true)
         try {
-            setLoading(true);
-            //const response = await createRateCard(RateCardData);
-            appCommon.showtextalert("Success", "Rate Card created successfully", "success");
-            //console.log(response);
+            const updatedGridData = gridData.filter((item) => item.Id !== data.Id)
+            setGridData(updatedGridData)
+            toast.current.show({
+                severity: "success",
+                summary: "Success",
+                detail: "Rate Card deleted successfully",
+                life: 3000,
+            })
         } catch (error) {
-            console.error('Error creating Rate Card:', error);
-            setError(error);
+            console.error("Error deleting Rate Card:", error)
+            toast.current.show({ severity: "error", summary: "Error", detail: "Failed to delete rate card", life: 3000 })
         } finally {
-            setLoading(false);
-            handleClose();
+            setLoading(false)
         }
-    };
-
-    const getCategoriesList = async (propertyId) => {
-        try {
-            setLoading(true);
-            const data = await getCategories(propertyId);
-            //setGridData(data);
-            setCategories(data);
-            setLoading(false);
-        } catch (error) {
-            console.error('Error fetching Categories:', error);
-            setLoading(false);
-        }
-    };
-
-    const getItems = async (propertyId) => {
-        try {
-            setLoading(true);
-            const data = await getAllItems(propertyId);
-            //setGridData(data);
-            setItems(data);
-            setLoading(false);
-        } catch (error) {
-            console.error('Error fetching Categories:', error);
-            setLoading(false);
-        }
-    };
-
-    const getAllVendors = async (propertyId) => {
-        try {
-            setLoading(true);
-            const data = await getVendors(propertyId);
-            //setGridData(data);
-            setVendor(data);
-            setLoading(false);
-        } catch (error) {
-            console.error('Error fetching Categories:', error);
-            setLoading(false);
-        }
-    };
-
-    const onPagechange = () => { }
-
-    const AddnewRateCard = async () => {
-        await getCategoriesList(propertyId);
-        await getItems(propertyId);
-        await getVendors(propertyId);
-        //setRateCardData(emptyRateCardData);
-        setPageMode('Add');
     }
 
-    const getCategoryName = (category) => {
-        return categories.find(cat => cat.id === category).Name || "N/A";
-    };
+    const onCategoryChange = (e) => {
+        const selectedCategoryId = e.value
+        setRateCardData({
+            ...rateCardData,
+            CategoryId: selectedCategoryId.Id,
+            CategoryName: selectedCategoryId.Name,
+            ItemId: 0,
+        })
+    }
+    
+    const onItemChange = (e) => {
+        const selectedItemId = e.value
+        setRateCardData({ ...rateCardData, ItemId: selectedItemId.Id, ItemName: selectedItemId.Name })
+    }
 
-    const getItemName = (Items) => {
-        return Items.find(item => item.id === Items.id).Name || "N/A";
-    };
-    //console.log(categories); 
-    //console.log(Items);
-    const getVendorName = (Vendor) => {
-        return Vendor.find(vendor => vendor.id === Vendor).Name || "N/A";
-    };
+    const onVendorChange = (e) => {
+        const selectedVendorId = e.value
+        setRateCardData({ ...rateCardData, VendorId: selectedVendorId.Id, VendorName: selectedVendorId.Name })
+    }
 
-    return (
-        <>
-            {pageMode === 'Home' && (
-                <div className='row'>
-                    <div className='col-md-12'>
-                        <div className='card'>
-                            <div className='card-header d-flex p-0'>
-                                <ul className='nav ml-auto tableFilterContainer'>
-                                    <li className='nav-item'>
-                                        <div className='input-group input-group-sm'>
-                                            <div className="input-group-prepend">
-                                                {/* <ExportToCSV data={RateCardData} className="btn btn-success btn-sm rounded mr-2" /> */}
-                                                <Button id="btnaddCalendarFrequency"
-                                                    Action={AddnewRateCard}
-                                                    ClassName="btn btn-success btn-sm rounded"
-                                                    Icon={<i className="fa fa-plus" aria-hidden="true"></i>}
-                                                    Text="Add Rate Card" />
-                                            </div>
-                                        </div>
-                                    </li>
-                                </ul>
-                            </div>
-                            <div className="card-body pt-2">
-                                <DataGrid
-                                    Id="RateCardGrid"
-                                    IsPagination={false}
-                                    ColumnCollection={gridHeader}
-                                    Onpageindexchanged={onPagechange}
-                                    onEditMethod={onGridEdit}
-                                    onGridDeleteMethod={onGridDelete}
-                                    onGridViewMethod={onGridView}
-                                    IsSarching={true}
-                                    GridData={gridData}
-                                    pageSize="2000" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {(pageMode === 'Add' || pageMode === 'Edit') && (
-                <div className="modal d-flex align-items-center justify-content-center show" tabIndex="-1" role="dialog">
-                    <div className="modal-dialog modal-lg" role="document">
-                        <div className="modal-content">
-                            <div className="modal-header">
-                                <h5 className="modal-title" id="exampleModalToggleLabel">
-                                    {pageMode === 'Add' ? "Add Rate Card" : "Edit Rate Card"}
-                                </h5>
-                            </div>
-                            <div className="modal-body">
-                                <div className='row'>
-                                    <div className='col-md-6'>
-                                        <label>Category</label>
-                                        <select
-                                            name="category"
-                                            value={RateCardData.category}
-                                            onChange={(e) => {
-                                                const selectedCategoryId = parseInt(e.target.value);
-                                                setRateCardData({ ...RateCardData, category: selectedCategoryId}); 
-                                            }}
-                                            className="form-control"
-                                        >
-                                            <option value="">Select Category</option>
-                                            {categories.map((cat) => (
-                                                <option key={cat.Id} value={cat.Id}>
-                                                    {cat.Name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className='col-md-6'>
-                                        <label htmlFor="item">Item</label>
-                                        <select
-                                            name="item"
-                                            value={RateCardData.Item}
-                                            onChange={(e) => {
-                                                const selectedItem= parseInt(e.target.value);
-                                                setRateCardData({ ...RateCardData, Item: selectedItem })
-                                            }}
-                                            className="form-control"
-                                            disabled={!RateCardData.category} 
-                                        >
-                                            <option value="">Select Item</option>
-                                            {Items
-                                                .filter(item => item.CategoryId === RateCardData.category)
-                                                .map((item) => (
-                                                    <option key={item.Id} value={item.Id}>
-                                                        {item.Name}
-                                                    </option>
-                                                ))}
-                                        </select>
-                                        {!RateCardData.category && <small className="form-text text-muted">Please select a category first.</small>}
-                                        {RateCardData.category && Items.filter(item => item.CategoryId === RateCardData.category).length === 0 && (
-                                            <small className="form-text text-muted">No items available for the selected category.</small>
-                                        )}
-                                    </div>
-                                    <div className='col-md-6'>
-                                        <label htmlFor="vendor">Vendor</label>
-                                        <select
-                                            name="vendor"
-                                            value={RateCardData.Vendors}
-                                            onChange={(e) => setRateCardData({ ...RateCardData, Vendors: parseInt(e.target.value) })}
-                                            className="form-control"
-                                        >
-                                            <option value="">Select Vendors</option>
-                                            {Vendor.map((vendor) => (
-                                                <option key={vendor.Id} value={vendor.Id}>
-                                                    {vendor.Name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className='col-md-6'>
-                                        <label htmlFor="rate">Rate</label>
-                                        <div className='input-group'>
-                                        <input
-                                            type="text"
-                                            name="rate"
-                                            value={RateCardData.Rate}
-                                            onChange={(e) => setRateCardData({ ...RateCardData, Rate: e.target.value })}
-                                            className="form-control"
-                                            
-                                        />
-                                         {Items.find(item=>item.Id === RateCardData.Item) &&(<span className="input-group-text">
-                                                /{Items.find(item => item.Id === RateCardData.Item).MeasurementUnit}
-                                            </span>)}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="modal-footer justify-content-start">
-                                <Button
-                                    Id="btnSave"
-                                    Text={pageMode === "Add" ? "Create" : "Update"}
-                                    Action={pageMode === "Add" ? handleCreateRateCard : handleUpdateRateCard}
-                                    ClassName="btn btn-primary"
+    const formatDate = (value) => {
+        if (value) {
+            return new Date(value).toLocaleDateString("en-US", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+            })
+        }
+        return ""
+    }
+
+    const actionBodyTemplate = (rowData) => {
+        return (
+            <React.Fragment>
+                <Button
+                    icon={<i className="fa fa-eye" aria-hidden="true"></i>}
+                    className="p-button-rounded p-button-info mr-2"
+                    onClick={() => viewRateCard(rowData)}
+                    tooltip="View"
+                />
+                {/* <Button icon="pi pi-pencil" className="p-button-rounded p-button-success mr-2" onClick={() => editRateCard(rowData)} tooltip="Edit" /> */}
+                <Button
+                    icon={<i className="fa fa-trash" aria-hidden="true"></i>}
+                    className="p-button-rounded p-button-danger"
+                    onClick={() => confirmDelete(rowData)}
+                    tooltip="Delete"
+                />
+            </React.Fragment>
+        )
+    }
+
+    const header = (
+        <div className="d-flex p-0">
+            <h2>Rate Card</h2>
+            <ul className="nav ml-auto tableFilterContainer">
+                <li className="nav-item">
+                    <div className="input-group input-group-sm">
+                        <div className="input-group-prepend">
+                            <span className="p-input-icon-right">
+                                <i className="pi pi-search" />
+                                <InputText
+                                    type="search"
+                                    onInput={(e) => setGlobalFilterValue(e.target.value)}
+                                    placeholder="Search..."
                                 />
-
-                                <Button Id="btnCancel" Text="Cancel" Action={handleClose}
-                                    ClassName="btn btn-secondary" />
-                            </div>
-                            <ToastContainer
-                                position="top-right"
-                                autoClose={5000}
-                                hideProgressBar={false}
-                                newestOnTop={false}
-                                closeOnClick
-                                rtl={false}
-                                pauseOnFocusLoss
-                                draggable
-                                pauseOnHover
+                            </span>
+                            <ExportToCSV data={gridData} className="btn btn-success btn-sm rounded ml-4 mr-2" />
+                            <Button
+                                label="Add New Rate"
+                                icon="pi pi-plus"
+                                className="btn btn-success btn-sm rounded ml-4"
+                                onClick={openNew}
                             />
                         </div>
                     </div>
-                </div>
-            )
-            }
-            {pageMode === 'View' && (
-                <div className="modal d-flex align-items-center justify-content-center show" tabIndex="-1" role="dialog"
-                    aria-modal="true">
-                    <div className="modal-dialog modal-lg" role="document">
-                        <div className="modal-content">
-                            <div className="modal-header">
-                                <h5 className="modal-title">View Rate Card</h5>
+                </li>
+            </ul>
+        </div>
+    )
+
+    const categoryFilterTemplate = (options) => {
+        if (!options) {
+            return null
+        }
+
+        return (
+            <Dropdown
+                value={categories.find(cat => cat.Name === options.value)}
+                options={categories}
+                onChange={(e) => {
+                    options.filterCallback(e.value ? e.value.Name : null)
+                }}
+                itemTemplate={(item) => <span>{item.Name}</span>}
+                placeholder="All"
+                className="p-column-filter"
+                optionLabel="Name"
+            />
+        )
+    }
+
+    const itemFilterTemplate = (options) => {
+        if (!options) {
+            return null
+        }
+
+        return (
+            <Dropdown
+                value={items.find(item => item.Name === options.value)}
+                options={items}
+                onChange={(e) => {
+                    options.filterCallback(e.value ? e.value.Name : null)
+                }}
+                itemTemplate={(item) => <span>{item.Name}</span>}
+                placeholder="All"
+                className="p-column-filter"
+                optionLabel="Name"
+            />
+        )
+    }
+
+    const vendorFilterTemplate = (options) => {
+        if (!options) {
+            return null
+        }
+
+        return (
+            <Dropdown
+                value={vendors.find(ven => ven.Name === options.value)}
+                options={vendors}
+                onChange={(e) => {
+                    options.filterCallback(e.value ? e.value.Name : null)
+                }}
+                itemTemplate={(item) => <span>{item.Name}</span>}
+                placeholder="All"
+                className="p-column-filter"
+                optionLabel="Name"
+            />
+        )
+    }
+
+    const viewRateCardDialogFooter = (
+        <Button label="Close" icon="pi pi-times" onClick={hideViewDialog} className="p-button-secondary" />
+    )
+
+    const rateCardDialogFooter = (
+        <React.Fragment>
+            <Button label="Cancel" icon="pi pi-times" className="p-button-text" onClick={hideDialog} />
+            <Button
+                label={pageMode === "Add" ? "Create" : "Create"}
+                icon="pi pi-check"
+                className="p-button-text"
+                onClick={saveRateCard}
+            />
+        </React.Fragment>
+    )
+
+    return (
+        <div className="card">
+            <Toast ref={toast} />
+            <confirmDialog />
+            <DataTable
+                value={gridData}
+                loading={loading}
+                header={header}
+                paginator
+                rows={10}
+                filters={filters}
+                filterDisplay="row"
+                globalFilter={globalFilterValue}
+                emptyMessage="No rate cards found."
+                dataKey="Id"
+            >
+                <Column field="VendorName" header="Vendor" sortable filter filterElement={vendorFilterTemplate} />
+                <Column field="ItemName" header="Item" sortable filter filterElement={itemFilterTemplate} />
+                <Column field="CategoryName" header="Category" sortable filter filterElement={categoryFilterTemplate} />
+                <Column field="Price" header="Rate" body={(rowData) => `${rowData.Price}`} />
+                <Column field="ValidTill" header=" Valid Till" body={(rowData) => formatDate(rowData.ValidTill)} />
+                <Column header="Action" body={actionBodyTemplate} />
+            </DataTable>
+
+            <Dialog
+                visible={isDialogVisible}
+                style={{ width: "30vw" }}
+                header={`${pageMode === "Add" ? "Add" : "Add"} Rate Card`}
+                modal
+                footer={rateCardDialogFooter}
+                onHide={hideDialog}
+            >
+                <div className="row">
+                    <div className="col-12 md:col-6">
+                        <div className="mb-3">
+                            <label htmlFor="category">Category</label>
+                            <div className="mb-3"><Dropdown
+                                id="category"
+                                onChange={onCategoryChange}
+                                value={categories.find((cat) => cat.Id === rateCardData.CategoryId)}
+                                options={categories}
+                                optionLabel="Name"
+                                placeholder="Select Category"
+                            /></div>
+                        </div>
+                    </div>
+                    <div className="col-12 md:col-6">
+                        <div className="mb-3">
+                            <label htmlFor="item">Item</label>
+                            <div className="mb-3">
+                                <Dropdown
+                                    id="item"
+                                    value={items.find((item) => item.Id === rateCardData.ItemId)}
+                                    onChange={onItemChange}
+                                    options={items.filter((item) => item.CategoryId === rateCardData.CategoryId)}
+                                    optionLabel="Name"
+                                    placeholder="Select Item"
+                                    disabled={!rateCardData.CategoryId}
+                                />
                             </div>
-                            <div className="modal-body p-2">
-                                <form>
-                                    <div className="row">
-                                        <ReadOnlyField label="Category" value={getCategoryName(RateCardData.category)} />
-                                        <ReadOnlyField label="Item" value={getItemName(RateCardData.Item)} />
-                                        <ReadOnlyField label="Vendor" value={getVendorName(RateCardData.Vendors)} />
-                                        <ReadOnlyField label="Rate" value={RateCardData.Rate} />
-                                    </div>
-                                </form>
+                            {!rateCardData.CategoryId && <small className="p-error">Please select a category first.</small>}
+                            {rateCardData.CategoryId &&
+                                items.filter((item) => item.CategoryId === rateCardData.CategoryId).length === 0 && (
+                                    <small className="p-text-secondary">No items available for the selected category.</small>
+                                )}
+                        </div>
+                    </div>
+                    <div className="col-12 md:col-6">
+                        <div className="mb-3">
+                            <label htmlFor="vendor">Vendor</label>
+                            <div className="mb-3">
+                                <Dropdown
+                                    id="vendor"
+                                    value={vendors.find((ven) => ven.Id === rateCardData.VendorId)}
+                                    onChange={onVendorChange}
+                                    options={vendors}
+                                    optionLabel="Name"
+                                    placeholder="Select Vendor"
+                                />
                             </div>
-                            <div className="modal-footer justify-content-start">
-                                <Button Id="btnCancel" Text="Close" Action={handleClose} ClassName="btn btn-secondary" />
+                        </div>
+                    </div>
+                    <div className="col-12 md:col-6">
+                        <div>
+                            <label htmlFor="rate">Rate</label>
+                            <div className="p-inputgroup">
+                                <InputText
+                                    type="number"
+                                    id="rate"
+                                    value={rateCardData.Price}
+                                    onChange={(e) =>
+                                        setRateCardData({
+                                            ...rateCardData,
+                                            Price: e.target.value === "" ? "" : Number.parseFloat(e.target.value),
+                                        })
+                                    }
+                                />
+                                {items.find((item) => item.Id === rateCardData.ItemId) && (
+                                    <span className="p-inputgroup-addon">
+                                        /{items.find((item) => item.Id === rateCardData.ItemId).MeasurementUnit}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="col-12 md:col-6">
+                        <div>
+                            <label htmlFor="ValidTill">Valid Till</label>
+                            <div className="p-inputgroup">
+                                <Calendar
+                                    value={rateCardData.ValidTill ? new Date(rateCardData.ValidTill) : null}
+                                    dateFormat="dd/mm/yy"
+                                    onChange={(e) => setRateCardData({ ...rateCardData, ValidTill: e.value })}
+                                    showIcon
+                                />
                             </div>
                         </div>
                     </div>
                 </div>
-            )}
-        </>
-    );
-};
+            </Dialog>
 
-export default RateCard;
+            <Dialog
+                visible={viewDialogVisible}
+                style={{ width: "50vw" }}
+                header="View Rate Card"
+                modal
+                footer={viewRateCardDialogFooter}
+                onHide={hideViewDialog}
+            >
+                {selectedRateCard && (
+                    <div className="p-fluid">
+                        <div className="p-field">
+                            <label>Category</label>
+                            <InputText value={`${selectedRateCard.CategoryName}`} readOnly />
+                        </div>
+                        <div className="p-field">
+                            <label>Item</label>
+                            <InputText value={`${selectedRateCard.ItemName}`} readOnly />
+                        </div>
+                        <div className="p-field">
+                            <label>Vendor</label>
+                            <InputText value={`${selectedRateCard.VendorName}`} readOnly />
+                        </div>
+
+                        <div className="p-field">
+                            <label>Rate</label>
+                            <div className="p-inputgroup">
+                                <InputText value={`${selectedRateCard.Price}`} readOnly />
+                                {items.find((item) => item.Name === selectedRateCard.ItemName) && (
+                                    <span className="p-inputgroup-addon">
+                                        &nbsp;/{items.find((item) => item.Name === selectedRateCard.ItemName).MeasurementUnit}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="p-field">
+                            <label>Valid Till</label>
+                            <InputText value={`${selectedRateCard.ValidTill}`} readOnly />
+                        </div>
+                    </div>
+                )}
+            </Dialog>
+        </div>
+    )
+}
+
+export default RateCard
