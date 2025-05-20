@@ -457,7 +457,7 @@ class MainNav extends React.Component {
 
                   <li className="nav-item has-treeview">
                     <a href="#" className="nav-link">
-                      <i className="nav-icon fas fa-wrench"></i>
+                      <i className="nav-icon fas fa-boxes"></i>
                       <p>
                         Inventory Management
                         <i className="right fas fa-angle-left"></i>

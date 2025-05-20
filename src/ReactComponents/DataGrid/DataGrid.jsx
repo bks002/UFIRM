@@ -37,6 +37,7 @@ export default class DataGrid extends React.Component {
             // }]
         });
         this.ApiProviderr = new ApiProvider();
+        console.log(this.props.GridData,"outside update")
     }
 
     GetSelectionIds() {
@@ -54,36 +55,29 @@ export default class DataGrid extends React.Component {
     onGridManage(fId) {
         this.props.onGridApprove(fId);
     }
-
     onGridDelete(fId) {
         // alert('Delete' + id);
-
         this.props.onGridDeleteMethod(fId);
     }
-
     onGridBlock(fId) {
         this.props.onGridBlockMethod(fId);
     }
-
-
     onGridView(fId) {
         //this.props.onEditMethod(fId);
         this.props.onGridViewMethod(fId);
     }
-
     onGridDownload(fId) {
         this.props.onGridDownloadMethod(fId);
     }
-    //End
-
     componentDidUpdate() {
-        // 
         let _this = this;
         var dr = this.props.ColumnCollection;
         let object = this;
+        console.log(object,"object")
         $('.tbl-loading').removeClass('hide');
         let GridarrayMain = [];
         let Gridarray = [];
+        console.log(this.props.GridData,"update")
         if (this.props.GridData != null) {
             this.props.GridData.map((val, idx) => {
                 this.props.ColumnCollection.map((cval, cidx) => {
@@ -165,13 +159,13 @@ export default class DataGrid extends React.Component {
                                 btnhtml += '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
                                 btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
                                 break;
-                            // Added by: Rakhmaji Ghule 147/0/2021 -> show Edit, Veiw and Delete button in Action Col 
+                            // Added by: Rakhmaji Ghule 147/0/2021 -> show Edit, Veiw and Delete button in Action Col
                             case 'Edit&View&Delete':
                                 btnhtml += '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
                                 btnhtml += '<button class="btn btn-sm btn-warning" title="View" ><i class="fa fa-eye"></i></button>';
                                 btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
                                 break;
-                            // Added by: Rakhmaji Ghule 26/03/2021 -> show Edit, Approve and Reject button in Action Col 
+                            // Added by: Rakhmaji Ghule 26/03/2021 -> show Edit, Approve and Reject button in Action Col
                             case 'Edit&Approve&Reject':
                                 btnhtml += '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
                                 btnhtml += '<button class="btn btn-sm btn-warning" title="Approve" ><i class="fa fa-check"></i></button>';
@@ -274,15 +268,11 @@ export default class DataGrid extends React.Component {
                 }
 
                 GridarrayMain.splice(idx, 0, Gridarray);
-                Gridarray = [];
+                 Gridarray = [];
             });
         }
-
-        // * removing existing object of table
-        objcommonjs.ClearTableGrid(this.props.Id);
-        //
+         objcommonjs.ClearTableGrid(this.props.Id);
         let table = $(`#${this.props.Id}`).DataTable({
-            
             data: GridarrayMain,
             //searching: this.props.IsSarching,
             "paging": this.props.DefaultPagination,
@@ -300,7 +290,7 @@ export default class DataGrid extends React.Component {
             // }]
 
         });
-         
+        console.log("DataTable initialized.",GridarrayMain,this.props.GridData,table);
         //Enable hide column property
         dr.map((item, index) => {
             if (item.visible !== undefined && item.visible) {
@@ -437,7 +427,6 @@ export default class DataGrid extends React.Component {
             });
         }
         $('.tbl-loading').addClass('hide');
-
     }
 
     viewInformation = (action, Id, x) => {

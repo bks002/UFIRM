@@ -9,6 +9,7 @@ import { DELETE_CONFIRMATION_MSG } from '../../Contants/Common';
 import { useSelector, useDispatch } from 'react-redux';
 import {  createItem,  deleteItem,  getAllItems,  getCategories,  getItemById,  updateItem} from "../../Services/InventoryService";
 import ExportToCSV from "../../ReactComponents/ExportToCSV/ExportToCSV";
+import ApprovalPage from "./ApprovalPage";
 const $ = window.$;
 
 const ReadOnlyField = ({ label, value }) => (
@@ -73,9 +74,11 @@ const ItemMaster = (props) => {
       setGridData([]);
       appCommon.showtextalert("Error", "Please Select a Property.", "error");
     }
-  }, [propertyId]);
+  }, [propertyId, openDropDown]);
 
   const onPagechange = (page) => { };
+
+  const onGridApprove = () => { };
 
   const handleDeleteItem = async (Id) => {
     try {
@@ -184,53 +187,28 @@ const ItemMaster = (props) => {
     <>
       <div className="row">
         <div className="col-12">
-          {gridData && gridData.length > 0 && pageMode === 'Home' && (
-            <div className="card">
-              <div className="card-header d-flex p-0 bg" onClick={DropDown} style={{ cursor: 'pointer', backgroundColor: '#f1e7c3' }}>
-                <h5 className="ml-3 mt-2">Pending Approval</h5>
-                <ul className="nav ml-auto tableFilterContainer">
-                  <li className="nav-item">
-                    <div className="input-group input-group-sm">
-                      <div className="input-group-prepend">
-                        <span
-                          className="btn btn-primary"
-                          style={{ backgroundColor: '#f1e7c3', color: '#000000' }}
-                        >
-                          {openDropDown ? '\u2191' : '\u2193'}
-                        </span>
-                      </div>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-              <div className="card-body">
-                {openDropDown && (
-                  <DataGrid
-                    Id="CategoryGridApproval"
-                    IsPagination={false}
-                    ColumnCollection={gridHeader}
-                    Onpageindexchanged={onPagechange}
-                    onEditMethod={onGridEdit}
-                    onGridDeleteMethod={onGridDelete}
-                    onGridViewMethod={onGridView}
-                    IsSarching="false"
-                    GridData={gridData}
-                    pageSize="2000" />
-                )}
-              </div>
-            </div>
+          {gridData.length>0 && pageMode=="Home" &&(
+              <ApprovalPage
+                  title={"Pending For Approval"}
+                  gridHeader={gridHeader}
+                  gridData={gridData}
+                  onGridEdit={onGridEdit}
+                  onGridDelete={onGridDelete}
+                  onGridApprove={onGridApprove}
+                  onGridView={onGridView}
+              />
           )}
         </div>
-      </div >
+      </div>
       {pageMode === 'Home' && (
-        <div className="row">
-          <div className="col-12">
-            <div className="card">
-              <div className="card-header d-flex p-0">
-                <ul className="nav ml-auto tableFilterContainer">
-                  <li className="nav-item">
-                    <div className="input-group input-group-sm">
-                      <div className="input-group-prepend">
+          <div className="row">
+            <div className="col-12">
+              <div className="card">
+                <div className="card-header d-flex p-0">
+                  <ul className="nav ml-auto tableFilterContainer">
+                    <li className="nav-item">
+                      <div className="input-group input-group-sm">
+                        <div className="input-group-prepend">
                         <ExportToCSV data={gridData} className="btn btn-success btn-sm rounded mr-2" />
                         <Button
                           id="btnNewItem"
