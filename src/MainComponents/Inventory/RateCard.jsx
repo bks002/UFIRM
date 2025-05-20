@@ -49,6 +49,18 @@ const RateCard = (props) => {
         VendorName: { value: null, matchMode: FilterMatchMode.EQUALS },
     })
 
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+
     useEffect(() => {
         if (propertyId) {
             setGridData([])
@@ -81,7 +93,6 @@ const RateCard = (props) => {
         try {
             const data = await getRateCard(propertyId)
             setGridData(data)
-            setSelectedRateCard(data)
         } catch (error) {
             console.error("Error fetching Rate Card:", error)
             toast.current.show({ severity: "error", summary: "Error", detail: "Failed to load rate cards", life: 3000 })
@@ -118,16 +129,13 @@ const RateCard = (props) => {
             ValidTill: null,
             CreatedBy: 1,
             IsApproved: true,
+            CategoryName: "",
+            ItemName: "",
+            VendorName: "",
         })
         setPageMode("addAttachment")
         setIsDialogVisible(true)
     }
-
-    // const editRateCard = async (data) => {
-    //     setRateCardData({ ...data, ValidTill: data.ValidTill ? new Date(data.ValidTill) : null });
-    //     setPageMode('Edit');
-    //     setIsDialogVisible(true);
-    // };
 
     const viewRateCard = async (data) => {
         setSelectedRateCard({
@@ -191,6 +199,7 @@ const RateCard = (props) => {
     const deleteRateCard = async (data) => {
         setLoading(true)
         try {
+            //await deleteRateCardApi(data.Id) 
             const updatedGridData = gridData.filter((item) => item.Id !== data.Id)
             setGridData(updatedGridData)
             toast.current.show({
@@ -214,9 +223,10 @@ const RateCard = (props) => {
             CategoryId: selectedCategoryId.Id,
             CategoryName: selectedCategoryId.Name,
             ItemId: 0,
+            ItemName: "",
         })
     }
-    
+
     const onItemChange = (e) => {
         const selectedItemId = e.value
         setRateCardData({ ...rateCardData, ItemId: selectedItemId.Id, ItemName: selectedItemId.Name })
@@ -229,11 +239,14 @@ const RateCard = (props) => {
 
     const formatDate = (value) => {
         if (value) {
-            return new Date(value).toLocaleDateString("en-US", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-            })
+            const date = new Date(value);
+            if (!isNaN(date.getTime())) {
+                return date.toLocaleDateString("en-US", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                })
+            }
         }
         return ""
     }
@@ -247,7 +260,6 @@ const RateCard = (props) => {
                     onClick={() => viewRateCard(rowData)}
                     tooltip="View"
                 />
-                {/* <Button icon="pi pi-pencil" className="p-button-rounded p-button-success mr-2" onClick={() => editRateCard(rowData)} tooltip="Edit" /> */}
                 <Button
                     icon={<i className="fa fa-trash" aria-hidden="true"></i>}
                     className="p-button-rounded p-button-danger"
@@ -259,32 +271,30 @@ const RateCard = (props) => {
     }
 
     const header = (
-        <div className="d-flex p-0">
-            <h2>Rate Card</h2>
-            <ul className="nav ml-auto tableFilterContainer">
-                <li className="nav-item">
-                    <div className="input-group input-group-sm">
-                        <div className="input-group-prepend">
-                            <span className="p-input-icon-right">
-                                <i className="pi pi-search" />
-                                <InputText
-                                    type="search"
-                                    onInput={(e) => setGlobalFilterValue(e.target.value)}
-                                    placeholder="Search..."
-                                />
-                            </span>
-                            <ExportToCSV data={gridData} className="btn btn-success btn-sm rounded ml-4 mr-2" />
-                            <Button
-                                label="Add New Rate"
-                                icon="pi pi-plus"
-                                className="btn btn-success btn-sm rounded ml-4"
-                                onClick={openNew}
-                            />
-                        </div>
-                    </div>
-                </li>
-            </ul>
+        <div className="card-header d-flex justify-content-between align-items-center p-2">
+            <div className="input-group input-group-sm ">
+                <span className="p-input-icon-right ">
+                    <i className="pi pi-search" />
+                    <InputText
+                        type="search"
+                        onInput={(e) => setGlobalFilterValue(e.target.value)}
+                        placeholder="Search..."
+                        className="form-control"
+                    />
+                </span>
+            </div>
+
+            <div className="d-flex">
+                <ExportToCSV data={gridData} className="btn btn-success btn-sm rounded ml-2 mr-2" />
+                <Button
+                    label="Add New Rate"
+                    icon="pi pi-plus"
+                    className="btn btn-success btn-sm rounded"
+                    onClick={openNew}
+                />
+            </div>
         </div>
+
     )
 
     const categoryFilterTemplate = (options) => {
@@ -382,46 +392,55 @@ const RateCard = (props) => {
                 <Column field="VendorName" header="Vendor" sortable filter filterElement={vendorFilterTemplate} />
                 <Column field="ItemName" header="Item" sortable filter filterElement={itemFilterTemplate} />
                 <Column field="CategoryName" header="Category" sortable filter filterElement={categoryFilterTemplate} />
-                <Column field="Price" header="Rate" body={(rowData) => `${rowData.Price}`} />
+                <Column field="Price" header="Rate" body={(rowData) => `₹${rowData.Price}`} />
                 <Column field="ValidTill" header=" Valid Till" body={(rowData) => formatDate(rowData.ValidTill)} />
                 <Column header="Action" body={actionBodyTemplate} />
             </DataTable>
 
             <Dialog
                 visible={isDialogVisible}
-                style={{ width: "30vw" }}
+                maximized={isMobile}
+                style={!isMobile ? { width: "50vw" } : {}}
+                contentStyle={{ backgroundColor: "white" }}
                 header={`${pageMode === "Add" ? "Add" : "Add"} Rate Card`}
                 modal
                 footer={rateCardDialogFooter}
                 onHide={hideDialog}
+                breakpoints={{ '960px': '80vw', '640px': '95vw' }}
             >
                 <div className="row">
                     <div className="col-12 md:col-6">
                         <div className="mb-3">
                             <label htmlFor="category">Category</label>
-                            <div className="mb-3"><Dropdown
-                                id="category"
-                                onChange={onCategoryChange}
-                                value={categories.find((cat) => cat.Id === rateCardData.CategoryId)}
-                                options={categories}
-                                optionLabel="Name"
-                                placeholder="Select Category"
-                            /></div>
+                            <div className="mb-3">
+                                <div className="card flex justify-content-center">
+                                    <Dropdown
+                                        id="category"
+                                        onChange={onCategoryChange}
+                                        value={categories.find((cat) => cat.Id === rateCardData.CategoryId)}
+                                        options={categories}
+                                        optionLabel="Name"
+                                        placeholder="Select Category"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div className="col-12 md:col-6">
                         <div className="mb-3">
                             <label htmlFor="item">Item</label>
                             <div className="mb-3">
-                                <Dropdown
-                                    id="item"
-                                    value={items.find((item) => item.Id === rateCardData.ItemId)}
-                                    onChange={onItemChange}
-                                    options={items.filter((item) => item.CategoryId === rateCardData.CategoryId)}
-                                    optionLabel="Name"
-                                    placeholder="Select Item"
-                                    disabled={!rateCardData.CategoryId}
-                                />
+                                <div className="card flex justify-content-center">
+                                    <Dropdown
+                                        id="item"
+                                        value={items.find((item) => item.Id === rateCardData.ItemId)}
+                                        onChange={onItemChange}
+                                        options={items.filter((item) => item.CategoryId === rateCardData.CategoryId)}
+                                        optionLabel="Name"
+                                        placeholder="Select Item"
+                                        disabled={!rateCardData.CategoryId}
+                                    />
+                                </div>
                             </div>
                             {!rateCardData.CategoryId && <small className="p-error">Please select a category first.</small>}
                             {rateCardData.CategoryId &&
@@ -434,19 +453,21 @@ const RateCard = (props) => {
                         <div className="mb-3">
                             <label htmlFor="vendor">Vendor</label>
                             <div className="mb-3">
-                                <Dropdown
-                                    id="vendor"
-                                    value={vendors.find((ven) => ven.Id === rateCardData.VendorId)}
-                                    onChange={onVendorChange}
-                                    options={vendors}
-                                    optionLabel="Name"
-                                    placeholder="Select Vendor"
-                                />
+                                <div className="card flex justify-content-center">
+                                    <Dropdown
+                                        id="vendor"
+                                        value={vendors.find((ven) => ven.Id === rateCardData.VendorId)}
+                                        onChange={onVendorChange}
+                                        options={vendors}
+                                        optionLabel="Name"
+                                        placeholder="Select Vendor"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div className="col-12 md:col-6">
-                        <div>
+                        <div className="mb-3">
                             <label htmlFor="rate">Rate</label>
                             <div className="p-inputgroup">
                                 <InputText
@@ -469,7 +490,7 @@ const RateCard = (props) => {
                         </div>
                     </div>
                     <div className="col-12 md:col-6">
-                        <div>
+                        <div className="mb-3">
                             <label htmlFor="ValidTill">Valid Till</label>
                             <div className="p-inputgroup">
                                 <Calendar
@@ -486,11 +507,13 @@ const RateCard = (props) => {
 
             <Dialog
                 visible={viewDialogVisible}
-                style={{ width: "50vw" }}
+                maximized={isMobile}
+                style={!isMobile ? { width: "50vw" } : {}}
                 header="View Rate Card"
                 modal
                 footer={viewRateCardDialogFooter}
                 onHide={hideViewDialog}
+                breakpoints={{ '960px': '50vw', '640px': '95vw' }}
             >
                 {selectedRateCard && (
                     <div className="p-fluid">
@@ -510,7 +533,7 @@ const RateCard = (props) => {
                         <div className="p-field">
                             <label>Rate</label>
                             <div className="p-inputgroup">
-                                <InputText value={`${selectedRateCard.Price}`} readOnly />
+                                <InputText value={`₹${selectedRateCard.Price}`} readOnly />
                                 {items.find((item) => item.Name === selectedRateCard.ItemName) && (
                                     <span className="p-inputgroup-addon">
                                         &nbsp;/{items.find((item) => item.Name === selectedRateCard.ItemName).MeasurementUnit}
@@ -521,7 +544,7 @@ const RateCard = (props) => {
 
                         <div className="p-field">
                             <label>Valid Till</label>
-                            <InputText value={`${selectedRateCard.ValidTill}`} readOnly />
+                            <InputText value={`${formatDate(selectedRateCard.ValidTill)}`} readOnly />
                         </div>
                     </div>
                 )}

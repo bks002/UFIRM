@@ -34,7 +34,7 @@ const ItemMaster = (props) => {
   const emptyItem = {
     Id: 0,
     Name: "",
-    Description: "", CategoryId: 0, MeasurementUnit: "", MinStockLevel: "", BrandName: "", HSN_Code: "",
+    Description: "", CategoryId: 0, MeasurementUnit: "", MinStockLevel: "", BrandName: "", HSNCode: "",
   };
   const [item, setItem] = useState(emptyItem);
   const [categories, setCategories] = useState([]);
@@ -80,8 +80,9 @@ const ItemMaster = (props) => {
   const handleDeleteItem = async (Id) => {
     try {
       setLoading(true);
-      const response = await deleteItem(item.Id);
+      const response = await deleteItem(Id);
       appCommon.showtextalert("Success", "Item deleted successfully", "success");
+      getItems(propertyId);
       console.log(response);
     } catch (error) {
       console.error('Error updating Item:', error);
@@ -92,7 +93,7 @@ const ItemMaster = (props) => {
 
   }
 
-  const onGridDelete = (Id) => {
+  const onGridDelete = (item) => {
     let myhtml = document.createElement("div");
     myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
     swal({
@@ -107,7 +108,7 @@ const ItemMaster = (props) => {
     }).then((value) => {
       switch (value) {
         case "ok":
-          handleDeleteItem(Id);
+          handleDeleteItem(item);
           break;
         case "cancel":
         default:
@@ -135,6 +136,7 @@ const ItemMaster = (props) => {
       setLoading(true);
       const response = await updateItem(item.Id, item);
       appCommon.showtextalert("Success", "Item updated successfully", "success");
+      getItems(propertyId);
       console.log(response);
     } catch (error) {
       console.error('Error updating Item:', error);
@@ -151,6 +153,7 @@ const ItemMaster = (props) => {
       const newItem = { ...item, PropertyId: propertyId };
       const response = await createItem(newItem);
       appCommon.showtextalert("Success", "Item created successfully", "success");
+      getItems(propertyId);
       console.log(response);
     } catch (error) {
       console.error('Error creating Item:', error);
@@ -362,8 +365,8 @@ const ItemMaster = (props) => {
                       placeholder="Enter HSN Code"
                       type="text"
                       className="form-control"
-                      value={item.HSN_Code}
-                      onChange={(e) => setItem({ ...item, HSN_Code: e.target.value })}
+                      value={item.HSNCode}
+                      onChange={(e) => setItem({ ...item, HSNCode: e.target.value })}
                     />
                   </div>
                 </div>
@@ -411,7 +414,7 @@ const ItemMaster = (props) => {
                     <ReadOnlyField label="Measuring Unit" value={item.MeasurementUnit} />
                     <ReadOnlyField label="Minimum Stock Level" value={item.MinStockLevel} />
                     <ReadOnlyField label="Brand Name" value={item.BrandName} />
-                    <ReadOnlyField label="HSN Code" value={item.HSN_Code} />
+                    <ReadOnlyField label="HSN Code" value={item.HSNCode} />
                   </div>
                 </form>
               </div>
