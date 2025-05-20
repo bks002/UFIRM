@@ -28,6 +28,30 @@ const Category = (props) => {
     const emptycategorydata = { Id: 0, Name: '', Description: '', propertyId: propertyId };
     const [categoryData, setCategoryData] = useState(emptycategorydata);
     const dispatch = useDispatch();
+    const approvalData = [
+        {
+            "Id": 39,
+            "PropertyId": 4,
+            "Name": "MEP Consumables",
+            "Description": "include items like fasteners, sealants, tapes, cable ties, conduits, insulation materials, and other components required for the efficient assembly, installation, and maintenance of MEP systems",
+            "IsActive": true,
+            "IsApproved": true,
+            "ApprovedBy": null,
+            "CreatedOn": "2025-05-03T14:47:10.007",
+            "CreatedBy": 0
+        },
+        {
+            "Id": 40,
+            "PropertyId": 4,
+            "Name": "gardening material",
+            "Description": "include soil, fertilizers, pots, seeds, watering cans, gardening tools, plant supports, and protective gear",
+            "IsActive": true,
+            "IsApproved": true,
+            "ApprovedBy": null,
+            "CreatedOn": "2025-05-03T14:48:02.123",
+            "CreatedBy": 0
+        }
+    ]
 
     const getCategoriesList = useCallback(async (propertyId) => {
         try {
@@ -51,7 +75,6 @@ const Category = (props) => {
             appCommon.showtextalert("Error", "Please Select a Property.", "error");
         }
     }, [getCategoriesList, propertyId]);
-
 
     const handleCreateCategory = async (newCategory) => {
         try {
@@ -189,7 +212,7 @@ const Category = (props) => {
                     {/*console.log("gridDataApproval", gridDataApproval)*/}
                         <div className="card">
                             <div className="card-header d-flex p-0 bg" onClick={DropDown} style={{ cursor: 'pointer', backgroundColor: '#f1e7c3' }}>
-                                <h5 className="ml-3 mt-2">Pending Approval</h5>
+                                <h5 className="ml-3 mt-2">Pending For Approval</h5>
                                 <ul className="nav ml-auto tableFilterContainer">
                                     <li className="nav-item">
                                         <div className="input-group input-group-sm">
@@ -265,9 +288,7 @@ const Category = (props) => {
                         </div>
                     </div>
                 </div>
-            )
-            }
-
+            )}
             {
                 (pageMode === 'Add' || pageMode === 'Edit') && (
                     <div className="modal d-flex align-items-center justify-content-center show" tabIndex="-1" role="dialog">
