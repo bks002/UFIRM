@@ -167,7 +167,7 @@ const Vendor = (props) => {
       setGridData([])
       appCommon.showtextalert("Error", "Please select a Property.", "error")
     }
-  }, [getVendorList, propertyId])
+  }, [getVendorApproval,getVendorList, propertyId])
 
   const handleViewVendor = async (id) => {
     try {
