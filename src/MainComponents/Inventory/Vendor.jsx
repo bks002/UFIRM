@@ -8,16 +8,16 @@ import Button from "../../ReactComponents/Button/Button"
 import { CreateValidator, ValidateControls } from "../Calendar/Validation"
 import * as appCommon from "../../Common/AppCommon.js"
 import { DELETE_CONFIRMATION_MSG } from "../../Contants/Common"
-import { getVendors, getVendorById, createVendor, updateVendor, deleteVendor } from "../../Services/InventoryService"
+import { getVendors, getVendorById, createVendor, updateVendor, deleteVendor, PendingApprovalVendor } from "../../Services/InventoryService"
 import { useSelector, useDispatch } from "react-redux"
 import ExportToCSV from "../../ReactComponents/ExportToCSV/ExportToCSV.js"
 import ApprovalPage from "./ApprovalPage";
-const $ = window.$
 
 const Vendor = (props) => {
   const [pageMode, setPageMode] = useState("Home")
   const [openDropDown, setOpenDropDown] = useState(false)
   const [gridData, setGridData] = useState([])
+  const [GridApproval, setGridApproval]= useState([])
   const gridHeader = [
     { sTitle: "Id", titleValue: "Id", orderable: true },
     { sTitle: "Name", titleValue: "Name" },
@@ -41,6 +41,7 @@ const Vendor = (props) => {
     Brochure: "",
     WebsiteURL: "",
     PropertyId: propertyId,
+    IsApproved: false
   }
   const [VendorData, setVendorData] = useState(emptyVendorData)
   const [loading, setLoading] = useState(false)
@@ -131,6 +132,18 @@ const Vendor = (props) => {
     }
   }
 
+  const getVendorApproval = useCallback(async (propertyId) => {
+    try {
+      setLoading(true)
+      const data = await PendingApprovalVendor(propertyId)
+      setGridApproval(data)
+      setLoading(false)
+    } catch (error) {
+      console.error("Error fetching Vendors:", error)
+      setLoading(false)
+    }
+  }, [])
+
   const getVendorList = useCallback(async (propertyId) => {
     try {
       setLoading(true)
@@ -145,9 +158,12 @@ const Vendor = (props) => {
 
   useEffect(() => {
     if (propertyId) {
+      setGridApproval([])
       setGridData([])
+      getVendorApproval(propertyId)
       getVendorList(propertyId)
     } else {
+      setGridApproval([])
       setGridData([])
       appCommon.showtextalert("Error", "Please select a Property.", "error")
     }
@@ -173,10 +189,23 @@ const Vendor = (props) => {
   }
 
   const onPagechange = (page) => {
-    // Pagination logic here
   }
 
-  const onGridApprove= ()=>{}
+ const onGridApprove = async (VendorApprovedId) => {
+         try {
+             const approvedVendor = GridApproval.find(item => item.Id === VendorApprovedId);
+             if (approvedVendor) {
+                 const updatedVendor = { ...approvedVendor, IsApproved: true };
+                 await updateVendor(updatedVendor.Id, updatedVendor);
+                 appCommon.showtextalert("Vendor Approved Successfully!", "", "success");
+                 setGridApproval(prevData => prevData.filter(item => item.Id !== VendorApprovedId));
+                 await getVendorList(propertyId);
+             }
+         } catch (error) {
+             appCommon.showtextalert("Error Approving Vendor", error.message, "error");
+             console.error("Error approving vendor:", error);
+         }
+     };
 
   const onGridDelete = (VendorData) => {
     const myhtml = document.createElement("div")
@@ -282,11 +311,11 @@ const Vendor = (props) => {
     <>
       <div className="row">
                 <div className="col-12">
-                    {gridData.length > 0 && pageMode == "Home" && (
+                    {gridData.length > 0 && pageMode === "Home" && (
                         <ApprovalPage
                             title={"Pending For Approval"}
                             gridHeader={gridHeader}
-                            gridData={gridData}
+                            gridData={GridApproval}
                             onGridEdit={onGridEdit}
                             onGridDelete={onGridDelete}
                             onGridApprove={onGridApprove}

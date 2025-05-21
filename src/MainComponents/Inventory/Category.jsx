@@ -6,15 +6,15 @@ import Button from '../../ReactComponents/Button/Button';
 import { CreateValidator, ValidateControls } from '../Calendar/Validation';
 import * as appCommon from '../../Common/AppCommon.js';
 import { DELETE_CONFIRMATION_MSG } from '../../Contants/Common';
-import { getCategories, getCategoryById, createCategory, updateCategory, deleteCategory } from "../../Services/InventoryService";
+import { getCategories, getCategoryById, createCategory, updateCategory, deleteCategory, PendingApprovalCategory } from "../../Services/InventoryService";
 import { useSelector, useDispatch } from 'react-redux';
 import ExportToCSV from '../../ReactComponents/ExportToCSV/ExportToCSV.js';
 import ApprovalPage from './ApprovalPage';
-const $ = window.$;
 
 const Category = (props) => {
     const [pageMode, setPageMode] = useState("Home");
     const [gridData, setGridData] = useState([]);
+    const [GridApproval, setGridApproval] = useState([]);
     const gridHeader = [
         { sTitle: 'Id', titleValue: 'Id', "orderable": true },
         { sTitle: 'Name', titleValue: 'Name' },
@@ -23,16 +23,27 @@ const Category = (props) => {
     ];
     const propertyId = useSelector((state) => state.Commonreducer.puidn);
     const [loading, setLoading] = useState(false);
-    const emptycategorydata = { Id: 0, Name: '', Description: '', propertyId: propertyId };
+    const emptycategorydata = { Id: 0, Name: '', Description: '', propertyId: propertyId, IsApproved: false };
     const [categoryData, setCategoryData] = useState(emptycategorydata);
     const dispatch = useDispatch();
+
+    const getPendingCategoryList = useCallback(async (propertyId) => {
+        try {
+            setLoading(true);
+            const data = await PendingApprovalCategory(propertyId);
+            setGridApproval(data);
+            setLoading(false);
+        } catch (error) {
+            console.error('error fetching pending approval');
+            setLoading(false);
+        }
+    }, []);
 
     const getCategoriesList = useCallback(async (propertyId) => {
         try {
             setLoading(true);
             const data = await getCategories(propertyId);
             setGridData(data);
-            //setCategoryData(data);
             setLoading(false);
         } catch (error) {
             console.error('Error fetching Categories:', error);
@@ -43,18 +54,21 @@ const Category = (props) => {
     useEffect(() => {
         if (propertyId) {
             setGridData([]);
+            setGridApproval([]);
+            getPendingCategoryList(propertyId);
             getCategoriesList(propertyId);
         } else {
             setGridData([]);
             appCommon.showtextalert("Error", "Please Select a Property.", "error");
         }
-    }, [getCategoriesList, propertyId]);
+    }, [getCategoriesList, getPendingCategoryList, propertyId]);
 
     const handleCreateCategory = async (newCategory) => {
         try {
             await createCategory(newCategory);
             appCommon.showtextalert("Category Saved Successfully!", "", "success");
             handleCancel();
+            await getPendingCategoryList(propertyId);
             await getCategoriesList(propertyId);
         } catch (error) {
             appCommon.showtextalert("Error Creating Category", error.message, "error");
@@ -66,6 +80,7 @@ const Category = (props) => {
             await updateCategory(id, updatedCategory);
             appCommon.showtextalert("Category Updated Successfully!", "", "success");
             handleCancel();
+            await getPendingCategoryList(propertyId);
             await getCategoriesList(propertyId);
         } catch (error) {
             appCommon.showtextalert("Error Updating Category", error.message, "error");
@@ -85,17 +100,31 @@ const Category = (props) => {
         try {
             await deleteCategory(id);
             appCommon.showtextalert("Category Deleted Successfully!", "", "success");
+            await getPendingCategoryList(propertyId);
             await getCategoriesList(propertyId);
         } catch (error) {
             appCommon.showtextalert("Error Deleting Category", error.message, "error");
         }
     };
 
-    const onPagechange = (page) => {
-        // Handle page change logic if needed
+    const onPagechange = () => {
     };
 
-    const onGridApprove = () => { };
+    const onGridApprove = async (categoryApprovedId) => {
+        try {
+            const approvedCategory = GridApproval.find(item => item.Id === categoryApprovedId);
+            if (approvedCategory) {
+                const updatedCategory = { ...approvedCategory, IsApproved: true };
+                await updateCategory(updatedCategory.Id, updatedCategory);
+                appCommon.showtextalert("Category Approved Successfully!", "", "success");
+                setGridApproval(prevData => prevData.filter(item => item.Id !== categoryApprovedId));
+                await getCategoriesList(propertyId);
+            }
+        } catch (error) {
+            appCommon.showtextalert("Error Approving Category", error.message, "error");
+            console.error("Error approving category:", error);
+        }
+    };
 
     const onGridDelete = (categoryData) => {
         let myhtml = document.createElement("div");
@@ -125,7 +154,7 @@ const Category = (props) => {
         setPageMode('View');
         CreateValidator();
         try {
-            const categoryDetails = handleViewCategory(categoryData);
+            const categoryDetails = await getCategoryById(categoryData); 
             setCategoryData(categoryDetails);
         } catch (error) {
             console.error("Error fetching category details", error);
@@ -179,11 +208,11 @@ const Category = (props) => {
         <>
             <div className="row">
                 <div className="col-12">
-                    {gridData.length > 0 && pageMode == "Home" && (
+                    {GridApproval.length > 0 && pageMode === "Home" && (
                         <ApprovalPage
                             title={"Pending For Approval"}
                             gridHeader={gridHeader}
-                            gridData={gridData}
+                            gridData={GridApproval}
                             onGridEdit={onGridEdit}
                             onGridDelete={onGridDelete}
                             onGridApprove={onGridApprove}

@@ -65,6 +65,16 @@ export const deleteCategory = async (id) => {
     }
 };
 
+export const PendingApprovalCategory= async (propertyId)=>{
+    try{
+        const response = await api.get(`categories/pendingApproval?propertyId=${propertyId}`);
+        return response.data;
+    }
+    catch(error){
+        handleApiError(error);
+    }
+}
+
 // ========== ITEM ==========
 export const getAllItems = async (propertyId) => {
     try {
@@ -107,6 +117,16 @@ export const deleteItem = async (id) => {
         const response = await api.delete(`/item/${id}`);
         return response.data;
     } catch (error) {
+        handleApiError(error);
+    }
+};
+
+export const PendingApprovalItem= async (propertyId)=>{
+    try{
+        const response = await api.get(`items/pendingApproval?propertyId=${propertyId}`);
+        return response.data;
+    }
+    catch(error){
         handleApiError(error);
     }
 };
@@ -157,6 +177,16 @@ export const deleteVendor = async (id) => {
         const response = await api.delete(`/vendor/${id}`);
         return response.data;
     } catch (error) {
+        handleApiError(error);
+    }
+};
+
+export const PendingApprovalVendor= async (propertyId)=>{
+    try{
+        const response = await api.get(`vendors/pendingApproval?propertyId=${propertyId}`);
+        return response.data;
+    }
+    catch(error){
         handleApiError(error);
     }
 };
