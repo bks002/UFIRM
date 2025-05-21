@@ -49,17 +49,6 @@ const RateCard = (props) => {
         VendorName: { value: null, matchMode: FilterMatchMode.EQUALS },
     })
 
-    const [isMobile, setIsMobile] = useState(false);
-
-    useEffect(() => {
-        const handleResize = () => {
-            setIsMobile(window.innerWidth <= 768);
-        };
-        handleResize();
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
 
     useEffect(() => {
         if (propertyId) {
@@ -114,12 +103,6 @@ const RateCard = (props) => {
         setVendors(data)
     }
 
-    useEffect(() => {
-        console.log("Categories:", categories)
-        console.log("Items:", items)
-        console.log("Vendors:", vendors)
-    }, [categories, items, vendors])
-
     const openNew = async () => {
         setRateCardData({
             CategoryId: 0,
@@ -133,7 +116,7 @@ const RateCard = (props) => {
             ItemName: "",
             VendorName: "",
         })
-        setPageMode("addAttachment")
+        setPageMode("Add")
         setIsDialogVisible(true)
     }
 
@@ -199,7 +182,6 @@ const RateCard = (props) => {
     const deleteRateCard = async (data) => {
         setLoading(true)
         try {
-            //await deleteRateCardApi(data.Id) 
             const updatedGridData = gridData.filter((item) => item.Id !== data.Id)
             setGridData(updatedGridData)
             toast.current.show({
@@ -388,6 +370,8 @@ const RateCard = (props) => {
                 globalFilter={globalFilterValue}
                 emptyMessage="No rate cards found."
                 dataKey="Id"
+                responsiveLayout="stack" 
+                breakpoint="960px" 
             >
                 <Column field="VendorName" header="Vendor" sortable filter filterElement={vendorFilterTemplate} />
                 <Column field="ItemName" header="Item" sortable filter filterElement={itemFilterTemplate} />
@@ -399,8 +383,7 @@ const RateCard = (props) => {
 
             <Dialog
                 visible={isDialogVisible}
-                maximized={isMobile}
-                style={!isMobile ? { width: "50vw" } : {}}
+                style={{ width: "50vw" }} 
                 contentStyle={{ backgroundColor: "white" }}
                 header={`${pageMode === "Add" ? "Add" : "Add"} Rate Card`}
                 modal
@@ -507,8 +490,7 @@ const RateCard = (props) => {
 
             <Dialog
                 visible={viewDialogVisible}
-                maximized={isMobile}
-                style={!isMobile ? { width: "50vw" } : {}}
+                style={{ width: "50vw" }} 
                 header="View Rate Card"
                 modal
                 footer={viewRateCardDialogFooter}
