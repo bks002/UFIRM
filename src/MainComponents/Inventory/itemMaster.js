@@ -3,26 +3,25 @@ import swal from 'sweetalert';
 import { ToastContainer, toast } from 'react-toastify';
 import DataGrid from '../../ReactComponents/DataGrid/DataGrid.jsx';
 import Button from '../../ReactComponents/Button/Button';
-import { CreateValidator, ValidateControls } from '../Calendar/Validation';
 import * as appCommon from '../../Common/AppCommon.js';
 import { DELETE_CONFIRMATION_MSG } from '../../Contants/Common';
 import { useSelector, useDispatch } from 'react-redux';
-import {  createItem,  deleteItem,  getAllItems,  getCategories,  getItemById,  updateItem} from "../../Services/InventoryService";
+import { createItem, deleteItem, getAllItems, getCategories, getItemById, updateItem, PendingApprovalItem } from "../../Services/InventoryService";
 import ExportToCSV from "../../ReactComponents/ExportToCSV/ExportToCSV";
 import ApprovalPage from "./ApprovalPage";
-const $ = window.$;
 
 const ReadOnlyField = ({ label, value }) => (
-    <div className="form-group col-12">
-      <label>{label}</label>
-      <input type="text" className="form-control" value={value || 'N/A'} readOnly />
-    </div>
+  <div className="form-group col-12">
+    <label>{label}</label>
+    <input type="text" className="form-control" value={value || 'N/A'} readOnly />
+  </div>
 );
 
 const ItemMaster = (props) => {
   const [pageMode, setPageMode] = useState("Home");
   const [gridData, setGridData] = useState([]);
-  const gridHeader =[
+  const [gridApproved, setgridApproved] = useState([]);
+  const gridHeader = [
     { sTitle: 'Id', titleValue: 'Id', "orderable": true },
     { sTitle: 'Name', titleValue: 'Name' },
     { sTitle: 'Description', titleValue: 'Description' },
@@ -35,7 +34,7 @@ const ItemMaster = (props) => {
   const emptyItem = {
     Id: 0,
     Name: "",
-    Description: "", CategoryId: 0, MeasurementUnit: "", MinStockLevel: "", BrandName: "", HSN_Code: "",
+    Description: "", CategoryId: 0, MeasurementUnit: "", MinStockLevel: "", BrandName: "", HSNCode: "", IsApproved: false
   };
   const [item, setItem] = useState(emptyItem);
   const [categories, setCategories] = useState([]);
@@ -46,6 +45,18 @@ const ItemMaster = (props) => {
       const data = await getAllItems(propertyId);
       setGridData(data);
       setItem(data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching Categories:', error);
+      setLoading(false);
+    }
+  };
+
+  const getItemsApproved = async (propertyId) => {
+    try {
+      setLoading(true);
+      const data = await PendingApprovalItem(propertyId);
+      setgridApproved(data);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching Categories:', error);
@@ -68,9 +79,12 @@ const ItemMaster = (props) => {
 
   useEffect(() => {
     if (propertyId) {
+      setgridApproved([]);
       setGridData([]);
+      getItemsApproved(propertyId);
       getItems(propertyId);
     } else {
+      setgridApproved([]);
       setGridData([]);
       appCommon.showtextalert("Error", "Please Select a Property.", "error");
     }
@@ -78,13 +92,29 @@ const ItemMaster = (props) => {
 
   const onPagechange = (page) => { };
 
-  const onGridApprove = () => { };
+  const onGridApprove = async (itemApprovedId) => {
+    try {
+      const approvedItem = gridApproved.find(items => items.Id === itemApprovedId);
+      if (approvedItem) {
+        const updatedItem = { ...approvedItem, IsApproved: true };
+        await updateItem(updatedItem.Id, updatedItem);
+        appCommon.showtextalert("Item Approved Successfully!", "", "success");
+        setgridApproved(prevData => prevData.filter(items => items.Id !== itemApprovedId));
+        await getItems(propertyId);
+      }
+    } catch (error) {
+      appCommon.showtextalert("Error Approving Item", error.message, "error");
+      console.error("Error approving Item:", error);
+    }
+  };
 
   const handleDeleteItem = async (Id) => {
     try {
       setLoading(true);
-      const response = await deleteItem(item.Id);
+      const response = await deleteItem(Id);
       appCommon.showtextalert("Success", "Item deleted successfully", "success");
+      getItemsApproved(propertyId);
+      getItems(propertyId);
       console.log(response);
     } catch (error) {
       console.error('Error updating Item:', error);
@@ -95,7 +125,7 @@ const ItemMaster = (props) => {
 
   }
 
-  const onGridDelete = (Id) => {
+  const onGridDelete = (item) => {
     let myhtml = document.createElement("div");
     myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
     swal({
@@ -110,7 +140,7 @@ const ItemMaster = (props) => {
     }).then((value) => {
       switch (value) {
         case "ok":
-          handleDeleteItem(Id);
+          handleDeleteItem(item);
           break;
         case "cancel":
         default:
@@ -138,6 +168,8 @@ const ItemMaster = (props) => {
       setLoading(true);
       const response = await updateItem(item.Id, item);
       appCommon.showtextalert("Success", "Item updated successfully", "success");
+      getItemsApproved(propertyId);
+      getItems(propertyId);
       console.log(response);
     } catch (error) {
       console.error('Error updating Item:', error);
@@ -154,6 +186,8 @@ const ItemMaster = (props) => {
       const newItem = { ...item, PropertyId: propertyId };
       const response = await createItem(newItem);
       appCommon.showtextalert("Success", "Item created successfully", "success");
+      getItemsApproved(propertyId);
+      getItems(propertyId);
       console.log(response);
     } catch (error) {
       console.error('Error creating Item:', error);
@@ -179,36 +213,32 @@ const ItemMaster = (props) => {
     return categories.find(cat => cat.Id === categoryId).Name || "N/A";
   };
 
-  const DropDown = () => {
-    setOpenDropDown(!openDropDown);
-  };
-
   return (
     <>
       <div className="row">
         <div className="col-12">
-          {gridData.length>0 && pageMode=="Home" &&(
-              <ApprovalPage
-                  title={"Pending For Approval"}
-                  gridHeader={gridHeader}
-                  gridData={gridData}
-                  onGridEdit={onGridEdit}
-                  onGridDelete={onGridDelete}
-                  onGridApprove={onGridApprove}
-                  onGridView={onGridView}
-              />
+          {gridData.length > 0 && pageMode === "Home" && (
+            <ApprovalPage
+              title={"Pending For Approval"}
+              gridHeader={gridHeader}
+              gridData={gridApproved}
+              onGridEdit={onGridEdit}
+              onGridDelete={onGridDelete}
+              onGridApprove={onGridApprove}
+              onGridView={onGridView}
+            />
           )}
         </div>
       </div>
       {pageMode === 'Home' && (
-          <div className="row">
-            <div className="col-12">
-              <div className="card">
-                <div className="card-header d-flex p-0">
-                  <ul className="nav ml-auto tableFilterContainer">
-                    <li className="nav-item">
-                      <div className="input-group input-group-sm">
-                        <div className="input-group-prepend">
+        <div className="row">
+          <div className="col-12">
+            <div className="card">
+              <div className="card-header d-flex p-0">
+                <ul className="nav ml-auto tableFilterContainer">
+                  <li className="nav-item">
+                    <div className="input-group input-group-sm">
+                      <div className="input-group-prepend">
                         <ExportToCSV data={gridData} className="btn btn-success btn-sm rounded mr-2" />
                         <Button
                           id="btnNewItem"
@@ -340,8 +370,8 @@ const ItemMaster = (props) => {
                       placeholder="Enter HSN Code"
                       type="text"
                       className="form-control"
-                      value={item.HSN_Code}
-                      onChange={(e) => setItem({ ...item, HSN_Code: e.target.value })}
+                      value={item.HSNCode}
+                      onChange={(e) => setItem({ ...item, HSNCode: e.target.value })}
                     />
                   </div>
                 </div>
@@ -389,7 +419,7 @@ const ItemMaster = (props) => {
                     <ReadOnlyField label="Measuring Unit" value={item.MeasurementUnit} />
                     <ReadOnlyField label="Minimum Stock Level" value={item.MinStockLevel} />
                     <ReadOnlyField label="Brand Name" value={item.BrandName} />
-                    <ReadOnlyField label="HSN Code" value={item.HSN_Code} />
+                    <ReadOnlyField label="HSN Code" value={item.HSNCode} />
                   </div>
                 </form>
               </div>

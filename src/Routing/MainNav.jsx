@@ -38,6 +38,7 @@ import CheckInCheckOut from "../pages/checkIn-checkOutPage.jsx";
 import RentalAssets from "../pages/RentalAssets.jsx";
 import CategoryPage from "../MainComponents/Inventory/CategoryPage.jsx";
 import VendorPage from "../MainComponents/Inventory/VendorPage.jsx";
+import RateCardPage from "../MainComponents/Inventory/RateCardPage.jsx";
 import EscalationGroupPage from "../pages/EscalationGroupPage";
 import EscalationMatrixPage from "../pages/EscalationMatrixPage";
 import NoticeBoardPage from "../pages/NoticeBoardPage";
@@ -488,6 +489,12 @@ class MainNav extends React.Component {
                         <Link to="/Vendors" className="nav-link">
                           <i className=" fas fa-caret-right nav-icon"></i>
                           <p>Vendors</p>
+                        </Link>
+                      </li>
+                      <li className="nav-item">
+                        <Link to="/RateCard" className="nav-link">
+                          <i className=" fas fa-caret-right nav-icon"></i>
+                          <p>Rate Card</p>
                         </Link>
                       </li>
                     </ul>
@@ -1121,6 +1128,9 @@ class MainNav extends React.Component {
             </Route>
             <Route path="/Vendors">
               <VendorPage/>
+            </Route>
+            <Route path="/RateCard">
+              <RateCardPage/>
             </Route>
             <Route path="/RentalAssets">
               <RentalAssets/>
