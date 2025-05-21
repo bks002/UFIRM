@@ -11,6 +11,7 @@ import { DELETE_CONFIRMATION_MSG } from "../../Contants/Common"
 import { getVendors, getVendorById, createVendor, updateVendor, deleteVendor } from "../../Services/InventoryService"
 import { useSelector, useDispatch } from "react-redux"
 import ExportToCSV from "../../ReactComponents/ExportToCSV/ExportToCSV.js"
+import ApprovalPage from "./ApprovalPage";
 const $ = window.$
 
 const Vendor = (props) => {
@@ -175,6 +176,8 @@ const Vendor = (props) => {
     // Pagination logic here
   }
 
+  const onGridApprove= ()=>{}
+
   const onGridDelete = (VendorData) => {
     const myhtml = document.createElement("div")
     myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>"
@@ -278,45 +281,20 @@ const Vendor = (props) => {
   return (
     <>
       <div className="row">
-        <div className="col-12">
-          {gridData && gridData.length > 0 && pageMode === "Home" && (
-            <div className="card">
-              <div
-                className="card-header d-flex p-0 bg"
-                onClick={DropDown}
-                style={{ cursor: "pointer", backgroundColor: "#f1e7c3" }}
-              >
-                <h5 className="ml-3 mt-2">Pending Approval</h5>
-                <ul className="nav ml-auto tableFilterContainer">
-                  <li className="nav-item">
-                    <div className="input-group input-group-sm">
-                      <div className="input-group-prepend">
-                        <span className="btn btn-primary" style={{ backgroundColor: "#f1e7c3", color: "#000000" }}>
-                          {openDropDown ? "\u2191" : "\u2193"}
-                        </span>
-                      </div>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-              <div className="card-body">
-                {openDropDown && (
-                  <DataGrid
-                    Id="ApprovalVendorGrid"
-                    IsPagination={false}
-                    ColumnCollection={gridHeader}
-                    Onpageindexchanged={onPagechange}
-                    onGridDeleteMethod={onGridDelete}
-                    IsSarching="false"
-                    GridData={gridData}
-                    pageSize="2000"
-                  />
-                )}
-              </div>
+                <div className="col-12">
+                    {gridData.length > 0 && pageMode == "Home" && (
+                        <ApprovalPage
+                            title={"Pending For Approval"}
+                            gridHeader={gridHeader}
+                            gridData={gridData}
+                            onGridEdit={onGridEdit}
+                            onGridDelete={onGridDelete}
+                            onGridApprove={onGridApprove}
+                            onGridView={onGridView}
+                        />
+                    )}
+                </div>
             </div>
-          )}
-        </div>
-      </div>
       {pageMode === "Home" && (
         <div className="row">
           <div className="col-12">

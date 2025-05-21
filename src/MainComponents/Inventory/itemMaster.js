@@ -3,7 +3,6 @@ import swal from 'sweetalert';
 import { ToastContainer, toast } from 'react-toastify';
 import DataGrid from '../../ReactComponents/DataGrid/DataGrid.jsx';
 import Button from '../../ReactComponents/Button/Button';
-import { CreateValidator, ValidateControls } from '../Calendar/Validation';
 import * as appCommon from '../../Common/AppCommon.js';
 import { DELETE_CONFIRMATION_MSG } from '../../Contants/Common';
 import { useSelector, useDispatch } from 'react-redux';
@@ -180,10 +179,6 @@ const ItemMaster = (props) => {
 
   const getCategoryName = (categoryId) => {
     return categories.find(cat => cat.Id === categoryId).Name || "N/A";
-  };
-
-  const DropDown = () => {
-    setOpenDropDown(!openDropDown);
   };
 
   return (

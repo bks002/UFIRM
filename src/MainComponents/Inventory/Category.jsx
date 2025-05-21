@@ -9,14 +9,14 @@ import { DELETE_CONFIRMATION_MSG } from '../../Contants/Common';
 import { getCategories, getCategoryById, createCategory, updateCategory, deleteCategory } from "../../Services/InventoryService";
 import { useSelector, useDispatch } from 'react-redux';
 import ExportToCSV from '../../ReactComponents/ExportToCSV/ExportToCSV.js';
+import ApprovalPage from './ApprovalPage';
 const $ = window.$;
 
 const Category = (props) => {
     const [pageMode, setPageMode] = useState("Home");
-    const [openDropDown, setOpenDropDown] = useState(false);
     const [gridData, setGridData] = useState([]);
     const gridDataApproval =
-        { Id: 100, Name: 'Category 1', Description: 'Description 1'};
+        { Id: 100, Name: 'Category 1', Description: 'Description 1' };
     const gridHeader = [
         { sTitle: 'Id', titleValue: 'Id', "orderable": true },
         { sTitle: 'Name', titleValue: 'Name' },
@@ -28,30 +28,6 @@ const Category = (props) => {
     const emptycategorydata = { Id: 0, Name: '', Description: '', propertyId: propertyId };
     const [categoryData, setCategoryData] = useState(emptycategorydata);
     const dispatch = useDispatch();
-    const approvalData = [
-        {
-            "Id": 39,
-            "PropertyId": 4,
-            "Name": "MEP Consumables",
-            "Description": "include items like fasteners, sealants, tapes, cable ties, conduits, insulation materials, and other components required for the efficient assembly, installation, and maintenance of MEP systems",
-            "IsActive": true,
-            "IsApproved": true,
-            "ApprovedBy": null,
-            "CreatedOn": "2025-05-03T14:47:10.007",
-            "CreatedBy": 0
-        },
-        {
-            "Id": 40,
-            "PropertyId": 4,
-            "Name": "gardening material",
-            "Description": "include soil, fertilizers, pots, seeds, watering cans, gardening tools, plant supports, and protective gear",
-            "IsActive": true,
-            "IsApproved": true,
-            "ApprovedBy": null,
-            "CreatedOn": "2025-05-03T14:48:02.123",
-            "CreatedBy": 0
-        }
-    ]
 
     const getCategoriesList = useCallback(async (propertyId) => {
         try {
@@ -121,6 +97,8 @@ const Category = (props) => {
         // Handle page change logic if needed
     };
 
+    const onGridApprove = () => { };
+
     const onGridDelete = (categoryData) => {
         let myhtml = document.createElement("div");
         myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
@@ -175,10 +153,6 @@ const Category = (props) => {
         setCategoryData(emptycategorydata);
     };
 
-    const DropDown = () => {
-        setOpenDropDown(!openDropDown);
-    };
-
     const handleSave = () => {
         if (ValidateControls()) {
             if (pageMode === "Add") {
@@ -193,7 +167,6 @@ const Category = (props) => {
         setPageMode('Home');
         setCategoryData(emptycategorydata);
         getCategoriesList(propertyId);
-        setOpenDropDown(false);
     };
 
     const handleInputChange = (e) => {
@@ -206,52 +179,21 @@ const Category = (props) => {
 
     return (
         <>
-            {gridDataApproval && pageMode === 'Home' && (
             <div className="row">
                 <div className="col-12">
-                    {/*console.log("gridDataApproval", gridDataApproval)*/}
-                        <div className="card">
-                            <div className="card-header d-flex p-0 bg" onClick={DropDown} style={{ cursor: 'pointer', backgroundColor: '#f1e7c3' }}>
-                                <h5 className="ml-3 mt-2">Pending For Approval</h5>
-                                <ul className="nav ml-auto tableFilterContainer">
-                                    <li className="nav-item">
-                                        <div className="input-group input-group-sm">
-                                            <div className="input-group-prepend">
-                                                <span
-                                                    className="btn btn-primary"
-                                                    style={{ backgroundColor: '#f1e7c3', color: '#000000' }}
-                                                >
-                                                    {openDropDown ? '\u2191' : '\u2193'}
-                                                </span>
-                                            </div>
-                                            {/*console.log("gridDataApproval", gridDataApproval)*/}
-                                        </div>
-                                    </li>
-                                </ul>
-                            </div>
-                            <div className="card-body pt-2">
-                                {/*console.log("gridDataApproval", gridDataApproval)*/}
-                                {console.log("openDropDown", openDropDown)}
-                                {console.log(gridHeader)}
-                                {openDropDown && (
-                                    <DataGrid
-                                    Id="CategoryApproval"
-                                    IsPagination={false}
-                                    ColumnCollection={gridHeader}
-                                    Onpageindexchanged={onPagechange}
-                                    onEditMethod={onGridEdit}
-                                    onGridDeleteMethod={onGridDelete}
-                                    onGridViewMethod={onGridView}
-                                    IsSarching={true}
-                                    GridData={[{ Id: 70, Name: 'Category 1', Description: 'Description 1' }]}
-                                    pageSize="2000" />
-                                )}
-                                {console.log("gridDataApproval", gridDataApproval)}
-                            </div>
-                        </div>
+                    {gridData.length > 0 && pageMode == "Home" && (
+                        <ApprovalPage
+                            title={"Pending For Approval"}
+                            gridHeader={gridHeader}
+                            gridData={gridData}
+                            onGridEdit={onGridEdit}
+                            onGridDelete={onGridDelete}
+                            onGridApprove={onGridApprove}
+                            onGridView={onGridView}
+                        />
+                    )}
                 </div>
-            </div >
-            )}
+            </div>
             {pageMode === 'Home' && (
                 <div className="row">
                     <div className="col-12">
