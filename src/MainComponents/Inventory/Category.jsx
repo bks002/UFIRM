@@ -15,8 +15,6 @@ const $ = window.$;
 const Category = (props) => {
     const [pageMode, setPageMode] = useState("Home");
     const [gridData, setGridData] = useState([]);
-    const gridDataApproval =
-        { Id: 100, Name: 'Category 1', Description: 'Description 1' };
     const gridHeader = [
         { sTitle: 'Id', titleValue: 'Id', "orderable": true },
         { sTitle: 'Name', titleValue: 'Name' },
