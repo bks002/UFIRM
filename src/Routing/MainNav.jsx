@@ -39,7 +39,6 @@ import RentalAssets from "../pages/RentalAssets.jsx";
 import CategoryPage from "../MainComponents/Inventory/CategoryPage.jsx";
 import VendorPage from "../MainComponents/Inventory/VendorPage.jsx";
 import RateCardPage from "../MainComponents/Inventory/RateCardPage.jsx";
-import POPage from "../MainComponents/Inventory/POPage.jsx"
 import EscalationGroupPage from "../pages/EscalationGroupPage";
 import EscalationMatrixPage from "../pages/EscalationMatrixPage";
 import NoticeBoardPage from "../pages/NoticeBoardPage";
@@ -496,12 +495,6 @@ class MainNav extends React.Component {
                         <Link to="/RateCard" className="nav-link">
                           <i className=" fas fa-caret-right nav-icon"></i>
                           <p>Rate Card</p>
-                        </Link>
-                      </li>
-                      <li className="nav-item">
-                        <Link to="/POPage" className="nav-link">
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>PO Page</p>
                         </Link>
                       </li>
                     </ul>
@@ -1138,9 +1131,6 @@ class MainNav extends React.Component {
             </Route>
             <Route path="/RateCard">
               <RateCardPage/>
-            </Route>
-            <Route path="/POPage">
-              <POPage/>
             </Route>
             <Route path="/RentalAssets">
               <RentalAssets/>
