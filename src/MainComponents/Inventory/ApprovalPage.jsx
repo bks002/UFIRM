@@ -49,7 +49,7 @@ const ApprovalTable = ({
             <div
                 className="card-header d-flex p-0"
                 onClick={handleToggle}
-                style={{ cursor: 'pointer', backgroundColor: '#f1e7c3' }}
+                style={{ cursor: 'pointer', backgroundColor: '#f1e7c3' }} 
             >
                 <h5 className="ml-3 mt-2">{title}</h5>
                 <ul className="nav ml-auto tableFilterContainer">
@@ -73,7 +73,7 @@ const ApprovalTable = ({
                     <DataTable
                         value={gridData}
                         paginator={false}
-                        rows={2}
+                        rows={2}  
                         scrollable
                         className="p-datatable-striped"
                     >
