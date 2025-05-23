@@ -48,7 +48,7 @@ const ApprovalTable = ({
     );
 
     return (
-        userrole=="Admin," ?(
+        
             <div className="card">
                 <div
                     className="card-header d-flex p-0"
@@ -99,7 +99,7 @@ const ApprovalTable = ({
                     </div>
                 )}
             </div>
-        ):null
+        
     );
 };
 
