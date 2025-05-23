@@ -131,6 +131,15 @@ export const PendingApprovalItem= async (propertyId)=>{
     }
 };
 
+export const fetchFilteredItems = async (propertyId,CategoryId) => {
+      try {
+        const response = await api.get(`/items?propertyId=${propertyId}&categoryId=${CategoryId}`);
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching items:', error);
+      }
+    };
+
 // ========== VENDOR ==========
 export const getVendors = async (propertyId) => {
     try {

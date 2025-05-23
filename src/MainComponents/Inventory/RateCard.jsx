@@ -9,7 +9,7 @@ import { InputText } from "primereact/inputtext"
 import { Dropdown } from "primereact/dropdown"
 import { Button } from "primereact/button"
 import { Toast } from "primereact/toast"
-import { getCategories, getAllItems, getVendors, createRateCard, getRateCard } from "../../Services/InventoryService"
+import { getCategories, getAllItems, getVendors, createRateCard, getRateCard , fetchFilteredItems } from "../../Services/InventoryService"
 import { confirmDialog } from "primereact/confirmdialog"
 import { DELETE_CONFIRMATION_MSG } from "../../Contants/Common"
 import { Dialog } from "primereact/dialog"
@@ -54,19 +54,20 @@ const RateCard = (props) => {
   const [filteredItems, setFilteredItems] = useState([]);
 
   useEffect(() => {
-    const fetchFilteredItems = async () => {
-      try {
-        const response = await axios.get(
-          `https://api.urest.in:8096/api/inventory/items?propertyId=${propertyId}&categoryId=${rateCardData.CategoryId}`,
-          { withCredentials: false }
-        );
-        setFilteredItems(response.data);
-      } catch (error) {
-        console.error('Error fetching items:', error);
-      }
-    };
-    fetchFilteredItems();
+    if(rateCardData.CategoryId){
+      loadfiltereditems(propertyId,rateCardData)
+    }
   }, [propertyId, rateCardData.CategoryId]);
+
+  const loadfiltereditems = async (propertyId,rateCardData) => {
+    try {
+      const data = await fetchFilteredItems(propertyId, rateCardData.CategoryId)
+      setFilteredItems(data);
+    } catch (error) {
+      console.error("Error fetching Item:", error)
+      toast.current.show({ severity: "error", summary: "Error", detail: "Failed to load Item", life: 3000 })
+    }
+  }
 
   useEffect(() => {
     if (propertyId) {
@@ -439,10 +440,9 @@ const RateCard = (props) => {
               <label htmlFor="item">Item</label>
               <div className="mb-3">
                 <div className="card flex justify-content-center">
-                  {console.log(filteredItems)}
                   <Dropdown
                     id="item"
-                    value={filteredItems.find(item =>(item.Id===rateCardData.ItemId))}
+                    value={filteredItems.find(item => item.Id === rateCardData.ItemId)}
                     onChange={onItemChange}
                     options={filteredItems}
                     optionLabel="Name"
