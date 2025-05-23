@@ -330,7 +330,6 @@ const RateCard = (props) => {
     )
   }
 
-
   const vendorFilterTemplate = (options) => {
     return (
       <Dropdown
