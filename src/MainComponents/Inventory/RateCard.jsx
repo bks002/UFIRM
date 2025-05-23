@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from "react"
+import axios from 'axios';
 import { FilterMatchMode } from "primereact/api"
 import { DataTable } from "primereact/datatable"
 import { Column } from "primereact/column"
@@ -49,6 +50,23 @@ const RateCard = (props) => {
     ItemName: { value: null, matchMode: FilterMatchMode.EQUALS },
     VendorName: { value: null, matchMode: FilterMatchMode.EQUALS },
   })
+
+  const [filteredItems, setFilteredItems] = useState([]);
+
+  useEffect(() => {
+    const fetchFilteredItems = async () => {
+      try {
+        const response = await axios.get(
+          `https://api.urest.in:8096/api/inventory/items?propertyId=${propertyId}&categoryId=${rateCardData.CategoryId}`,
+          { withCredentials: false }
+        );
+        setFilteredItems(response.data);
+      } catch (error) {
+        console.error('Error fetching items:', error);
+      }
+    };
+    fetchFilteredItems();
+  }, [propertyId, rateCardData.CategoryId]);
 
   useEffect(() => {
     if (propertyId) {
@@ -311,6 +329,7 @@ const RateCard = (props) => {
     )
   }
 
+
   const vendorFilterTemplate = (options) => {
     return (
       <Dropdown
@@ -420,11 +439,12 @@ const RateCard = (props) => {
               <label htmlFor="item">Item</label>
               <div className="mb-3">
                 <div className="card flex justify-content-center">
+                  {console.log(filteredItems)}
                   <Dropdown
                     id="item"
-                    value={items.find((item) => item.Id === rateCardData.ItemId)}
+                    value={filteredItems.find(item =>(item.Id===rateCardData.ItemId))}
                     onChange={onItemChange}
-                    options={items.filter((item) => item.CategoryId === rateCardData.CategoryId)}
+                    options={filteredItems}
                     optionLabel="Name"
                     placeholder="Select Item"
                     disabled={!rateCardData.CategoryId}
@@ -433,7 +453,7 @@ const RateCard = (props) => {
               </div>
               {!rateCardData.CategoryId && <small className="p-error">Please select a category first.</small>}
               {rateCardData.CategoryId &&
-                items.filter((item) => item.CategoryId === rateCardData.CategoryId).length === 0 && (
+                filteredItems.length === 0 && (
                   <small className="p-text-secondary">No items available for the selected category.</small>
                 )}
             </div>
