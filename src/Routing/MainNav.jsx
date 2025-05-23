@@ -71,6 +71,7 @@ import ServiceRecords from "../pages/ManageAssets";
 import PPMSpreadsheet from "../pages/PPMSpreadsheet";
 import FrequencyMasterPage from "../pages/FrequencyMasterPage";
 import ItemMasterPage from "../MainComponents/Inventory/itemPage";
+import PurchaseOrderPage from "../MainComponents/Inventory/PurchaseOrderPage";
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -465,7 +466,7 @@ class MainNav extends React.Component {
                       </p>
                     </a>
                     <ul className="nav nav-treeview">
-                    <li className="nav-item">
+                      <li className="nav-item">
                         <Link
                             to="/Category"
                             className="nav-link"
@@ -495,6 +496,12 @@ class MainNav extends React.Component {
                         <Link to="/RateCard" className="nav-link">
                           <i className=" fas fa-caret-right nav-icon"></i>
                           <p>Rate Card</p>
+                        </Link>
+                      </li>
+                      <li className="nav-item">
+                        <Link to="Inventory/PuchaseOrders" className="nav-link">
+                          <i className=" fas fa-caret-right nav-icon"></i>
+                          <p>Purchase Orders</p>
                         </Link>
                       </li>
                     </ul>
@@ -1131,6 +1138,9 @@ class MainNav extends React.Component {
             </Route>
             <Route path="/RateCard">
               <RateCardPage/>
+            </Route>
+            <Route path="/Inventory/PuchaseOrders">
+              <PurchaseOrderPage/>
             </Route>
             <Route path="/RentalAssets">
               <RentalAssets/>
