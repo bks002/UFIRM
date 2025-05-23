@@ -39,7 +39,7 @@ const ApprovalTable = ({
                     <i className="fa fa-trash" aria-hidden="true"></i>
                 </button>
             )}
-            {onGridApprove && (
+            {userrole=="Admin," && onGridApprove && (
                 <button className="btn btn-sm btn-success rounded" onClick={() => onGridApprove(rowData.Id)}>
                     <i class='fa fa-check'></i>
                 </button>
