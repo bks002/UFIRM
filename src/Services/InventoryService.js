@@ -65,6 +65,16 @@ export const deleteCategory = async (id) => {
     }
 };
 
+export const PendingApprovalCategory= async (propertyId)=>{
+    try{
+        const response = await api.get(`categories/pendingApproval?propertyId=${propertyId}`);
+        return response.data;
+    }
+    catch(error){
+        handleApiError(error);
+    }
+}
+
 // ========== ITEM ==========
 export const getAllItems = async (propertyId) => {
     try {
@@ -111,6 +121,25 @@ export const deleteItem = async (id) => {
     }
 };
 
+export const PendingApprovalItem= async (propertyId)=>{
+    try{
+        const response = await api.get(`items/pendingApproval?propertyId=${propertyId}`);
+        return response.data;
+    }
+    catch(error){
+        handleApiError(error);
+    }
+};
+
+export const fetchFilteredItems = async (propertyId,CategoryId) => {
+      try {
+        const response = await api.get(`/items?propertyId=${propertyId}&categoryId=${CategoryId}`);
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching items:', error);
+      }
+    };
+
 // ========== VENDOR ==========
 export const getVendors = async (propertyId) => {
     try {
@@ -132,7 +161,11 @@ export const getVendorById = async (id) => {
 
 export const createVendor = async (vendor) => {
     try {
-        const response = await api.post('/vendor', vendor);
+        const response = await api.post('/vendor', vendor, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
         return response.data;
     } catch (error) {
         handleApiError(error);
@@ -151,6 +184,36 @@ export const updateVendor = async (id, vendor) => {
 export const deleteVendor = async (id) => {
     try {
         const response = await api.delete(`/vendor/${id}`);
+        return response.data;
+    } catch (error) {
+        handleApiError(error);
+    }
+};
+
+export const PendingApprovalVendor= async (propertyId)=>{
+    try{
+        const response = await api.get(`vendors/pendingApproval?propertyId=${propertyId}`);
+        return response.data;
+    }
+    catch(error){
+        handleApiError(error);
+    }
+};
+
+// ========== Rate Card ==========
+
+export const getRateCard = async (propertyId) => {
+    try {
+        const response = await api.get(`/ratecards?propertyId=${propertyId}`);
+        return response.data;
+    } catch (error) {
+        handleApiError(error);
+    }
+};
+
+export const createRateCard = async (ratecard) => {
+    try {
+        const response = await api.post('/ratecard', ratecard);
         return response.data;
     } catch (error) {
         handleApiError(error);

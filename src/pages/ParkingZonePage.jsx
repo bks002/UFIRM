@@ -23,7 +23,7 @@ class ParkingZonePage extends React.Component {
                             <div className="col-sm-6">
                                 <ol className="breadcrumb float-sm-right">
                                     <li className="breadcrumb-item"><a href="/">Home</a></li>
-                                    <li className="breadcrumb-item active"><a href="/Account/App/ParkingZone">Parking Zone</a> </li>
+                                    <li className="breadcrumb-item active"><a href="/ParkingZone">Parking Zone</a> </li>
                                 </ol>
                             </div>
                         </div>
