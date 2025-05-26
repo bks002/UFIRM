@@ -468,7 +468,7 @@ class MainNav extends React.Component {
                     <ul className="nav nav-treeview">
                       <li className="nav-item">
                         <Link
-                            to="/Category"
+                            to="/Account/App/Category"
                             className="nav-link"
                         >
                           <i className=" fas fa-caret-right nav-icon"></i>
@@ -478,7 +478,7 @@ class MainNav extends React.Component {
 
                       <li className="nav-item">
                         <Link
-                            to="/Item"
+                            to="/Account/App/Item"
                             className="nav-link"
                         >
                           <i className=" fas fa-caret-right nav-icon"></i>
@@ -487,19 +487,19 @@ class MainNav extends React.Component {
                       </li>
 
                       <li className="nav-item">
-                        <Link to="/Vendors" className="nav-link">
+                        <Link to="/Account/App/Vendors" className="nav-link">
                           <i className=" fas fa-caret-right nav-icon"></i>
                           <p>Vendors</p>
                         </Link>
                       </li>
                       <li className="nav-item">
-                        <Link to="/RateCard" className="nav-link">
+                        <Link to="/Account/App/RateCard" className="nav-link">
                           <i className=" fas fa-caret-right nav-icon"></i>
                           <p>Rate Card</p>
                         </Link>
                       </li>
                       <li className="nav-item">
-                        <Link to="Inventory/PuchaseOrders" className="nav-link">
+                        <Link to="/Account/App/PurchaseOrders" className="nav-link">
                           <i className=" fas fa-caret-right nav-icon"></i>
                           <p>Purchase Orders</p>
                         </Link>
@@ -1124,25 +1124,25 @@ class MainNav extends React.Component {
             <Route path="/AssetsMaster">
               <AssetsMasterPage />
             </Route>
-            <Route path="/Category">
+            <Route path="/Account/App/Category">
               <CategoryPage />
                </Route>
-            <Route path="/Item">
+            <Route path="/Account/App/Item">
               <ItemMasterPage />
             </Route>
             <Route path="/CheckIn&CheckOut">
               <CheckInCheckOut/>
             </Route>
-            <Route path="/Vendors">
+            <Route path="/Account/App/Vendors">
               <VendorPage/>
             </Route>
-            <Route path="/RateCard">
+            <Route path="/Account/App/RateCard">
               <RateCardPage/>
             </Route>
-            <Route path="/Inventory/PuchaseOrders">
+            <Route path="/Account/App/PurchaseOrders">
               <PurchaseOrderPage/>
             </Route>
-            <Route path="/RentalAssets">
+            <Route path="/Account/App/RentalAssets">
               <RentalAssets/>
             </Route>
             <Route path="/ServiceRecords">
