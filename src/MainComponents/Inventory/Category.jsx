@@ -6,17 +6,15 @@ import Button from '../../ReactComponents/Button/Button';
 import { CreateValidator, ValidateControls } from '../Calendar/Validation';
 import * as appCommon from '../../Common/AppCommon.js';
 import { DELETE_CONFIRMATION_MSG } from '../../Contants/Common';
-import { getCategories, getCategoryById, createCategory, updateCategory, deleteCategory } from "../../Services/InventoryService";
+import { getCategories, getCategoryById, createCategory, updateCategory, deleteCategory, PendingApprovalCategory } from "../../Services/InventoryService";
 import { useSelector, useDispatch } from 'react-redux';
 import ExportToCSV from '../../ReactComponents/ExportToCSV/ExportToCSV.js';
-const $ = window.$;
+import ApprovalPage from './ApprovalPage';
 
 const Category = (props) => {
     const [pageMode, setPageMode] = useState("Home");
-    const [openDropDown, setOpenDropDown] = useState(false);
     const [gridData, setGridData] = useState([]);
-    const gridDataApproval =
-        { Id: 100, Name: 'Category 1', Description: 'Description 1'};
+    const [GridApproval, setGridApproval] = useState([]);
     const gridHeader = [
         { sTitle: 'Id', titleValue: 'Id', "orderable": true },
         { sTitle: 'Name', titleValue: 'Name' },
@@ -25,16 +23,27 @@ const Category = (props) => {
     ];
     const propertyId = useSelector((state) => state.Commonreducer.puidn);
     const [loading, setLoading] = useState(false);
-    const emptycategorydata = { Id: 0, Name: '', Description: '', propertyId: propertyId };
+    const emptycategorydata = { Id: 0, Name: '', Description: '', propertyId: propertyId, IsApproved: false };
     const [categoryData, setCategoryData] = useState(emptycategorydata);
     const dispatch = useDispatch();
+
+    const getPendingCategoryList = useCallback(async (propertyId) => {
+        try {
+            setLoading(true);
+            const data = await PendingApprovalCategory(propertyId);
+            setGridApproval(data);
+            setLoading(false);
+        } catch (error) {
+            console.error('error fetching pending approval');
+            setLoading(false);
+        }
+    }, []);
 
     const getCategoriesList = useCallback(async (propertyId) => {
         try {
             setLoading(true);
             const data = await getCategories(propertyId);
             setGridData(data);
-            //setCategoryData(data);
             setLoading(false);
         } catch (error) {
             console.error('Error fetching Categories:', error);
@@ -45,19 +54,21 @@ const Category = (props) => {
     useEffect(() => {
         if (propertyId) {
             setGridData([]);
+            setGridApproval([]);
+            getPendingCategoryList(propertyId);
             getCategoriesList(propertyId);
         } else {
             setGridData([]);
             appCommon.showtextalert("Error", "Please Select a Property.", "error");
         }
-    }, [getCategoriesList, propertyId]);
-
+    }, [getCategoriesList, getPendingCategoryList, propertyId]);
 
     const handleCreateCategory = async (newCategory) => {
         try {
             await createCategory(newCategory);
             appCommon.showtextalert("Category Saved Successfully!", "", "success");
             handleCancel();
+            await getPendingCategoryList(propertyId);
             await getCategoriesList(propertyId);
         } catch (error) {
             appCommon.showtextalert("Error Creating Category", error.message, "error");
@@ -69,6 +80,7 @@ const Category = (props) => {
             await updateCategory(id, updatedCategory);
             appCommon.showtextalert("Category Updated Successfully!", "", "success");
             handleCancel();
+            await getPendingCategoryList(propertyId);
             await getCategoriesList(propertyId);
         } catch (error) {
             appCommon.showtextalert("Error Updating Category", error.message, "error");
@@ -88,14 +100,30 @@ const Category = (props) => {
         try {
             await deleteCategory(id);
             appCommon.showtextalert("Category Deleted Successfully!", "", "success");
+            await getPendingCategoryList(propertyId);
             await getCategoriesList(propertyId);
         } catch (error) {
             appCommon.showtextalert("Error Deleting Category", error.message, "error");
         }
     };
 
-    const onPagechange = (page) => {
-        // Handle page change logic if needed
+    const onPagechange = () => {
+    };
+
+    const onGridApprove = async (categoryApprovedId) => {
+        try {
+            const approvedCategory = GridApproval.find(item => item.Id === categoryApprovedId);
+            if (approvedCategory) {
+                const updatedCategory = { ...approvedCategory, IsApproved: true };
+                await updateCategory(updatedCategory.Id, updatedCategory);
+                appCommon.showtextalert("Category Approved Successfully!", "", "success");
+                setGridApproval(prevData => prevData.filter(item => item.Id !== categoryApprovedId));
+                await getCategoriesList(propertyId);
+            }
+        } catch (error) {
+            appCommon.showtextalert("Error Approving Category", error.message, "error");
+            console.error("Error approving category:", error);
+        }
     };
 
     const onGridDelete = (categoryData) => {
@@ -126,7 +154,7 @@ const Category = (props) => {
         setPageMode('View');
         CreateValidator();
         try {
-            const categoryDetails = handleViewCategory(categoryData);
+            const categoryDetails = await getCategoryById(categoryData); 
             setCategoryData(categoryDetails);
         } catch (error) {
             console.error("Error fetching category details", error);
@@ -152,10 +180,6 @@ const Category = (props) => {
         setCategoryData(emptycategorydata);
     };
 
-    const DropDown = () => {
-        setOpenDropDown(!openDropDown);
-    };
-
     const handleSave = () => {
         if (ValidateControls()) {
             if (pageMode === "Add") {
@@ -170,7 +194,6 @@ const Category = (props) => {
         setPageMode('Home');
         setCategoryData(emptycategorydata);
         getCategoriesList(propertyId);
-        setOpenDropDown(false);
     };
 
     const handleInputChange = (e) => {
@@ -183,52 +206,21 @@ const Category = (props) => {
 
     return (
         <>
-            {gridDataApproval && pageMode === 'Home' && (
             <div className="row">
                 <div className="col-12">
-                    {/*console.log("gridDataApproval", gridDataApproval)*/}
-                        <div className="card">
-                            <div className="card-header d-flex p-0 bg" onClick={DropDown} style={{ cursor: 'pointer', backgroundColor: '#f1e7c3' }}>
-                                <h5 className="ml-3 mt-2">Pending Approval</h5>
-                                <ul className="nav ml-auto tableFilterContainer">
-                                    <li className="nav-item">
-                                        <div className="input-group input-group-sm">
-                                            <div className="input-group-prepend">
-                                                <span
-                                                    className="btn btn-primary"
-                                                    style={{ backgroundColor: '#f1e7c3', color: '#000000' }}
-                                                >
-                                                    {openDropDown ? '\u2191' : '\u2193'}
-                                                </span>
-                                            </div>
-                                            {/*console.log("gridDataApproval", gridDataApproval)*/}
-                                        </div>
-                                    </li>
-                                </ul>
-                            </div>
-                            <div className="card-body pt-2">
-                                {/*console.log("gridDataApproval", gridDataApproval)*/}
-                                {console.log("openDropDown", openDropDown)}
-                                {console.log(gridHeader)}
-                                {openDropDown && (
-                                    <DataGrid
-                                    Id="CategoryApproval"
-                                    IsPagination={false}
-                                    ColumnCollection={gridHeader}
-                                    Onpageindexchanged={onPagechange}
-                                    onEditMethod={onGridEdit}
-                                    onGridDeleteMethod={onGridDelete}
-                                    onGridViewMethod={onGridView}
-                                    IsSarching={true}
-                                    GridData={[{ Id: 70, Name: 'Category 1', Description: 'Description 1' }]}
-                                    pageSize="2000" />
-                                )}
-                                {console.log("gridDataApproval", gridDataApproval)}
-                            </div>
-                        </div>
+                    {GridApproval.length > 0 && pageMode === "Home" && (
+                        <ApprovalPage
+                            title={"Pending For Approval"}
+                            gridHeader={gridHeader}
+                            gridData={GridApproval}
+                            onGridEdit={onGridEdit}
+                            onGridDelete={onGridDelete}
+                            onGridApprove={onGridApprove}
+                            onGridView={onGridView}
+                        />
+                    )}
                 </div>
-            </div >
-            )}
+            </div>
             {pageMode === 'Home' && (
                 <div className="row">
                     <div className="col-12">
@@ -265,9 +257,7 @@ const Category = (props) => {
                         </div>
                     </div>
                 </div>
-            )
-            }
-
+            )}
             {
                 (pageMode === 'Add' || pageMode === 'Edit') && (
                     <div className="modal d-flex align-items-center justify-content-center show" tabIndex="-1" role="dialog">
