@@ -16,7 +16,6 @@ const PurchaseOrderPage = () => {
     const [Items, setItems] = useState([]);
     const [selectedItem, setSelectedItem] = useState(null);
     const [allVendors, setAllVendors] = useState([]);
-    const [availableVendors, setAvailableVendors] = useState([]);
     const [RateCard, setRateCard] = useState([]);
     const [selectedVendor, setSelectedVendor] = useState(null);
     const [allGridData, setAllGridData] = useState([]);
@@ -24,6 +23,9 @@ const PurchaseOrderPage = () => {
     const [selectedGridData, setSelectedGridData] = useState([]);
     const [displayDialog, setDisplayDialog] = useState(false);
     const [displayafterPlaceOrder, setDisplayafterPlaceOrder] = useState(false);
+    const [shippingAddress, setShippingAddress] = useState("");
+    const [billingAddress, setBillingAddress] = useState("");
+
     const propertyId = useSelector((state) => state.Commonreducer.puidn);
 
     const toast = useRef(null);
@@ -73,8 +75,8 @@ const PurchaseOrderPage = () => {
                         Description: item.Description,
                         Quantity: 0,
                         TotalAmount: 0,
-                        Billing: "N/A",
-                        Shipping: "N/A"
+                        Billing: "",
+                        Shipping: ""
                     }));
                 } else {
                     return [{
@@ -89,8 +91,8 @@ const PurchaseOrderPage = () => {
                         Description: item.Description,
                         Quantity: 0,
                         TotalAmount: 0,
-                        Billing: "N/A",
-                        Shipping: "N/A"
+                        Billing: "",
+                        Shipping: ""
                     }];
                 }
             });
@@ -107,6 +109,7 @@ const PurchaseOrderPage = () => {
     useEffect(() => {
         let currentData = [...allGridData];
         if (selectedItem) {
+            console.log("Filtering by selectedItem:", selectedItem);
             currentData = currentData.filter(data => String(data.ItemId) === String(selectedItem));
         }
         if (selectedVendor && selectedVendor !== '') {
@@ -163,7 +166,6 @@ const PurchaseOrderPage = () => {
         try {
             const data = await getVendors(propertyId);
             setAllVendors(data);
-            setAvailableVendors(data);
         } catch (error) {
             console.error('Error fetching Vendors:', error);
             toast.current.show({
@@ -225,24 +227,28 @@ const PurchaseOrderPage = () => {
         return <span>{rowData.HSNCode}</span>
     }
 
-    const onQuantityChange = (e, rowData) => {
-        const updatedSelectedGridData = selectedGridData.map(item => {
-            if (item.ItemId === rowData.ItemId) {
-                const quantity = e.value || 0;
-                const price = item.Price || 0;
-                return { ...item, Quantity: quantity, TotalAmount: quantity * price };
-            }
-            return item;
-        });
-        setSelectedGridData(updatedSelectedGridData);
-    };
+    // const onQuantityChange = (e, rowData) => {
+    //     const updatedSelectedGridData = selectedGridData.map(item => {
+    //         if (item.ItemId === rowData.ItemId && item.VendorName === rowData.VendorName) {
+    //             const price = item.Price;
+    //             const newQuantity = e.value;
+    //             return {
+    //                 ...item,
+    //                 Quantity: newQuantity,
+    //                 TotalAmount: newQuantity * price
+    //             };
+    //         }
+    //         return item;
+    //     });
+    //     setSelectedGridData(updatedSelectedGridData);
+    // };
 
     const Quantitytemplate = (rowData) => {
         return (
             <InputNumber
-                value={rowData.Quantity}
-                onValueChange={(e) => onQuantityChange(e, rowData)}
-                mode="decimal"
+            value={rowData.Quantity}
+                showButtons
+                onValueChange={(e) => {rowData.Quantity = e.value; rowData.TotalAmount = e.value * rowData.Price; setSelectedGridData([...selectedGridData])}}
                 min={0}
             />
         );
@@ -258,35 +264,83 @@ const PurchaseOrderPage = () => {
         }
     };
 
-    const openplaceorder = () => {
+    const openPlaceOrder = () => {
+        const dataWithAddresses = selectedGridData.map(item => ({
+            ...item,
+            Shipping: shippingAddress,
+            Billing: billingAddress
+        }));
+        setSelectedGridData(dataWithAddresses);
         setDisplayafterPlaceOrder(true);
     };
 
     const onHideDialog = () => {
         setDisplayDialog(false);
+        setDisplayafterPlaceOrder(false);
+        setSelectedGridData([]);
+        setShippingAddress("");
+        setBillingAddress("");
     };
 
-    const renderPlaceordercontent=()=>{
-        return(<div>
-            
-        </div>);
+    const renderPlaceordercontent = () => {
+        const groupedByVendor = selectedGridData.reduce((acc, item) => {
+            if (!acc[item.VendorName]) {
+                acc[item.VendorName] = [];
+            }
+            acc[item.VendorName].push(item);
+            return acc;
+        }, {});
+
+        return (
+            <div className='flex flex-wrap row'>
+                {Object.keys(groupedByVendor).map((vendorName, index) => (
+                    <div key={index} className='col-6 mb-4'>
+                        <div className='card flex flex-column'>
+                            <div className='card-header d-flex align-items-center justify-content-between'>
+                                <h5>{vendorName}</h5>
+                            </div>
+                            <div className='card-body p-3'>
+                                <p><strong>Shipping Address:</strong> {groupedByVendor[vendorName][0].Shipping}</p>
+                                <p><strong>Billing Address:</strong> {groupedByVendor[vendorName][0].Billing}</p>
+                                {groupedByVendor[vendorName].map((item, itemIndex) => (
+                                    <div key={itemIndex} className='mb-2'>
+                                        <p><strong>Item:</strong> {item.ItemName}</p>
+                                        <p><strong>Brand:</strong> {item.BrandName}</p>
+                                        <p><strong>HSN Code:</strong> {item.HSNCode}</p>
+                                        <p><strong>Price:</strong> {item.Price ? `₹${item.Price} /${item.MeasurementUnit}` : 'N/A'}</p>
+                                        <p><strong>Quantity:</strong> {item.Quantity}</p>
+                                        <p><strong>Total Amount:</strong> {item.TotalAmount ? `₹${item.TotalAmount}` : 'N/A'}</p>
+                                        {itemIndex < groupedByVendor[vendorName].length - 1 && <hr />}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
     };
+
 
     const renderDialogContent = () => {
         return (
             <div>
-                <div className="d-flex justify-content-center">
-                    <div className="d-flex">
-                        <span className="p-input-icon-left">
-                            <label htmlFor='Shipping'>Shipping Address</label>
-                            <InputText id='Shipping' value={selectedGridData.Shipping} />
-                        </span>
+                <div className="d-flex justify-content-between mb-4">
+                    <div className="d-flex flex-column me-3 flex-grow-1">
+                        <label htmlFor='Shipping'>Shipping Address</label>
+                        <InputText
+                            id='Shipping'
+                            value={shippingAddress}
+                            onChange={(e) => setShippingAddress(e.target.value)}
+                        />
                     </div>
-                    <div className="d-flex">
-                        <span className="p-input-icon-right">
-                            <label htmlFor='Billing'>Billing Address</label>
-                            <InputText id='Billing' value={selectedGridData.Billing} />
-                        </span>
+                    <div className="d-flex flex-column ms-3 flex-grow-1">
+                        <label htmlFor='Billing'>Billing Address</label>
+                        <InputText
+                            id='Billing'
+                            value={billingAddress}
+                            onChange={(e) => setBillingAddress(e.target.value)}
+                        />
                     </div>
                 </div>
                 <DataTable
@@ -305,19 +359,18 @@ const PurchaseOrderPage = () => {
                     <Column body={Totalamounttemplate} header="Total Amount" />
                 </DataTable>
                 <div className="p-d-flex p-jc-end p-mt-3">
-                    <Button label="Place Order" icon="pi pi-check" className="p-button-success" onClick={openplaceorder} />
+                    <Button label="Place Order" icon="pi pi-check" className="p-button-success" onClick={openPlaceOrder} />
                 </div>
                 <Dialog
-                visible={displayafterPlaceOrder}
-                onHide={onHideDialog}
-                modal
-                style={{ width: '90vw', height: '90vh' }}
-                header="Purchase Order Details"
-            >
-                {renderPlaceordercontent()}
-            </Dialog>
+                    visible={displayafterPlaceOrder}
+                    onHide={onHideDialog}
+                    modal
+                    style={{ width: '90vw', height: '90vh' }}
+                    header="Purchase Order Details"
+                >
+                    {renderPlaceordercontent()}
+                </Dialog>
             </div>
-            
         );
     };
 
@@ -374,7 +427,7 @@ const PurchaseOrderPage = () => {
                                 onChange={handleVendorSelect}
                             >
                                 <option value="">Select Vendor</option>
-                                {availableVendors.map((ven) => (
+                                {allVendors.map((ven) => (
                                     <option key={ven.Id} value={ven.Id}>
                                         {ven.Name}
                                     </option>
