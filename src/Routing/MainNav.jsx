@@ -234,7 +234,7 @@ class MainNav extends React.Component {
           </nav>
 
           <aside className="main-sidebar elevation-4 sidebar-light-primary">
-            <Link to="/Account/App" className="brand-link">
+            <Link to="/" className="brand-link">
               <img
                 src="https://ufirm.in/assets/cdn/public/img/Ufirm-fabicon.png"
                 alt="UFIRM Logo"
@@ -254,7 +254,7 @@ class MainNav extends React.Component {
                     className="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu"
                     data-accordion="false">
                   <li className="nav-item has-treeview">
-                    <a href="/Account/App" className="nav-link">
+                    <a href="#" className="nav-link">
                       <i className="nav-icon fas fa-tachometer-alt"></i>
                       <p>
                         Dashboard
@@ -1011,15 +1011,13 @@ class MainNav extends React.Component {
             </div>
           </aside>
           <Switch>
-            {/* <Route
+            <Route
                 exact
                 path="/"
-                render={() => <Redirect to=" "/>}
-            /> */}
-            <Route exact path="/" component={Home}/>
-            {/* <Route exact path="/">
-              <Home />
-            </Route> */}
+                render={() => <Redirect to="/Account/App" />}
+            />
+
+            <Route exact path="/Account/App" component={Home} />
             <Route exact path="/Account/App/ticket">
               <TicketingDashboard/>
             </Route>
