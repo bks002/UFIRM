@@ -548,7 +548,7 @@ class AmenitiesBooking extends React.Component {
                     <div class="col-sm-6">
                       <div class="form-group">
                         <label for="ddlPropertyList">Navigate to </label>
-                        <Link to="/Account/App/AmenitiesBooking" className="nav-link">
+                        <Link to="/AmenitiesBooking" className="nav-link">
                         <Button
                             id="btnaddCalendarCategory"
                             ClassName="btn btn-success ml-2"
@@ -558,7 +558,7 @@ class AmenitiesBooking extends React.Component {
                       </div>
                       <div class="form-group">
                         <label for="ddlPropertyList">Navigate to </label>
-                        <Link to="/Account/App/EventCalendar" className="nav-link">
+                        <Link to="/EventCalendar" className="nav-link">
                         <Button
                             id="btnaddCalendarCategory"
                             ClassName="btn btn-success ml-2"

@@ -1,38 +1,55 @@
 import React, { useEffect, useState } from "react";
 import NotificationButton from "./NotificationButton";
 import NotificationList from "./NotificationList";
+import { connect } from "react-redux";
+import {fetchNotifications} from "../../Services/notificationService";
 
-const Notification = () => {
-  const [nCount, setNCount] = useState(0);
-  const [list, setList] = useState({});
-  const [showList,setShowList] = useState(false);
+const NOTIFICATION_TYPES = ["task", "asset", "complaint"];
+
+const Notification = ({ propId }) => {
+  const [dataMap, setDataMap] = useState({
+    task: [],
+    asset: [],
+    complaint: [],
+  });
+  const [showType, setShowType] = useState(null);
+
+  const loadNotification = async (type) => {
+    const data = await fetchNotifications(type, propId);
+    setDataMap((prev) => ({ ...prev, [type]: data }));
+  };
 
   useEffect(() => {
-    const fetchNotification = async () => {
-      const response = await fetch("https://api.urest.in:8096/FMTaskNotification");
-      if (response.ok) {
-        const data = await response.json();
-        console.log(data);
-        setList(data);
-        setNCount(data.length);
-      } else {
-        setNCount(0);
-      }
-    };
-    fetchNotification();
-  }, [showList]);
+    NOTIFICATION_TYPES.forEach((type) => loadNotification(type));
+  }, [propId,showType]);
 
-  const handleShowList = () => {
-    setShowList(!showList);
+  const handleShowList = (type) => {
+    setShowType((prev) => (prev === type ? null : type));
   };
 
   return (
-    <>
-    <NotificationButton count={nCount} onClick={handleShowList}  />
-    {showList && <NotificationList nList={list} apiCall={handleShowList}/>}
-    
-    </>
+      <>
+        {NOTIFICATION_TYPES.map((type) => (
+            <NotificationButton
+                key={type}
+                count={dataMap[type].length}
+                type={type}
+                onClick={() => handleShowList(type)}
+            />
+        ))}
+
+        {showType && (
+            <NotificationList
+                nList={dataMap[showType]}
+                apiCall={() => loadNotification(showType)}
+            />
+        )}
+      </>
   );
 };
 
-export default Notification;
+const mapStateToProps = (state) => ({
+  propId: state.Commonreducer.puidn,
+});
+
+export default connect(mapStateToProps)(Notification);

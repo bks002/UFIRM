@@ -2,7 +2,6 @@ import ServiceProvider from '../../Common/ServiceProvider.js';
 let srv = new ServiceProvider();
 class DataProvider {
     manageCategory(model, type) {
-        // 
         let url = '';
         switch (type) {
             case 'C':
@@ -18,6 +17,27 @@ class DataProvider {
                 url = `Calendar/Category/List/${model[0].CmdType}`;
                 return srv.get(url);
             default:
+        }
+    }
+    manageFrequency(model, type) {
+        let url = '';
+        let data = model[0];
+
+        switch (type) {
+            case 'C': // Create
+                url = `api/master/addFrequency`;
+                return srv.CallPostNewService(url, data);
+
+            case 'U': // Update
+                url = `api/master/updateFrequency/${data.Id}`;
+                return srv.CallPutService(url, data);
+
+            case 'D': // Delete
+                url = `api/master/deleteFrequency/${data.Id}`;
+                return srv.CallDeleteNewService(url);
+
+            default:
+                throw new Error("Invalid operation type");
         }
     }
 
@@ -93,7 +113,6 @@ class DataProvider {
     }
 
     manageAttendanceData(model, type) {
-        console.log(model)
         let url = '';
         switch (type) {
             case 'R':
@@ -109,7 +128,6 @@ class DataProvider {
     }
 
     manageEmployee(model, type) {
-        console.log(model)
         switch (type) {
         case 'R':
             let url = `Facility/FacilityMember`;
@@ -119,7 +137,6 @@ class DataProvider {
     }
 
     manageResidentEvents(model, type) {
-        console.log(model)
         let url = '';
         switch (type) {
             case 'R':
@@ -159,7 +176,6 @@ class DataProvider {
     }
 
     manageAssign(model, type) {
-        console.log(model)
         let url = '';
         switch (type) {
             case 'R':
@@ -171,7 +187,6 @@ class DataProvider {
     }
 
     manageDashboardAssign(model, type) {
-        console.log(model)
         let url = '';
         switch (type) {
             case 'R':
@@ -208,7 +223,6 @@ class DataProvider {
     manageQues(model, type) {
         // 
         let url = '';
-        console.log(model)
         switch (type) {
             case 'C':
                 url = `/CreateQuestionnaire`;
@@ -241,7 +255,6 @@ class DataProvider {
     manageRemarks(model, type) {
         // 
         let url = '';
-        console.log(model)
         switch (type) {
             case 'C':
                 url = `CreateTaskWiseFmStatusData`;
@@ -254,7 +267,6 @@ class DataProvider {
     manageQuesImage(model, type) {
         // 
         let url = '';
-        console.log(model)
         switch (type) {
             case 'R':
                 url = `GetTaskQuestionImage?TaskId=${model[0].TaskId}&QuestId=${model[0].QuestId}&UpdatedOn=${model[0].UpdatedOn}`;

@@ -4,12 +4,11 @@ import "react-datepicker/dist/react-datepicker.css";
 import { setHours, setMinutes } from "date-fns";
 import Modal from "react-awesome-modal";
 import moment from "moment";
-import { th } from "date-fns/locale";
 import ApiProvider from "../DataProvider";
 import Button from "../../../ReactComponents/Button/Button";
 import * as appCommon from "../../../Common/AppCommon.js";
-import { CreateValidator, ValidateControls } from "../Validation";
 import { ToastContainer, toast } from "react-toastify";
+import {getFrequencyList} from "../../../Services/masterService";
 
 export default class AddTask extends Component {
   constructor(props) {
@@ -35,6 +34,7 @@ export default class AddTask extends Component {
       selectedSubCategory: "",
       subCategory: [],
       assets: [],
+      frequencyData:[],
       assetId: "",
       QRCode: "",
       remarks:"",
@@ -111,6 +111,7 @@ export default class AddTask extends Component {
           Location: this.state.location,
           AssetsID: parseInt(this.state.assetId),
           QRCode: this.state.QRCode,
+          type: this.props.type,
         });
         break;
       default:
@@ -143,7 +144,7 @@ export default class AddTask extends Component {
 
   manageTask = (model, type) => {
     this.ApiProvider.manageTask(model, type).then((resp) => {
-      if (resp.ok && resp.status == 200) {
+      if (resp.ok && resp.status === 200) {
         return resp.json().then((rData) => {
           switch (type) {
             case "C":
@@ -175,16 +176,13 @@ export default class AddTask extends Component {
 
   manageAssets = (model, type) => {
        this.ApiProvider.manageAssets(model, type).then((resp) => {
-        console.log(resp)
-      if (resp.ok && resp.status == 200) {
+      if (resp.ok && resp.status === 200) {
         return resp.json().then((rData) => {
           let assetsData = [];
-          console.log(rData)
           assetsData = [...rData.PassedServiceDates, ...rData.UpcomingServiceDates].map((element) => ({
             assetId: element.Id,
             assetName: element.Name,
           }));
-          console.log(assetsData)
           // rData.forEach((element) => {
           //   assetsData.push({
           //     assetId: element.Id,
@@ -204,7 +202,7 @@ export default class AddTask extends Component {
 
   manageAssign = (model, type) => {
     this.ApiProvider.manageAssign(model, type).then((resp) => {
-      if (resp.ok && resp.status == 200) {
+      if (resp.ok && resp.status === 200) {
         return resp.json().then((rData) => {
           let assignData = [];
           rData.forEach((element) => {
@@ -226,7 +224,7 @@ export default class AddTask extends Component {
 
   manageProperties = (model, type) => {
     this.ApiProvider.manageProperties(model, type).then((resp) => {
-      if (resp.ok && resp.status == 200) {
+      if (resp.ok && resp.status === 200) {
         return resp.json().then((rData) => {
           let propertyData = [];
           rData.forEach((element) => {
@@ -259,7 +257,6 @@ export default class AddTask extends Component {
     var type = "R";
     var model = this.getModel(type);
     model.propertyId=propId;
-    console.log(model);
     this.manageAssets(model, type);
   }
 
@@ -273,6 +270,17 @@ export default class AddTask extends Component {
     var type = "R";
     var model = this.getModel(type);
     this.manageProperties(model, type);
+  }
+
+  getAllFrenquency= async()=>{
+    try {
+      this.setState({ loading: true }); // Show loading before fetching data
+      const data = await getFrequencyList();
+      this.setState({ frequencyData: data, loading: false });
+    } catch (error) {
+      console.error('Error fetching frequency:', error);
+      this.setState({ loading: false });
+    }
   }
 
   handleSave = (e) => {
@@ -297,9 +305,9 @@ export default class AddTask extends Component {
   }
 
   componentDidMount() {
-   
     this.getAssign();
     this.getAllProperties();
+    this.getAllFrenquency();
   }
 
   render() {
@@ -415,6 +423,7 @@ export default class AddTask extends Component {
                         showYearDropdown
                         dropdownMode="select"
                         id="textStartDate"
+                        // openToDate={this.state.startDate || new Date()}
                       />
                     </div>
                     <div className="col-6">
@@ -429,6 +438,7 @@ export default class AddTask extends Component {
                         showYearDropdown
                         dropdownMode="select"
                         id="textEndDate"
+                        // openToDate={this.state.endDate || new Date()}
                       />
                     </div>
                     <div className="col-3 mt-2">
@@ -511,7 +521,7 @@ export default class AddTask extends Component {
                     <div className="col-5">
                       <label>Property</label>
                       <select
-                        iid="ddlAssignee"
+                        id="ddlAssignee"
                         className="form-control"
                         onChange={(e) =>
                           this.setState({
@@ -533,7 +543,7 @@ export default class AddTask extends Component {
                     <div className="col-4">
                       <label>Assign To</label>
                       <select
-                        iid="ddlAssignee"
+                        id="ddlAssignee"
                         className="form-control"
                         onChange={(e) =>
                           this.setState({
@@ -563,12 +573,16 @@ export default class AddTask extends Component {
                           });
                         }}
                       >
-                        <option value="N">Do not repeat</option>
-                        <option value="D">Daily</option>
-                        <option value="W">Weekly</option>
-                        <option value="M">Monthly</option>
-                        <option value="Y">Yearly</option>
-                        {/* <option>Custom</option> */}
+                        <option value={0}>Select occurence</option>
+                        {this.state.frequencyData
+                            ? this.state.frequencyData.map((e, key) => {
+                              return (
+                                  <option key={key} value={e.Occurence}>
+                                    {e.Name}
+                                  </option>
+                              );
+                            })
+                            : null}
                       </select>
                     </div>
                   </div>

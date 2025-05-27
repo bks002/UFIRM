@@ -1,8 +1,6 @@
 // ChartNavigator.js
 import React, { useState ,useEffect} from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import BarChart from './BarChart';
-import PieChart from './PieChart';
 import { connect } from 'react-redux';
 import departmentActions from '../../redux/department/action';
 import { bindActionCreators } from 'redux';

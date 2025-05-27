@@ -33,9 +33,9 @@ const ChatBox = ({ remark, name, remarkDateTime, status, onSend }) => {
 
         <div className="alert alert-secondary mb-3">
           <strong>{name}</strong>: {remark}
-          <span className='mb-2px' style={{ display: 'block', fontSize: '0.8em', color: 'gray' }}>
-            {new Date(remarkDateTime).toLocaleString()}
-          </span>
+          <span className='mb-2px' style={{ display: 'block', fontSize: '1rem', color: 'white' }}>
+  {new Date(remarkDateTime).toLocaleString()}
+</span>
         
           {/* Input Box with Send Button inside the same div */}
           <div className="d-flex">

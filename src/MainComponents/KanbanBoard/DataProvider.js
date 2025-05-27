@@ -63,6 +63,7 @@ class DataProvider {
     }
     GetEditTicketDropdownData(StatementType, TicketId) {
         // debugger
+        console.log(StatementType,TicketId);
         let url = `Ticket/EditTicketDropdownVal/${StatementType}/${TicketId}`
         return srv.get(url);
     }

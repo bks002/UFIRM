@@ -10,6 +10,9 @@ import swal from 'sweetalert';
 import  {CreateValidator,ValidateControls} from './Validation.js';
 import DropDownList from '../../ReactComponents/SelectBox/DropdownList'
 import CommonDataProvider from '../../Common/DataProvider/CommonDataProvider.js';
+import {connect} from "react-redux";
+import {bindActionCreators} from "redux";
+import departmentActions from "../../redux/department/action";
 const $ = window.$;
 class PropertyDetails extends React.Component {
     constructor(props) {
@@ -18,17 +21,17 @@ class PropertyDetails extends React.Component {
             PropertyListData:[],
             GridData:[],
             gridHeader: [
-                { sTitle: 'Id', titleValue: 'propertyTowerId', "orderable": false },
+                { sTitle: 'Tower Id', titleValue: 'propertyTowerId', "orderable": false },
                 { sTitle: 'Property Name', titleValue: 'propertyName',  },
                 { sTitle: 'Tower name', titleValue: 'towername',  },
-                { sTitle: 'Foors', titleValue: 'totalFoors',  },
+                { sTitle: 'Floors', titleValue: 'totalFoors',  },
                 { sTitle: 'Action', titleValue: 'Action', Action: "Edit&Delete", Index: '0', "orderable": false },
             ],
 
             PageMode:'Home',
             PropertyTowerId:'0',
             Towername:'',
-            PropertyId:'0',
+            PropertyId:this.props.PropertyId,
             TotalFoors:'',
          };
          this.ApiProviderr = new ApiProvider();
@@ -39,7 +42,7 @@ class PropertyDetails extends React.Component {
     {
         this.comdbprovider.getPropertyMaster(0).then(
             resp => {          
-                if (resp.ok && resp.status == 200) {
+                if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
                         
                         rData = appCommon.changejsoncolumnname(rData,"id","Value");
@@ -52,38 +55,37 @@ class PropertyDetails extends React.Component {
                 
             });
     }
-
     getModel=(type)=>{
-        var mode = [{
+        var model = [{
             "propertyTowerId": this.state.PropertyTowerId,
             "towername": this.state.Towername,
             "propertyId": this.state.PropertyId,
             "totalFoors": this.state.TotalFoors,
             "cmdType": ""+type+""
           }]
-        return mode;
+        return model;
     }
-
     componentDidMount(){
         this.loadHomagePageData();
-        
+    }
+    componentDidUpdate(prevProps) {
+        if (prevProps.PropertyId !== this.props.PropertyId) {
+            this.state.PropertyId = this.props.PropertyId;
+            this.loadHomagePageData();
+        }
     }
     loadHomagePageData() {
-        
         var model = this.getModel('R');
         this.ApiProviderr.managePropertyTowers(model).then(
-             resp => {          
-                 if (resp.ok && resp.status == 200) {
+             resp => {
+                 if (resp.ok && resp.status === 200) {
                      return resp.json().then(rData => {
                          this.setState({GridData:rData});
                      });
-                 
                  }
              });
      }
-
     onPagechange = (page) => {
-            
     }
     onGridDelete=(Id)=>{
         let myhtml = document.createElement("div");
@@ -114,10 +116,8 @@ class PropertyDetails extends React.Component {
                 }
             })
         );
-      
     }
     ongridedit=(Id) => {
-        
         this.setState({PageMode:'Edit'},()=>{
             CreateValidator();
             this.loadProperty();
@@ -128,93 +128,78 @@ class PropertyDetails extends React.Component {
         this.setState({TotalFoors:rowData.totalFoors});
         $('#ddlPropertyList').val(Id);
         });
-       
     }
-    
-
     Addnew=()=> {
         this.setState({PageMode:'Add'},()=>{
             CreateValidator();
             this.loadProperty();
         });
     }
-    
     findItem(id) {
-        
         return this.state.GridData.find((item) => {
-            if (item.propertyTowerId == id) {
+            if (item.propertyTowerId === id) {
                 return item;
             }
         });
     }
 updatetextmodel = (ctrl,val) => {
-    if(ctrl=='floor')
+    if(ctrl==='floor')
     {
         this.setState({TotalFoors:val});
     }
-    else if(ctrl=='tower')
+    else if(ctrl==='tower')
     {
         this.setState({Towername:val});
     }
-     
 }
 handleSave = () => {
-    
     if(ValidateControls()){
         var type = 'C'
-        if(this.state.PageMode=='Edit')
+        if(this.state.PageMode==='Edit')
         type='U'
         var model = this.getModel(type);
         this.mangaeSave(model,type);    
     }
 }
 mangaeSave=(model,type)=>{
-    
     this.ApiProviderr.managePropertyTowers(model).then(
         resp => {          
-            if (resp.ok && resp.status == 200) {
+            if (resp.ok && resp.status === 200) {
                 return resp.json().then(rData => {
-                    
-                    if(type!='D')
+                    if(type!=='D')
                        appCommon.showtextalert("Tower Saved Successfully!", "", "success");
                        else
                        appCommon.showtextalert("Tower Deleted Successfully!", "", "success");
                    this.handleCancel();
                 });
             }
-            
         });
 }
 handleCancel = () => {
-    this.setState({ PropertyId:'0',Towername:'',TotalFoors:'0',PropertyTowerId:'0'},()=>{
+    this.setState({ Towername:'',TotalFoors:'0',PropertyTowerId:'0'},()=>{
         this.setState({PageMode:'Home'});
         this.loadHomagePageData();
     });
 };
-onPropertyChanged=(value)=>{
-        this.setState({PropertyId:value});
-}
-//End
     render() {
         return (
             <div>
-            {this.state.PageMode=='Home' &&
+            {this.state.PageMode === 'Home' &&
             <div className="row">
             <div className="col-12">
                 <div className="card">
                     <div className="card-header d-flex p-0">
                         <ul className="nav ml-auto tableFilterContainer">
-                           
                             <li className="nav-item">
                             <div className="input-group input-group-sm">
-                                    <div className="input-group-prepend">
-                                <Button id="btnNewComplain"
+                                <div className="input-group-prepend">
+                                    <Button id="btnNewComplain"
                                     Action={this.Addnew.bind(this)}
                                     ClassName="btn btn-success btn-sm"
                                     Icon={<i className="fa fa-plus" aria-hidden="true"></i>}
-                                    Text=" Create New" />
-                                    </div>
-                                    </div>
+                                    Text="Create New" />
+                                </div>
+                            </div>
                             </li>
                         </ul>
                     </div>
@@ -235,60 +220,37 @@ onPropertyChanged=(value)=>{
             </div>
         </div>
     }
-    {(this.state.PageMode=='Add' || this.state.PageMode=='Edit') &&
+    {(this.state.PageMode==='Add' || this.state.PageMode==='Edit') &&
       <div>
-      <div>
-          <div class="modal-content">
-          <div class="modal-body">
-                  <div class="row">
-                      <div class="col-sm-6">
-                          <div class="form-group">
-                              <label for="ddlPropertyList">Property</label>
-                              <DropDownList Id="ddlPropertyList"
-                              onSelected={this.onPropertyChanged.bind(this)}
-                          Options={this.state.PropertyListData} />
+          <div className="modal-content">
+              <div className="modal-body">
+                  <div className="row">
+                      <div className="col-sm-6">
+                          <div className="form-group">
+                              <label htmlFor="txtLandMark">Tower Name</label>
+                              <InputBox Id="txtTowerName"
+                                        Value={this.state.Towername}
+                                        onChange={this.updatetextmodel.bind(this, "tower")}
+                                        PlaceHolder="Tower Name"
+                                        Class="form-control form-control-sm"
+                              />
                           </div>
                       </div>
-                      <div class="col-sm-6">
-                          <div class="form-group">
-                          <label for="txtLandMark">Tower Name</label>
-                            <InputBox Id="txtTowerName"
-                                  Value={this.state.Towername}
-                                      onChange={this.updatetextmodel.bind(this,"tower")}
-                                      PlaceHolder="Tower Name"
-                                      Class="form-control form-control-sm"
-                                  />
-                          </div>
-                      </div>
-                  </div>
-                  <div class="row">
-                      <div class="col-sm-6">
-                          <div class="form-group">
-                              <label for="txtPinNumber">Total Floors</label>
-                                  <InputBox Id="txtfloors"
-                                  Value={this.state.TotalFoors}
-                                      onChange={this.updatetextmodel.bind(this,"floor")}
-                                      PlaceHolder="Floors"
-                                      Class="form-control form-control-sm"
-                                  />                                  
-                          </div>
-                      </div>
-                      <div class="col-sm-6">
-                          <div class="form-group">
-                              {/* <label for="txtAddress">Contact number</label>
-                              <InputBox Id="txtContactNumber"
-                              Value={this.state.ContactNumber}
-                                      onChange={this.updatetextmodel.bind(this,"contact")}
-                                      PlaceHolder="Contact"
-                                      Class="form-control form-control-sm"
-                                  /> */}
+                      <div className="col-sm-6">
+                          <div className="form-group">
+                              <label htmlFor="txtPinNumber">Total Floors</label>
+                              <InputBox Id="txtfloors"
+                                        Value={this.state.TotalFoors}
+                                        onChange={this.updatetextmodel.bind(this, "floor")}
+                                        PlaceHolder="Floors"
+                                        Class="form-control form-control-sm"
+                              />
                           </div>
                       </div>
                   </div>
               </div>
-                           
-              <div class="modal-footer">
-                  <Button
+              <div className="modal-footer">
+              <Button
                       Id="btnSave"
                       Text="Save"
                       Action={this.handleSave}
@@ -300,8 +262,6 @@ onPropertyChanged=(value)=>{
                       ClassName="btn btn-secondary" />
               </div>
           </div>
-      
-      </div>
       <ToastContainer
           position="top-right"
           autoClose={5000}
@@ -320,4 +280,13 @@ onPropertyChanged=(value)=>{
         );
     }
 }
-export default PropertyDetails;
+function mapStoreToprops(state, props) {
+    return {
+        PropertyId: state.Commonreducer.puidn,
+    }
+}
+function mapDispatchToProps(dispatch) {
+    const actions = bindActionCreators(departmentActions, dispatch);
+    return {actions};
+}
+export default connect(mapStoreToprops, mapDispatchToProps) (PropertyDetails);

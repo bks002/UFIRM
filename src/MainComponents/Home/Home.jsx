@@ -23,6 +23,9 @@ class Home extends React.Component {
             taskPriority:[],
             totalActTasks:0,
 
+            assetCount:[],
+            totalAssets:10,
+
             initialDate:"",
             finalDate:""
         };
@@ -39,7 +42,6 @@ class Home extends React.Component {
     loadDashboardData(value, id) {
         var type = 'R';
         var model = this.getModel(type);
-        console.log(model);
         this.manageDashboardCnt(model, type);
         
     }
@@ -54,13 +56,57 @@ class Home extends React.Component {
     getDates = (initialDate,finalDate)=>{
         var type = 'R';
             var model = this.getModel(type);
-            this.setState({initialDate:initialDate,finalDate:finalDate})
-            console.log("Initial Date:", initialDate);
-            console.log("Final Date:", finalDate);
+            this.setState({initialDate:initialDate,finalDate:finalDate});
             this.taskStatusCount(model,initialDate,finalDate);
             this.taskPriorityCount(model,initialDate,finalDate);
+            this.getAssetCount(model,initialDate,finalDate);
         
     }
+
+    getAssetCount = async (model,initialDate,finalDate) => {
+        try {
+            const resp = await this.ApiProviderr.manageDashAssetCardCount(model,initialDate,finalDate);
+            if(resp && resp.ok && resp.status===200)
+            {
+                const data = await resp.json();
+                if (data) {
+                    const defaultCounts = {
+                        TotalAsset: { Count: 0 },
+                        ServiceOverdueAssets: { Count: 0 },
+                        UpcomingServices: { Count: 0 },
+                        RentedOutAsset: { Count: 0 },
+                        CheckedOutAssets: { Count: 0 },
+                    };
+
+                    const assetStatus = [
+                        { Title: "Service Overdue",  Value:data.ServiceOverdueAssets },
+                        { Title: "Upcoming Services", Value:data.UpcomingServices },
+                        { Title: "Rented-Out Assets", Value:data.RentedOutAsset  },
+                        { Title: "Checked-Out Assets", Value: data.CheckedOutAssets },
+                    ];
+
+                    this.setState({
+                        assetCount: assetStatus,
+                        totalAssets: data.TotalAsset,
+                    });
+                }
+
+            }else{
+                const assetStatus = [
+                    { Title: "Service Overdue",  Value:0 },
+                    { Title: "Upcoming Services", Value:0 },
+                    { Title: "Rented-Out Assets", Value:0  },
+                    { Title: "Checked-Out Assets", Value: 0 },
+                ];
+                this.setState({  assetCount: assetStatus,
+                    totalAssets: 0,
+                });
+            }
+        } catch (error)
+        {
+            console.error("Error fetching data:", error);
+        }
+    };
 
     taskStatusCount = async (model,initialDate,finalDate) => {
         try {
@@ -68,18 +114,37 @@ class Home extends React.Component {
                     if(resp && resp.ok && resp.status===200)
                     {
                         const data = await resp.json();
-                        console.log(data);
                         if (data) {
-                            const [actionable = { Count: 0 }, completed = { Count: 0 }, pending = { Count: 0 }] = data;
+                            const defaultCounts = {
+                                Actionable: { Count: 0 },
+                                Completed: { Count: 0 },
+                                Pending: { Count: 0 },
+                            };
+
+                            const taskCounts = data.reduce((acc, task) => {
+                                if (task.TaskStatus === "Actionable") {
+                                    acc.Actionable = { Count: task.Count };
+                                } else if (task.TaskStatus === "Completed") {
+                                    acc.Completed = { Count: task.Count };
+                                } else if (task.TaskStatus === "Pending") {
+                                    acc.Pending = { Count: task.Count };
+                                }
+                                return acc;
+                            }, { ...defaultCounts });
+
                             const taskStatus = [
-                              { Title: 'Actionable', Value: actionable.Count},
-                              { Title: 'Completed', Value: completed.Count},
-                              { Title: 'Pending', Value: pending.Count}
+                                { Title: "Actionable", Value: taskCounts.Actionable.Count },
+                                { Title: "Completed", Value: taskCounts.Completed.Count },
+                                { Title: "Pending", Value: taskCounts.Pending.Count },
                             ];
-                            this.setState({ taskStatus: taskStatus ,
-                                totalTAsks :data.reduce((total, item) => total + item.Count, 0)
-                            }); 
+
+                            const totalTasks = data.reduce((total, item) => total + item.Count, 0);
+                            this.setState({
+                                taskStatus: taskStatus,
+                                totalTAsks: totalTasks,
+                            });
                         }
+
                     }else{
                         const taskStatus = [
                             { Title: 'Actionable', Value:0 },
@@ -88,9 +153,9 @@ class Home extends React.Component {
                           ];
                           this.setState({ taskStatus: taskStatus ,
                               totalTAsks :0
-                          }); 
+                          });
                     }
-            } catch (error) 
+            } catch (error)
                 {
                     console.error("Error fetching data:", error);
                  }
@@ -102,7 +167,6 @@ class Home extends React.Component {
                     if(resp && resp.ok && resp.status===200)
                     {
                         const data = await resp.json();
-                        console.log(data);
                         if (data) {
                             const [completed = { Count: 0 }, SOS = { Count: 0 }, HighPriority = { Count: 0 },MediumPriority={ Count: 0 } ,LowPriority={ Count: 0 }] = data;
                             const taskPriority = [
@@ -112,8 +176,7 @@ class Home extends React.Component {
                               { Title: 'Medium Priority', Value: MediumPriority.Count},
                               { Title: 'Low Priority', Value: LowPriority.Count}
                             ];
-                            console.log(taskPriority)
-                            this.setState({ taskPriority: taskPriority ,
+                             this.setState({ taskPriority: taskPriority ,
                                 totalActTasks :taskPriority.reduce((total, item) => total + item.Value, 0)
                             }); 
                         }
@@ -138,9 +201,8 @@ class Home extends React.Component {
     manageDashboardCnt = (model, type) => {
         this.ApiProviderr.manageDashboardCnt(model, type).then(
             resp => {
-                if (resp && resp.ok && resp.status == 200) {
+                if (resp && resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
-                        console.log(rData);
                         switch (type) {
                             case 'R':
                                 if (rData !== null) {
@@ -189,27 +251,34 @@ class Home extends React.Component {
             <div className="content-wrapper mt-2">
                 <section className="content ">
                 <div className="container-fluid">
-                <div className="row equal-height">
-                <div className="col-md-3">
-                <div className="card mb-2 shadow-sm chart-boundary">
-                <div className="card-body">
-                <BarChart chartData={this.state.taskStatus}/>
+                    <div className="row equal-height">
+                        <div className="col-md-3">
+                            <div className="card mb-2 shadow-sm chart-boundary">
+                                <div className="card-body">
+                                    <BarChart chartData={this.state.taskStatus}/>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="col-md-3 ">
+                            <div className="card mb-2 shadow-sm chart-boundary">
+                                <div className="card-body">
+                                    <PieChart chartData={this.state.taskPriority}/>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="col-md-3 ">
+                            <div className="card mb-2 shadow-sm chart-boundary">
+                                <div className="card-body">
+                                    <PieChart chartData={this.state.assetCount}/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                </div>
-                </div>
-                <div className="col-md-3 ">
-                <div className="card mb-2 shadow-sm chart-boundary">
-                <div className="card-body">
-                <PieChart chartData={this.state.taskPriority}/>
-                </div>
-            </div>
-          </div>
-        </div>
-      </div>
-                 </section>
+                </section>
                 <section className="content  px-2">
                     <div className="container-fluid card p-2 shadow-sm">
-                    <ChartNavigator onPeriodChange={this.getDates}/>
+                        <ChartNavigator onPeriodChange={this.getDates}/>
                     </div>
                 </section>
                
@@ -218,32 +287,42 @@ class Home extends React.Component {
                         <div className="row">
                             <div className="col-md-3 ">
                                 <DashboardCard CardTitle="Task Status"
-                                    HeaderValue={this.state.totalTAsks}
-                                    HeaderClass="card card-danger cardutline"
-                                    ItemJson={this.state.taskStatus}
-                                    Link="/Account/App/PlannerTask" />
+                                               HeaderValue={this.state.totalTAsks}
+                                               HeaderClass="card card-danger cardutline"
+                                               ItemJson={this.state.taskStatus}
+                                               Link="/PlannerTask"/>
                             </div>
                             <div className="col-md-3 ">
                                 <DashboardCard CardTitle="Priority Tasks"
-                                    HeaderValue={this.state.totalActTasks}
-                                    HeaderClass="card card-danger cardutline"
-                                    ItemJson={this.state.taskPriority}
-                                    Link="/Account/App/PlannerTask" />
+                                               HeaderValue={this.state.totalActTasks}
+                                               HeaderClass="card card-danger cardutline"
+                                               ItemJson={this.state.taskPriority}
+                                               Link="/PlannerTask"/>
+                            </div>
+                            <div className="col-md-3">
+                                <DashboardCard CardTitle="Total Assets"
+                                               HeaderValue={this.state.totalAssets}
+                                               HeaderClass="card card-danger cardutline"
+                                               ItemJson={this.state.assetCount}
+                                               Link="/ServiceRecords"/>
                             </div>
                             <div className="col-md-3 ">
                                 <DashboardCard CardTitle="Complains"
-                                    HeaderValue={this.state.complainsCnt}
-                                    HeaderClass="card card-danger cardutline"
-                                    ItemJson={this.state.complains}
-                                    Link="/Account/App/TicketComplains" />
+                                               HeaderValue={this.state.complainsCnt}
+                                               HeaderClass="card card-danger cardutline"
+                                               ItemJson={this.state.complains}
+                                               Link="/TicketComplains"/>
                             </div>
+
+                        </div>
+                        <div className="row">
                             <div className="col-md-3">
                                 <DashboardCard CardTitle="Total Flats"
-                                    HeaderValue={this.state.totalFlatsCnt}
-                                    HeaderClass="card card-info cardutline"
-                                    ItemJson={this.state.totalFlats}
-                                    Link="/Account/App/ManageResidentOwners" />
-                            </div>                         
+                                               HeaderValue={this.state.totalFlatsCnt}
+                                               HeaderClass="card card-info cardutline"
+                                               ItemJson={this.state.totalFlats}
+                                               Link="/ManageResidentOwners"/>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -251,6 +330,7 @@ class Home extends React.Component {
         );
     }
 }
+
 // export default Home;
 
 function mapStoreToprops(state, props) {
@@ -263,6 +343,7 @@ function mapStoreToprops(state, props) {
 
 function mapDispatchToProps(dispatch) {
     const actions = bindActionCreators(departmentActions, dispatch);
-    return { actions };
+    return {actions};
 }
+
 export default connect(mapStoreToprops, mapDispatchToProps)(Home);

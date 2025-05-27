@@ -31,17 +31,14 @@ const [labels,setLabels] = useState(["Total", "Closed", "Pending", "Actionable"]
   
 
 useEffect(() => {
-  console.log(chartData);
   if(chartData.length>0)
   {  const label = [...chartData.map((item)=> item.Title)]
      const newData = [
     ...chartData.map((item) => item.Value)
   ];
-  console.log(newData,label);
   setLabels(label);
   setData(newData);
   }else setData(data);
-  // console.log(totalData);
 }, [chartData]);
 
   

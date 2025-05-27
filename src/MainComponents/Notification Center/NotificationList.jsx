@@ -2,48 +2,39 @@ import React, { useState, useEffect } from 'react';
 import FMResponseModal from './FMResponseModal';
 import './Notification.css';
 
-
 const NotificationList = ({ nList, apiCall }) => {
   const [selectedNotification, setSelectedNotification] = useState(null);
-
-
   const handleNotificationClick = (notification) => {
-    console.log('clicked');
-    setSelectedNotification(notification); // Set the selected notification
+     setSelectedNotification(notification);
   };
 
   const handleCloseModal = () => {
-
-    setSelectedNotification(null); // Reset selected notification
+    setSelectedNotification(null);
   };
 
   const handleReply = (message,currentStatus) => {
-    console.log(message);
     if (message.trim() === '') {
         alert('Message cannot be empty!'); // Alert for empty message
         return;
       }
-    // Create a new response object
     const newResponse = {
         TaskId: selectedNotification.TaskId,
         QuestionId: selectedNotification.QuestionId,
         TaskName: selectedNotification.TaskName,
-        FmId: 0, // Assuming FmId starts at 0, adjust as needed
+        FmId: 0,
         FmRemark: message,
-        FmDateTime: new Date(), 
+        FmDateTime: new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }),
         CurrentStatus:currentStatus,
-        SUPdateTime:selectedNotification.SUPdateTime
+        SUPdateTime:selectedNotification.SUPdateTime,
+        TaskDate:selectedNotification.TaskDate
     };
-    console.log(newResponse)
-    // Update the responseData state by appending the new response object
     handleSendReply(newResponse);
-    alert('Reply submitted!'); 
     handleCloseModal(); 
     };
 
     const handleSendReply= async(newResponse)=>{
-        console.log(newResponse);
         const apiUrl = 'https://api.urest.in:8096/FMResponse';
+        // const apiUrl = 'http://localhost:62929//FMResponse';
           try {
                 const res = await fetch(apiUrl, {
                 method: 'POST',
@@ -52,13 +43,8 @@ const NotificationList = ({ nList, apiCall }) => {
                 },
                 body: JSON.stringify(newResponse),
             });
-
-            // Check if the request was successful
             if (res.ok) {
                 apiCall();
-            // Clear the response data
-            // setResponseData([]); // Assuming you have a state variable 'responseData'
-            alert('Reply sent successfully!');
             } else {
             throw new Error('Failed to send reply');
             }
@@ -81,15 +67,12 @@ const NotificationList = ({ nList, apiCall }) => {
         >
           <div className="notification-item-content">
             <span>
-              {notification.TaskId} : {notification.QuestionId} : {notification.SupName} : 
-              {notification.TaskName} : {notification.SupRemark} : {notification.SUPdateTime} : 
-              {notification.PropertyId}
+              {notification.SupName} : {notification.SupRemark}
             </span>
           </div>
         </div>
       ))}
 
-      {/* FMResponseModal component is rendered here */}
       <FMResponseModal 
         notification={selectedNotification} 
         onClose={handleCloseModal} 

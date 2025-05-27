@@ -23,6 +23,7 @@ const $ = window.$;
 class TicketDetails extends Component {
     constructor(props) {
         super(props);
+        console.log(props)
         this.state = {
             currentTicketID: null,
             initialComplainLocation: null,
@@ -70,7 +71,6 @@ class TicketDetails extends Component {
                             this.loadComplainbyAccordingPropertyDT(this.props.TicketDetailModelInstance.complainLocation.Id)
                         })
                 }
-
                 if (this.props.TicketDetailModelInstance != null && this.props.TicketDetailModelInstance.category) {
                     this.loadCategoryWiseAssignee("TAM", this.props.TicketDetailModelInstance.category.Id, parseInt(this.props.PropertyId))
                 }
@@ -320,7 +320,7 @@ class TicketDetails extends Component {
         if (this.state.currentTicketID !== null && this.state.comment !== '') {
             let type = 'TC';
             var model = this.getModel(type);
-            // console.log(model);
+            console.log(model);
             this.manageTickets(model, type);
         }
         else {
@@ -352,14 +352,14 @@ class TicketDetails extends Component {
                                     this.props.loadBoradData();
                                 }
                                 else
-                                    appCommon.showtextalert("Faild to update ticket details !", "", "error");
+                                    appCommon.showtextalert("Failed to update ticket details !", "", "error");
                                 break;
                             case 'CTL':
                                 if (rData >= 1) {
                                     this.props.loadTicketComments(this.props.EditTicktDetails.CardId)
                                 }
                                 else
-                                    appCommon.showtextalert("Faild to update ticket log details !", "", "error");
+                                    appCommon.showtextalert("Failed to update ticket log details !", "", "error");
                                 break;
                             default:
                         }
@@ -403,13 +403,14 @@ class TicketDetails extends Component {
                 });
                 break;
             default:
-        };
+        }
         return model;
     }
 
     showImage = (filename, src, type, extension) => {
         this.setState({ showImagefilename: filename, showImagefile: src, showImagefiletype: type, extension: extension },
             () => {
+            console.log(this.state.showImagefilename,this.state.showImagefile,this.state.showImagefiletype,this.state.extension,)
                 $('#modal-lg-img').modal('show')
             })
     }
@@ -523,7 +524,7 @@ class TicketDetails extends Component {
                                 />
                                 <TicketOnhold
                                     Id="modal-Ticket-Onhold"
-                                    titile="Pause/Hole Ticket"
+                                    titile="Pause/Hold Ticket"
                                     TicketId={this.props.EditTicktDetails.CardId}
                                     loadBoradData={this.props.loadBoradData}
                                     onTicketHold={this.onTicketHold.bind(this)}
@@ -532,8 +533,8 @@ class TicketDetails extends Component {
 
                                 <div className="row">
                                     <div className="col-sm-4">
-                                        <div class="media">
-                                            <span class="media-left">
+                                        <div className="media">
+                                            <span className="media-left">
                                                 <img
                                                     alt="NA"
                                                     src={this.props.EditTicktDetails.CardReoprterImg}
@@ -542,8 +543,8 @@ class TicketDetails extends Component {
                                                     className="img-circle"
                                                 />
                                             </span>
-                                            <div class="media-body">
-                                                <h3 class="media-heading">{this.props.EditTicktDetails.Cardusername}</h3>
+                                            <div className="media-body">
+                                                <h3 className="media-heading">{this.props.EditTicktDetails.Cardusername}</h3>
                                                 {this.state.initialComplainLocation ?
                                                     ` (${this.state.initialComplainLocation.label})`
                                                     :
@@ -690,7 +691,7 @@ class TicketDetails extends Component {
                                             <label htmlFor="ddlEscalationMatrixCategory">Priority</label>
                                             <SelectBox
                                                 ID="ddlPriority"
-                                                Value={this.props.TicketDetailModelInstance ? this.props.TicketDetailModelInstance.priority : 0}
+                                                Value={this.props.EditTicktDetails ? this.props.EditTicktDetails.CardPriority : 0}
                                                 onSelected={this.onSelected.bind(this, "Priority")}
                                                 Options={this.props.priorityList}
                                                 ClassName="form-control "

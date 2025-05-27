@@ -1,7 +1,7 @@
 import React, { Component, Fragment } from 'react';
 import Modal from 'react-awesome-modal';
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
+// import DatePicker from "react-datepicker";
+// import "react-datepicker/dist/react-datepicker.css";
 import { setHours, setMinutes } from 'date-fns';
 
 import { EditorState, convertToRaw, ContentState } from 'draft-js';
@@ -686,35 +686,35 @@ class DetailsEvent extends Component {
                                             <div className="row mt-2">
                                                 <div className="col-6">
                                                     <label>Start Date</label>
-                                                    <DatePicker
-                                                        className="form-control"
-                                                        selected={this.state.startDate}
-                                                        minDate={this.state.startDate}
-                                                        onChange={(date) => this.setState({ startDate: date, endDate: date })}
-                                                        dateFormat="dd/MM/yyyy"
-                                                        peekNextMonth
-                                                        showMonthDropdown
-                                                        showYearDropdown
-                                                        dropdownMode="select"
-                                                        id='updatetxtStartDate'
-                                                        disabled={this.state.isEditMode}
-                                                    />
+                                                    {/*<DatePicker*/}
+                                                    {/*    className="form-control"*/}
+                                                    {/*    selected={this.state.startDate}*/}
+                                                    {/*    minDate={this.state.startDate}*/}
+                                                    {/*    onChange={(date) => this.setState({ startDate: date, endDate: date })}*/}
+                                                    {/*    dateFormat="dd/MM/yyyy"*/}
+                                                    {/*    peekNextMonth*/}
+                                                    {/*    showMonthDropdown*/}
+                                                    {/*    showYearDropdown*/}
+                                                    {/*    dropdownMode="select"*/}
+                                                    {/*    id='updatetxtStartDate'*/}
+                                                    {/*    disabled={this.state.isEditMode}*/}
+                                                    {/*/>*/}
                                                 </div>
                                                 <div className="col-6">
                                                     <label>End Date</label>
-                                                    <DatePicker
-                                                        className="form-control"
-                                                        selected={this.state.endDate}
-                                                        onChange={(date) => this.setState({ endDate: date, RepeateEndBy: date })}
-                                                        dateFormat="dd/MM/yyyy"
-                                                        minDate={this.state.startDate}
-                                                        peekNextMonth
-                                                        showMonthDropdown
-                                                        showYearDropdown
-                                                        dropdownMode="select"
-                                                        id='updatetxtEndDate'
-                                                        disabled={this.state.isEditMode}
-                                                    />
+                                                    {/*<DatePicker*/}
+                                                    {/*    className="form-control"*/}
+                                                    {/*    selected={this.state.endDate}*/}
+                                                    {/*    onChange={(date) => this.setState({ endDate: date, RepeateEndBy: date })}*/}
+                                                    {/*    dateFormat="dd/MM/yyyy"*/}
+                                                    {/*    minDate={this.state.startDate}*/}
+                                                    {/*    peekNextMonth*/}
+                                                    {/*    showMonthDropdown*/}
+                                                    {/*    showYearDropdown*/}
+                                                    {/*    dropdownMode="select"*/}
+                                                    {/*    id='updatetxtEndDate'*/}
+                                                    {/*    disabled={this.state.isEditMode}*/}
+                                                    {/*/>*/}
                                                 </div>
                                                 <div className='col-3 mt-2'>
                                                     <label>All Day</label>
@@ -732,36 +732,36 @@ class DetailsEvent extends Component {
                                                 </div>
                                                 <div className="col-3 mt-2">
                                                     <label>Start Time</label>
-                                                    <DatePicker
-                                                        className="form-control"
-                                                        selected={this.state.startTime}
-                                                        onChange={(date) => this.setState({
-                                                            startTime: date,
-                                                            endTime: moment(date).add(30, 'm').toDate()
-                                                        })}
-                                                        showTimeSelect
-                                                        showTimeSelectOnly
-                                                        timeIntervals={15}
-                                                        timeCaption="Time"
-                                                        dateFormat="h:mm a"
-                                                        disabled={this.state.isTimePickerDisabled}
-                                                    />
+                                                    {/*<DatePicker*/}
+                                                    {/*    className="form-control"*/}
+                                                    {/*    selected={this.state.startTime}*/}
+                                                    {/*    onChange={(date) => this.setState({*/}
+                                                    {/*        startTime: date,*/}
+                                                    {/*        endTime: moment(date).add(30, 'm').toDate()*/}
+                                                    {/*    })}*/}
+                                                    {/*    showTimeSelect*/}
+                                                    {/*    showTimeSelectOnly*/}
+                                                    {/*    timeIntervals={15}*/}
+                                                    {/*    timeCaption="Time"*/}
+                                                    {/*    dateFormat="h:mm a"*/}
+                                                    {/*    disabled={this.state.isTimePickerDisabled}*/}
+                                                    {/*/>*/}
                                                 </div>
                                                 <div className="col-3 mt-2">
                                                     <label>End Time</label>
-                                                    <DatePicker
-                                                        className="form-control"
-                                                        selected={this.state.endTime}
-                                                        onChange={(date) => this.setState({ endTime: date })}
-                                                        showTimeSelect
-                                                        showTimeSelectOnly
-                                                        timeIntervals={15}
-                                                        timeCaption="Time"
-                                                        dateFormat="h:mm a"
-                                                        disabled={this.state.isTimePickerDisabled}
-                                                        minTime={moment(this.state.startTime).add(30, 'm').toDate()}
-                                                        maxTime={setHours(setMinutes(this.state.startTime, 45), 23)}
-                                                    />
+                                                    {/*<DatePicker*/}
+                                                    {/*    className="form-control"*/}
+                                                    {/*    selected={this.state.endTime}*/}
+                                                    {/*    onChange={(date) => this.setState({ endTime: date })}*/}
+                                                    {/*    showTimeSelect*/}
+                                                    {/*    showTimeSelectOnly*/}
+                                                    {/*    timeIntervals={15}*/}
+                                                    {/*    timeCaption="Time"*/}
+                                                    {/*    dateFormat="h:mm a"*/}
+                                                    {/*    disabled={this.state.isTimePickerDisabled}*/}
+                                                    {/*    minTime={moment(this.state.startTime).add(30, 'm').toDate()}*/}
+                                                    {/*    maxTime={setHours(setMinutes(this.state.startTime, 45), 23)}*/}
+                                                    {/*/>*/}
                                                 </div>
                                                 <div className='col-3 mt-2'>
                                                     <label>Remind me</label>
@@ -818,19 +818,19 @@ class DetailsEvent extends Component {
                                                     this.state.repeat !== 'Do not repeat' &&
                                                     <div className='col-3'>
                                                         <label>Repeate End Till Date</label>
-                                                        <DatePicker
-                                                            className="form-control"
-                                                            selected={this.state.RepeateEndBy}
-                                                            onChange={(date) => this.setState({ RepeateEndBy: date })}
-                                                            dateFormat="dd/MM/yyyy"
-                                                            minDate={this.state.endDate}
-                                                            peekNextMonth
-                                                            showMonthDropdown
-                                                            showYearDropdown
-                                                            dropdownMode="select"
-                                                            id='txtRepeateEndBy'
-                                                            disabled={this.state.isEditMode}
-                                                        />
+                                                        {/*<DatePicker*/}
+                                                        {/*    className="form-control"*/}
+                                                        {/*    selected={this.state.RepeateEndBy}*/}
+                                                        {/*    onChange={(date) => this.setState({ RepeateEndBy: date })}*/}
+                                                        {/*    dateFormat="dd/MM/yyyy"*/}
+                                                        {/*    minDate={this.state.endDate}*/}
+                                                        {/*    peekNextMonth*/}
+                                                        {/*    showMonthDropdown*/}
+                                                        {/*    showYearDropdown*/}
+                                                        {/*    dropdownMode="select"*/}
+                                                        {/*    id='txtRepeateEndBy'*/}
+                                                        {/*    disabled={this.state.isEditMode}*/}
+                                                        {/*/>*/}
                                                     </div>
                                                 }
                                             </div>

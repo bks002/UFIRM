@@ -2,18 +2,21 @@ import React, { useEffect, useState } from "react";
 import RentalPopUp from "../ReactComponents/RentalModal/RentalPopUp"
 import "bootstrap/dist/css/bootstrap.min.css";
 import ExportToCSV from "../ReactComponents/ExportToCSV/ExportToCSV";
-const RentAssetPage = () => {
+import {connect} from "react-redux";
+import {PropagateLoader} from "react-spinners";
+import LoadingOverlay from "react-loading-overlay";
+const RentAssetPage = (actions) => {
   const [rentalAssets, setRentalAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewModal, setViewModal] = useState(false);
   const [currentAsset, setCurrentAsset] = useState(null);
   const [actionType, setActionType] = useState("rentout"); // "return" or "rentout"
-
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // const url="https://api.urest.in:8096/GetAssets";
-       const url="https://api.urest.in:8096/GetRentalAssetData"
+        setLoading(true);
+        const url=`http://localhost:62929/api/Asset/GetRentalAssetData?PropId=${actions.propId}`;
+      // const url=`https://api.urest.in:8096/api/Asset/GetRentalAssetData?PropId=${actions.propId}`;
         const response = await fetch(url, {
           method: "GET",
           headers: {
@@ -25,10 +28,8 @@ const RentAssetPage = () => {
           throw new Error('Network response was not ok');
         }
         const data = await response.json();
-        console.log(data);
         // const filteredAssets = data.filter(asset=> asset.IsRentable.includes("true")||asset.IsRentable.includes("1"));
         setRentalAssets(data);
-        // console.log(filteredAssets);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -36,7 +37,7 @@ const RentAssetPage = () => {
       }
     };
     fetchData();
-  }, [currentAsset, actionType]);
+  }, [currentAsset, actionType,actions.propId,viewModal]);
 
   const handleReturn = (asset) => {
     setCurrentAsset(asset);
@@ -58,8 +59,8 @@ const RentAssetPage = () => {
 
   const handleSubmit = async (formData) => {
     const url = actionType === "return" 
-      ? "https://api.urest.in:8096/ManageRentInAsset" 
-      : "https://api.urest.in:8096/ManageRentOutAsset";
+      ? "http://localhost:62929/ManageRentInAsset"
+      : "http://localhost:62929/ManageRentOutAsset";
     
     try {
       const response = await fetch(url, {
@@ -107,57 +108,67 @@ const RentAssetPage = () => {
             <h2 className="mb-0">Rental Asset List</h2>
             <ExportToCSV data={rentalAssets} className="btn btn-success btn-sm rounded px-3" />
           </div>
-          {loading ? (
-            <p>Loading...</p>
-          ) : (
+          <LoadingOverlay
+              active={loading}
+              spinner={<PropagateLoader color="#336B93" size={30}/>}
+          >
             <div className="table-responsive">
               <table className="table table-striped">
                 <thead>
-                  <tr>
-                    <th>Serial No.</th>
-                    <th>Asset ID</th>
-                    <th>Asset Name</th>
-                    <th>Actions</th>
-                  </tr>
+                <tr>
+                  <th>Serial No.</th>
+                  <th>Asset ID</th>
+                  <th>Asset Name</th>
+                  <th>Actions</th>
+                </tr>
                 </thead>
                 <tbody>
-                  {rentalAssets.map((asset, index) => (
+                {rentalAssets.map((asset, index) => (
                     <tr key={asset.Id}>
                       <td>{index + 1}</td>
                       <td>{asset.Id}</td>
                       <td>{asset.Name}</td>
                       <td className="align-middle">
-                        {asset.ReturnDate===null?
-                      <button
-                        className="btn btn-warning btn-sm m-1 px-3 mr-2"
-                        onClick={() => handleReturn(asset)}
+                        {(asset.RentedOutDate === null || asset.ReturnDate)?
+                            <button
+                          className="btn-lg btn-success btn-sm px-3 m-1"
+                          onClick={() => handleRentOut(asset)}
+                          >
+                          Rent Out
+                          </button>
+                          :
+                          <button
+                          className="btn btn-warning btn-sm m-1 px-3 mr-2"
+                          onClick={() => handleReturn(asset)}
                       >
                         Return
-                      </button>:
-                      <button
-                        className="btn-lg btn-success btn-sm px-3 m-1"
-                        onClick={() => handleRentOut(asset)}
-                      >
-                        Rent Out
-                      </button>}
+                      </button>
+                      }
                     </td>
-                    </tr>
+                  </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          )}
+          </LoadingOverlay>
+
         </div>
-        {viewModal?<RentalPopUp
-          show={viewModal} 
-          handleClose={handleCloseModal} 
-          asset={currentAsset} 
-          actionType={actionType} 
-          handleSubmit={handleSubmit} 
-        />:undefined}
+        {viewModal ? <RentalPopUp
+            show={viewModal}
+            handleClose={handleCloseModal}
+            asset={currentAsset}
+            actionType={actionType}
+            handleSubmit={handleSubmit}
+        /> : undefined}
       </section>
     </div>
   );
 };
 
-export default RentAssetPage;
+function mapStateToProps(state, props) {
+  return {
+    propId: state.Commonreducer.puidn,
+  }
+}
+
+export default connect(mapStateToProps)(RentAssetPage);

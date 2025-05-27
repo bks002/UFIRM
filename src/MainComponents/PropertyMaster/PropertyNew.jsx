@@ -98,16 +98,16 @@ class PropertyNew extends React.Component {
             <div>
             <div >
             
-                <div class="modal-content">
-                <div class="modal-body">
-                    <div class="row"><div class="col-12"><div class="card card-info"><div class="card-header">
-                        <h3 class="card-title ">Property Details</h3></div>
+                <div className="modal-content">
+                <div className="modal-body">
+                    <div className="row"><div className="col-12"><div className="card card-info"><div className="card-header">
+                        <h3 className="card-title ">Property Details</h3></div>
                      
-                                        <div class="card-body pt-2">
-                                        <div class="modal-body">
-                        <div class="row">
-                            <div class="col-sm-6">
-                                <div class="form-group">
+                                        <div className="card-body pt-2">
+                                        <div className="modal-body">
+                        <div className="row">
+                            <div className="col-sm-6">
+                                <div className="form-group">
                                     <label for="txtDepartmentName">Property Name</label>
                                         <InputBox Id="Propertyname"
                                             onChange={this.updateDepartment.bind(this)}
@@ -116,8 +116,8 @@ class PropertyNew extends React.Component {
                                         />
                                 </div>
                             </div>
-                            <div class="col-sm-6">
-                                <div class="form-group">
+                            <div className="col-sm-6">
+                                <div className="form-group">
                                     <label for="txtAddress">Address</label>
                                     <InputBox Id="txtAddress"
                                             onChange={this.updateDepartment.bind(this)}
@@ -127,9 +127,9 @@ class PropertyNew extends React.Component {
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-sm-6">
-                                <div class="form-group">
+                        <div className="row">
+                            <div className="col-sm-6">
+                                <div className="form-group">
                                     <label for="txtDepartmentName">Land Mark</label>
                                         <InputBox Id="txtLandMark"
                                             onChange={this.updateDepartment.bind(this)}
@@ -138,17 +138,17 @@ class PropertyNew extends React.Component {
                                         />
                                 </div>
                             </div>
-                            <div class="col-sm-6">
-                                <div class="form-group">
+                            <div className="col-sm-6">
+                                <div className="form-group">
                                     <label for="ddlCity">City</label>
                                     <DropDownList Id="ddlCity"
                                 Options={this.state.CityData} />
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-sm-6">
-                                <div class="form-group">
+                        <div className="row">
+                            <div className="col-sm-6">
+                                <div className="form-group">
                                     <label for="txtDepartmentName">Pin number</label>
                                         <InputBox Id="Propertyname"
                                             onChange={this.updateDepartment.bind(this)}
@@ -157,8 +157,8 @@ class PropertyNew extends React.Component {
                                         />                                  
                                 </div>
                             </div>
-                            <div class="col-sm-6">
-                                <div class="form-group">
+                            <div className="col-sm-6">
+                                <div className="form-group">
                                     <label for="txtAddress">Contact number</label>
                                     <InputBox Id="txtAddress"
                                             onChange={this.updateDepartment.bind(this)}
@@ -172,7 +172,7 @@ class PropertyNew extends React.Component {
                                         </div></div></div></div></div>
                     
                  
-                                <div class="modal-body">
+                                <div className="modal-body">
                       
                                 <div className="row">
             <div className="col-12">

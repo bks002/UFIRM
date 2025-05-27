@@ -21,5 +21,10 @@ class DataProvider {
         let url=`GetTaskPriorityCountDash?propId=${model[0].PropertyId}&dateFrom=${initialDate}&dateTo=${finalDate}`
         return srv.getComplaint(url);
     }
+    manageDashAssetCardCount(model,initialDate,finalDate)
+    {
+        let url=`api/Asset/GetCountOnAssets?propertyId=${model[0].PropertyId}&dateFrom=${initialDate}&dateTo=${finalDate}`
+        return srv.getComplaint(url);
+    }
 }
 export default DataProvider;

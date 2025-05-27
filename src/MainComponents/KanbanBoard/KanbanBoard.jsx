@@ -3,7 +3,6 @@ import moment from 'moment'
 import Board from 'react-trello'
 import { saveAs } from "file-saver";
 import LoadingOverlay from 'react-loading-overlay';
-
 import ApiProvider from './DataProvider';
 import CommonDataProvider from '../../Common/DataProvider/CommonDataProvider.js';
 import { MyCard } from './CustomCard'
@@ -18,15 +17,11 @@ import ClipLoader from "react-spinners/ClipLoader";
 import PropagateLoader from "react-spinners/PropagateLoader";
 import CreateTicket from './CreateTicket';
 import { CreateValidator } from './Validation';
-
 import { connect } from 'react-redux';
 import departmentAction from '../../redux/department/action';
 import { bindActionCreators } from 'redux';
-
-
 import './TicketSystem.css'
 import TicketDetails from './TicketDetails';
-
 import TicketDetailModel from './TicketDetailModel'
 let TicketDetailModelInstance = new TicketDetailModel();
 
@@ -74,7 +69,6 @@ class KanbanBoard extends Component {
             CategoryDataCreateAndEditTicket: [], priorityList: [], complainLocationList: [],
             ticketComments: [], ticketCommentLoading: false,
             TicketDetailModelInstance: null
-
         }
         this.ApiProviderr = new ApiProvider();
         this.comdbprovider = new CommonDataProvider();
@@ -84,18 +78,19 @@ class KanbanBoard extends Component {
         // console.log(cardId, laneId);
 
         let laneDetails = this.state.data.lanes.filter((x) => x.id === laneId);
+        console.log(laneDetails);
         let cardsDetails = laneDetails[0].cards.filter((x) => x.id === cardId)
-
-        // console.log(cardsDetails[0]);
-
+         console.log(cardsDetails[0]);
         this.ApiProviderr.GetticketAttachments(parseInt(cardId)).then(
             resp => {
-                if (resp.ok && resp.status == 200) {
+                if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
+                        console.log(rData+"GetticketAttachments");
                         this.setState({ TicketAttachmens: rData }, () => {
                             this.ApiProviderr.GetEditTicketDropdownData(cardsDetails[0].ticketOrigin, parseInt(cardId)).then(
                                 resp => {
-                                    if (resp.ok && resp.status == 200) {
+                                    if (resp.ok && resp.status === 200) {
+                                        console.log(rData);
                                         return resp.json().then(rData => {
                                             this.setState({
                                                 EditTicktDetails:
@@ -110,9 +105,10 @@ class KanbanBoard extends Component {
                                                     Cardusername: rData.username,
                                                     CardReoprterImg: rData.profileImageUrl,
                                                     CardAttachment: this.state.TicketAttachmens,
+                                                    CardPriority:cardsDetails[0].priority,
                                                 }
                                             }, () => {
-                                                //categroy
+                                                //category
                                                 const existCategory = this.state.CategoryDataCreateAndEditTicket.filter(
                                                     item => item.Name === cardsDetails[0].category);
 
@@ -181,7 +177,7 @@ class KanbanBoard extends Component {
         this.setState({ ticketCommentLoading: true }, () => {
             this.ApiProviderr.GetticketComment(TicketId).then(
                 resp => {
-                    if (resp.ok && resp.status == 200) {
+                    if (resp.ok && resp.status === 200) {
                         return resp.json().then(rData => {
                             this.setState({ ticketComments: rData }, () => this.setState({ ticketCommentLoading: false }))
                         });
@@ -212,7 +208,7 @@ class KanbanBoard extends Component {
                     let logMessage = `Ticket status changed from ${sourceLaneId.split('_')[1]} To ${targetLaneId.split('_')[1]}`;
                     this.ApiProviderr.ChangeTicketStatustype("TSU", card, statusTypeid, logMessage).then(
                         resp => {
-                            if (resp.ok && resp.status == 200) {
+                            if (resp.ok && resp.status === 200) {
                                 return resp.json().then(rData => {
                                     // has some issue drag and drop when use this with async and await not work
                                     // if (rData === 1) {
@@ -236,7 +232,7 @@ class KanbanBoard extends Component {
                     let logMessage = `Ticket status changed from ${sourceLaneId.split('_')[1]} To ${targetLaneId.split('_')[1]}`;
                     this.ApiProviderr.ChangeTicketStatustype("TSU", card, statusTypeid, logMessage).then(
                         resp => {
-                            if (resp.ok && resp.status == 200) {
+                            if (resp.ok && resp.status === 200) {
                                 return resp.json().then(rData => {
                                 });
                             }
@@ -254,7 +250,7 @@ class KanbanBoard extends Component {
                     let logMessage = `Ticket status changed from ${sourceLaneId.split('_')[1]} To ${targetLaneId.split('_')[1]}`;
                     this.ApiProviderr.ChangeTicketStatustype("TSU", card, statusTypeid, logMessage).then(
                         resp => {
-                            if (resp.ok && resp.status == 200) {
+                            if (resp.ok && resp.status === 200) {
                                 return resp.json().then(rData => {
                                 });
                             }
@@ -277,13 +273,16 @@ class KanbanBoard extends Component {
     manageTickets = (model, type) => {
         this.ApiProviderr.manageTickets(model, type).then(
             resp => {
-                if (resp.ok && resp.status == 200) {
+                console.log(model,type)
+                if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
+                        console.log(rData)
                         switch (type) {
                             case 'R':
                                 let data = {
                                     lanes: rData
                                 }
+                                console.log(data.lanes);
                                 this.setState({ data: data }, () => this.setState({ boardLoading: false }))
                                 break;
                             case 'AU':
@@ -371,7 +370,7 @@ class KanbanBoard extends Component {
                 });
                 break;
             default:
-        };
+        }
         return model;
     }
 
@@ -384,7 +383,7 @@ class KanbanBoard extends Component {
     loadCategoryData = () => {
         this.ApiProviderr.GetCategory().then(
             resp => {
-                if (resp.ok && resp.status == 200) {
+                if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
                         let CatData = [];
                         let CatDataCreateEdit = [];
@@ -411,8 +410,9 @@ class KanbanBoard extends Component {
         this.setState({ isTeamMemLoaded: true })
         this.ApiProviderr.GetTeamMember(StatementType, Category, PropertyId).then(
             resp => {
-                if (resp.ok && resp.status == 200) {
+                if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
+                        console.log(rData)
                         let CategoryWiseTeamMemberData = [];
                         rData.forEach(element => {
                             CategoryWiseTeamMemberData.push({ Id: element.id, Name: element.text });
@@ -429,7 +429,7 @@ class KanbanBoard extends Component {
     loadPriorityData = () => {
         this.ApiProviderr.GetDropdownData("TP", 0, 0, 0).then(
             resp => {
-                if (resp.ok && resp.status == 200) {
+                if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
                         let Data = [{ Id: 0, Name: "Select Priority" }];
                         rData.forEach(element => {
@@ -450,7 +450,7 @@ class KanbanBoard extends Component {
     loadComplainLocationData = () => {
         this.ApiProviderr.GetDropdownData("CL", this.props.PropertyId, 0, 0).then(
             resp => {
-                if (resp.ok && resp.status == 200) {
+                if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
                         let Data = [];
                         rData.forEach(element => {
@@ -468,7 +468,6 @@ class KanbanBoard extends Component {
         )
     }
 
-    // Set Date rangle 
     DateRangeConfig(startDate, endDate) {
         let _this = this;
         $('#dataRange').daterangepicker({
@@ -596,7 +595,7 @@ class KanbanBoard extends Component {
                             this.loadTicketNumberData()
                         }
 
-                        if (this.state.selectedCategoryId != "") {
+                        if (this.state.selectedCategoryId !== "") {
                             this.loadTemmemberCategoryWiseData("TAM", this.state.selectedCategoryId, this.props.PropertyId);
                         }
                         else {
@@ -618,7 +617,7 @@ class KanbanBoard extends Component {
     }
 
     onAssigneeChange(data) {
-        if (data != '') {
+        if (data !== '') {
             this.setState({ UserIds: data }, () => {
                 this.loadBoradData(this.state.TicketNumber);
                 //load tickenumber according to Assignee changed
@@ -691,7 +690,8 @@ class KanbanBoard extends Component {
     }
 
     onTicketLoad = (arg) => {
-        if (arg == '' || arg == null) {
+        console.log("onTicketLoad")
+        if (arg === '' || arg == null) {
             this.setState({ searchValue: '' }, () => {
                 this.loadBoradData("");
             });
@@ -705,7 +705,7 @@ class KanbanBoard extends Component {
     }
     ClearTyeahead = (type, event) => {
 
-        if (type == 'C') {
+        if (type === 'C') {
             var option = this.thaCustomer.props.options;
             if (!option.includes(event.target.value)) {
 
@@ -777,7 +777,6 @@ class KanbanBoard extends Component {
                         this.loadTicketNumberData()
                     }
                 })
-
                 this.loadCategoryData();
                 this.TicektStatusConfig();
                 if (this.state.personalPropertyTickets !== "Personal") {
@@ -790,7 +789,7 @@ class KanbanBoard extends Component {
     manageTicketsExportExcel = (model, type) => {
         this.ApiProviderr.manageTickets(model, type).then(
             resp => {
-                if (resp.ok && resp.status == 200) {
+                if (resp.ok && resp.status === 200) {
                     return resp.blob().then(rData => {
                         switch (type) {
                             case 'Excel':
@@ -835,7 +834,7 @@ class KanbanBoard extends Component {
                         />
                         : null
                 }
-                {this.state.PageMode == 'Home' &&
+                {this.state.PageMode === 'Home' &&
                     <LoadingOverlay
                         active={this.state.boardLoading}
                         spinner={<PropagateLoader color="#336B93" size={30} />}
@@ -884,7 +883,6 @@ class KanbanBoard extends Component {
                                                     : <ClipLoader color="#336B93" loading={this.state.isTeamMemLoaded} size={30} />
                                             }
                                         </li>
-
                                         <li className="nav-item">
                                             {
                                                 this.state.isLoaded === false ?
@@ -910,7 +908,6 @@ class KanbanBoard extends Component {
                                                 </div>
                                             </div>
                                         </li>
-
                                         <li className="nav-item">
                                             <div className="input-group-prepend">
                                                 <select className="form-control-sm pr-0 input-group-text"
@@ -990,7 +987,7 @@ class KanbanBoard extends Component {
                         </div>
                     </LoadingOverlay>
                 }
-                {this.state.PageMode == 'Add' &&
+                {this.state.PageMode === 'Add' &&
                     <CreateTicket
                         handleCancel={this.handleCancel.bind(this)}
                         currentRole={this.state.currentRole}

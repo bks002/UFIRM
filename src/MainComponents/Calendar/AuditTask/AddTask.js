@@ -1,5 +1,4 @@
 import React, { Component } from 'react'
-import ReactDatePicker from 'react-datepicker'
 import "react-datepicker/dist/react-datepicker.css";
 import { setHours, setMinutes } from 'date-fns';
 import Modal from 'react-awesome-modal';
@@ -10,11 +9,6 @@ import Button from '../../../ReactComponents/Button/Button';
 import * as appCommon from '../../../Common/AppCommon.js';
 import { CreateValidator, ValidateControls } from '../Validation';
 import { ToastContainer, toast } from 'react-toastify';
-
-
-
-
-
 
 export default class AddTask extends Component {
   constructor(props) {
@@ -326,34 +320,34 @@ export default class AddTask extends Component {
                     </div>
                   </div>
                   <div className='row mt-2'>
-                    <div className='col-6'>
-                      <label>Start Date</label>
-                      <ReactDatePicker
-                        className='form-control'
-                        selected={this.state.startDate}
-                        onChange={ this.onStartDateChange} 
-                        dateFormat="dd/MM/yyyy"
-                        peekNextmonth
-                        showMonthDropdown
-                        showYearDropdown
-                        dropdownMode='select'
-                        id="textStartDate"
-                      />
-                    </div>
-                    <div className='col-6'>
-                      <label>End Date</label>
-                      <ReactDatePicker
-                        className='form-control'
-                        selected={this.state.endDate}
-                        onChange={ this.onEndDateChange }
-                        dateFormat="dd/MM/yyyy"
-                        peekNextmonth
-                        showMonthDropdown
-                        showYearDropdown
-                        dropdownMode='select'
-                        id="textEndDate"
-                      />
-                    </div>
+                    {/*<div className='col-6'>*/}
+                    {/*  <label>Start Date</label>*/}
+                    {/*  <ReactDatePicker*/}
+                    {/*    className='form-control'*/}
+                    {/*    selected={this.state.startDate}*/}
+                    {/*    onChange={ this.onStartDateChange} */}
+                    {/*    dateFormat="dd/MM/yyyy"*/}
+                    {/*    peekNextmonth*/}
+                    {/*    showMonthDropdown*/}
+                    {/*    showYearDropdown*/}
+                    {/*    dropdownMode='select'*/}
+                    {/*    id="textStartDate"*/}
+                    {/*  />*/}
+                    {/*</div>*/}
+                    {/*<div className='col-6'>*/}
+                    {/*  <label>End Date</label>*/}
+                    {/*  <ReactDatePicker*/}
+                    {/*    className='form-control'*/}
+                    {/*    selected={this.state.endDate}*/}
+                    {/*    onChange={ this.onEndDateChange }*/}
+                    {/*    dateFormat="dd/MM/yyyy"*/}
+                    {/*    peekNextmonth*/}
+                    {/*    showMonthDropdown*/}
+                    {/*    showYearDropdown*/}
+                    {/*    dropdownMode='select'*/}
+                    {/*    id="textEndDate"*/}
+                    {/*  />*/}
+                    {/*</div>*/}
                     <div className='col-3 mt-2'>
                       <label>All Day</label>
                       <br />
@@ -368,40 +362,40 @@ export default class AddTask extends Component {
                           </div>
                       </label>
                     </div>
-                    <div className="col-3 mt-2">
-                        <label>Start Time</label>
-                        <ReactDatePicker
-                            className="form-control"
-                            selected={this.state.startTime}
-                            onChange={(date) => this.setState({
-                                startTime: date,
-                                endTime: moment(date).add(30, 'm').toDate()
-                            })}
-                            
-                            showTimeSelect
-                            showTimeSelectOnly
-                            timeIntervals={30}
-                            timeCaption="Time"
-                            dateFormat="h:mm a"
-                            // disabled={this.state.check}
-                        />
-                    </div>
-                    <div className="col-3 mt-2">
-                        <label>End Time</label>
-                        <ReactDatePicker
-                            className="form-control"
-                            selected={this.state.endTime}
-                            onChange={(date) => this.setState({ endTime: date })}
-                            showTimeSelect
-                            showTimeSelectOnly
-                            timeIntervals={30}
-                            timeCaption="Time"
-                            dateFormat="h:mm a"
-                            // disabled={this.state.check}
-                            minTime={moment(this.state.startTime).add(30, 'm').toDate()}
-                            maxTime={setHours(setMinutes(this.state.startTime, 45), 23)}
-                        />
-                    </div>
+                    {/*<div className="col-3 mt-2">*/}
+                    {/*    <label>Start Time</label>*/}
+                    {/*    <ReactDatePicker*/}
+                    {/*        className="form-control"*/}
+                    {/*        selected={this.state.startTime}*/}
+                    {/*        onChange={(date) => this.setState({*/}
+                    {/*            startTime: date,*/}
+                    {/*            endTime: moment(date).add(30, 'm').toDate()*/}
+                    {/*        })}*/}
+                    {/*        */}
+                    {/*        showTimeSelect*/}
+                    {/*        showTimeSelectOnly*/}
+                    {/*        timeIntervals={30}*/}
+                    {/*        timeCaption="Time"*/}
+                    {/*        dateFormat="h:mm a"*/}
+                    {/*        // disabled={this.state.check}*/}
+                    {/*    />*/}
+                    {/*</div>*/}
+                    {/*<div className="col-3 mt-2">*/}
+                    {/*    <label>End Time</label>*/}
+                    {/*    <ReactDatePicker*/}
+                    {/*        className="form-control"*/}
+                    {/*        selected={this.state.endTime}*/}
+                    {/*        onChange={(date) => this.setState({ endTime: date })}*/}
+                    {/*        showTimeSelect*/}
+                    {/*        showTimeSelectOnly*/}
+                    {/*        timeIntervals={30}*/}
+                    {/*        timeCaption="Time"*/}
+                    {/*        dateFormat="h:mm a"*/}
+                    {/*        // disabled={this.state.check}*/}
+                    {/*        minTime={moment(this.state.startTime).add(30, 'm').toDate()}*/}
+                    {/*        maxTime={setHours(setMinutes(this.state.startTime, 45), 23)}*/}
+                    {/*    />*/}
+                    {/*</div>*/}
                     <div className='col-3 mt-2'>
                         <label>Remind me</label>
                         <select

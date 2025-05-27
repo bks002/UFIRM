@@ -1,6 +1,6 @@
 import React, { Component } from "react";
-import ReactDatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
+// import ReactDatePicker from "react-datepicker";
+// import "react-datepicker/dist/react-datepicker.css";
 import { setHours, setMinutes } from "date-fns";
 import Modal from "react-awesome-modal";
 import moment from "moment";

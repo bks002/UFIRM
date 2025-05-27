@@ -116,7 +116,7 @@ const $ = window.$;
                 <button
                   className="btn btn-sm btn-success"
                   onClick={this.EditTask.bind(this, data.cell.row.original)}
-                  title="View"
+                  title="Edit"
                   style={{ marginRight: "5px" }}
                 >
                   <i className="fa fa-edit"></i>
@@ -124,7 +124,7 @@ const $ = window.$;
                 <button
                   className="btn btn-sm btn-danger"
                   onClick={this.DeleteTask.bind(this, data.cell.row.original)}
-                  title="View"
+                  title="Delete"
                 >
                   <i className="fa fa-trash"></i>
                 </button>
@@ -223,7 +223,6 @@ const $ = window.$;
       dataLoading: false,
       showAddModal: false,
       showEditModal: false,
-      showEditModal: false,
       PageMode: "Home",
       showQuesModal: false,
       showTaskModal: false,
@@ -271,7 +270,7 @@ const $ = window.$;
   loadProperty() {
     this.comdbprovider.getUserAssignedproperty().then(
         resp => {
-            if (resp && resp.ok && resp.status == 200) {
+            if (resp && resp.ok && resp.status === 200) {
                 return resp.json().then(rData => {
                   
                     this.setState({ propertyData: rData });
@@ -366,7 +365,6 @@ const $ = window.$;
   };
 
   manageTask = (model, type) => {
-    console.log(this.state.filtered)
     if(this.state.filtered){
       this.setState({ dataLoading: true });
       this.ApiProvider.manageTask(model, type).then((resp) => {
@@ -429,22 +427,22 @@ const $ = window.$;
   };
 
   modifyOccurence = (Occurrence)=>{
-    if(Occurrence == 'W'){
+    if(Occurrence === 'W'){
       return 'Weekly'
     }
-    if(Occurrence == 'Y'){
+    if(Occurrence === 'Y'){
       return 'Yearly'
     }
-    if(Occurrence == 'D'){
+    if(Occurrence === 'D'){
       return 'Daily'
     }
-    if(Occurrence == 'M'){
+    if(Occurrence === 'M'){
       return 'Monthly'
     }
   }
   manageSubCategory = (model, type, categoryId) => {
     this.ApiProvider.manageSubCategory(model, type, categoryId).then((resp) => {
-      if (resp.ok && resp.status == 200) {
+      if (resp.ok && resp.status === 200) {
         return resp.json().then((rData) => {
           let subCatData = [];
           rData.forEach((element) => {
@@ -467,7 +465,7 @@ const $ = window.$;
 
   manageAssign = (model, type) => {
     this.ApiProvider.manageAssign(model, type).then((resp) => {
-      if (resp.ok && resp.status == 200) {
+      if (resp.ok && resp.status === 200) {
         return resp.json().then((rData) => {
           let assignData = [];
           rData.forEach((element) => {
@@ -489,7 +487,7 @@ const $ = window.$;
 
   manageDashboardAssign = (model, type) => {
     this.ApiProvider.manageDashboardAssign(model, type).then((resp) => {
-      if (resp.ok && resp.status == 200) {
+      if (resp.ok && resp.status === 200) {
         return resp.json().then((rData) => {
           let assignData = [];
           rData.forEach((element) => {
@@ -511,7 +509,7 @@ const $ = window.$;
 
   manageTaskPriority = (model, type) => {
     this.ApiProvider.manageTaskPriority(model, type).then((resp) => {
-      if (resp.ok && resp.status == 200) {
+      if (resp.ok && resp.status === 200) {
         return resp.json().then((rData) => {
           let taskPriorityList = [];
           rData.forEach((element) => {
@@ -569,7 +567,6 @@ const $ = window.$;
     this.manageSubCategory(model, type, categoryId);
   }
 
-  
   getAllProperties() {
     var type = "R";
     var model = this.getModel(type);
@@ -577,7 +574,6 @@ const $ = window.$;
   }
 
   getTasks() {
-    console.log(this.state.filtered);
     var type = "R";
     var categoryId = this.state.selectedCategoryId
       ? this.state.selectedCategoryId
@@ -625,7 +621,7 @@ const $ = window.$;
 
   findItem(id) {
     return this.state.data.find((item) => {
-      if (item.TaskId == id) {
+      if (item.TaskId === id) {
         return item;
       }
     });
@@ -643,7 +639,6 @@ const $ = window.$;
     $('#dataRange').on('apply.daterangepicker', function (ev, picker) {
       var startDate = picker.startDate;
       var endDate = picker.endDate;
-      console.log(startDate , endDate);
       _this.setState({ filterFromDate: startDate.format('YYYY-MM-DD'), filterToDate: endDate.format('YYYY-MM-DD') });
   });
   }
@@ -653,8 +648,6 @@ const $ = window.$;
     const status = this.props.status==='Completed'?'Complete':this.props.status;
     const priority = this.props.priority;
     const initialDate=this.props.dashDates;
-    console.log(status,priority,initialDate);
-
     const today = moment();
     this.setState({
       filterFromDate:(status===null && priority===null)? today.format('YYYY-MM-DD'):initialDate,
@@ -692,17 +685,16 @@ const $ = window.$;
   };
 
   Filter = () => {
-    if (this.state.propertyId > 0 ||this.state.assignTo > 0 || this.state.occurance !="" || this.state.taskStatus != "None") 
+    if (this.state.propertyId > 0 ||this.state.assignTo > 0 || this.state.occurance !=="" || this.state.taskStatus !== "None")
       {
       this.setState({ filtered: true }, () => {
-        console.log(this.state.filtered); 
         this.getTasks();
       });
       
     } else {
       appCommon.showtextalert("", "Please Select Any Filter Attribute", "warning");
     }
-  };
+  };s
 
   Reset = () => {
     this.setState({
@@ -1150,8 +1142,7 @@ const $ = window.$;
                       columns={this.state.columns}
                       hideGridSearchAndSize={true}
                       globalSearch={true}
-                      isDefaultPagination={true}/> 
-                      
+                      isDefaultPagination={true}/>
                     </LoadingOverlay>
                   </div>
                 </div>
@@ -1165,6 +1156,7 @@ const $ = window.$;
             closeModal={this.closeModal}
             categoryData={this.state.CategoryData}
             getTask={this.getTasks}
+            type={"PPMtask"}
           />
         )}
         {this.state.PageMode === "AddQuestion" && (

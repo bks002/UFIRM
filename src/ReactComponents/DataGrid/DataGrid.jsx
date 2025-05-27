@@ -19,9 +19,7 @@ export default class DataGrid extends React.Component {
         super(props);
         this.state = {
         }
-
     }
-
     componentDidMount() {
         // 
         $(`#${this.props.Id}`).DataTable({
@@ -56,30 +54,21 @@ export default class DataGrid extends React.Component {
     onGridManage(fId) {
         this.props.onGridApprove(fId);
     }
-
     onGridDelete(fId) {
         // alert('Delete' + id);
-
         this.props.onGridDeleteMethod(fId);
     }
-
     onGridBlock(fId) {
         this.props.onGridBlockMethod(fId);
     }
-
-
     onGridView(fId) {
         //this.props.onEditMethod(fId);
         this.props.onGridViewMethod(fId);
     }
-
     onGridDownload(fId) {
         this.props.onGridDownloadMethod(fId);
     }
-    //End
-
     componentDidUpdate() {
-        // 
         let _this = this;
         var dr = this.props.ColumnCollection;
         let object = this;
@@ -98,15 +87,11 @@ export default class DataGrid extends React.Component {
                     statusColorColIndex = StatusColorColumn[0].Index;
                     statusValue = StatusColorColumn[0].Value;
                 }
-
-
                 const StatusColumn = gridBL.GetStatusColumn(this.props.ColumnCollection);
                 let statusColIndex = null;
                 if (StatusColumn != null) {
                     statusColIndex = StatusColumn[0].Index;
                 }
-
-
                 const SelectButton = gridBL.GetSelectOption(this.props.ColumnCollection);
                 let selectIndex = null;
                 let statusindex = null;
@@ -119,7 +104,6 @@ export default class DataGrid extends React.Component {
                 if (actionButtons != null) {
                     actionButtonIndex = actionButtons[0].Index;
                 }
-
                 //****Start******//ravindra 08-feb-2021
                 const SelectImage = gridBL.GetImageIndexForUrl(this.props.ColumnCollection);
                 let iselectIndex = null;
@@ -172,13 +156,13 @@ export default class DataGrid extends React.Component {
                                 btnhtml += '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
                                 btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
                                 break;
-                            // Added by: Rakhmaji Ghule 147/0/2021 -> show Edit, Veiw and Delete button in Action Col 
+                            // Added by: Rakhmaji Ghule 147/0/2021 -> show Edit, Veiw and Delete button in Action Col
                             case 'Edit&View&Delete':
                                 btnhtml += '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
                                 btnhtml += '<button class="btn btn-sm btn-warning" title="View" ><i class="fa fa-eye"></i></button>';
                                 btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
                                 break;
-                            // Added by: Rakhmaji Ghule 26/03/2021 -> show Edit, Approve and Reject button in Action Col 
+                            // Added by: Rakhmaji Ghule 26/03/2021 -> show Edit, Approve and Reject button in Action Col
                             case 'Edit&Approve&Reject':
                                 btnhtml += '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
                                 btnhtml += '<button class="btn btn-sm btn-warning" title="Approve" ><i class="fa fa-check"></i></button>';
@@ -281,15 +265,11 @@ export default class DataGrid extends React.Component {
                 }
 
                 GridarrayMain.splice(idx, 0, Gridarray);
-                Gridarray = [];
+                 Gridarray = [];
             });
         }
-
-        // * removing existing object of table
-        objcommonjs.ClearTableGrid(this.props.Id);
-        //
+         objcommonjs.ClearTableGrid(this.props.Id);
         let table = $(`#${this.props.Id}`).DataTable({
-            
             data: GridarrayMain,
             //searching: this.props.IsSarching,
             "paging": this.props.DefaultPagination,
@@ -307,15 +287,12 @@ export default class DataGrid extends React.Component {
             // }]
 
         });
-         
         //Enable hide column property
         dr.map((item, index) => {
             if (item.visible !== undefined && item.visible) {
                 table.column(index).visible(false);
             }
         });
-
-
 
         if (this.props.GridData != null) {
 
@@ -446,7 +423,6 @@ export default class DataGrid extends React.Component {
             });
         }
         $('.tbl-loading').addClass('hide');
-
     }
 
     viewInformation = (action, Id, x) => {

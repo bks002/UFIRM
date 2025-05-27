@@ -27,24 +27,23 @@ class PropertyTower extends React.Component {
             PropertyDetailsTypeListData: [],
             GridData: [],
             gridHeader: [
-                { sTitle: 'Id', titleValue: 'propertyDetailsId', "orderable": false },
-                { sTitle: 'Property Name', titleValue: 'propertyName', },
-                { sTitle: 'Tower name', titleValue: 'towername', },
-                { sTitle: 'Floor', titleValue: 'floor', },
-                { sTitle: 'Flat Name', titleValue: 'flat', },
+                { sTitle: 'Id', titleValue: 'PropertyDetailsId', "orderable": false },
+                // { sTitle: 'Property Name', titleValue: 'propertyName', },
+                { sTitle: 'Tower Name', titleValue: 'TowerName', },
+                { sTitle: 'Floor', titleValue: 'Floor', },
+                { sTitle: 'Flat Name', titleValue: 'Flat', },
                 // { sTitle: 'Flat Number', titleValue: 'FlatDetailNumber',  },
-                { sTitle: 'Ext.', titleValue: 'contactNumber', },
-                { sTitle: 'Status', titleValue: 'propertyStatus', },
+                { sTitle: 'Contact Number', titleValue: 'ContactNumber', },
+                { sTitle: 'Status', titleValue: 'PropertyStatus', },
                 { sTitle: 'Action', titleValue: 'Action', Action: "Edit&Delete", Index: '0', "orderable": false },
             ],
-
             PageMode: 'Home',
             PropertyTowerId: 0,
             PropertyId: 0,
             PropertyDetailsId: 0,
             Floor: 0,
             FlatName: '',
-            ContactNumber: 0,
+            ContactNumber: "",
             FlatTypeId: 0,
             MeasureunitId: 0,
             TotalArea: 0.0,
@@ -52,13 +51,9 @@ class PropertyTower extends React.Component {
             CarpetArea: 0.0,
             SuperBuilupArea: 0.0,
             Configuration: '',
-
-
         };
         this.ApiProviderr = new ApiProvider();
         this.comdbprovider = new CommonDataProvider();
-
-
     }
 
     async loadPropertyDetailType() {
@@ -73,7 +68,6 @@ class PropertyTower extends React.Component {
         rData = appCommon.changejsoncolumnname(rData, "text", "Name");
         this.setState({ MeasureunitListData: rData });
     }
-
     async loadProperty() {
         await this.comdbprovider.getPropertyMaster(0).then(
             resp => {
@@ -90,14 +84,12 @@ class PropertyTower extends React.Component {
 
             });
     }
-
     async loadPropertyTowers(id) {
         var rData = await this.comdbprovider.getPropertyTowersAsync(id);
         rData = appCommon.changejsoncolumnname(rData, "id", "Value");
         rData = appCommon.changejsoncolumnname(rData, "text", "Name");
         this.setState({ PropertyTowersData: rData });
     }
-
     getModel = (type) => {
         var mode = [{
             "propertyDetailsId": this.state.PropertyDetailsId,
@@ -113,12 +105,11 @@ class PropertyTower extends React.Component {
             "carpetArea": parseFloat(this.state.CarpetArea),
             "superBuilUpArea": parseFloat(this.state.SuperBuilupArea),
             "measurementUnitsId": this.state.MeasureunitId,
-            "uniteConfiguration": this.state.Configuration
+            "uniteConfiguration": this.state.Configuration,
+            "userId":this.state.userId,
         }]
-
         return mode;
     }
-
 
     componentDidMount() {
         this.loadHomagePageData();
@@ -133,16 +124,15 @@ class PropertyTower extends React.Component {
             this.loadMeasureunit();
         }
     }
-    loadHomagePageData() {
-
+     async loadHomagePageData() {
         var model = this.getModel('R');
         this.ApiProviderr.managePropertyTowers(model).then(
             resp => {
-                if (resp.ok && resp.status == 200) {
+                if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
+                        console.log(rData)
                         this.setState({ GridData: rData });
                     });
-
                 }
             });
     }
@@ -151,7 +141,6 @@ class PropertyTower extends React.Component {
 
     }
     onGridDelete = (Id) => {
-
         let myhtml = document.createElement("div");
         myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>"
         alert: (
@@ -215,7 +204,6 @@ class PropertyTower extends React.Component {
     }
 
     findItem(id) {
-
         return this.state.GridData.find((item) => {
             if (item.propertyDetailsId == id) {
                 return item;
@@ -299,7 +287,6 @@ class PropertyTower extends React.Component {
 
         });
     }
-
     onTowerChanges(id) {
         var searchvalue = [];
         this.state.PropertyTowersData.find((item) => {
@@ -323,16 +310,14 @@ class PropertyTower extends React.Component {
     onPropertyDetailChanged(value) {
         this.setState({ PropertyDetailTypeId: parseInt(value) });
     }
-
     onmeasurmentChanged(value) {
         this.setState({ MeasureunitId: parseInt(value) });
     }
-
     //End
     render() {
         return (
             <div>
-                {this.state.PageMode == 'Home' &&
+                {this.state.PageMode === 'Home' &&
                     <div className="row">
                         <div className="col-12">
                             <div className="card">
