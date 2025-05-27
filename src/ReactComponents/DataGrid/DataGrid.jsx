@@ -37,7 +37,6 @@ export default class DataGrid extends React.Component {
             // }]
         });
         this.ApiProviderr = new ApiProvider();
-        console.log(this.props.GridData,"outside update")
     }
 
     GetSelectionIds() {
@@ -73,11 +72,9 @@ export default class DataGrid extends React.Component {
         let _this = this;
         var dr = this.props.ColumnCollection;
         let object = this;
-        console.log(object,"object")
         $('.tbl-loading').removeClass('hide');
         let GridarrayMain = [];
         let Gridarray = [];
-        console.log(this.props.GridData,"update")
         if (this.props.GridData != null) {
             this.props.GridData.map((val, idx) => {
                 this.props.ColumnCollection.map((cval, cidx) => {
@@ -290,7 +287,6 @@ export default class DataGrid extends React.Component {
             // }]
 
         });
-        console.log("DataTable initialized.",GridarrayMain,this.props.GridData,table);
         //Enable hide column property
         dr.map((item, index) => {
             if (item.visible !== undefined && item.visible) {

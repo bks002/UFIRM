@@ -114,8 +114,8 @@ class MainNav extends React.Component {
   }
 
   componentDidMount() {
-    var token ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
-    //var token = window.sessionStorage.getItem("userinfo_key")
+    //var token ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
+    var token = window.sessionStorage.getItem("userinfo_key")
 
     if (token === null) {
         const timerId = setTimeout(() => {
@@ -234,7 +234,7 @@ class MainNav extends React.Component {
           </nav>
 
           <aside className="main-sidebar elevation-4 sidebar-light-primary">
-            <Link to="/Account/App" className="brand-link">
+            <Link to="/" className="brand-link">
               <img
                 src="https://ufirm.in/assets/cdn/public/img/Ufirm-fabicon.png"
                 alt="UFIRM Logo"
@@ -254,7 +254,7 @@ class MainNav extends React.Component {
                     className="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu"
                     data-accordion="false">
                   <li className="nav-item has-treeview">
-                    <a href="/Account/App" className="nav-link">
+                    <a href="#" className="nav-link">
                       <i className="nav-icon fas fa-tachometer-alt"></i>
                       <p>
                         Dashboard
@@ -1011,15 +1011,13 @@ class MainNav extends React.Component {
             </div>
           </aside>
           <Switch>
-            {/* <Route
+            <Route
                 exact
                 path="/"
-                render={() => <Redirect to=" "/>}
-            /> */}
-            <Route exact path="/" component={Home}/>
-            {/* <Route exact path="/">
-              <Home />
-            </Route> */}
+                render={() => <Redirect to="/Account/App" />}
+            />
+
+            <Route exact path="/Account/App" component={Home} />
             <Route exact path="/Account/App/ticket">
               <TicketingDashboard/>
             </Route>

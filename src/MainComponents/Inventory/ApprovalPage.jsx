@@ -15,8 +15,17 @@ const ApprovalTable = ({
     onGridView
 }) => {
     const userrole= useSelector((state)=>state.Commonreducer.entrolval);
+    const userid= useSelector((state)=>state.Commonreducer.userId);
+    const username= useSelector((state)=>state.Commonreducer.userName);
+    const useremail= useSelector((state)=>state.Commonreducer.userEmail);
+    const companyid= useSelector((state)=>state.Commonreducer.companyid);
     const dispatch= useDispatch();
     const [openDropDown, setOpenDropDown] = useState(true);
+    {console.log("Role",userrole)}
+    {console.log("ID",userid)}
+    {console.log("Name",username)}
+    {console.log("Email",useremail)}
+    {console.log("Company Id",companyid)}
 
     const handleToggle = () => {
         setOpenDropDown(prev => !prev);
