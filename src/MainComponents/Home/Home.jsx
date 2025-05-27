@@ -290,28 +290,28 @@ class Home extends React.Component {
                                                HeaderValue={this.state.totalTAsks}
                                                HeaderClass="card card-danger cardutline"
                                                ItemJson={this.state.taskStatus}
-                                               Link="/PlannerTask"/>
+                                               Link="/Account/App/PlannerTask"/>
                             </div>
                             <div className="col-md-3 ">
                                 <DashboardCard CardTitle="Priority Tasks"
                                                HeaderValue={this.state.totalActTasks}
                                                HeaderClass="card card-danger cardutline"
                                                ItemJson={this.state.taskPriority}
-                                               Link="/PlannerTask"/>
+                                               Link="/Account/App/PlannerTask"/>
                             </div>
                             <div className="col-md-3">
                                 <DashboardCard CardTitle="Total Assets"
                                                HeaderValue={this.state.totalAssets}
                                                HeaderClass="card card-danger cardutline"
                                                ItemJson={this.state.assetCount}
-                                               Link="/ServiceRecords"/>
+                                               Link="/Account/App/ServiceRecords"/>
                             </div>
                             <div className="col-md-3 ">
                                 <DashboardCard CardTitle="Complains"
                                                HeaderValue={this.state.complainsCnt}
                                                HeaderClass="card card-danger cardutline"
                                                ItemJson={this.state.complains}
-                                               Link="/TicketComplains"/>
+                                               Link="/Account/App/TicketComplains"/>
                             </div>
 
                         </div>
@@ -321,7 +321,7 @@ class Home extends React.Component {
                                                HeaderValue={this.state.totalFlatsCnt}
                                                HeaderClass="card card-info cardutline"
                                                ItemJson={this.state.totalFlats}
-                                               Link="/ManageResidentOwners"/>
+                                               Link="/Account/App/ManageResidentOwners"/>
                             </div>
                         </div>
                     </div>
