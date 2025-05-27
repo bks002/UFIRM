@@ -234,7 +234,7 @@ class MainNav extends React.Component {
           </nav>
 
           <aside className="main-sidebar elevation-4 sidebar-light-primary">
-            <Link to="/" className="brand-link">
+            <Link to="/Account/App" className="brand-link">
               <img
                 src="https://ufirm.in/assets/cdn/public/img/Ufirm-fabicon.png"
                 alt="UFIRM Logo"
