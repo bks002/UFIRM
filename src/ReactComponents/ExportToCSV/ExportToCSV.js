@@ -2,7 +2,6 @@ import React from 'react';
 import { CSVLink } from 'react-csv';
 
 const ExportToCSV = ({ data = [] ,className }) => {
-  console.log(className);
   return (
     <CSVLink
       data={data}
