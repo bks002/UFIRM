@@ -4,7 +4,7 @@ import { Column } from "primereact/column";
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { Toast } from 'primereact/toast';
-import { getCategories, fetchFilteredItems, getVendors, getRateCard } from "../../Services/InventoryService";
+import { getCategories, fetchFilteredItems, getVendors, getRateCard, fetchFilteredRateCategory } from "../../Services/InventoryService";
 import { useSelector } from "react-redux";
 import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
@@ -18,7 +18,22 @@ const PurchaseOrderPage = () => {
     const [allVendors, setAllVendors] = useState([]);
     const [RateCard, setRateCard] = useState([]);
     const [selectedVendor, setSelectedVendor] = useState(null);
-    const [allGridData, setAllGridData] = useState([]);
+    const emptyallGridData = {
+        ItemId: 0,
+        VendorId: 0,
+        ItemName: "N/A",
+        VendorName: "N/A",
+        BrandName: "N/A",
+        Price: 0,
+        MeasurementUnit: "N/A",
+        HSNCode: 0,
+        Description: "N/A",
+        Quantity: 0,
+        TotalAmount: 0,
+        Billing: "N/A",
+        Shipping: "N/A"
+    };
+    const [allGridData, setAllGridData] = useState(emptyallGridData);
     const [filteredGridData, setFilteredGridData] = useState([]);
     const [selectedGridData, setSelectedGridData] = useState([]);
     const [displayDialog, setDisplayDialog] = useState(false);
@@ -32,6 +47,7 @@ const PurchaseOrderPage = () => {
 
     useEffect(() => {
         if (propertyId) {
+            setFilteredGridData([]);
             getAllCategories(propertyId);
             getAllVendors(propertyId);
             getAllRateCard(propertyId);
@@ -42,88 +58,56 @@ const PurchaseOrderPage = () => {
                 detail: 'Please Select a Property.',
                 life: 3000
             });
+            setFilteredGridData([]);
         }
     }, [propertyId]);
 
     useEffect(() => {
-        if (propertyId && selectedCategory) {
-            getItems(propertyId, selectedCategory);
-        } else {
-            setItems([]);
-            setAllGridData([]);
-            setFilteredGridData([]);
-            setSelectedItem(null);
-            setSelectedVendor(null);
-        }
+        const fetchData = async () => {
+            if (propertyId && selectedCategory) {
+                const data = await fetchFilteredRateCategory(propertyId,selectedCategory);
+                setFilteredGridData(data);
+                getItems(propertyId, selectedCategory);
+            }
+        };
+        fetchData();
     }, [propertyId, selectedCategory]);
 
     useEffect(() => {
-        if (Items.length > 0) {
-            const newGridData = Items.flatMap(item => {
-                const itemRateCards = RateCard.filter(rate => rate.ItemName === item.Name);
-
-                if (itemRateCards.length > 0) {
-                    return itemRateCards.map(rateInfo => ({
-                        ItemId: item.Id,
-                        VendorId: rateInfo.VendorId,
-                        ItemName: item.Name,
-                        VendorName: rateInfo.VendorName,
-                        BrandName: item.BrandName,
-                        Price: rateInfo.Price,
-                        MeasurementUnit: item.MeasurementUnit,
-                        HSNCode: item.HSNCode,
-                        Description: item.Description,
-                        Quantity: 0,
-                        TotalAmount: 0,
-                        Billing: "",
-                        Shipping: ""
-                    }));
-                } else {
-                    return [{
-                        ItemId: item.Id,
-                        VendorId: 0,
-                        ItemName: item.Name,
-                        VendorName: "N/A",
-                        BrandName: item.BrandName,
-                        Price: 0,
-                        MeasurementUnit: item.MeasurementUnit,
-                        HSNCode: item.HSNCode,
-                        Description: item.Description,
-                        Quantity: 0,
-                        TotalAmount: 0,
-                        Billing: "",
-                        Shipping: ""
-                    }];
-                }
-            });
-            setAllGridData(newGridData);
-            setFilteredGridData(newGridData);
-        } else {
-            setAllGridData([]);
-            setFilteredGridData([]);
+        if (Items.length > 0 && RateCard.length > 0) {
+            const updatedList = Items.flatMap((item) =>
+                RateCard.map((rate) => ({
+                    ...allGridData,
+                    VendorId: rate.VendorId,
+                    VendorName: rate.VendorName,
+                    Price: rate.Price,
+                    ItemId: item.Id,
+                    ItemName: item.Name,
+                    BrandName: item.BrandName,
+                    MeasurementUnit: item.MeasurementUnit,
+                    HSNCode: item.HSNCode,
+                    Description: item.Description
+                }))
+            );
+            setAllGridData(updatedList);
+            setFilteredGridData(updatedList);
         }
-        setSelectedItem(null);
-        setSelectedVendor(null);
     }, [Items, RateCard]);
 
     useEffect(() => {
-        let currentData = [...allGridData];
-        if (selectedItem) {
-            console.log("Filtering by selectedItem:", selectedItem);
-            currentData = currentData.filter(data => String(data.ItemId) === String(selectedItem));
+        if(selectedVendor){
+            console.log(selectedVendor)
+            const vendorfilter= allVendors.filter((ven)=>(ven.Id===selectedVendor))
+            console.log(vendorfilter)
+            const updatedList =vendorfilter.map((ven)=>({
+                ...allGridData,
+                VendorId: ven.Id,
+                VendorName: ven.Name,
+            }));
+            setAllGridData(updatedList);
+            setFilteredGridData(updatedList);
         }
-        if (selectedVendor && selectedVendor !== '') {
-            const vendorObj = allVendors.find(vendor => String(vendor.Id) === String(selectedVendor));
-            const selectedVendorName = vendorObj ? vendorObj.Name : null;
-            if (selectedVendorName) {
-                currentData = currentData.filter(data => {
-                    const match = data.VendorName && data.VendorName.toLowerCase() === selectedVendorName.toLowerCase();
-                    return match;
-                });
-            }
-        }
-        setFilteredGridData(currentData);
-    }, [selectedItem, selectedVendor, allGridData, allVendors]);
+    }, [allVendors, selectedVendor]);
 
     const getAllCategories = async (propertyId) => {
         setLoading(true);
@@ -246,9 +230,9 @@ const PurchaseOrderPage = () => {
     const Quantitytemplate = (rowData) => {
         return (
             <InputNumber
-            value={rowData.Quantity}
+                value={rowData.Quantity}
                 showButtons
-                onValueChange={(e) => {rowData.Quantity = e.value; rowData.TotalAmount = e.value * rowData.Price; setSelectedGridData([...selectedGridData])}}
+                onValueChange={(e) => { rowData.Quantity = e.value; rowData.TotalAmount = e.value * rowData.Price; setSelectedGridData([...selectedGridData]) }}
                 min={0}
             />
         );

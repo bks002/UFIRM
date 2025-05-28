@@ -161,11 +161,7 @@ export const getVendorById = async (id) => {
 
 export const createVendor = async (vendor) => {
     try {
-        const response = await api.post('/vendor', vendor, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
+        const response = await api.post('/vendor', vendor);
         return response.data;
     } catch (error) {
         handleApiError(error);
@@ -219,3 +215,12 @@ export const createRateCard = async (ratecard) => {
         handleApiError(error);
     }
 };
+
+export const fetchFilteredRateCategory = async (propertyId,CategoryId) => {
+      try {
+        const response = await api.get(`ratecards?propertyId=${propertyId}&categoryId=${CategoryId}`);
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching Rate Card:', error);
+      }
+    };
