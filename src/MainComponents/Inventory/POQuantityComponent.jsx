@@ -1,105 +1,120 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from 'primereact/button';
-import { Dialog } from 'primereact/dialog';
 import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
 
-const POQuantityComponent = ({
-    selectedGridData = []
-}) => {
-    console.log(selectedGridData)
-    const [shippingAddress, setShippingAddress] = useState("");
-    const [billingAddress, setBillingAddress] = useState("");
-
-    const [items, setItems] = useState(selectedGridData);
+const POQuantityComponent = ({ selectedGridData = [] }) => {
+    const [shippingAddress, setShippingAddress] = useState('');
+    const [billingAddress, setBillingAddress] = useState('');
+    const [items, setItems] = useState([]);
 
     useEffect(() => {
-        setItems(selectedGridData);
+        const updatedItems = selectedGridData.map(item => ({
+            ...item,
+            TotalAmount: (item.Quantity || 0) * (item.Price || 0)
+        }));
+        setItems(updatedItems);
     }, [selectedGridData]);
 
-    const Ratetemplate = (rowData) => {
-        return rowData.Price ? <span>{`₹${rowData.Price} /${rowData.MeasurementUnit}`}</span> : null;
+    const updateItemQuantity = (id, quantity) => {
+        setItems(prevItems => {
+            const updated = [...prevItems];
+            const index = updated.findIndex(item => item.Id === id);
+            if (index > -1) {
+                const item = updated[index];
+                updated[index] = {
+                    ...item,
+                    Quantity: quantity,
+                    TotalAmount: (quantity || 0) * (item.Price || 0),
+                };
+            }
+            return updated;
+        });
     };
 
+    const RateTemplate = useCallback((rowData) => {
+        return rowData.Price ? <span>{`₹${rowData.Price} /${rowData.MeasurementUnit}`}</span> : null;
+    }, []);
 
-    const Quantitytemplate = (rowData) => (
+    const QuantityTemplate = useCallback((rowData) => (
         <InputNumber
             value={rowData.Quantity}
-            onValueChange={(e) => {
-                setItems(prevItems =>
-                    prevItems.map(item =>
-                        item.Id === rowData.Id
-                            ? {
-                                ...item,
-                                Quantity: e.value,
-                                TotalAmount:( item.Price * item.Quantity)
-                            }
-                            : item
-                    )
-                );
-            }}
+            min={0}
+            onValueChange={(e) => updateItemQuantity(rowData.Id, e.value)}
+            buttonLayout="horizontal"
         />
-    );
+    ), []);
 
-    const Totalamounttemplate = (rowData) => {
-    const amount = Number(rowData.TotalAmount) || 0;
-    return new Intl.NumberFormat('en-IN', {
-        style: 'currency',
-        currency: 'INR',
-    }).format(amount);
-};
+    const TotalAmountTemplate = useCallback((rowData) => {
+        const amount = Number(rowData.TotalAmount) || 0;
+        return new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+        }).format(amount);
+    }, []);
 
+    const grandTotal = useMemo(() => {
+        return items.reduce((sum, item) => sum + (item.TotalAmount || 0), 0);
+    }, [items]);
 
     return (
         <div>
+            {/* Shipping & Billing address */}
             <div className="d-flex justify-content-between mb-4">
                 <div className="d-flex flex-column me-3 flex-grow-1">
-                    <label htmlFor='Shipping'>Shipping Address</label>
+                    <label htmlFor="Shipping">Shipping Address</label>
                     <InputText
-                        id='Shipping'
+                        id="Shipping"
                         value={shippingAddress}
                         onChange={(e) => setShippingAddress(e.target.value)}
+                        placeholder="Enter shipping address"
                     />
                 </div>
                 <div className="d-flex flex-column ms-3 flex-grow-1">
-                    <label htmlFor='Billing'>Billing Address</label>
+                    <label htmlFor="Billing">Billing Address</label>
                     <InputText
-                        id='Billing'
+                        id="Billing"
                         value={billingAddress}
                         onChange={(e) => setBillingAddress(e.target.value)}
+                        placeholder="Enter billing address"
                     />
                 </div>
             </div>
+
+            {/* Table */}
             <DataTable
                 value={items}
-                dataKey="ItemId"
-                editMode="cell"
+                dataKey="Id"
                 paginator
                 rows={15}
+                responsiveLayout="scroll"
+                className="mb-3"
             >
-                <Column  field='ItemName' header="Item" />
-                <Column field='Description' header='Description' />
-                <Column field='VendorName' header="Vendor" />
-                <Column field='BrandName' header="Brand" />
-                <Column body={Ratetemplate} header="Price" />
-                <Column field='HSNCode' header="HSN Code" />
-                <Column header="Quantity" body={Quantitytemplate}  />
-                <Column body={Totalamounttemplate} header="Total Amount" field='TotalAmount' />
+                <Column field="ItemName" header="Item" />
+                <Column field="Description" header="Description" />
+                <Column field="VendorName" header="Vendor" />
+                <Column field="BrandName" header="Brand" />
+                <Column body={RateTemplate} header="Price" />
+                <Column field="HSNCode" header="HSN Code" />
+                <Column header="Quantity" body={QuantityTemplate} />
+                <Column body={TotalAmountTemplate} header="Total Amount" />
             </DataTable>
-            <div className="p-d-flex p-jc-end p-mt-3">
+
+            {/* Grand total */}
+            <div className="text-end mt-3">
+                <strong>Total Order Amount: </strong>
+                {new Intl.NumberFormat('en-IN', {
+                    style: 'currency',
+                    currency: 'INR',
+                }).format(grandTotal)}
+            </div>
+
+            {/* Place Order Button */}
+            <div className="d-flex justify-content-end mt-3">
                 <Button label="Place Order" icon="pi pi-check" className="p-button-success" />
             </div>
-            {/* <Dialog
-                visible={displayafterPlaceOrder}
-                onHide={onHideDialog}
-                modal
-                style={{ width: '90vw', height: '90vh' }}
-                header="Purchase Order Details"
-            >
-                {renderPlaceordercontent()}
-            </Dialog> */}
         </div>
     );
 };
