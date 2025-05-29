@@ -4,7 +4,7 @@ import { Column } from "primereact/column";
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { Toast } from 'primereact/toast';
-import { getCategories, fetchFilteredItems, getVendors, getRateCard, fetchFilteredRateCategory } from "../../Services/InventoryService";
+import { getCategories, fetchFilteredItems, getVendors, fetchFilteredRate } from "../../Services/InventoryService";
 import { useSelector } from "react-redux";
 import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
@@ -16,7 +16,6 @@ const PurchaseOrderPage = () => {
     const [Items, setItems] = useState([]);
     const [selectedItem, setSelectedItem] = useState(null);
     const [allVendors, setAllVendors] = useState([]);
-    const [RateCard, setRateCard] = useState([]);
     const [selectedVendor, setSelectedVendor] = useState(null);
     const emptyallGridData = {
         ItemId: 0,
@@ -33,8 +32,7 @@ const PurchaseOrderPage = () => {
         Billing: "N/A",
         Shipping: "N/A"
     };
-    const [allGridData, setAllGridData] = useState(emptyallGridData);
-    const [filteredGridData, setFilteredGridData] = useState([]);
+    const [filteredGridData, setFilteredGridData] = useState([emptyallGridData]);
     const [selectedGridData, setSelectedGridData] = useState([]);
     const [displayDialog, setDisplayDialog] = useState(false);
     const [displayafterPlaceOrder, setDisplayafterPlaceOrder] = useState(false);
@@ -50,7 +48,6 @@ const PurchaseOrderPage = () => {
             setFilteredGridData([]);
             getAllCategories(propertyId);
             getAllVendors(propertyId);
-            getAllRateCard(propertyId);
         } else {
             toast.current.show({
                 severity: 'error',
@@ -64,50 +61,17 @@ const PurchaseOrderPage = () => {
 
     useEffect(() => {
         const fetchData = async () => {
-            if (propertyId && selectedCategory) {
-                const data = await fetchFilteredRateCategory(propertyId,selectedCategory);
+            const category = selectedCategory ? selectedCategory : null;
+            const item = selectedItem ? selectedItem : null;
+            const vendor = selectedVendor ? selectedVendor : null;
+            if (propertyId) {
+                getItems(propertyId, category);
+                const data = await fetchFilteredRate(propertyId, category, item, vendor);
                 setFilteredGridData(data);
-                getItems(propertyId, selectedCategory);
             }
         };
         fetchData();
-    }, [propertyId, selectedCategory]);
-
-    useEffect(() => {
-        if (Items.length > 0 && RateCard.length > 0) {
-            const updatedList = Items.flatMap((item) =>
-                RateCard.map((rate) => ({
-                    ...allGridData,
-                    VendorId: rate.VendorId,
-                    VendorName: rate.VendorName,
-                    Price: rate.Price,
-                    ItemId: item.Id,
-                    ItemName: item.Name,
-                    BrandName: item.BrandName,
-                    MeasurementUnit: item.MeasurementUnit,
-                    HSNCode: item.HSNCode,
-                    Description: item.Description
-                }))
-            );
-            setAllGridData(updatedList);
-            setFilteredGridData(updatedList);
-        }
-    }, [Items, RateCard]);
-
-    useEffect(() => {
-        if(selectedVendor){
-            console.log(selectedVendor)
-            const vendorfilter= allVendors.filter((ven)=>(ven.Id===selectedVendor))
-            console.log(vendorfilter)
-            const updatedList =vendorfilter.map((ven)=>({
-                ...allGridData,
-                VendorId: ven.Id,
-                VendorName: ven.Name,
-            }));
-            setAllGridData(updatedList);
-            setFilteredGridData(updatedList);
-        }
-    }, [allVendors, selectedVendor]);
+    }, [propertyId, selectedCategory, selectedItem, selectedVendor]);
 
     const getAllCategories = async (propertyId) => {
         setLoading(true);
@@ -120,24 +84,6 @@ const PurchaseOrderPage = () => {
                 severity: 'error',
                 summary: 'Error',
                 detail: 'Failed to fetch categories.',
-                life: 3000
-            });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const getAllRateCard = async (propertyId) => {
-        setLoading(true);
-        try {
-            const data = await getRateCard(propertyId);
-            setRateCard(data);
-        } catch (error) {
-            console.error('Error fetching Rate Card:', error);
-            toast.current.show({
-                severity: 'error',
-                summary: 'Error',
-                detail: 'Failed to fetch rate card.',
                 life: 3000
             });
         } finally {

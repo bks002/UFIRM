@@ -216,9 +216,9 @@ export const createRateCard = async (ratecard) => {
     }
 };
 
-export const fetchFilteredRateCategory = async (propertyId,CategoryId) => {
+export const fetchFilteredRate = async (propertyId,CategoryId,ItemId,VendorId) => {
       try {
-        const response = await api.get(`ratecards?propertyId=${propertyId}&categoryId=${CategoryId}`);
+        const response = await api.get(`ratecards?propertyId=${propertyId}&categoryId=${CategoryId}&itemId=${ItemId}&vendorId=${VendorId}`);
         return response.data;
       } catch (error) {
         console.error('Error fetching Rate Card:', error);
