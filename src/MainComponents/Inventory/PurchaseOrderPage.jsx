@@ -156,7 +156,7 @@ const PurchaseOrderPage = () => {
 
     const onHideDialog = () => {
         setDisplayDialog(false);
-        setDisplayafterPlaceOrder(false);
+        //setDisplayafterPlaceOrder(false);
         setSelectedGridData([]);
         // setShippingAddress("");
         // setBillingAddress("");
