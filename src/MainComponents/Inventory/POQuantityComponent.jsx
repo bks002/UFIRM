@@ -4,11 +4,29 @@ import { Column } from "primereact/column";
 import { Button } from 'primereact/button';
 import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
+import { Dialog } from 'primereact/dialog';
+import PreviewPurchaseOrder from './PreviewPurchaseOrder';
 
 const POQuantityComponent = ({ selectedGridData = [] }) => {
     const [shippingAddress, setShippingAddress] = useState('');
     const [billingAddress, setBillingAddress] = useState('');
     const [items, setItems] = useState([]);
+    const [displayafterPlaceOrder, setDisplayafterPlaceOrder] = useState(false);
+    const onHideDialog = () => {
+        setDisplayafterPlaceOrder(false);
+        setShippingAddress("");
+        setBillingAddress("");
+    };
+
+    const openPlaceOrder = () => {
+       const dataWithAddresses = items.map(item => ({
+             ...item,
+             Shipping: shippingAddress,
+             Billing: billingAddress
+         }));
+        setItems(dataWithAddresses);
+         setDisplayafterPlaceOrder(true);
+    };
 
     useEffect(() => {
         const updatedItems = selectedGridData.map(item => ({
@@ -43,7 +61,8 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
             value={rowData.Quantity}
             min={0}
             onValueChange={(e) => updateItemQuantity(rowData.Id, e.value)}
-            buttonLayout="horizontal"
+            buttonLayout="stacked"
+            showButtons
         />
     ), []);
 
@@ -61,7 +80,6 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
 
     return (
         <div>
-            {/* Shipping & Billing address */}
             <div className="d-flex justify-content-between mb-4">
                 <div className="d-flex flex-column me-3 flex-grow-1">
                     <label htmlFor="Shipping">Shipping Address</label>
@@ -82,8 +100,6 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
                     />
                 </div>
             </div>
-
-            {/* Table */}
             <DataTable
                 value={items}
                 dataKey="Id"
@@ -101,8 +117,6 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
                 <Column header="Quantity" body={QuantityTemplate} />
                 <Column body={TotalAmountTemplate} header="Total Amount" />
             </DataTable>
-
-            {/* Grand total */}
             <div className="text-end mt-3">
                 <strong>Total Order Amount: </strong>
                 {new Intl.NumberFormat('en-IN', {
@@ -110,12 +124,18 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
                     currency: 'INR',
                 }).format(grandTotal)}
             </div>
-
-            {/* Place Order Button */}
             <div className="d-flex justify-content-end mt-3">
-                <Button label="Place Order" icon="pi pi-check" className="p-button-success" />
+                <Button label="Preview Order" icon="pi pi-check" className="p-button-success" onClick={openPlaceOrder}/>
             </div>
-            
+            <Dialog
+                visible={displayafterPlaceOrder}
+                onHide={onHideDialog}
+                modal
+                style={{ width: '90vw', height: '90vh' }}
+                header="Purchase Order Details"
+            >
+                <PreviewPurchaseOrder items={items} />
+            </Dialog>
         </div>
     );
 };

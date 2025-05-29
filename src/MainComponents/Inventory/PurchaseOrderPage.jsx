@@ -143,16 +143,6 @@ const PurchaseOrderPage = () => {
         }
     };
 
-    // const openPlaceOrder = () => {
-    //     const dataWithAddresses = selectedGridData.map(item => ({
-    //         ...item,
-    //         Shipping: shippingAddress,
-    //         Billing: billingAddress
-    //     }));
-    //     setSelectedGridData(dataWithAddresses);
-    //     setDisplayafterPlaceOrder(true);
-    // };
-
     const onHideDialog = () => {
         setDisplayDialog(false);
         setSelectedGridData([]);
