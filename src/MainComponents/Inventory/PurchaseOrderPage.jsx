@@ -34,7 +34,6 @@ const PurchaseOrderPage = () => {
     const [filteredGridData, setFilteredGridData] = useState([emptyallGridData]);
     const [selectedGridData, setSelectedGridData] = useState([]);
     const [displayDialog, setDisplayDialog] = useState(false);
-    // const [displayafterPlaceOrder, setDisplayafterPlaceOrder] = useState(false);
     const propertyId = useSelector((state) => state.Commonreducer.puidn);
 
     const toast = useRef(null);
@@ -156,50 +155,8 @@ const PurchaseOrderPage = () => {
 
     const onHideDialog = () => {
         setDisplayDialog(false);
-        //setDisplayafterPlaceOrder(false);
         setSelectedGridData([]);
-        // setShippingAddress("");
-        // setBillingAddress("");
     };
-
-    // const renderPlaceordercontent = () => {
-    //     const groupedByVendor = selectedGridData.reduce((acc, item) => {
-    //         if (!acc[item.VendorName]) {
-    //             acc[item.VendorName] = [];
-    //         }
-    //         acc[item.VendorName].push(item);
-    //         return acc;
-    //     }, {});
-
-    //     return (
-    //         <div className='flex flex-wrap row'>
-    //             {Object.keys(groupedByVendor).map((vendorName, index) => (
-    //                 <div key={index} className='col-6 mb-4'>
-    //                     <div className='card flex flex-column'>
-    //                         <div className='card-header d-flex align-items-center justify-content-between'>
-    //                             <h5>{vendorName}</h5>
-    //                         </div>
-    //                         <div className='card-body p-3'>
-    //                             <p><strong>Shipping Address:</strong> {groupedByVendor[vendorName][0].Shipping}</p>
-    //                             <p><strong>Billing Address:</strong> {groupedByVendor[vendorName][0].Billing}</p>
-    //                             {groupedByVendor[vendorName].map((item, itemIndex) => (
-    //                                 <div key={itemIndex} className='mb-2'>
-    //                                     <p><strong>Item:</strong> {item.ItemName}</p>
-    //                                     <p><strong>Brand:</strong> {item.BrandName}</p>
-    //                                     <p><strong>HSN Code:</strong> {item.HSNCode}</p>
-    //                                     <p><strong>Price:</strong> {item.Price ? `₹${item.Price} /${item.MeasurementUnit}` : 'N/A'}</p>
-    //                                     <p><strong>Quantity:</strong> {item.Quantity}</p>
-    //                                     <p><strong>Total Amount:</strong> {item.TotalAmount ? `₹${item.TotalAmount}` : 'N/A'}</p>
-    //                                     {itemIndex < groupedByVendor[vendorName].length - 1 && <hr />}
-    //                                 </div>
-    //                             ))}
-    //                         </div>
-    //                     </div>
-    //                 </div>
-    //             ))}
-    //         </div>
-    //     );
-    // };
 
     return (
         <div className="content-wrapper">

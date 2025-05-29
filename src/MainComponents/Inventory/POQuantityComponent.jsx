@@ -5,14 +5,19 @@ import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
+import PreviewPurchaseOrder from './PreviewPurchaseOrder';
 
 const POQuantityComponent = ({
     selectedGridData = []
 }) => {
-    console.log(selectedGridData)
     const [shippingAddress, setShippingAddress] = useState("");
     const [billingAddress, setBillingAddress] = useState("");
-
+    const [displayafterPlaceOrder, setDisplayafterPlaceOrder] = useState(false);
+    const onHideDialog = () => {
+        setDisplayafterPlaceOrder(false);
+        setShippingAddress("");
+        setBillingAddress("");
+    };
     const [items, setItems] = useState(selectedGridData);
 
     useEffect(() => {
@@ -23,6 +28,11 @@ const POQuantityComponent = ({
         return rowData.Price ? <span>{`₹${rowData.Price} /${rowData.MeasurementUnit}`}</span> : null;
     };
 
+    const openDialog =()=>{
+        if(items.length>0){
+            setDisplayafterPlaceOrder(true);
+        }
+    }
 
     const Quantitytemplate = (rowData) => (
         <InputNumber
@@ -74,8 +84,6 @@ const POQuantityComponent = ({
             </div>
             <DataTable
                 value={items}
-                dataKey="ItemId"
-                editMode="cell"
                 paginator
                 rows={15}
             >
@@ -89,17 +97,17 @@ const POQuantityComponent = ({
                 <Column body={Totalamounttemplate} header="Total Amount" field='TotalAmount' />
             </DataTable>
             <div className="p-d-flex p-jc-end p-mt-3">
-                <Button label="Place Order" icon="pi pi-check" className="p-button-success" />
+                <Button label="Place Order" icon="pi pi-check" className="p-button-success" onClick={openDialog} />
             </div>
-            {/* <Dialog
+            <Dialog
                 visible={displayafterPlaceOrder}
                 onHide={onHideDialog}
                 modal
                 style={{ width: '90vw', height: '90vh' }}
                 header="Purchase Order Details"
             >
-                {renderPlaceordercontent()}
-            </Dialog> */}
+                <PreviewPurchaseOrder items={items} />
+            </Dialog>
         </div>
     );
 };
