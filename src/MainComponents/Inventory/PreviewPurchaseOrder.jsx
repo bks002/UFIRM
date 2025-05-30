@@ -3,11 +3,13 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from 'primereact/button';
 import { useSelector } from 'react-redux';
+import POQuantityComponent from './POQuantityComponent';
 
 const PreviewPurchaseOrder = ({ items = [] }) => {
     const initialPOID = 'xxxx';
     const [POID, setPOID] = useState(initialPOID);
     const [Dates, setDates] = useState('');
+    const [groupedData, setGroupedData] = useState(null);
     const propertyId = useSelector((state) => state.Commonreducer.puidn);
     const createdBy= useSelector((state)=> state.Commonreducer.userId);
     useEffect(() => {
@@ -59,8 +61,7 @@ const PreviewPurchaseOrder = ({ items = [] }) => {
 
             return acc;
         }, []);
-
-        console.log(grouped);
+       setGroupedData(grouped);
     };
 
     return (
@@ -122,9 +123,7 @@ const PreviewPurchaseOrder = ({ items = [] }) => {
                     </div>
                 );
             })}
-            <div className="d-flex justify-content-end">
-                <Button label="Place Order" icon="pi pi-check" className="p-button-success" onClick={savePlaceOrder} />
-            </div>
+            {groupedData && <POQuantityComponent grouped={groupedData} />}
         </div>
     );
 };

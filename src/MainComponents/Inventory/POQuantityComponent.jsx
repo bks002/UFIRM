@@ -6,8 +6,10 @@ import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
 import { Dialog } from 'primereact/dialog';
 import PreviewPurchaseOrder from './PreviewPurchaseOrder';
+import { createPurchaseOrder } from '../../Services/InventoryService';
+import * as appCommon from '../../Common/AppCommon.js';
 
-const POQuantityComponent = ({ selectedGridData = [] }) => {
+const POQuantityComponent = ({ selectedGridData = [], grouped = [] }) => {
     const [shippingAddress, setShippingAddress] = useState('');
     const [billingAddress, setBillingAddress] = useState('');
     const [items, setItems] = useState([]);
@@ -17,6 +19,11 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
         setShippingAddress("");
         setBillingAddress("");
     };
+
+    const handleCreatePO = async (grouped) => {
+        await createPurchaseOrder(grouped);
+        appCommon.showtextalert("Purchase Order Saved Successfully!", "", "success");
+    }
 
     const openPlaceOrder = () => {
         const dataWithAddresses = items.map(item => ({
@@ -133,6 +140,11 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
                 modal
                 style={{ width: '90vw', height: '90vh' }}
                 header="Purchase Order Details"
+                footer={
+                    <div>
+                        <Button label="Confirm & Create PO" icon="pi pi-save" onClick={() => handleCreatePO(items)} />
+                    </div>
+                }
             >
                 <PreviewPurchaseOrder items={items} />
             </Dialog>
