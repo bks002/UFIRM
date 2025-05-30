@@ -81,10 +81,9 @@ const PreviewPurchaseOrder = ({ items = [] }) => {
                             <div className='d-flex align-items-center justify-content-between'>
                                 <h5><strong>Vendor Name: </strong>{vendorName}</h5>
                                 <Button
-                                    icon='pi pi-times' severity="danger"
+                                    icon={<i className='fa fa-times'></i>}
+                                    style={{backgroundColor: 'white', color:'black'}}
                                     onClick={() => removeVendor(vendorName)}
-                                    tooltip="Remove Vendor"
-                                    tooltipOptions={{ position: 'left' }}
                                 />
                             </div>
                             <div className='card-body'>
