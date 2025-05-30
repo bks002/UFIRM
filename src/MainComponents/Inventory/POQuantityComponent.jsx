@@ -19,13 +19,13 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
     };
 
     const openPlaceOrder = () => {
-       const dataWithAddresses = items.map(item => ({
-             ...item,
-             Shipping: shippingAddress,
-             Billing: billingAddress
-         }));
+        const dataWithAddresses = items.map(item => ({
+            ...item,
+            ShippingAddress: shippingAddress,
+            BillingAddress: billingAddress,
+        }));
         setItems(dataWithAddresses);
-         setDisplayafterPlaceOrder(true);
+        setDisplayafterPlaceOrder(true);
     };
 
     useEffect(() => {
@@ -125,7 +125,7 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
                 }).format(grandTotal)}
             </div>
             <div className="d-flex justify-content-end mt-3">
-                <Button label="Preview Order" icon="pi pi-check" className="p-button-success" onClick={openPlaceOrder}/>
+                <Button label="Preview Order" icon="pi pi-check" className="p-button-success" onClick={openPlaceOrder} />
             </div>
             <Dialog
                 visible={displayafterPlaceOrder}

@@ -17,6 +17,8 @@ const PurchaseOrderPage = () => {
     const [allVendors, setAllVendors] = useState([]);
     const [selectedVendor, setSelectedVendor] = useState(null);
     const emptyallGridData = {
+        POId: "xxxxx",
+        Dates: "N/A",
         ItemId: 0,
         VendorId: 0,
         ItemName: "N/A",
@@ -28,8 +30,8 @@ const PurchaseOrderPage = () => {
         Description: "N/A",
         Quantity:0,
         TotalAmount: 0,
-        Billing: "N/A",
-        Shipping: "N/A"
+        BillingAddress: "N/A",
+        ShippingAddress: "N/A",
     };
     const [filteredGridData, setFilteredGridData] = useState([emptyallGridData]);
     const [selectedGridData, setSelectedGridData] = useState([]);

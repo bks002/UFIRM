@@ -1,10 +1,27 @@
-import React,{useState} from 'react';
+import React, { useState, useEffect } from 'react';
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from 'primereact/button';
+import { useSelector } from 'react-redux';
 
 const PreviewPurchaseOrder = ({ items = [] }) => {
-    const [vendorData, setVendorData] = useState(items);
+    const initialPOID = 'xxxx';
+    const [POID, setPOID] = useState(initialPOID);
+    const [Dates, setDates] = useState('');
+    const propertyId = useSelector((state) => state.Commonreducer.puidn);
+    useEffect(() => {
+        const today = new Date();
+        const formattedDate = today.toISOString().split("T")[0];
+        setDates(formattedDate);
+    }, []);
+    const [vendorData, setVendorData] = useState(
+        items.map(item => ({
+            ...item,
+            POID: initialPOID,
+            Date: Dates
+        }))
+    );
+
     const groupedByVendor = vendorData.reduce((acc, item) => {
         if (!acc[item.VendorName]) {
             acc[item.VendorName] = [];
@@ -18,8 +35,43 @@ const PreviewPurchaseOrder = ({ items = [] }) => {
         setVendorData(updatedItems);
     };
 
+    const savePlaceOrder = () => {
+        const grouped = vendorData.reduce((acc, item) => {
+            const existingVendor = acc.find(v => v.VendorId === item.VendorId);
+            const itemDetails = {
+                ItemId: item.ItemId,
+                Quantity: item.Quantity,
+                TotalAmount: item.TotalAmount
+            };
+            if (existingVendor) {
+                existingVendor.Items.push(itemDetails);
+            } else {
+                acc.push({
+                    VendorId: item.VendorId,
+                    ShippingAddress: item.ShippingAddress,
+                    BillingAddress: item.BillingAddress,
+                    TotalOrderAmount: item.TotalOrderAmount,
+                    propertyId: propertyId,
+                    Items: [itemDetails]
+                });
+            }
+
+            return acc;
+        }, []);
+
+        console.log(grouped);
+    };
+
     return (
         <div className='flex flex-wrap col'>
+            <div className="d-flex justify-content-between mb-4">
+                <div className="d-flex flex-column me-3 flex-grow-1">
+                    <h5><strong>PO ID:</strong> {POID}</h5>
+                </div>
+                <div className="d-flex flex-column ms-3 flex-grow-1">
+                    <h5><strong>Date:</strong> {Dates}</h5>
+                </div>
+            </div>
             {Object.keys(groupedByVendor).map((vendorName, index) => {
                 const vendorItems = groupedByVendor[vendorName];
                 const vendorTotal = vendorItems.reduce((sum, item) => sum + (item.TotalAmount || 0), 0);
@@ -27,9 +79,9 @@ const PreviewPurchaseOrder = ({ items = [] }) => {
                     <div key={index} className='row mb-4'>
                         <div className='card flex flex-column'>
                             <div className='d-flex align-items-center justify-content-between'>
-                                <h5>{vendorName}</h5>
+                                <h5><strong>Vendor Name: </strong>{vendorName}</h5>
                                 <Button
-                                    icon="pi pi-times" severity="danger"
+                                    icon='pi pi-times' severity="danger"
                                     onClick={() => removeVendor(vendorName)}
                                     tooltip="Remove Vendor"
                                     tooltipOptions={{ position: 'left' }}
@@ -38,10 +90,10 @@ const PreviewPurchaseOrder = ({ items = [] }) => {
                             <div className='card-body'>
                                 <div className="d-flex justify-content-between mb-4">
                                     <div className="d-flex flex-column me-3 flex-grow-1">
-                                        <p><strong>Shipping Address:</strong> {vendorItems[0].Shipping}</p>
+                                        <p><strong>Shipping Address:</strong> {vendorItems[0].ShippingAddress}</p>
                                     </div>
                                     <div className="d-flex flex-column ms-3 flex-grow-1">
-                                        <p><strong>Billing Address:</strong> {vendorItems[0].Billing}</p>
+                                        <p><strong>Billing Address:</strong> {vendorItems[0].BillingAddress}</p>
                                     </div>
                                 </div>
 
@@ -58,23 +110,21 @@ const PreviewPurchaseOrder = ({ items = [] }) => {
                                         body={(rowData) => rowData.TotalAmount ? `₹${rowData.TotalAmount}` : 'N/A'}
                                     />
                                 </DataTable>
-                                <div className="flex mt-2">
-                                    <div className="text-start mt-2">
-                                        <strong>Total Order Amount: </strong>
-                                        {new Intl.NumberFormat('en-IN', {
-                                            style: 'currency',
-                                            currency: 'INR',
-                                        }).format(vendorTotal)}
-                                    </div>
-                                    <div className="d-flex justify-content-end">
-                                        <Button label="Place Order" icon="pi pi-check" className="p-button-success" onClick={console.log(vendorData)} />
-                                    </div>
+                                <div className="text-end mt-3">
+                                    <strong>Total Order Amount: </strong>
+                                    {new Intl.NumberFormat('en-IN', {
+                                        style: 'currency',
+                                        currency: 'INR',
+                                    }).format(vendorTotal)}
                                 </div>
                             </div>
                         </div>
                     </div>
                 );
             })}
+            <div className="d-flex justify-content-end">
+                <Button label="Place Order" icon="pi pi-check" className="p-button-success" onClick={savePlaceOrder} />
+            </div>
         </div>
     );
 };
