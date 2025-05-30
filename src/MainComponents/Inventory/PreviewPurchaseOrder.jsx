@@ -9,6 +9,7 @@ const PreviewPurchaseOrder = ({ items = [] }) => {
     const [POID, setPOID] = useState(initialPOID);
     const [Dates, setDates] = useState('');
     const propertyId = useSelector((state) => state.Commonreducer.puidn);
+    const createdBy= useSelector((state)=> state.Commonreducer.userId);
     useEffect(() => {
         const today = new Date();
         const formattedDate = today.toISOString().split("T")[0];
@@ -39,20 +40,20 @@ const PreviewPurchaseOrder = ({ items = [] }) => {
         const grouped = vendorData.reduce((acc, item) => {
             const existingVendor = acc.find(v => v.VendorId === item.VendorId);
             const itemDetails = {
-                ItemId: item.ItemId,
-                Quantity: item.Quantity,
-                TotalAmount: item.TotalAmount
+                itemId: item.ItemId,
+                quantity: item.Quantity,
+                price: item.TotalAmount
             };
             if (existingVendor) {
-                existingVendor.Items.push(itemDetails);
+                existingVendor.items.push(itemDetails);
             } else {
                 acc.push({
                     VendorId: item.VendorId,
-                    ShippingAddress: item.ShippingAddress,
-                    BillingAddress: item.BillingAddress,
-                    TotalOrderAmount: item.TotalOrderAmount,
+                    shippingAddress: item.ShippingAddress,
+                    billingAddress: item.BillingAddress,
                     propertyId: propertyId,
-                    Items: [itemDetails]
+                    createdBy: createdBy,
+                    items: [itemDetails]
                 });
             }
 
