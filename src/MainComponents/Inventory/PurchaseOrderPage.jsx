@@ -227,7 +227,7 @@ const PurchaseOrderPage = () => {
                             <Column field='Description' header="Item Description" />
                             <Column field='BrandName' header="Brand" />
                             <Column body={Ratetemplate} header="Price" />
-                            <Column selectionMode="multiple" header="Select" />
+                            <Column selectionMode="multiple" header={<div className='px-2'>Select</div>} />
                         </DataTable>
                     </div>
                     <div className="row mt-3">
