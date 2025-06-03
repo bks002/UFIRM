@@ -56,19 +56,22 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
     }, [items, shippingAddress, billingAddress]);
 
     const transformedPreviewData = useMemo(() => {
-        return Object.entries(groupedItemsWithAddresses).map(([vendorName, items], index) => {
+        return Object.entries(groupedItemsWithAddresses).map(([vendorName, items]) => {
             const { ShippingAddress, BillingAddress, VendorId } = items[0];
-
             return {
                 POId: "XXXXX",
                 Dates: new Date().toLocaleDateString(),
                 VendorId: VendorId || 0,
                 VendorName: vendorName,
-                Item: items.map(({ Id, ItemName, Price, Quantity }) => ({
+                Item: items.map(({ Id, ItemName, Price, Quantity, Description, BrandName, MeasurementUnit, HSNCode }) => ({
                     ItemId: Id,
                     ItemName,
                     Price,
                     Quantity,
+                    Description,
+                    BrandName,
+                    MeasurementUnit,
+                    HSNCode
                 })),
                 ShippingAddress,
                 BillingAddress,
@@ -184,7 +187,17 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
                 onHide={onHideDialog}
                 modal
                 style={{ width: '90vw', maxHeight: '90vh', overflowY: 'auto' }}
-                header="Purchase Order Details"
+                header={
+                    <div>
+                        <h5 className='mb-4'>Preview Purchase Order(s)</h5>
+                        {transformedPreviewData.length > 0 && ( 
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+                                <h5>Purchase Order ID: {transformedPreviewData[0].POId}</h5> 
+                                <h5>Date: {transformedPreviewData[0].Dates}</h5> 
+                            </div>
+                        )}
+                    </div>
+                }
                 footer={
                     <div className="d-flex justify-content-end w-100">
                         <Button

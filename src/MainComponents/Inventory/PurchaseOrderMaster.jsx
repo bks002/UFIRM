@@ -242,10 +242,19 @@ const PurchaseOrderMaster = () => {
                 onHide={onHideDialog}
                 modal
                 style={{ width: '90vw', height: '90vh' }}
-                header="Preview Purchase Order"
-            >
+                header={
+                    <div>
+                        <h5 className='mb-4'>Preview Purchase Order</h5>
+                        {selectedRow && ( 
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+                                <h5>Purchase Order ID: {selectedRow.POId}</h5>
+                                <h5>Date: {selectedRow.Dates}</h5>
+                            </div>
+                        )}
+                    </div>
+                }>
                 {console.log("Selected Row: ", selectedRow)}
-                <PreviewPurchaseOrder groupedItems={selectedRow} onRemoveVendor={handleRemoveVendor}/>
+                <PreviewPurchaseOrder groupedItems={selectedRow} onRemoveVendor={handleRemoveVendor} />
             </Dialog>
         </div >
     );
