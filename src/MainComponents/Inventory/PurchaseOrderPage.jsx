@@ -151,21 +151,12 @@ const PurchaseOrderPage = () => {
     };
 
     return (
-        <div className="content-wrapper">
+        <div>
             <Toast ref={toast} />
-            <div className="content-header">
-                <div className="container-fluid">
-                    <div className="row mb-2">
-                        <div className="col-sm-6">
-                            <h1 className="m-0 text-dark">Purchase Order</h1>
-                        </div>
-                    </div>
-                </div>
-            </div>
             <section className="content">
-                <div className="container-fluid">
+                <div>
                     <div className="row">
-                        <div className="col-4">
+                        <div className="col">
                             <label>Category</label>
                             <select
                                 className="form-control"
@@ -180,7 +171,7 @@ const PurchaseOrderPage = () => {
                                 ))}
                             </select>
                         </div>
-                        <div className="col-4">
+                        <div className="col">
                             <label>Items</label>
                             <select
                                 className="form-control"
@@ -195,7 +186,7 @@ const PurchaseOrderPage = () => {
                                 ))}
                             </select>
                         </div>
-                        <div className="col-4">
+                        <div className="col">
                             <label>Vendor</label>
                             <select
                                 className="form-control"

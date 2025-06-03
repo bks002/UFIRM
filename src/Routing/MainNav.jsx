@@ -71,7 +71,7 @@ import ServiceRecords from "../pages/ManageAssets";
 import PPMSpreadsheet from "../pages/PPMSpreadsheet";
 import FrequencyMasterPage from "../pages/FrequencyMasterPage";
 import ItemMasterPage from "../MainComponents/Inventory/itemPage";
-import PurchaseOrderPage from "../MainComponents/Inventory/PurchaseOrderPage";
+import PurchaseOrderPage from "../MainComponents/Inventory/PurchaseOrderMaster";
 
 var currentpropertyid;
 class MainNav extends React.Component {
