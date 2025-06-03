@@ -25,7 +25,7 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
         await createPurchaseOrder(grouped);
         appCommon.showtextalert("Purchase Order Saved Successfully!", "", "success");
         onHideDialog();
-        window.location.href = '/Account/App/PurchaseOrders';
+        //window.location.href = '/Account/App/PurchaseOrders';
     };
 
     const openPlaceOrder = () => {
@@ -60,7 +60,8 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
             const { ShippingAddress, BillingAddress, VendorId } = items[0];
 
             return {
-                POId: index + 1,
+                POId: "XXXXX",
+                Dates: new Date().toLocaleDateString(),
                 VendorId: VendorId || 0,
                 VendorName: vendorName,
                 Item: items.map(({ Id, ItemName, Price, Quantity }) => ({

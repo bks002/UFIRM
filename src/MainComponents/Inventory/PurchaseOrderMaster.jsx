@@ -32,9 +32,9 @@ const PurchaseOrderMaster = () => {
         BillingAddress: "N/A",
         ShippingAddress: "N/A",
     };
-    const [filteredGridData, setFilteredGridData] = useState([{ POId: 1, VendorId: 3, VendorName: "Akshat", Item: [{ ItemId: 4, ItemName: 'Mop', Price: 30, Quantity: 10 }, { ItemId: 5, ItemName: 'Bread', Price: 40, Quantity: 20 }], ShippingAddress: "New York", BillingAddress: "India" },
-    { POId: 2, VendorId: 3, VendorName: "Akshat", Item: [{ ItemId: 4, ItemName: 'Mop', Price: 30, Quantity: 10 }, { ItemId: 5, ItemName: 'Bread', Price: 40, Quantity: 20 }], ShippingAddress: "New York", BillingAddress: "India" },
-    { POId: 3, VendorId: 4, VendorName: "Bhavesh", Item: [{ ItemId: 5, ItemName: 'Bread', Price: 40, Quantity: 20 }, { ItemId: 4, ItemName: 'Mop', Price: 30, Quantity: 10 }], ShippingAddress: "New York", BillingAddress: "India" },]);
+    const [filteredGridData, setFilteredGridData] = useState([{ POId: 1, Dates: "01/03/2025", VendorId: 3, VendorName: "Akshat", Item: [{ ItemId: 4, ItemName: 'Mop', Price: 30, Quantity: 10 }, { ItemId: 5, ItemName: 'Bread', Price: 40, Quantity: 20 }], ShippingAddress: "New York", BillingAddress: "India" },
+    { POId: 2, Dates: "01/03/2025", VendorId: 3, VendorName: "Akshat", Item: [{ ItemId: 4, ItemName: 'Mop', Price: 30, Quantity: 10 }, { ItemId: 5, ItemName: 'Bread', Price: 40, Quantity: 20 }], ShippingAddress: "New York", BillingAddress: "India" },
+    { POId: 3, Dates: "01/03/2025", VendorId: 4, VendorName: "Bhavesh", Item: [{ ItemId: 5, ItemName: 'Bread', Price: 40, Quantity: 20 }, { ItemId: 4, ItemName: 'Mop', Price: 30, Quantity: 10 }], ShippingAddress: "New York", BillingAddress: "India" },]);
     const [displayDialog, setDisplayDialog] = useState(false);
     const propertyId = useSelector((state) => state.Commonreducer.puidn);
     const [preview, setpreview] = useState(false);
@@ -91,7 +91,7 @@ const PurchaseOrderMaster = () => {
                 <p>${rowData.POId}</p>
                 <div style="display: flex; justify-content: space-between;">
                     <p>To,</p>
-                    <p>Date: ${new Date().toLocaleDateString()}</p>
+                    <p>Date: ${rowData.Dates}</p>
                 </div>
                 <p><b>${rowData.VendorName}</b></p>
                 <p style="margin-top: 30px;"><b>Subject: Order</b></p>
