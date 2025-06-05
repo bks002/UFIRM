@@ -224,3 +224,14 @@ export const fetchFilteredRate = async (propertyId,CategoryId,ItemId,VendorId) =
         console.error('Error fetching Rate Card:', error);
       }
     };
+
+// ========== Purchase Order ==========
+
+export const createPurchaseOrder = async (PurchaseOrder) => {
+      try {
+        const response = await api.post(`/CreatePurchaseOrders`,PurchaseOrder);
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching Purchase Order:', error);
+      }
+    };

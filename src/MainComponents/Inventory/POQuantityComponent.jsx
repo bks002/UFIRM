@@ -4,11 +4,80 @@ import { Column } from "primereact/column";
 import { Button } from 'primereact/button';
 import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
+import { Dialog } from 'primereact/dialog';
+import PreviewPurchaseOrder from './PreviewPurchaseOrder';
+import { createPurchaseOrder } from '../../Services/InventoryService';
+import * as appCommon from '../../Common/AppCommon.js';
 
 const POQuantityComponent = ({ selectedGridData = [] }) => {
     const [shippingAddress, setShippingAddress] = useState('');
     const [billingAddress, setBillingAddress] = useState('');
     const [items, setItems] = useState([]);
+    const [displayafterPlaceOrder, setDisplayafterPlaceOrder] = useState(false);
+
+    const onHideDialog = () => {
+        setDisplayafterPlaceOrder(false);
+        setShippingAddress('');
+        setBillingAddress('');
+    };
+
+    const handleCreatePO = async (grouped) => {
+        await createPurchaseOrder(grouped);
+        appCommon.showtextalert("Purchase Order Saved Successfully!", "", "success");
+        onHideDialog();
+        //window.location.href = '/Account/App/PurchaseOrders';
+    };
+
+    const openPlaceOrder = () => {
+        setDisplayafterPlaceOrder(true);
+    };
+
+    const groupItemsByVendor = (items) => {
+        return items.reduce((acc, item) => {
+            if (!acc[item.VendorName]) {
+                acc[item.VendorName] = [];
+            }
+            acc[item.VendorName].push(item);
+            return acc;
+        }, {});
+    };
+
+    const handleRemoveVendor = (vendorNameToRemove) => {
+        setItems(prevItems => prevItems.filter(item => item.VendorName !== vendorNameToRemove));
+    };
+
+    const groupedItemsWithAddresses = useMemo(() => {
+        const itemsWithAddresses = items.map(item => ({
+            ...item,
+            ShippingAddress: shippingAddress,
+            BillingAddress: billingAddress,
+        }));
+        return groupItemsByVendor(itemsWithAddresses);
+    }, [items, shippingAddress, billingAddress]);
+
+    const transformedPreviewData = useMemo(() => {
+        return Object.entries(groupedItemsWithAddresses).map(([vendorName, items]) => {
+            const { ShippingAddress, BillingAddress, VendorId } = items[0];
+            return {
+                POId: "XXXXX",
+                Dates: new Date().toLocaleDateString(),
+                VendorId: VendorId || 0,
+                VendorName: vendorName,
+                Item: items.map(({ Id, ItemName, Price, Quantity, Description, BrandName, MeasurementUnit, HSNCode }) => ({
+                    ItemId: Id,
+                    ItemName,
+                    Price,
+                    Quantity,
+                    Description,
+                    BrandName,
+                    MeasurementUnit,
+                    HSNCode
+                })),
+                ShippingAddress,
+                BillingAddress,
+            };
+        });
+    }, [groupedItemsWithAddresses]);
 
     useEffect(() => {
         const updatedItems = selectedGridData.map(item => ({
@@ -43,7 +112,8 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
             value={rowData.Quantity}
             min={0}
             onValueChange={(e) => updateItemQuantity(rowData.Id, e.value)}
-            buttonLayout="horizontal"
+            buttonLayout="stacked"
+            showButtons
         />
     ), []);
 
@@ -61,7 +131,6 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
 
     return (
         <div>
-            {/* Shipping & Billing address */}
             <div className="d-flex justify-content-between mb-4">
                 <div className="d-flex flex-column me-3 flex-grow-1">
                     <label htmlFor="Shipping">Shipping Address</label>
@@ -83,7 +152,6 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
                 </div>
             </div>
 
-            {/* Table */}
             <DataTable
                 value={items}
                 dataKey="Id"
@@ -102,7 +170,6 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
                 <Column body={TotalAmountTemplate} header="Total Amount" />
             </DataTable>
 
-            {/* Grand total */}
             <div className="text-end mt-3">
                 <strong>Total Order Amount: </strong>
                 {new Intl.NumberFormat('en-IN', {
@@ -111,10 +178,45 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
                 }).format(grandTotal)}
             </div>
 
-            {/* Place Order Button */}
             <div className="d-flex justify-content-end mt-3">
-                <Button label="Place Order" icon="pi pi-check" className="p-button-success" />
+                <Button label="Preview Order" icon="pi pi-check" className="p-button-success" onClick={openPlaceOrder} />
             </div>
+
+            <Dialog
+                visible={displayafterPlaceOrder}
+                onHide={onHideDialog}
+                modal
+                style={{ width: '90vw', maxHeight: '90vh', overflowY: 'auto' }}
+                header={
+                    <div>
+                        <h5 className='mb-4'>Preview Purchase Order(s)</h5>
+                        {transformedPreviewData.length > 0 && ( 
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+                                <h5>Purchase Order ID: {transformedPreviewData[0].POId}</h5> 
+                                <h5>Date: {transformedPreviewData[0].Dates}</h5> 
+                            </div>
+                        )}
+                    </div>
+                }
+                footer={
+                    <div className="d-flex justify-content-end w-100">
+                        <Button
+                            label="Confirm & Create All POs"
+                            icon="pi pi-save"
+                            onClick={() => handleCreatePO(groupedItemsWithAddresses)}
+                        />
+                    </div>
+                }
+            >
+                {transformedPreviewData.map((group, index) => (
+                    <div key={index} className="mb-4 border-bottom pb-3">
+                        <PreviewPurchaseOrder
+                            groupedItems={group}
+                            onRemoveVendor={handleRemoveVendor}
+                        />
+                    </div>
+                ))}
+            </Dialog>
         </div>
     );
 };
