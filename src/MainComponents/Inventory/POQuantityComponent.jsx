@@ -8,6 +8,7 @@ import { Dialog } from 'primereact/dialog';
 import PreviewPurchaseOrder from './PreviewPurchaseOrder';
 import { createPurchaseOrder } from '../../Services/InventoryService';
 import { Toast } from 'primereact/toast';
+import { useSelector } from 'react-redux';
 
 const POQuantityComponent = ({ selectedGridData = [] }) => {
     const [shippingAddress, setShippingAddress] = useState('');
@@ -15,6 +16,7 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
     const [items, setItems] = useState([]);
     const [displayafterPlaceOrder, setDisplayafterPlaceOrder] = useState(false);
     const toast = useRef(null);
+    const propertyId = useSelector((state) => state.Commonreducer.puidn);
 
     const onHideDialog = () => {
         setDisplayafterPlaceOrder(false);
@@ -58,6 +60,7 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
             ShippingAddress: shippingAddress,
             BillingAddress: billingAddress,
         }));
+        console.log(items)
         return groupItemsByVendor(itemsWithAddresses);
     }, [items, shippingAddress, billingAddress]);
 
@@ -69,8 +72,10 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
                 Dates: new Date().toLocaleDateString(),
                 VendorId: VendorId || 0,
                 VendorName: vendorName,
-                Item: items.map(({ Id, ItemName, Price, Quantity, Description, BrandName, MeasurementUnit, HSNCode }) => ({
-                    ItemId: Id,
+                PropertyId: propertyId,
+                CreatedBy: 0,
+                Items: items.map(({ ItemId, ItemName, Price, Quantity, Description, BrandName, MeasurementUnit, HSNCode }) => ({
+                    ItemId,
                     ItemName,
                     Price,
                     Quantity,
@@ -211,7 +216,7 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
                         <Button
                             label="Confirm & Create All POs"
                             icon="pi pi-save"
-                            onClick={() => handleCreatePO(groupedItemsWithAddresses)}
+                            onClick={() => handleCreatePO(transformedPreviewData)}
                         />
                     </div>
                 }

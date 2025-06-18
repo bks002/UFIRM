@@ -4,7 +4,7 @@ import { Column } from "primereact/column";
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { Toast } from 'primereact/toast';
-import { } from "../../Services/InventoryService";
+import { getPurchaseOrder } from "../../Services/InventoryService";
 import { useSelector } from "react-redux";
 import PurchaseOrderPage from './PurchaseOrderPage';
 import ExportToCSV from '../../ReactComponents/ExportToCSV/ExportToCSV';
@@ -14,7 +14,7 @@ import PreviewPurchaseOrder from './PreviewPurchaseOrder';
 const PurchaseOrderMaster = () => {
     const [loading, setLoading] = useState(false);
     const printRef = useRef();
-    const [selectedRow, setSelectedRow] = useState(null);
+    const [selectedRow, setSelectedRow] = useState([]);
     const emptyallGridData = {
         POId: "xxxxx",
         Dates: "N/A",
@@ -32,31 +32,26 @@ const PurchaseOrderMaster = () => {
         BillingAddress: "N/A",
         ShippingAddress: "N/A",
     };
-    const [filteredGridData, setFilteredGridData] = useState([{ POId: 1, Dates: "01/03/2025", VendorId: 3, VendorName: "Akshat", Item: [{ ItemId: 4, ItemName: 'Mop', Price: 30, Quantity: 10 }, { ItemId: 5, ItemName: 'Bread', Price: 40, Quantity: 20 }], ShippingAddress: "New York", BillingAddress: "India" },
-    { POId: 2, Dates: "01/03/2025", VendorId: 3, VendorName: "Akshat", Item: [{ ItemId: 4, ItemName: 'Mop', Price: 30, Quantity: 10 }, { ItemId: 5, ItemName: 'Bread', Price: 40, Quantity: 20 }], ShippingAddress: "New York", BillingAddress: "India" },
-    { POId: 3, Dates: "01/03/2025", VendorId: 4, VendorName: "Bhavesh", Item: [{ ItemId: 5, ItemName: 'Bread', Price: 40, Quantity: 20 }, { ItemId: 4, ItemName: 'Mop', Price: 30, Quantity: 10 }], ShippingAddress: "New York", BillingAddress: "India" },]);
+    const [filteredGridData, setFilteredGridData] = useState([emptyallGridData]);
     const [displayDialog, setDisplayDialog] = useState(false);
     const propertyId = useSelector((state) => state.Commonreducer.puidn);
     const [preview, setpreview] = useState(false);
     const toast = useRef(null);
 
     useEffect(() => {
-        // if (propertyId) {
-        //     //setFilteredGridData([]);
-        if (!propertyId) {
-            toast.current.show({
-                severity: 'error',
-                summary: 'Error',
-                detail: 'Please Select a Property.',
-                life: 3000
-            });
-            //setFilteredGridData([]);
-        }
-    }, [propertyId]);
-
-    useEffect(() => {
         const fetchData = async () => {
             if (propertyId) {
+                const data = await getPurchaseOrder(propertyId);
+                setFilteredGridData(data);
+            }
+            else {
+                setFilteredGridData([]);
+                toast.current.show({
+                    severity: "error",
+                    summary: "Error",
+                    detail: `Please select a property`,
+                    life: 3000,
+                })
             }
         };
         fetchData();
@@ -88,10 +83,10 @@ const PurchaseOrderMaster = () => {
                 </style>
             </head>
             <body>
-                <p>${rowData.POId}</p>
+                <p>${rowData.PONumber}</p>
                 <div style="display: flex; justify-content: space-between;">
                     <p>To,</p>
-                    <p>Date: ${rowData.Dates}</p>
+                    <p>Date: ${rowData.PODateTime}</p>
                 </div>
                 <p><b>${rowData.VendorName}</b></p>
                 <p style="margin-top: 30px;"><b>Subject: Order</b></p>
@@ -112,7 +107,7 @@ const PurchaseOrderMaster = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        ${rowData.Item.map((item, index) => `
+                        ${rowData.Items.map((item, index) => `
                             <tr>
                                 <td>${index + 1}</td>
                                 <td>${item.ItemName}</td>
@@ -169,10 +164,7 @@ const PurchaseOrderMaster = () => {
                     className="p-button-rounded rounded p-button-info"
                     style={{ backgroundColor: 'green', borderColor: 'green', color: 'white' }}
                     onClick={() => {
-                        setSelectedRow(rowData);
-                        setTimeout(() => {
-                            printRow(rowData);
-                        }, 100);
+                        printRow(rowData);
                     }}
                 />
             </React.Fragment>
@@ -217,9 +209,9 @@ const PurchaseOrderMaster = () => {
                     rows={15}
                     loading={loading}
                     emptyMessage="No records found matching your criteria."
-                    dataKey="POId"
+                    dataKey="PurchaseOrderId"
                 >
-                    <Column header="PO Id" field='POId' />
+                    <Column header="PO Id" field='PONumber' />
                     <Column header="Vendor" field='VendorName' />
                     {/* <Column header="Total Amount" /> */}
                     <Column header="Shipping Address" field='ShippingAddress' />
@@ -245,15 +237,14 @@ const PurchaseOrderMaster = () => {
                 header={
                     <div>
                         <h5 className='mb-4'>Preview Purchase Order</h5>
-                        {selectedRow && ( 
+                        {selectedRow && (
                             <div className="d-flex justify-content-between align-items-center mb-3">
-                                <h5>Purchase Order ID: {selectedRow.POId}</h5>
-                                <h5>Date: {selectedRow.Dates}</h5>
+                                <h5>Purchase Order ID: {selectedRow.PONumber}</h5>
+                                <h5>Date: {selectedRow.PODateTime}</h5>
                             </div>
                         )}
                     </div>
                 }>
-                {console.log("Selected Row: ", selectedRow)}
                 <PreviewPurchaseOrder groupedItems={selectedRow} onRemoveVendor={handleRemoveVendor} />
             </Dialog>
         </div >

@@ -221,6 +221,7 @@ const PurchaseOrderPage = () => {
                             <Column selectionMode="multiple" header={<div className='px-2'>Select</div>} />
                         </DataTable>
                     </div>
+                    {console.log(selectedGridData)}
                     <div className="row mt-3">
                         <div className="col-12 text-right">
                             <Button

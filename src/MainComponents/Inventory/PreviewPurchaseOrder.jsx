@@ -4,25 +4,18 @@ import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 
 const PreviewPurchaseOrder = ({ groupedItems, onRemoveVendor }) => {
-    if (!groupedItems || !groupedItems.Item) {
+    if (!groupedItems || !groupedItems.Items) {
         return <div>No purchase order data available.</div>;
     }
 
     const {
-        POId,
-        VendorId,
-        Dates,
         VendorName,
-        Item,
-        Description,
-        BrandName,
-        MeasurementUnit,
-        HSNCode,
+        Items,
         ShippingAddress,
         BillingAddress
     } = groupedItems;
 
-    const totalAmount = Item.reduce((sum, item) => sum + (item.TotalAmount || item.Price * item.Quantity || 0), 0);
+    const totalAmount = Items.reduce((sum, item) => sum + (item.TotalAmount || item.Price * item.Quantity || 0), 0);
 
     return (
         <>
@@ -41,7 +34,7 @@ const PreviewPurchaseOrder = ({ groupedItems, onRemoveVendor }) => {
                     <p><strong>Billing Address:</strong> {BillingAddress}</p>
                 </div>
 
-                <DataTable value={Item} responsiveLayout="scroll" stripedRows className="p-datatable-sm">
+                <DataTable value={Items} responsiveLayout="scroll" stripedRows className="p-datatable-sm">
                     <Column field="ItemName" header="Item" />
                     <Column field="Description" header="Description" />
                     <Column field="Quantity" header="Quantity" />
