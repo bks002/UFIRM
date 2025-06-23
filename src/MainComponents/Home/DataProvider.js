@@ -11,9 +11,9 @@ class DataProvider {
             default:
         }
     }
-    manageDashTaskStatusCnt(model,initialDate,finalDate)
+    manageDashTaskStatusCnt(model,initialDate,finalDate,catId=null,subcatId=null)
     {
-        let url=`GetAllTaskWiseStatusFinalCountDash?propId=${model[0].PropertyId}&dateFrom=${initialDate}&dateTo=${finalDate}`
+        let url=`GetAllTaskWiseStatusFinalCountDash?propId=${model[0].PropertyId}&categoryId=${catId}&subCategoryId=${subcatId}&dateFrom=${initialDate}&dateTo=${finalDate}`
         return srv.getComplaint(url);
     }
     manageDashTaskPriorityCnt(model,initialDate,finalDate)

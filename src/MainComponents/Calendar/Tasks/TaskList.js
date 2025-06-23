@@ -24,6 +24,7 @@ const $ = window.$;
  class TaskList extends Component {
   constructor(props) {
     super(props);
+    console.log(this.props);
     this.state = {
       columns: [
         {
@@ -529,29 +530,6 @@ const $ = window.$;
     });
   };
 
-  
-  // manageProperties = (model, type) => {
-  //   this.ApiProvider.manageProperties(model, type).then((resp) => {
-  //     if (resp.ok && resp.status == 200) {
-  //       return resp.json().then((rData) => {
-  //         let propertyData = [];
-  //         rData.forEach((element) => {
-  //           propertyData.push({
-  //             propertyId: element.PropertyId,
-  //             name: element.Name,
-  //           });
-  //         });
-  //         switch (type) {
-  //           case "R":
-  //             this.setState({ propertyData: propertyData });
-  //             break;
-  //           default:
-  //         }
-  //       });
-  //     }
-  //   });
-  // };
-
   getCategory() {
     var type = "R";
     var model = this.getModel(type);
@@ -567,18 +545,12 @@ const $ = window.$;
     this.manageSubCategory(model, type, categoryId);
   }
 
-  getAllProperties() {
-    var type = "R";
-    var model = this.getModel(type);
-    this.manageProperties(model, type);
-  }
-
   getTasks() {
     var type = "R";
     var categoryId = this.state.selectedCategoryId
       ? this.state.selectedCategoryId
       : 0;
-    var subCategoryId = this.state.selectedSubCategoryId
+    var subCategoryId = (this.state.selectedSubCategoryId)
       ? this.state.selectedSubCategoryId
       : 0;
       var assignToId = this.state.assignTo
@@ -647,6 +619,7 @@ const $ = window.$;
     const { PropertyVal } = this.props;
     const status = this.props.status==='Completed'?'Complete':this.props.status;
     const priority = this.props.priority;
+    const subCatId = parseInt(this.props.subCatId);
     const initialDate=this.props.dashDates;
     const today = moment();
     this.setState({
@@ -656,6 +629,7 @@ const $ = window.$;
       propertyId:PropertyVal,
       taskStatus: status===null?0:status,
       taskPriority:priority===null?0:priority,
+      selectedSubCategoryId:subCatId===null?0:subCatId,
     },
     // const startDate = moment().clone().startOf("month");
     // const endDate = moment().clone().endOf("month");

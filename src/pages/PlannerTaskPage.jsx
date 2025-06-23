@@ -15,12 +15,14 @@ class PlannerTaskPage extends Component {
     const { location } = this.props;
     const status =  new URLSearchParams(location.search).get('status');
     const priority =  new URLSearchParams(location.search).get('priority');
+    const subCatId =  new URLSearchParams(location.search).get('subCat');
+    console.log(status,priority,subCatId);
     return (
       <div className='content-wrapper'>
         <section className="content mt-4">
             <div className="container-fluid">
                 <div className="container-fluid">
-                  <TaskList status={status} priority={priority} />
+                  <TaskList status={status} priority={priority} subCatId={subCatId} />
                 </div>
             </div>
         </section>

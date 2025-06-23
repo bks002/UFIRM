@@ -1,349 +1,244 @@
-import React, { useEffect } from 'react';
-import DashboardCard from '../Dashboards/DashboardCard';
-import ApiProvider from './DataProvider';
+import React, { useEffect, useState, useCallback } from 'react';
 import { connect } from 'react-redux';
-import departmentActions from '../../redux/department/action';
 import { bindActionCreators } from 'redux';
-import PieChart from '../Charts/PieChart';
-import ChartNavigator from '../Charts/ChartNavigator';
-import BarChart from '../Charts/BarChart';
-class Home extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            complains: [],
-            complainsCnt: 0,
+import DataProvider from './DataProvider';
+import ChartNavigator from "../Charts/ChartNavigator";
+import DashboardCard from "../Dashboards/DashboardCard";
+import departmentActions from "../../redux/department/action";
+import {fetchSubCatTaskCounts} from "../../Services/DashboardServices";
 
-            totalFlats: [],
-            totalFlatsCnt: 0,
+const Home = ({ PropertyId }) => {
+    const [complains, setComplains] = useState([]);
+    const [complainsCnt, setComplainsCnt] = useState(0);
 
-            taskStatus:[],
-            totalTAsks:0,
+    const [totalFlats, setTotalFlats] = useState([]);
+    const [totalFlatsCnt, setTotalFlatsCnt] = useState(0);
 
-            taskPriority:[],
-            totalActTasks:0,
+    const [taskStatus, setTaskStatus] = useState([]);
+    const [totalTasks, setTotalTasks] = useState(0);
 
-            assetCount:[],
-            totalAssets:10,
+    const [taskPriority, setTaskPriority] = useState([]);
+    const [totalActTasks, setTotalActTasks] = useState(0);
 
-            initialDate:"",
-            finalDate:""
-        };
-        this.ApiProviderr = new ApiProvider();
-    }
+    const [assetCount, setAssetCount] = useState([]);
+    const [totalAssets, setTotalAssets] = useState(0);
 
-    
-    componentDidMount() {
-        this.taskStatusCount();
-        this.loadDashboardData();
-        
-    }
+    const [initialDate, setInitialDate] = useState('');
+    const [finalDate, setFinalDate] = useState('');
 
-    loadDashboardData(value, id) {
-        var type = 'R';
-        var model = this.getModel(type);
-        this.manageDashboardCnt(model, type);
-        
-    }
+    const [subCategoryCards] = useState([{ name: "Lift", id: 4 }, { name: "DG", id: 69 }]);
+    const [subCategoryTaskData, setSubCategoryTaskData] = useState({});
 
-    componentDidUpdate(prevProps) {
-        if (prevProps.PropertyId !== this.props.PropertyId) {
-            this.loadDashboardData();
-            this.getDates(this.state.initialDate,this.state.finalDate);
-        }
-    }
+    const apiProvider = new DataProvider();
 
-    getDates = (initialDate,finalDate)=>{
-        var type = 'R';
-            var model = this.getModel(type);
-            this.setState({initialDate:initialDate,finalDate:finalDate});
-            this.taskStatusCount(model,initialDate,finalDate);
-            this.taskPriorityCount(model,initialDate,finalDate);
-            this.getAssetCount(model,initialDate,finalDate);
-        
-    }
+    const getModel = useCallback(() => {
+        return [{ PropertyId: parseInt(PropertyId) }];
+    }, [PropertyId]);
 
-    getAssetCount = async (model,initialDate,finalDate) => {
+    const taskStatusCount = useCallback(async (model, initialDate, finalDate) => {
         try {
-            const resp = await this.ApiProviderr.manageDashAssetCardCount(model,initialDate,finalDate);
-            if(resp && resp.ok && resp.status===200)
+            const resp = await apiProvider.manageDashTaskStatusCnt(model, initialDate, finalDate);
+            if (resp && resp.ok && resp.status === 200)
             {
                 const data = await resp.json();
-                if (data) {
-                    const defaultCounts = {
-                        TotalAsset: { Count: 0 },
-                        ServiceOverdueAssets: { Count: 0 },
-                        UpcomingServices: { Count: 0 },
-                        RentedOutAsset: { Count: 0 },
-                        CheckedOutAssets: { Count: 0 },
-                    };
+                const defaultCounts = { Actionable: 0, Completed: 0, Pending: 0 };
+                let total = 0;
 
-                    const assetStatus = [
-                        { Title: "Service Overdue",  Value:data.ServiceOverdueAssets },
-                        { Title: "Upcoming Services", Value:data.UpcomingServices },
-                        { Title: "Rented-Out Assets", Value:data.RentedOutAsset  },
-                        { Title: "Checked-Out Assets", Value: data.CheckedOutAssets },
-                    ];
-
-                    this.setState({
-                        assetCount: assetStatus,
-                        totalAssets: data.TotalAsset,
-                    });
-                }
-
-            }else{
-                const assetStatus = [
-                    { Title: "Service Overdue",  Value:0 },
-                    { Title: "Upcoming Services", Value:0 },
-                    { Title: "Rented-Out Assets", Value:0  },
-                    { Title: "Checked-Out Assets", Value: 0 },
-                ];
-                this.setState({  assetCount: assetStatus,
-                    totalAssets: 0,
+                data.forEach(task => {
+                    if (defaultCounts.hasOwnProperty(task.TaskStatus)) {
+                        defaultCounts[task.TaskStatus] = task.Count;
+                    }
+                    total += task.Count;
                 });
+
+                setTaskStatus([
+                    { Title: 'Actionable', Value: defaultCounts.Actionable },
+                    { Title: 'Completed', Value: defaultCounts.Completed },
+                    { Title: 'Pending', Value: defaultCounts.Pending }
+                ]);
+                setTotalTasks(total);
+            } else {
+                setTaskStatus([
+                    { Title: 'Actionable', Value: 0 },
+                    { Title: 'Completed', Value: 0 },
+                    { Title: 'Pending', Value: 0 }
+                ]);
+                setTotalTasks(0);
             }
-        } catch (error)
-        {
-            console.error("Error fetching data:", error);
+        } catch (error) {
+            console.error('Error fetching task status:', error);
         }
-    };
+    }, []);
 
-    taskStatusCount = async (model,initialDate,finalDate) => {
+    const taskPriorityCount = useCallback(async (model, initialDate, finalDate) => {
         try {
-            const resp = await this.ApiProviderr.manageDashTaskStatusCnt(model,initialDate,finalDate);
-                    if(resp && resp.ok && resp.status===200)
-                    {
-                        const data = await resp.json();
-                        if (data) {
-                            const defaultCounts = {
-                                Actionable: { Count: 0 },
-                                Completed: { Count: 0 },
-                                Pending: { Count: 0 },
-                            };
+            const resp = await apiProvider.manageDashTaskPriorityCnt(model, initialDate, finalDate);
+            if (resp && resp.ok && resp.status === 200)
+            {
+                const data = await resp.json();
+                const [completed = {}, SOS = {}, High = {}, Medium = {}, Low = {}] = data;
 
-                            const taskCounts = data.reduce((acc, task) => {
-                                if (task.TaskStatus === "Actionable") {
-                                    acc.Actionable = { Count: task.Count };
-                                } else if (task.TaskStatus === "Completed") {
-                                    acc.Completed = { Count: task.Count };
-                                } else if (task.TaskStatus === "Pending") {
-                                    acc.Pending = { Count: task.Count };
-                                }
-                                return acc;
-                            }, { ...defaultCounts });
+                const priorities = [
+                    { Title: 'SOS', Value: SOS.Count || 0 },
+                    { Title: 'High Priority', Value: High.Count || 0 },
+                    { Title: 'Medium Priority', Value: Medium.Count || 0 },
+                    { Title: 'Low Priority', Value: Low.Count || 0 }
+                ];
 
-                            const taskStatus = [
-                                { Title: "Actionable", Value: taskCounts.Actionable.Count },
-                                { Title: "Completed", Value: taskCounts.Completed.Count },
-                                { Title: "Pending", Value: taskCounts.Pending.Count },
-                            ];
+                setTaskPriority(priorities);
+                setTotalActTasks(priorities.reduce((sum, p) => sum + p.Value, 0));
+            } else {
+                setTaskPriority([
+                    { Title: 'SOS', Value: 0 },
+                    { Title: 'High Priority', Value: 0 },
+                    { Title: 'Medium Priority', Value: 0 },
+                    { Title: 'Low Priority', Value: 0 }
+                ]);
+                setTotalActTasks(0);
+            }
+        } catch (error) {
+            console.error('Error fetching task priority:', error);
+        }
+    }, []);
 
-                            const totalTasks = data.reduce((total, item) => total + item.Count, 0);
-                            this.setState({
-                                taskStatus: taskStatus,
-                                totalTAsks: totalTasks,
-                            });
-                        }
-
-                    }else{
-                        const taskStatus = [
-                            { Title: 'Actionable', Value:0 },
-                            { Title: 'Completed', Value: 0},
-                            { Title: 'Pending', Value:0}
-                          ];
-                          this.setState({ taskStatus: taskStatus ,
-                              totalTAsks :0
-                          });
-                    }
-            } catch (error)
-                {
-                    console.error("Error fetching data:", error);
-                 }
-    };
-
-    taskPriorityCount = async (model,initialDate,finalDate) => {
+    const getAssetCount = useCallback(async (model, initialDate, finalDate) => {
         try {
-            const resp = await this.ApiProviderr.manageDashTaskPriorityCnt(model,initialDate,finalDate);
-                    if(resp && resp.ok && resp.status===200)
-                    {
-                        const data = await resp.json();
-                        if (data) {
-                            const [completed = { Count: 0 }, SOS = { Count: 0 }, HighPriority = { Count: 0 },MediumPriority={ Count: 0 } ,LowPriority={ Count: 0 }] = data;
-                            const taskPriority = [
-                            //   { Title: 'Completed', Value: completed.Count},
-                              { Title: 'SOS', Value: SOS.Count},
-                              { Title: 'High Priority', Value: HighPriority.Count},
-                              { Title: 'Medium Priority', Value: MediumPriority.Count},
-                              { Title: 'Low Priority', Value: LowPriority.Count}
-                            ];
-                             this.setState({ taskPriority: taskPriority ,
-                                totalActTasks :taskPriority.reduce((total, item) => total + item.Value, 0)
-                            }); 
-                        }
-                    }else{
-                        const taskPriority = [
-                            // { Title: 'Completed', Value:0},
-                            { Title: 'SOS', Value:0 },
-                            { Title: 'High Priority', Value: 0},
-                            { Title: 'Medium Priority', Value: 0},
-                            { Title: 'Low Priority', Value:0}
-                          ];
-                          this.setState({ taskPriority: taskPriority ,
-                              totalActTasks :0
-                          }); 
-                    }
-            } catch (error) 
-                {
-                    console.error("Error fetching data:", error);
-                 }
+            const resp = await apiProvider.manageDashAssetCardCount(model, initialDate, finalDate);
+            if (resp && resp.ok && resp.status === 200){
+                const data = await resp.json();
+
+                const assetStatus = [
+                    { Title: 'Service Overdue', Value: data.ServiceOverdueAssets || 0 },
+                    { Title: 'Upcoming Services', Value: data.UpcomingServices || 0 },
+                    { Title: 'Rented-Out Assets', Value: data.RentedOutAsset || 0 },
+                    { Title: 'Checked-Out Assets', Value: data.CheckedOutAssets || 0 }
+                ];
+
+                setAssetCount(assetStatus);
+                setTotalAssets(data.TotalAsset || 0);
+            }
+        } catch (error) {
+            console.error('Error fetching assets:', error);
+        }
+    }, []);
+
+    const loadSubCatData = async (propertyId, fromDate, toDate) => {
+        const data = await fetchSubCatTaskCounts(propertyId, fromDate, toDate);
+        setSubCategoryTaskData(data);
     };
 
-    manageDashboardCnt = (model, type) => {
-        this.ApiProviderr.manageDashboardCnt(model, type).then(
-            resp => {
-                if (resp && resp.ok && resp.status === 200) {
-                    return resp.json().then(rData => {
-                        switch (type) {
-                            case 'R':
-                                if (rData !== null) {
-                                    let totalFlats = [
-                                        { Title: 'Owners Residing', Value: rData.dashbaordFlatCount.owner },
-                                        { Title: 'Tenants', Value: rData.dashbaordFlatCount.tenant },
-                                        { Title: 'Vacant', Value: rData.dashbaordFlatCount.vacant },
-                                        { Title: 'Free', Value: rData.dashbaordFlatCount.free }
 
-                                    ];
-                                    let complains = [
-                                        { Title: 'Open', Value: rData.dashbaordComplainCount.open },
-                                        { Title: 'In Progress', Value: rData.dashbaordComplainCount.inProgress },
-                                        { Title: 'Resolved', Value: rData.dashbaordComplainCount.resolved },
-                                        {Title: 'Closed', Value: rData.dashbaordComplainCount.completed },
-                                    ];
-                                    this.setState({
-                                        totalFlats: totalFlats,
-                                        totalFlatsCnt: rData.dashbaordFlatCount.total,
-                                        complains: complains,
-                                        complainsCnt: rData.dashbaordComplainCount.total
-                                    })
-                                }
-                                break;
-                            default:
-                        }
-                    });
-                }
-            });
-    }
-    getModel = (type) => {
-        var model = [];
-        switch (type) {
-            case 'R':
-                model.push({
-                    "PropertyId": parseInt(this.props.PropertyId),
-                });
-                break;
-            default:
-        };
-        return model;
-    }
 
-    render() {
-        return (
-            <div className="content-wrapper mt-2">
-                <section className="content ">
+    const getDates = useCallback(async (initialDate, finalDate) => {
+        setInitialDate(initialDate);
+        setFinalDate(finalDate);
+        const model = getModel();
+        loadSubCatData(model[0].PropertyId,initialDate, finalDate)
+        taskStatusCount(model, initialDate, finalDate);
+        taskPriorityCount(model, initialDate, finalDate);
+        getAssetCount(model, initialDate, finalDate);
+    }, [getModel, taskStatusCount, taskPriorityCount, getAssetCount, loadSubCatData, subCategoryCards]);
+
+    const manageDashboardCnt = useCallback(async (model) => {
+        const resp = await apiProvider.manageDashboardCnt(model, 'R');
+        if (resp && resp.ok && resp.status === 200)
+        {
+            const rData = await resp.json();
+            if (rData) {
+                setTotalFlatsCnt(rData.dashbaordFlatCount.total);
+                setTotalFlats([
+                    { Title: 'Owners Residing', Value: rData.dashbaordFlatCount.owner },
+                    { Title: 'Tenants', Value: rData.dashbaordFlatCount.tenant },
+                    { Title: 'Vacant', Value: rData.dashbaordFlatCount.vacant },
+                    { Title: 'Free', Value: rData.dashbaordFlatCount.free }
+                ]);
+                setComplainsCnt(rData.dashbaordComplainCount.total);
+                setComplains([
+                    { Title: 'Open', Value: rData.dashbaordComplainCount.open },
+                    { Title: 'In Progress', Value: rData.dashbaordComplainCount.inProgress },
+                    { Title: 'Resolved', Value: rData.dashbaordComplainCount.resolved },
+                    { Title: 'Closed', Value: rData.dashbaordComplainCount.completed }
+                ]);
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        const model = getModel();
+        manageDashboardCnt(model);
+    }, [getModel, manageDashboardCnt]);
+
+    useEffect(() => {
+        if (initialDate && finalDate) {
+            getDates(initialDate, finalDate);
+        }
+    }, [PropertyId]);
+
+    return (
+        <div className="content-wrapper mt-2">
+            <section className="content ">
                 <div className="container-fluid">
-                    <div className="row equal-height">
+                    <div className="row">
                         <div className="col-md-3">
-                            <div className="card mb-2 shadow-sm chart-boundary">
-                                <div className="card-body">
-                                    <BarChart chartData={this.state.taskStatus}/>
-                                </div>
-                            </div>
+                            <DashboardCard CardTitle="Task Status" HeaderValue={totalTasks} HeaderClass="card card-danger cardutline" ItemJson={taskStatus} Link="/Account/App/PlannerTask" />
                         </div>
-                        <div className="col-md-3 ">
-                            <div className="card mb-2 shadow-sm chart-boundary">
-                                <div className="card-body">
-                                    <PieChart chartData={this.state.taskPriority}/>
-                                </div>
-                            </div>
+                        <div className="col-md-3">
+                            <DashboardCard CardTitle="Priority Tasks" HeaderValue={totalActTasks} HeaderClass="card card-danger cardutline" ItemJson={taskPriority} Link="/Account/App/PlannerTask" />
                         </div>
-                        <div className="col-md-3 ">
-                            <div className="card mb-2 shadow-sm chart-boundary">
-                                <div className="card-body">
-                                    <PieChart chartData={this.state.assetCount}/>
-                                </div>
-                            </div>
+                        <div className="col-md-3">
+                            <DashboardCard CardTitle="Total Assets" HeaderValue={totalAssets} HeaderClass="card card-danger cardutline" ItemJson={assetCount} Link="/Account/App/ServiceRecords" />
                         </div>
+                        <div className="col-md-3">
+                            <DashboardCard CardTitle="Complains" HeaderValue={complainsCnt} HeaderClass="card card-danger cardutline" ItemJson={complains} Link="/Account/App/TicketComplains" />
+                        </div>
+                    </div>
+
+                    <section className="content px-2">
+                        <div className="container-fluid card p-2 shadow-sm">
+                            <ChartNavigator onPeriodChange={getDates} />
+                        </div>
+                    </section>
+                    <div className="row">
+                        <div className="col-md-3">
+                            <DashboardCard CardTitle="Total Flats" HeaderValue={totalFlatsCnt} HeaderClass="card card-info cardutline" ItemJson={totalFlats} Link="/Account/App/ManageResidentOwners" />
+                        </div>
+                        {subCategoryCards.map((x) => {
+                            const counts = subCategoryTaskData[x.id] || { Actionable: 0, Completed: 0, Pending: 0 };
+                            const itemJson = [
+                                { Title: "Actionable", Value: counts.Actionable || 0 },
+                                { Title: "Completed", Value: counts.Completed || 0 },
+                                { Title: "Pending", Value: counts.Pending || 0 }
+                            ];
+                            const total = itemJson.reduce((sum, i) => sum + i.Value, 0);
+
+                            return (
+                                <div className="col-md-3" key={x.id}>
+                                    <DashboardCard
+                                        CardTitle={x.name}
+                                        HeaderValue={total}
+                                        HeaderClass="card card-danger cardutline"
+                                        ItemJson={itemJson}
+                                        Link="/Account/App/PlannerTask"
+                                    />
+                                </div>
+                            );
+                        })}
+
                     </div>
                 </div>
-                </section>
-                <section className="content  px-2">
-                    <div className="container-fluid card p-2 shadow-sm">
-                        <ChartNavigator onPeriodChange={this.getDates}/>
-                    </div>
-                </section>
-               
-                <section className="content ">
-                    <div className="container-fluid">
-                        <div className="row">
-                            <div className="col-md-3 ">
-                                <DashboardCard CardTitle="Task Status"
-                                               HeaderValue={this.state.totalTAsks}
-                                               HeaderClass="card card-danger cardutline"
-                                               ItemJson={this.state.taskStatus}
-                                               Link="/Account/App/PlannerTask"/>
-                            </div>
-                            <div className="col-md-3 ">
-                                <DashboardCard CardTitle="Priority Tasks"
-                                               HeaderValue={this.state.totalActTasks}
-                                               HeaderClass="card card-danger cardutline"
-                                               ItemJson={this.state.taskPriority}
-                                               Link="/Account/App/PlannerTask"/>
-                            </div>
-                            <div className="col-md-3">
-                                <DashboardCard CardTitle="Total Assets"
-                                               HeaderValue={this.state.totalAssets}
-                                               HeaderClass="card card-danger cardutline"
-                                               ItemJson={this.state.assetCount}
-                                               Link="/Account/App/ServiceRecords"/>
-                            </div>
-                            <div className="col-md-3 ">
-                                <DashboardCard CardTitle="Complains"
-                                               HeaderValue={this.state.complainsCnt}
-                                               HeaderClass="card card-danger cardutline"
-                                               ItemJson={this.state.complains}
-                                               Link="/Account/App/TicketComplains"/>
-                            </div>
+            </section>
+        </div>
+    );
+};
 
-                        </div>
-                        <div className="row">
-                            <div className="col-md-3">
-                                <DashboardCard CardTitle="Total Flats"
-                                               HeaderValue={this.state.totalFlatsCnt}
-                                               HeaderClass="card card-info cardutline"
-                                               ItemJson={this.state.totalFlats}
-                                               Link="/Account/App/ManageResidentOwners"/>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </div>
-        );
-    }
-}
+const mapStoreToProps = (state) => ({
+    PropertyId: state.Commonreducer.puidn,
+    Entrolval: state.Commonreducer.entrolval,
+    dashDates: state.Commonreducer.dashDates
+});
 
-// export default Home;
+const mapDispatchToProps = (dispatch) => ({
+    actions: bindActionCreators(departmentActions, dispatch)
+});
 
-function mapStoreToprops(state, props) {
-    return {
-        PropertyId: state.Commonreducer.puidn,
-        Entrolval: state.Commonreducer.entrolval,
-        dashDates: state.Commonreducer.dashDates,
-    }
-}
-
-function mapDispatchToProps(dispatch) {
-    const actions = bindActionCreators(departmentActions, dispatch);
-    return {actions};
-}
-
-export default connect(mapStoreToprops, mapDispatchToProps)(Home);
+export default connect(mapStoreToProps, mapDispatchToProps)(Home);
