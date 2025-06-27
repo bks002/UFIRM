@@ -1,12 +1,21 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
+import { Dialog } from 'primereact/dialog';
+import { Toast } from 'primereact/toast';
 
 const PreviewPurchaseOrder = ({ groupedItems, onRemoveVendor }) => {
+    const [displayDialog, setDisplayDialog] = useState(false);
+    const [selectedItem, setSelectedItem] = useState(null);
+    const toast = useRef(null);
     if (!groupedItems || !groupedItems.Items) {
         return <div>No purchase order data available.</div>;
     }
+
+    const onHideDialog = () => {
+        setDisplayDialog(false);
+    };
 
     const {
         VendorName,
@@ -15,7 +24,34 @@ const PreviewPurchaseOrder = ({ groupedItems, onRemoveVendor }) => {
         BillingAddress
     } = groupedItems;
 
-    const totalAmount = Items.reduce((sum, item) => sum + (item.TotalAmount || item.Price * item.Quantity || 0), 0);
+    const totalAmount = Items.reduce((sum, item) => sum + (item.LineTotal || item.Price * item.Quantity || 0), 0);
+
+    const hasRedRows = Array.isArray(Items) && Items.some(item => item.IsCompleted === false);
+
+    const actionTemplate = (rowData) => {
+        if (rowData.IsCompleted === false) {
+            return (
+                <React.Fragment>
+                    {/* <Button
+                        icon={<i className="fa fa-eye" aria-hidden="true"></i>}
+                        className="p-button-rounded rounded p-button-info mr-2"
+                    // onClick={() => {
+                    //     openbox(rowData);
+                    // }}
+                    /> */}
+                    <Button
+                        icon={<i className="fa fa-exclamation" aria-hidden="true"></i>}
+                        className="p-button-rounded rounded p-button-danger"
+                        onClick={() => {
+                            setSelectedItem(rowData);
+                            setDisplayDialog(true);
+                        }}
+                    />
+                </React.Fragment>
+            );
+        }
+        return null;
+    };
 
     return (
         <>
@@ -33,12 +69,16 @@ const PreviewPurchaseOrder = ({ groupedItems, onRemoveVendor }) => {
                     <p><strong>Shipping Address:</strong> {ShippingAddress}</p>
                     <p><strong>Billing Address:</strong> {BillingAddress}</p>
                 </div>
-
-                <DataTable value={Items} responsiveLayout="scroll" stripedRows className="p-datatable-sm">
+                <DataTable value={Items} responsiveLayout="scroll" stripedRows className="p-datatable-sm" rowClassName={(rowData) => {
+                    if (rowData.IsCompleted === true) return 'row-green';
+                    if (rowData.IsCompleted === false) return 'row-red';
+                    return '';
+                }}
+                >
                     <Column field="ItemName" header="Item" />
                     <Column field="Description" header="Description" />
                     <Column field="Quantity" header="Quantity" />
-                    <Column field="Price" header="Price" body={(rowData) => `₹${rowData.Price}`} />
+                    <Column field="Price" header="Price" body={(rowData) => `₹${rowData.Price || rowData.Rate}`} />
                     <Column
                         field="TotalAmount"
                         header="Total"
@@ -46,9 +86,10 @@ const PreviewPurchaseOrder = ({ groupedItems, onRemoveVendor }) => {
                             new Intl.NumberFormat('en-IN', {
                                 style: 'currency',
                                 currency: 'INR',
-                            }).format(rowData.TotalAmount || rowData.Price * rowData.Quantity || 0)
+                            }).format(rowData.LineTotal || rowData.Price * rowData.Quantity || 0)
                         }
                     />
+                    {hasRedRows && (<Column header="Action" body={actionTemplate} />)}
                 </DataTable>
 
                 <div className="text-end mt-2">
@@ -58,6 +99,44 @@ const PreviewPurchaseOrder = ({ groupedItems, onRemoveVendor }) => {
                         currency: 'INR',
                     }).format(totalAmount)}
                 </div>
+                <Dialog
+                    visible={displayDialog}
+                    onHide={onHideDialog}
+                    modal
+                    style={{ width: '50vw', maxHeight: '90vh', overflowY: 'auto' }}
+                    header="Partial Order"
+                >
+                    <Toast ref={toast} />
+                    {selectedItem && (
+                        <>
+                            <h5>
+                                We have received {selectedItem.QuantityReceived} quantity but actual quantity is {selectedItem.Quantity} of {selectedItem.ItemName}, So what do you want to do:
+                            </h5>
+                            <div className="flex justify-center items-center mt-4">
+                                <div className="flex gap-4">
+                                    <Button
+                                        className="p-button-success p-button-sm rounded-full rounded mr-4 ml-4"
+                                        style={{ fontSize: '0.75rem' }}
+                                        onClick={() => {
+                                            setDisplayDialog(false);
+                                        }}
+                                    >
+                                        Complete Purchase <i className="fa fa-check ml-2" />
+                                    </Button>
+                                    <Button
+                                        className="p-button-danger p-button-sm rounded-full rounded"
+                                        style={{ fontSize: '0.75rem' }}
+                                        onClick={() => {
+                                            setDisplayDialog(false);
+                                        }}
+                                    >
+                                        Wait for Remaining items <i className="fa fa-times ml-2" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </Dialog>
             </div>
         </>
     );

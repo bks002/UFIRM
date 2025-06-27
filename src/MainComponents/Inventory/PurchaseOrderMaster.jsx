@@ -13,22 +13,28 @@ import PreviewPurchaseOrder from './PreviewPurchaseOrder';
 
 const PurchaseOrderMaster = () => {
     const [loading, setLoading] = useState(false);
-    const printRef = useRef();
+    const [globalFilterValue, setGlobalFilterValue] = useState('');
     const [selectedRow, setSelectedRow] = useState([]);
     const emptyallGridData = {
-        POId: "xxxxx",
+        POId: "XXXXX",
         Dates: "N/A",
-        ItemId: 0,
         VendorId: 0,
-        ItemName: "N/A",
         VendorName: "N/A",
-        BrandName: "N/A",
-        Price: 0,
-        MeasurementUnit: "N/A",
-        HSNCode: 0,
-        Description: "N/A",
-        Quantity: 0,
-        TotalAmount: 0,
+        PropertyId: propertyId,
+        CreatedBy: 0,
+        Items: [{
+            ItemId: 0,
+            ItemName: "N/A",
+            Price: 0,
+            Quantity: 0,
+            Description: "N/A",
+            BrandName: "N/A",
+            MeasurementUnit: "N/A",
+            HSNCode: 0,
+            IsCompleted: null,
+            IsRejected: null,
+            RejectionRemarks: null,
+        },],
         BillingAddress: "N/A",
         ShippingAddress: "N/A",
     };
@@ -66,8 +72,11 @@ const PurchaseOrderMaster = () => {
         setpreview(false);
     };
 
-    const handleRemoveVendor = (vendorName) => {
-        setSelectedRow(item => item.VendorName !== vendorName);
+    const onGlobalFilterChange = (e) => {
+        setGlobalFilterValue(e.target.value);
+    };
+
+    const handleRemoveVendor = () => {
     };
 
     const printRow = (rowData) => {
@@ -115,8 +124,8 @@ const PurchaseOrderMaster = () => {
                                 <td>${item.MeasurementUnit || 'Unit'}</td>
                                 <td>${item.HSNCode || 'N/A'}</td>
                                 <td>${item.Quantity}</td>
-                                <td>${item.Price}</td>
-                                <td>${item.Price * item.Quantity}</td>
+                                <td>${item.Rate}</td>
+                                <td>${item.LineTotal}</td>
                             </tr>`).join('')
             }
                     </tbody>
@@ -149,6 +158,33 @@ const PurchaseOrderMaster = () => {
     };
 
     const actionBodyTemplate = (rowData) => {
+        const Item = rowData.Items;
+        const hasIncompleteItems = Array.isArray(Item) && Item.some(item => item.IsCompleted === false);
+        if (hasIncompleteItems === true) {
+            return (
+            <>
+                <Button
+                    icon={<i className="fa fa-eye" aria-hidden="true"></i>}
+                    className="p-button-rounded rounded p-button-info mr-2"
+                    onClick={() => {
+                        setSelectedRow(rowData);
+                        setpreview(true);
+                    }}
+                />
+                <Button
+                    icon={<i className="fa fa-print" aria-hidden="true"></i>}
+                    className="p-button-rounded rounded p-button-info"
+                    style={{ backgroundColor: 'green', borderColor: 'green', color: 'white' }}
+                    onClick={() => {
+                        printRow(rowData);
+                    }}
+                />
+                <span title="Some items are incomplete" style={{ color: 'red', fontSize: '27px', marginLeft: '10px' }}>
+                    &#9888;
+                </span>
+            </>
+            );
+        }
         return (
             <React.Fragment>
                 <Button
@@ -189,8 +225,8 @@ const PurchaseOrderMaster = () => {
                         <i className="pi pi-search" />
                         <InputText
                             type="search"
-                            // value={globalFilterValue}
-                            // onChange={onGlobalFilterChange}
+                            value={globalFilterValue}
+                            onChange={onGlobalFilterChange}
                             placeholder="Search..."
                             className="form-control"
                         />
@@ -198,7 +234,7 @@ const PurchaseOrderMaster = () => {
                 </div>
 
                 <div className="d-flex">
-                    <ExportToCSV className="btn btn-success btn-sm rounded ml-2 mr-2" />
+                    <ExportToCSV className="btn btn-success btn-sm rounded ml-2 mr-2" data={filteredGridData}/>
                     <Button label="Create Purchase Order" icon="pi pi-plus" className="btn btn-success btn-sm rounded" onClick={openDialog} />
                 </div>
             </div>
@@ -208,12 +244,13 @@ const PurchaseOrderMaster = () => {
                     paginator
                     rows={15}
                     loading={loading}
+                    stripedRows
                     emptyMessage="No records found matching your criteria."
                     dataKey="PurchaseOrderId"
+                    globalFilter={globalFilterValue}
                 >
                     <Column header="PO Id" field='PONumber' />
                     <Column header="Vendor" field='VendorName' />
-                    {/* <Column header="Total Amount" /> */}
                     <Column header="Shipping Address" field='ShippingAddress' />
                     <Column header="Billing Address" field='BillingAddress' />
                     <Column header="Action" body={actionBodyTemplate} />
