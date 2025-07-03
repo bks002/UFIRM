@@ -57,6 +57,24 @@ class DashboardCard extends React.Component {
                                     {item.Title} <span className="float-right badge bg-primary">{item.Value}</span>
                                 </Link>
                                 )}
+                                {(this.props.CardTitle==="Lift"&&
+                                    <Link to={`${this.props.Link}?status=${item.Title}&subCat=4`}  className="nav-link"
+                                          style={
+                                              this.props.Entrolval.includes("Admin") || this.props.Entrolval.includes("Property Manager") ?
+                                                  null : { pointerEvents: 'none', cursor: "no-drop" }
+                                          }>
+                                        {item.Title} <span className="float-right badge bg-primary">{item.Value}</span>
+                                    </Link>
+                                )}
+                                {(this.props.CardTitle==="DG"&&
+                                    <Link to={`${this.props.Link}?status=${item.Title}&subCat=69`}  className="nav-link"
+                                          style={
+                                              this.props.Entrolval.includes("Admin") || this.props.Entrolval.includes("Property Manager") ?
+                                                  null : { pointerEvents: 'none', cursor: "no-drop" }
+                                          }>
+                                        {item.Title} <span className="float-right badge bg-primary">{item.Value}</span>
+                                    </Link>
+                                )}
                             </li>
                         ))}
                     </ul>

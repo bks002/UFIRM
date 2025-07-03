@@ -118,6 +118,7 @@ export default class EditTask extends Component {
           Location: this.state.location,
           AssetsId: parseInt(this.state.assetId),
           QRCode: this.state.QRCode,
+          Type: type,
         });
         break;
       default:
@@ -271,7 +272,6 @@ export default class EditTask extends Component {
     // console.log(model);
     // this.getAssets(model);
   }
-
 
   handleSave = (e) => {
     e.currentTarget.disabled = true;
