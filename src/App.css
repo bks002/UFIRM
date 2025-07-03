@@ -99,3 +99,11 @@ textarea{
     border-color: #336B93;
 }
 .table.custTable td .badge{padding: 4px 10px;}
+.row-green {
+    background-color: #d4edda !important;
+}
+
+.row-red {
+    background-color: #f8d7da !important;
+}
+

@@ -4,7 +4,7 @@ import { Column } from "primereact/column";
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { Toast } from 'primereact/toast';
-import { } from "../../Services/InventoryService";
+import { getPurchaseOrder } from "../../Services/InventoryService";
 import { useSelector } from "react-redux";
 import PurchaseOrderPage from './PurchaseOrderPage';
 import ExportToCSV from '../../ReactComponents/ExportToCSV/ExportToCSV';
@@ -13,50 +13,51 @@ import PreviewPurchaseOrder from './PreviewPurchaseOrder';
 
 const PurchaseOrderMaster = () => {
     const [loading, setLoading] = useState(false);
-    const printRef = useRef();
-    const [selectedRow, setSelectedRow] = useState(null);
+    const [globalFilterValue, setGlobalFilterValue] = useState('');
+    const [selectedRow, setSelectedRow] = useState([]);
     const emptyallGridData = {
-        POId: "xxxxx",
+        POId: "XXXXX",
         Dates: "N/A",
-        ItemId: 0,
         VendorId: 0,
-        ItemName: "N/A",
         VendorName: "N/A",
-        BrandName: "N/A",
-        Price: 0,
-        MeasurementUnit: "N/A",
-        HSNCode: 0,
-        Description: "N/A",
-        Quantity: 0,
-        TotalAmount: 0,
+        PropertyId: propertyId,
+        CreatedBy: 0,
+        Items: [{
+            ItemId: 0,
+            ItemName: "N/A",
+            Price: 0,
+            Quantity: 0,
+            Description: "N/A",
+            BrandName: "N/A",
+            MeasurementUnit: "N/A",
+            HSNCode: 0,
+            IsCompleted: null,
+            IsRejected: null,
+            RejectionRemarks: null,
+        },],
         BillingAddress: "N/A",
         ShippingAddress: "N/A",
     };
-    const [filteredGridData, setFilteredGridData] = useState([{ POId: 1, Dates: "01/03/2025", VendorId: 3, VendorName: "Akshat", Item: [{ ItemId: 4, ItemName: 'Mop', Price: 30, Quantity: 10 }, { ItemId: 5, ItemName: 'Bread', Price: 40, Quantity: 20 }], ShippingAddress: "New York", BillingAddress: "India" },
-    { POId: 2, Dates: "01/03/2025", VendorId: 3, VendorName: "Akshat", Item: [{ ItemId: 4, ItemName: 'Mop', Price: 30, Quantity: 10 }, { ItemId: 5, ItemName: 'Bread', Price: 40, Quantity: 20 }], ShippingAddress: "New York", BillingAddress: "India" },
-    { POId: 3, Dates: "01/03/2025", VendorId: 4, VendorName: "Bhavesh", Item: [{ ItemId: 5, ItemName: 'Bread', Price: 40, Quantity: 20 }, { ItemId: 4, ItemName: 'Mop', Price: 30, Quantity: 10 }], ShippingAddress: "New York", BillingAddress: "India" },]);
+    const [filteredGridData, setFilteredGridData] = useState([emptyallGridData]);
     const [displayDialog, setDisplayDialog] = useState(false);
     const propertyId = useSelector((state) => state.Commonreducer.puidn);
     const [preview, setpreview] = useState(false);
     const toast = useRef(null);
 
     useEffect(() => {
-        // if (propertyId) {
-        //     //setFilteredGridData([]);
-        if (!propertyId) {
-            toast.current.show({
-                severity: 'error',
-                summary: 'Error',
-                detail: 'Please Select a Property.',
-                life: 3000
-            });
-            //setFilteredGridData([]);
-        }
-    }, [propertyId]);
-
-    useEffect(() => {
         const fetchData = async () => {
             if (propertyId) {
+                const data = await getPurchaseOrder(propertyId);
+                setFilteredGridData(data);
+            }
+            else {
+                setFilteredGridData([]);
+                toast.current.show({
+                    severity: "error",
+                    summary: "Error",
+                    detail: `Please select a property`,
+                    life: 3000,
+                })
             }
         };
         fetchData();
@@ -71,8 +72,11 @@ const PurchaseOrderMaster = () => {
         setpreview(false);
     };
 
-    const handleRemoveVendor = (vendorName) => {
-        setSelectedRow(item => item.VendorName !== vendorName);
+    const onGlobalFilterChange = (e) => {
+        setGlobalFilterValue(e.target.value);
+    };
+
+    const handleRemoveVendor = () => {
     };
 
     const printRow = (rowData) => {
@@ -88,10 +92,10 @@ const PurchaseOrderMaster = () => {
                 </style>
             </head>
             <body>
-                <p>${rowData.POId}</p>
+                <p>${rowData.PONumber}</p>
                 <div style="display: flex; justify-content: space-between;">
                     <p>To,</p>
-                    <p>Date: ${rowData.Dates}</p>
+                    <p>Date: ${rowData.PODateTime}</p>
                 </div>
                 <p><b>${rowData.VendorName}</b></p>
                 <p style="margin-top: 30px;"><b>Subject: Order</b></p>
@@ -112,7 +116,7 @@ const PurchaseOrderMaster = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        ${rowData.Item.map((item, index) => `
+                        ${rowData.Items.map((item, index) => `
                             <tr>
                                 <td>${index + 1}</td>
                                 <td>${item.ItemName}</td>
@@ -120,8 +124,8 @@ const PurchaseOrderMaster = () => {
                                 <td>${item.MeasurementUnit || 'Unit'}</td>
                                 <td>${item.HSNCode || 'N/A'}</td>
                                 <td>${item.Quantity}</td>
-                                <td>${item.Price}</td>
-                                <td>${item.Price * item.Quantity}</td>
+                                <td>${item.Rate}</td>
+                                <td>${item.LineTotal}</td>
                             </tr>`).join('')
             }
                     </tbody>
@@ -154,6 +158,33 @@ const PurchaseOrderMaster = () => {
     };
 
     const actionBodyTemplate = (rowData) => {
+        const Item = rowData.Items;
+        const hasIncompleteItems = Array.isArray(Item) && Item.some(item => item.IsCompleted === false);
+        if (hasIncompleteItems === true) {
+            return (
+            <>
+                <Button
+                    icon={<i className="fa fa-eye" aria-hidden="true"></i>}
+                    className="p-button-rounded rounded p-button-info mr-2"
+                    onClick={() => {
+                        setSelectedRow(rowData);
+                        setpreview(true);
+                    }}
+                />
+                <Button
+                    icon={<i className="fa fa-print" aria-hidden="true"></i>}
+                    className="p-button-rounded rounded p-button-info"
+                    style={{ backgroundColor: 'green', borderColor: 'green', color: 'white' }}
+                    onClick={() => {
+                        printRow(rowData);
+                    }}
+                />
+                <span title="Some items are incomplete" style={{ color: 'red', fontSize: '27px', marginLeft: '10px' }}>
+                    &#9888;
+                </span>
+            </>
+            );
+        }
         return (
             <React.Fragment>
                 <Button
@@ -169,10 +200,7 @@ const PurchaseOrderMaster = () => {
                     className="p-button-rounded rounded p-button-info"
                     style={{ backgroundColor: 'green', borderColor: 'green', color: 'white' }}
                     onClick={() => {
-                        setSelectedRow(rowData);
-                        setTimeout(() => {
-                            printRow(rowData);
-                        }, 100);
+                        printRow(rowData);
                     }}
                 />
             </React.Fragment>
@@ -197,8 +225,8 @@ const PurchaseOrderMaster = () => {
                         <i className="pi pi-search" />
                         <InputText
                             type="search"
-                            // value={globalFilterValue}
-                            // onChange={onGlobalFilterChange}
+                            value={globalFilterValue}
+                            onChange={onGlobalFilterChange}
                             placeholder="Search..."
                             className="form-control"
                         />
@@ -206,7 +234,7 @@ const PurchaseOrderMaster = () => {
                 </div>
 
                 <div className="d-flex">
-                    <ExportToCSV className="btn btn-success btn-sm rounded ml-2 mr-2" />
+                    <ExportToCSV className="btn btn-success btn-sm rounded ml-2 mr-2" data={filteredGridData}/>
                     <Button label="Create Purchase Order" icon="pi pi-plus" className="btn btn-success btn-sm rounded" onClick={openDialog} />
                 </div>
             </div>
@@ -216,12 +244,13 @@ const PurchaseOrderMaster = () => {
                     paginator
                     rows={15}
                     loading={loading}
+                    stripedRows
                     emptyMessage="No records found matching your criteria."
-                    dataKey="POId"
+                    dataKey="PurchaseOrderId"
+                    globalFilter={globalFilterValue}
                 >
-                    <Column header="PO Id" field='POId' />
+                    <Column header="PO Id" field='PONumber' />
                     <Column header="Vendor" field='VendorName' />
-                    {/* <Column header="Total Amount" /> */}
                     <Column header="Shipping Address" field='ShippingAddress' />
                     <Column header="Billing Address" field='BillingAddress' />
                     <Column header="Action" body={actionBodyTemplate} />
@@ -245,15 +274,14 @@ const PurchaseOrderMaster = () => {
                 header={
                     <div>
                         <h5 className='mb-4'>Preview Purchase Order</h5>
-                        {selectedRow && ( 
+                        {selectedRow && (
                             <div className="d-flex justify-content-between align-items-center mb-3">
-                                <h5>Purchase Order ID: {selectedRow.POId}</h5>
-                                <h5>Date: {selectedRow.Dates}</h5>
+                                <h5>Purchase Order ID: {selectedRow.PONumber}</h5>
+                                <h5>Date: {selectedRow.PODateTime}</h5>
                             </div>
                         )}
                     </div>
                 }>
-                {console.log("Selected Row: ", selectedRow)}
                 <PreviewPurchaseOrder groupedItems={selectedRow} onRemoveVendor={handleRemoveVendor} />
             </Dialog>
         </div >

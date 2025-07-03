@@ -235,3 +235,12 @@ export const createPurchaseOrder = async (PurchaseOrder) => {
         console.error('Error fetching Purchase Order:', error);
       }
     };
+
+    export const getPurchaseOrder = async (propertyId) => {
+      try {
+        const response = await api.get(`/GetGroupedPurchaseOrderDetails?propertyId=${propertyId}`);
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching Purchase Order:', error);
+      }
+    };

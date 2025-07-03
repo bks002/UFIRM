@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from 'primereact/button';
@@ -7,13 +7,16 @@ import { InputText } from 'primereact/inputtext';
 import { Dialog } from 'primereact/dialog';
 import PreviewPurchaseOrder from './PreviewPurchaseOrder';
 import { createPurchaseOrder } from '../../Services/InventoryService';
-import * as appCommon from '../../Common/AppCommon.js';
+import { Toast } from 'primereact/toast';
+import { useSelector } from 'react-redux';
 
 const POQuantityComponent = ({ selectedGridData = [] }) => {
     const [shippingAddress, setShippingAddress] = useState('');
     const [billingAddress, setBillingAddress] = useState('');
     const [items, setItems] = useState([]);
     const [displayafterPlaceOrder, setDisplayafterPlaceOrder] = useState(false);
+    const toast = useRef(null);
+    const propertyId = useSelector((state) => state.Commonreducer.puidn);
 
     const onHideDialog = () => {
         setDisplayafterPlaceOrder(false);
@@ -23,9 +26,13 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
 
     const handleCreatePO = async (grouped) => {
         await createPurchaseOrder(grouped);
-        appCommon.showtextalert("Purchase Order Saved Successfully!", "", "success");
+        toast.current.show({
+                severity: 'success',
+                summary: 'Success',
+                detail: 'Purchase Order Created Successfully.',
+                life: 3000
+            });
         onHideDialog();
-        //window.location.href = '/Account/App/PurchaseOrders';
     };
 
     const openPlaceOrder = () => {
@@ -63,8 +70,10 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
                 Dates: new Date().toLocaleDateString(),
                 VendorId: VendorId || 0,
                 VendorName: vendorName,
-                Item: items.map(({ Id, ItemName, Price, Quantity, Description, BrandName, MeasurementUnit, HSNCode }) => ({
-                    ItemId: Id,
+                PropertyId: propertyId,
+                CreatedBy: 0,
+                Items: items.map(({ ItemId, ItemName, Price, Quantity, Description, BrandName, MeasurementUnit, HSNCode }) => ({
+                    ItemId,
                     ItemName,
                     Price,
                     Quantity,
@@ -130,6 +139,8 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
     }, [items]);
 
     return (
+        <>
+        <Toast ref={toast} />
         <div>
             <div className="d-flex justify-content-between mb-4">
                 <div className="d-flex flex-column me-3 flex-grow-1">
@@ -203,7 +214,7 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
                         <Button
                             label="Confirm & Create All POs"
                             icon="pi pi-save"
-                            onClick={() => handleCreatePO(groupedItemsWithAddresses)}
+                            onClick={() => handleCreatePO(transformedPreviewData)}
                         />
                     </div>
                 }
@@ -218,6 +229,7 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
                 ))}
             </Dialog>
         </div>
+        </>
     );
 };
 
