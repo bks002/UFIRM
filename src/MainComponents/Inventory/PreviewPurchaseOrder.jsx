@@ -32,13 +32,6 @@ const PreviewPurchaseOrder = ({ groupedItems, onRemoveVendor }) => {
         if (rowData.IsCompleted === false) {
             return (
                 <React.Fragment>
-                    {/* <Button
-                        icon={<i className="fa fa-eye" aria-hidden="true"></i>}
-                        className="p-button-rounded rounded p-button-info mr-2"
-                    // onClick={() => {
-                    //     openbox(rowData);
-                    // }}
-                    /> */}
                     <Button
                         icon={<i className="fa fa-exclamation" aria-hidden="true"></i>}
                         className="p-button-rounded rounded p-button-danger"

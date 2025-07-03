@@ -33,7 +33,6 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
                 life: 3000
             });
         onHideDialog();
-        //window.location.href = '/Account/App/PurchaseOrders';
     };
 
     const openPlaceOrder = () => {
@@ -60,7 +59,6 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
             ShippingAddress: shippingAddress,
             BillingAddress: billingAddress,
         }));
-        console.log(items)
         return groupItemsByVendor(itemsWithAddresses);
     }, [items, shippingAddress, billingAddress]);
 
