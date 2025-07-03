@@ -21,9 +21,9 @@ export default class DataGrid extends React.Component {
         }
     }
     componentDidMount() {
-        // 
+        // Initialize DataTable when the component mounts
         $(`#${this.props.Id}`).DataTable({
-            data: null,
+            data: null, // Data will be set in componentDidUpdate
             searching: false,
             "paging": false,
             "info": false,
@@ -32,9 +32,6 @@ export default class DataGrid extends React.Component {
                 "sEmptyTable": " "
             },
             columns: this.props.ColumnCollection,
-            // "columns": [{
-            //     sTitle: "Id"
-            // }]
         });
         this.ApiProviderr = new ApiProvider();
     }
@@ -46,8 +43,7 @@ export default class DataGrid extends React.Component {
     ResetSelectionIds() {
         returnSelectValues = [];
     }
-    // Grid Event Method
-
+    // Grid Event Method wrappers - these simply pass the Id to the parent component
     onGridEdit(fId) {
         this.props.onEditMethod(fId);
     }
@@ -55,31 +51,48 @@ export default class DataGrid extends React.Component {
         this.props.onGridApprove(fId);
     }
     onGridDelete(fId) {
-        // alert('Delete' + id);
         this.props.onGridDeleteMethod(fId);
     }
     onGridBlock(fId) {
         this.props.onGridBlockMethod(fId);
     }
     onGridView(fId) {
-        //this.props.onEditMethod(fId);
         this.props.onGridViewMethod(fId);
     }
     onGridDownload(fId) {
         this.props.onGridDownloadMethod(fId);
     }
+
     componentDidUpdate() {
-        let _this = this;
-        var dr = this.props.ColumnCollection;
-        let object = this;
-        $('.tbl-loading').removeClass('hide');
-        let GridarrayMain = [];
-        let Gridarray = [];
+        let _this = this; // Capture 'this' for use inside jQuery event handlers
+        var dr = this.props.ColumnCollection; // Column definitions
+        let object = this; // Reference to the DataGrid component instance for event handlers
+
+        $('.tbl-loading').removeClass('hide'); // Show loading indicator
+
+        let GridarrayMain = []; // Array to hold transformed data for DataTables
+        let Gridarray = [];     // Temporary array for each row
+
+        // --- Start: Capture current page before destroying the table ---
+        let currentPage = 0;
+        const existingTable = $(`#${this.props.Id}`).DataTable();
+
+        // Check if the table exists and pagination is enabled before getting the page
+        if (existingTable.page && this.props.DefaultPagination) {
+            currentPage = existingTable.page();
+        }
+        // --- End: Capture current page ---
+
         if (this.props.GridData != null) {
             this.props.GridData.map((val, idx) => {
+                // Populate Gridarray with data values based on ColumnCollection
                 this.props.ColumnCollection.map((cval, cidx) => {
                     Gridarray.splice(cidx, 0, (val[cval.titleValue]));
                 });
+
+                // --- Start: Custom column rendering logic ---
+
+                // Status Color Column
                 const StatusColorColumn = gridBL.GetStatusColorColumn(this.props.ColumnCollection);
                 let statusColorColIndex = null;
                 let statusValue = null;
@@ -87,11 +100,34 @@ export default class DataGrid extends React.Component {
                     statusColorColIndex = StatusColorColumn[0].Index;
                     statusValue = StatusColorColumn[0].Value;
                 }
+                if (statusColorColIndex !== null) {
+                    // Existing logic for status color/text rendering
+                    Gridarray[statusColorColIndex] = `<span>${val[statusValue]}</span>`;
+                    if (StatusColorColumn[0].Value === 'color') {
+                        Gridarray[statusColorColIndex] = `<span style="background-color:${val[statusValue]}">${val[statusValue]}</span>`;
+                    }
+                    if (val[statusValue] === "Vacant") {
+                        Gridarray[statusColorColIndex] = `<span class='setStatusbox btn-success'>${val[statusValue]}</span>`;
+                    }
+                    if (val[statusValue] === "Tenant Residing") {
+                        Gridarray[statusColorColIndex] = `<span class='setStatusbox btn-warning'>${val[statusValue]}</span>`;
+                    }
+                    if (val[statusValue] === "Owner Residing") {
+                        Gridarray[statusColorColIndex] = `<span class='setStatusbox btn-danger'>${val[statusValue]}</span>`;
+                    }
+                }
+
+                // Generic Status Column (for class mapping)
                 const StatusColumn = gridBL.GetStatusColumn(this.props.ColumnCollection);
                 let statusColIndex = null;
                 if (StatusColumn != null) {
                     statusColIndex = StatusColumn[0].Index;
                 }
+                if (statusColIndex != null) {
+                    Gridarray[statusColIndex] = `<span class=${Gridarray[statusColIndex].toLowerCase()}>${Gridarray[statusColIndex]}</span>`;
+                }
+
+                // Select Checkbox
                 const SelectButton = gridBL.GetSelectOption(this.props.ColumnCollection);
                 let selectIndex = null;
                 let statusindex = null;
@@ -99,12 +135,18 @@ export default class DataGrid extends React.Component {
                     selectIndex = SelectButton[0].Index;
                     statusindex = SelectButton[0].StatusColumnIndex;
                 }
-                const actionButtons = gridBL.GetActionButton(this.props.ColumnCollection);
-                let actionButtonIndex = null;
-                if (actionButtons != null) {
-                    actionButtonIndex = actionButtons[0].Index;
+                if (selectIndex != null && statusindex == null) {
+                    Gridarray[selectIndex] = `<input type="checkbox" value="${val.Id}">`; // Use actual ID
                 }
-                //****Start******//ravindra 08-feb-2021
+                if (selectIndex !== null && statusindex !== null) {
+                    if (Gridarray[statusindex] === "Expired" || Gridarray[statusindex] === "Deactivated")
+                        Gridarray[selectIndex] = `<input type="checkbox" disabled >`;
+                    else {
+                        Gridarray[selectIndex] = `<input type="checkbox" value="${val.Id}">`; // Use actual ID
+                    }
+                }
+
+                // Image Column
                 const SelectImage = gridBL.GetImageIndexForUrl(this.props.ColumnCollection);
                 let iselectIndex = null;
                 let imagePath = null;
@@ -116,13 +158,15 @@ export default class DataGrid extends React.Component {
                     Gridarray[iselectIndex] = "<img src=" + val[imagePath] + " class='rounded-circle' alt=" + val.name + " width='35' height='35'/>";
                 }
 
+                // Toggle Switch (e.g., for password visibility)
                 const ToggleSwitch = gridBL.GetToggleSwitch(this.props.ColumnCollection);
                 if (ToggleSwitch != null) {
                     ToggleSwitch.forEach(element => {
-                        Gridarray[element.Index] = "<input style='width: " + element.Width + "%;border: 0px;background-color: transparent;box-shadow: none;' type='password' value=" + val[element.ToggleSwitch] + " id='" + (element.ToggleSwitch) + "Protection" + Gridarray[0] + "' readonly><span class='showHideButton' value='" + (element.ToggleSwitch) + "'><i class='fa fa-eye' aria-hidden='true'></i></span>";
+                        Gridarray[element.Index] = `<input style='width: ${element.Width}%;border: 0px;background-color: transparent;box-shadow: none;' type='password' value="${val[element.ToggleSwitch]}" id="${(element.ToggleSwitch)}Protection${val.Id}" readonly><span class='showHideButton' value="${(element.ToggleSwitch)}"><i class='fa fa-eye' aria-hidden='true'></i></span>`;
                     });
                 }
 
+                // IsBlocked Column (status for facility members)
                 const IsBlocked = gridBL.GetIsBlockedColumn(this.props.ColumnCollection);
                 let bselectIndex = null;
                 let isBlocked = null;
@@ -143,151 +187,121 @@ export default class DataGrid extends React.Component {
                         Gridarray[bselectIndex] = "Block";
                     }
                 }
-                //RG Changes because added status col in facilty member (get index)
-                const IsBlockedFacilty = gridBL.GetIsBlockedColumnFaciltyMember(this.props.ColumnCollection);
-                //****END******/
+                const IsBlockedFacilty = gridBL.GetIsBlockedColumnFaciltyMember(this.props.ColumnCollection); // RG Changes
 
+                // Action Buttons
+                const actionButtons = gridBL.GetActionButton(this.props.ColumnCollection);
+                let actionButtonIndex = null;
+                if (actionButtons != null) {
+                    actionButtonIndex = actionButtons[0].Index;
+                }
                 let btnhtml = "";
                 if (actionButtons && actionButtons !== undefined) {
                     actionButtons.map((action, idx) => {
+                        // All buttons will now have data-id attribute for robust ID retrieval
+                        // The value in data-id should be the actual unique ID of the row
+                        const rowId = val.Id; // Assuming 'Id' is the unique identifier in your data object 'val'
+
                         switch (action.Buttons[0]) {
                             case 'Edit&Delete':
-                                //btnhtml += `<a title="Edit" class="fa fa-edit" href="#"></a>`;
-                                btnhtml += '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
-                                btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
+                                btnhtml += `<button class="btn btn-sm btn-info" title="Edit" data-id="${rowId}"><i class="fa fa-pen-alt"></i></button>`;
+                                btnhtml += `<button class="btn btn-sm btn-danger" title="Delete" data-id="${rowId}"><i class="fa fa-trash"></i></button>`;
                                 break;
-                            // Added by: Rakhmaji Ghule 147/0/2021 -> show Edit, Veiw and Delete button in Action Col
                             case 'Edit&View&Delete':
-                                btnhtml += '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
-                                btnhtml += '<button class="btn btn-sm btn-warning" title="View" ><i class="fa fa-eye"></i></button>';
-                                btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
+                                btnhtml += `<button class="btn btn-sm btn-info" title="Edit" data-id="${rowId}"><i class="fa fa-pen-alt"></i></button>`;
+                                btnhtml += `<button class="btn btn-sm btn-warning" title="View" data-id="${rowId}"><i class="fa fa-eye"></i></button>`;
+                                btnhtml += `<button class="btn btn-sm btn-danger" title="Delete" data-id="${rowId}"><i class="fa fa-trash"></i></button>`;
                                 break;
-                            // Added by: Rakhmaji Ghule 26/03/2021 -> show Edit, Approve and Reject button in Action Col
                             case 'Edit&Approve&Reject':
-                                btnhtml += '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
-                                btnhtml += '<button class="btn btn-sm btn-warning" title="Approve" ><i class="fa fa-check"></i></button>';
-                                btnhtml += '<button class="btn btn-sm btn-dark" title="Reject"><i class="fa fa-ban"></i></button>';
+                                btnhtml += `<button class="btn btn-sm btn-info" title="Edit" data-id="${rowId}"><i class="fa fa-pen-alt"></i></button>`;
+                                btnhtml += `<button class="btn btn-sm btn-warning" title="Approve" data-id="${rowId}"><i class="fa fa-check"></i></button>`;
+                                btnhtml += `<button class="btn btn-sm btn-dark" title="Reject" data-id="${rowId}"><i class="fa fa-ban"></i></button>`;
                                 break;
-                            // Added by: Rakhmaji Ghule 26/03/2021 -> show view and Delete button in Action Col
                             case 'View&Delete':
-                                btnhtml += '<button class="btn btn-sm btn-warning" title="View" ><i class="fa fa-eye"></i></button>';
-                                btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
+                                btnhtml += `<button class="btn btn-sm btn-warning" title="View" data-id="${rowId}"><i class="fa fa-eye"></i></button>`;
+                                btnhtml += `<button class="btn btn-sm btn-danger" title="Delete" data-id="${rowId}"><i class="fa fa-trash"></i></button>`;
                                 break;
                             case 'Edit&Delete&Block':
-                                //btnhtml += `<a title="Edit" class="fa fa-edit" href="#"></a>`;
-                                //RG Changes because added status col in facilty member (show block and unblock function)
-                                // if (Gridarray[IsBlockedFacilty] !== 'Old') {
-                                    btnhtml += '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
-                                    btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
-                                    if (Gridarray[IsBlockedFacilty] === 'Blocked') {
-                                        btnhtml += '<button class="btn btn-sm btn-secondary BlockAndUnblock" title="Unblock"><i class="fa fa-circle"></i></button>';
-                                    } else {
-                                        btnhtml += '<button class="btn btn-sm btn-dark BlockAndUnblock" title="Block"><i class="fa fa-ban"></i></button>';
-                                    }
-                                // }
-
+                                btnhtml += `<button class="btn btn-sm btn-info" title="Edit" data-id="${rowId}"><i class="fa fa-pen-alt"></i></button>`;
+                                btnhtml += `<button class="btn btn-sm btn-danger" title="Delete" data-id="${rowId}"><i class="fa fa-trash"></i></button>`;
+                                if (Gridarray[IsBlockedFacilty] === 'Blocked') {
+                                    btnhtml += `<button class="btn btn-sm btn-secondary BlockAndUnblock" title="Unblock" data-id="${rowId}"><i class="fa fa-circle"></i></button>`;
+                                } else {
+                                    btnhtml += `<button class="btn btn-sm btn-dark BlockAndUnblock" title="Block" data-id="${rowId}"><i class="fa fa-ban"></i></button>`;
+                                }
                                 break;
                             case 'Edit':
-                                //btnhtml += `<a title="Edit" class="fa fa-edit" href="#"></a>`;
-                                btnhtml += '<button class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pen-alt"></i></button>';
+                                btnhtml += `<button class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" data-id="${rowId}"><i class="fa fa-pen-alt"></i></button>`;
                                 break;
-                                case 'Edit&Approve':
-                                    //btnhtml += `<a title="Edit" class="fa fa-edit" href="#"></a>`;
-                                    btnhtml += '<button class="btn btn-sm btn-info" title="Edit/Approve" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pen-alt"></i></button>';
-                                    break;
+                            case 'Edit&Approve':
+                                btnhtml += `<button class="btn btn-sm btn-info" title="Edit/Approve" data-toggle="modal" data-target="#ticketCrudModal" data-id="${rowId}"><i class="fa fa-pen-alt"></i></button>`;
+                                break;
                             case 'Delete':
-                                btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
+                                btnhtml += `<button class="btn btn-sm btn-danger" title="Delete" data-id="${rowId}"><i class="fa fa-trash"></i></button>`;
                                 break;
                             case 'View':
-                                btnhtml += '<button class="btn btn-sm btn-warning" title="View" data-toggle="modal" data-target="#ticketViewModal"><i class="fa fa-eye"></i></button>';
+                                btnhtml += `<button class="btn btn-sm btn-warning" title="View" data-toggle="modal" data-target="#ticketViewModal" data-id="${rowId}"><i class="fa fa-eye"></i></button>`;
                                 break;
                             case 'Download':
-                                btnhtml += '<button class="btn btn-sm btn-success" title="Download"><i class="fa fa-download"></i></button>';
+                                btnhtml += `<button class="btn btn-sm btn-success" title="Download" data-id="${rowId}"><i class="fa fa-download"></i></button>`;
                                 break;
                             case 'DownloadNDelete':
-                                btnhtml += '<button class="btn btn-sm btn-success" title="Download"><i class="fa fa-download"></i></button>';
-                                btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
+                                btnhtml += `<button class="btn btn-sm btn-success" title="Download" data-id="${rowId}"><i class="fa fa-download"></i></button>`;
+                                btnhtml += `<button class="btn btn-sm btn-danger" title="Delete" data-id="${rowId}"><i class="fa fa-trash"></i></button>`;
                                 break;
                             case 'Edit&View':
-                                btnhtml += '<button class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pen-alt"></i></button>';
-                                btnhtml += '<button class="btn btn-sm btn-warning" title="View" data-toggle="modal" data-target="#ticketViewModal"><i class="fa fa-eye"></i></button>';
+                                btnhtml += `<button class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" data-id="${rowId}"><i class="fa fa-pen-alt"></i></button>`;
+                                btnhtml += `<button class="btn btn-sm btn-warning" title="View" data-toggle="modal" data-target="#ticketViewModal" data-id="${rowId}"><i class="fa fa-eye"></i></button>`;
                                 break;
                             case 'ALL':
-                                btnhtml += '<button class="btn btn-sm btn-warning" title="View" ><i class="fa fa-eye"></i></button>';
-                                btnhtml += '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
-                                btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
+                                btnhtml += `<button class="btn btn-sm btn-warning" title="View" data-id="${rowId}"><i class="fa fa-eye"></i></button>`;
+                                btnhtml += `<button class="btn btn-sm btn-info" title="Edit" data-id="${rowId}"><i class="fa fa-pen-alt"></i></button>`;
+                                btnhtml += `<button class="btn btn-sm btn-danger" title="Delete" data-id="${rowId}"><i class="fa fa-trash"></i></button>`;
                                 break;
                             case 'Manage':
-                                btnhtml += '<button class="btn btn-sm btn-info" title="Manage" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-tasks"></i></button>';
+                                btnhtml += `<button class="btn btn-sm btn-info" title="Manage" data-toggle="modal" data-target="#ticketCrudModal" data-id="${rowId}"><i class="fa fa-tasks"></i></button>`;
                                 break;
-                                case 'Edit&Manage':
-                                btnhtml += '<button class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pen-alt"></i></button>';
-                                    btnhtml += '<button class="btn btn-sm btn-info" title="Manage" data-toggle="modal" data-target="#ticketCrudModal" style="margin-left:10px"><i class="fa fa-tasks"></i></button>';
-                                    break;
+                            case 'Edit&Manage':
+                                btnhtml += `<button class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" data-id="${rowId}"><i class="fa fa-pen-alt"></i></button>`;
+                                btnhtml += `<button class="btn btn-sm btn-info" title="Manage" data-toggle="modal" data-target="#ticketCrudModal" style="margin-left:10px" data-id="${rowId}"><i class="fa fa-tasks"></i></button>`;
+                                break;
                             default:
                                 break;
                         }
                     });
                 }
-                //Creating Action button in the grid
+                // Assign the generated HTML buttons to the correct column index
                 if (actionButtonIndex != null)
                     Gridarray[actionButtonIndex] = btnhtml;
-                //Creating select option in the grid
-                if (selectIndex != null && statusindex == null) {
-                    Gridarray[selectIndex] = `<input type="checkbox" value="14">`;
-                }
-                if (selectIndex !== null && statusindex !== null) {
-                    if (Gridarray[statusindex] === "Expired" || Gridarray[statusindex] === "Deactivated")
-                        Gridarray[selectIndex] = `<input type="checkbox" disabled >`;
-                    else {
-                        Gridarray[selectIndex] = `<input type="checkbox" value="14">`;
-                    }
-                }
-                //Status column class mapping
-                if (statusColIndex != null) {
-                    Gridarray[statusColIndex] = `<span class=${Gridarray[statusColIndex].toLowerCase()}>${Gridarray[statusColIndex]}</span>`;
-                }
-                if (statusColorColIndex !== null) {
-                    Gridarray[statusColorColIndex] = `<span>${val[statusValue]}</span>`;
-                    // added by sanjay  jan 04 22
-                    if(StatusColorColumn[0].Value==='color'){
-                        Gridarray[statusColorColIndex] = `<span style="background-color:${val[statusValue]}">${val[statusValue]}</span>`;
-                    }
-                    if (val[statusValue] === "Vacant") {
-                        Gridarray[statusColorColIndex] = `<span class='setStatusbox btn-success'>${val[statusValue]}</span>`;
-                    }
-                    if (val[statusValue] === "Tenant Residing") {
-                        Gridarray[statusColorColIndex] = `<span class='setStatusbox btn-warning'>${val[statusValue]}</span>`;
-                    }
-                    if (val[statusValue] === "Owner Residing") {
-                        Gridarray[statusColorColIndex] = `<span class='setStatusbox btn-danger'>${val[statusValue]}</span>`;
-                    }
-                }
 
-                GridarrayMain.splice(idx, 0, Gridarray);
-                 Gridarray = [];
+                // --- End: Custom column rendering logic ---
+
+                GridarrayMain.splice(idx, 0, Gridarray); // Add the processed row to main data array
+                Gridarray = []; // Reset temporary array for next row
             });
         }
-         objcommonjs.ClearTableGrid(this.props.Id);
+
+        // Clear existing table and re-initialize DataTables with new data
+        objcommonjs.ClearTableGrid(this.props.Id);
         let table = $(`#${this.props.Id}`).DataTable({
             data: GridarrayMain,
-            //searching: this.props.IsSarching,
             "paging": this.props.DefaultPagination,
             "info": this.props.DefaultPagination,
             "order": [],
             "lengthChange": false,
             "searching": this.props.IsSarching,
             "ordering": true,
-            //"info": true,
             "autoWidth": false,
-            // "responsive": true,
             "columns": this.props.ColumnCollection
-            // "columns": [{
-            //     sTitle: "Id"
-            // }]
-
         });
-        //Enable hide column property
+
+        // --- Start: Restore current page after re-initialization ---
+        if (this.props.DefaultPagination) {
+            table.page(currentPage).draw('page'); // Set page and redraw
+        }
+        // --- End: Restore current page ---
+
+        // Hide columns based on column definition
         dr.map((item, index) => {
             if (item.visible !== undefined && item.visible) {
                 table.column(index).visible(false);
@@ -295,88 +309,40 @@ export default class DataGrid extends React.Component {
         });
 
         if (this.props.GridData != null) {
-
+            // Unbind previous click handlers to prevent multiple bindings
             $(`#${this.props.Id} tbody`).unbind("click");
-            // EDIT ACTION
-            //$(`#${this.props.Id} tbody`).on('click', '.fa-edit', function () {
-            $(`#${this.props.Id} tbody`).on('click', '.btn-info', function (iid) {
-                let idIndex = gridBL.GetReferenceIdIndex(object.props.ColumnCollection, "Action");
-                //let index = $(this).parent().parent()[0].rowIndex;
-                let index = $(this).parent().parent()[0].rowIndex
-               // default pagintion
-               var currentrow = gridBL.GetCurrentRow(table,index);
-                // var currentpage  = table.page()
-                // var  page=0;
-                // if(currentpage>0){
-                // page=currentpage*10;
 
-                // }
-                // var tbldata = table.data();
-                // var currentrow = tbldata[page+index-1]
-                // end default pagination
-                object.onGridEdit(currentrow[idIndex]);
-                //var data = table.row(index - 1).data();
-                //debugger
-                //object.onGridEdit(data[idIndex]);
+            // EDIT ACTION: Get ID from data-id attribute on the button
+            $(`#${this.props.Id} tbody`).on('click', '.btn-info', function () {
+                const fId = $(this).data('id'); // Get ID directly from data attribute
+                object.onGridEdit(fId);
             });
-            // DOWNLOAD ACTION
-            //$(`#${this.props.Id} tbody`).on('click', '.fa-eye', function () {
+
+            // DOWNLOAD ACTION: Get ID from data-id attribute on the button
             $(`#${this.props.Id} tbody`).on('click', '.btn-success', function () {
-                let idIndex = gridBL.GetReferenceIdIndexForUrl(object.props.ColumnCollection, "Action");
-                //let index = $(this).parent().parent()[0].rowIndex;
-                let index = $(this).parent().parent()[0].rowIndex
-                var data = table.row(index - 1).data();
-
-                object.onGridDownload(data[idIndex]);
+                const fId = $(this).data('id'); // Get ID directly from data attribute
+                object.onGridDownload(fId);
             });
-            // VIEW ACTION
-            //$(`#${this.props.Id} tbody`).on('click', '.fa-eye', function () {
+
+            // VIEW ACTION: Get ID from data-id attribute on the button
             $(`#${this.props.Id} tbody`).on('click', '.btn-warning', function () {
-
-                let idIndex = gridBL.GetReferenceIdIndex(object.props.ColumnCollection, "Action");
-                //let index = $(this).parent().parent()[0].rowIndex;
-                let index = $(this).parent().parent()[0].rowIndex
-                var data = table.row(index - 1).data();
-                object.onGridView(data[idIndex]);
+                const fId = $(this).data('id'); // Get ID directly from data attribute
+                object.onGridView(fId);
             });
-            //DELETE ACTION
+
+            // DELETE ACTION: Get ID from data-id attribute on the button
             $(`#${this.props.Id} tbody`).on('click', '.btn-danger', function () {
-
-                let idIndex = gridBL.GetReferenceIdIndex(object.props.ColumnCollection, "Action");
-                //let index = $(this).parent().parent()[0].rowIndex;
-                let index = $(this).parent().parent()[0].rowIndex
-                var currentrow = gridBL.GetCurrentRow(table,index);
-                // var currentpage  = table.page()
-                // var  page=0;
-                // if(currentpage>0){
-                // page=currentpage*10;
-
-                // }
-                // var tbldata = table.data();
-                // var currentrow = tbldata[page+index-1]
-                // end default pagination
-                object.onGridDelete(currentrow[idIndex]);
-                // var data = table.row(index - 1).data();
-                // debugger
-                // object.onGridDelete(data[idIndex]);
+                const fId = $(this).data('id'); 
+                object.onGridDelete(fId);
             });
 
-            //Block ACTION
             $(`#${this.props.Id} tbody`).on('click', '.BlockAndUnblock', function () {
-
-                let idIndex = gridBL.GetReferenceIdIndex(object.props.ColumnCollection, "Action");
-                //let index = $(this).parent().parent()[0].rowIndex;
-                let index = $(this).parent().parent()[0].rowIndex
-                var data = table.row(index - 1).data();
-                object.onGridBlock(data[idIndex]);
+                const fId = $(this).data('id'); 
+                object.onGridBlock(fId);
             });
 
             $(`#${this.props.Id} tbody`).on('click', 'input[type=checkbox]', function () {
-                let idIndex = gridBL.GetReferenceIdIndex(object.props.ColumnCollection, "Select");
-                //let index = $(this).parent().parent()[0].rowIndex;
-                let index = $(this).parent().parent().parent()[0].rowIndex
-                var data = table.row(index - 1).data();
-                let returnVale = data[idIndex];
+                let returnVale = $(this).val();
 
                 if (this.checked) {
                     if (returnSelectValues.length > 0) {
@@ -387,7 +353,6 @@ export default class DataGrid extends React.Component {
                     }
                 }
                 else {
-
                     let deleteIndex = undefined;
                     let searchjson = returnSelectValues.find((item, idx) => {
                         deleteIndex = idx;
@@ -397,24 +362,18 @@ export default class DataGrid extends React.Component {
                         returnSelectValues.splice(deleteIndex, 1);
                     }
                 }
-
-                // let idIndex = gridBL.GetReferenceIdIndex(object.props.ColumnCollection);
-                // let index = $(this).parent().parent()[0].rowIndex;
-                // var data = table.row(index - 1).data();
-                // object.onGridEdit(data[idIndex]);
-                //alert(`You clicked on ' ${data[0]} + '\'s row and Account Code : ${data[1]}`);
             });
 
             $(`#${this.props.Id} tbody`).on('click', '.showHideButton', function () {
-                let index = $(this).parent().parent()[0].rowIndex;
-                var data = table.row(index - 1).data();
-                let val = $(this).attr("value");
-                var x = document.getElementById(val + "Protection" + data[0]);
+                const rowData = table.row($(this).closest('tr')).data();
+                const rowId = rowData[gridBL.GetReferenceIdIndex(object.props.ColumnCollection, "Action")]; 
 
-                // RG 2021/07/29 check x is null or not
+                let val = $(this).attr("value");
+                var x = document.getElementById(val + "Protection" + rowId); 
+
                 if (x) {
                     if (x.type === "password") {
-                        _this.viewInformation(val + " Showing", data[0], x);
+                        _this.viewInformation(val + " Showing", rowId, x);
                     } else {
                         x.type = "password";
                         $(this).children('i').removeClass("fa-eye-slash");
@@ -422,15 +381,13 @@ export default class DataGrid extends React.Component {
                 }
             });
         }
-        $('.tbl-loading').addClass('hide');
+        $('.tbl-loading').addClass('hide'); 
     }
 
     viewInformation = (action, Id, x) => {
-
         var textarea = document.createElement('textarea');
         textarea.rows = 6;
         textarea.className = 'swal-content__textarea';
-        // Set swal return value every time an onkeyup event is fired in this textarea
         textarea.onkeyup = function () {
             swal.setActionValue({
                 confirm: this.value
@@ -465,7 +422,6 @@ export default class DataGrid extends React.Component {
                             return resp.json().then(rData => {
                                 if (rData) {
                                     x.type = "text";
-                                    $(_this).children('i').addClass("fa-eye-slash");
                                     swal.close();
                                 }
                             });
@@ -474,19 +430,9 @@ export default class DataGrid extends React.Component {
             }
             if (value === true || value === '') {
                 swal("", "You need to write something!", "info");
-                //swal.close();
             }
         });
     }
-
-    // CreateGridButtons(data, type, row, meta) {
-    //     var parameters = meta.settings.oInit.columnDefs[meta.col].parameters;
-    //     var target_url = parameters.url;
-    //     //return '<a onclick="'+this.myEditor+'" href="'+target_url+data+'">'+data+'</a>';
-    //     //return '<a  href="#">'+data+'</a>';
-    //     return `<button  class="edit"  >Edit</button>`;
-    // };
-
 
     render() {
         return (
@@ -503,7 +449,6 @@ export default class DataGrid extends React.Component {
                         totalRows={this.props.totalrows}
                         totalPages={this.props.totalpages}
                         pageSize={this.props.pageSize}
-
                     />
                 }
             </div>
@@ -514,46 +459,4 @@ DataGrid.defaultProps = {
     IsSarching: false,
     IsPagination: false,
     DefaultPagination: false,
-
 }
-
-
-/*
-Data Grid Properties
-   ActionButton :select,edit,delete,update
-  scrollY":        "200px",
-  "scrollCollapse": true,
-  "paging":false  //This uses the paging option to disable paging for the table.
-  searching: false, // showsearch
-    ordering:  false // order of columns
-     select: true // Enable row select
-     Id:
-     Columns:
-     Data:
-    Column.visible // to hide and show the columns
-     "info":     false // show info about the pagination
-
-
-
-     Events
-     ------------------------
-     table.on( 'draw', function () {
-    alert( 'Table redrawn' );
-    -- search event
-    table.on( 'search.dt', function () {
-    $('#filterInfo').html( 'Currently applied global search: '+table.search() );
-    ----------------
-    order event
-    ------------------------------
-    $('#example').on( 'order.dt', function () {
-    // This will show: "Ordering on column 1 (asc)", for example
-    var order = table.order();
-    $('#orderInfo').html( 'Ordering on column '+order[0][0]+' ('+order[0][1]+')' );
-} );
-} );
-
-
-
-/// https://datatables.net/reference/api/
-
-*/
