@@ -24,7 +24,6 @@ const $ = window.$;
  class TaskList extends Component {
   constructor(props) {
     super(props);
-    console.log(this.props);
     this.state = {
       columns: [
         {
@@ -87,12 +86,6 @@ const $ = window.$;
           Header: "Remarks",
           accessor:"Remarks"
         },
-        // {
-        //   Header: "Assigned To",
-        // },
-        // {
-        //   Header: "Assigned By",
-        // },
         {
           Header: "Action",
           Cell: (data) => {
