@@ -273,7 +273,6 @@ export default class EditTask extends Component {
     // this.getAssets(model);
   }
 
-
   handleSave = (e) => {
     e.currentTarget.disabled = true;
     var type = "C";
