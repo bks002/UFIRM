@@ -94,12 +94,12 @@ const ItemMaster = (props) => {
 
   const onGridApprove = async (itemApprovedId) => {
     try {
-      const approvedItem = gridApproved.find(items => items.Id === itemApprovedId);
+      const approvedItem = gridApproved.find(item => item.Id === itemApprovedId);
       if (approvedItem) {
         const updatedItem = { ...approvedItem, IsApproved: true };
         await updateItem(updatedItem.Id, updatedItem);
         appCommon.showtextalert("Item Approved Successfully!", "", "success");
-        setgridApproved(prevData => prevData.filter(items => items.Id !== itemApprovedId));
+        setgridApproved(prevData => prevData.filter(item => item.Id !== itemApprovedId));
         await getItems(propertyId);
       }
     } catch (error) {
@@ -217,7 +217,7 @@ const ItemMaster = (props) => {
     <>
       <div className="row">
         <div className="col-12">
-          {gridData.length > 0 && pageMode === "Home" && (
+          {gridApproved.length > 0 && pageMode === "Home" && (
             <ApprovalPage
               title={"Pending For Approval"}
               gridHeader={gridHeader}
