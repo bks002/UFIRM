@@ -73,7 +73,7 @@ import FrequencyMasterPage from "../pages/FrequencyMasterPage";
 import ItemMasterPage from "../MainComponents/Inventory/itemPage";
 import PurchaseOrderPage from "../MainComponents/Inventory/PurchaseOrderMaster";
 import StockPage from "../MainComponents/Inventory/StockMaster";
-import AttendanceRecords from "../MainComponents/Attendance/attendance.jsx";
+import AttendanceMaster from "../MainComponents/Attendance/attendance.jsx";
 import LeavesMaster from "../MainComponents/Attendance/LeavesMaster.jsx";
 
 var currentpropertyid;
@@ -245,7 +245,7 @@ class MainNav extends React.Component {
               ></img>
               <span className="brand-text">
                 <img
-                  src="https://account.ufirm.in/assets/cdn/public/img/LogoShort.png"
+                  src="/Assets/firmity.png"
                   alt="UFIRM Logo"
                 ></img>
               </span>
@@ -623,6 +623,12 @@ class MainNav extends React.Component {
                             </Link>
                           </li> : null}
                           <li className="nav-item">
+                          <Link to="/Account/App/Attendance" className="nav-link">
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p >Attendance</p>
+                          </Link>
+                        </li>
+                          <li className="nav-item">
                           <Link
                             to="/Account/App/leaves"
                             className="nav-link"
@@ -825,12 +831,6 @@ class MainNav extends React.Component {
                           <Link to="/Account/App/Employee" className="nav-link">
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Employee Master</p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link to="/Account/App/Attendance" className="nav-link">
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p >Attendance</p>
                           </Link>
                         </li>
                         <li className="nav-item">
@@ -1111,7 +1111,7 @@ class MainNav extends React.Component {
               <EmployeePage />
             </Route>
             <Route path="/Account/App/Attendance">
-              <AttendanceRecords />
+              <AttendanceMaster />
             </Route>
             <Route path="/Account/App/Guard">
               <GuardMasterPage />
