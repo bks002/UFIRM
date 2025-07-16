@@ -17,6 +17,7 @@ const StockMaster = () => {
         StockId: 0,
         ItemId: 0,
         ItemDescription: "N/A",
+        BrandName: "N/A",
         CategoryId: 0,
         PropertyId: propertyId,
     };
@@ -64,8 +65,8 @@ const StockMaster = () => {
 
     // Filter items by selected category
     const displayedData = selectedCategory
-      ? filteredGridData.filter(item => item.CategoryId === selectedCategory)
-      : filteredGridData;
+        ? filteredGridData.filter(item => item.CategoryId === selectedCategory)
+        : filteredGridData;
 
     if (!propertyId || propertyId === 0) {
         return null;
@@ -84,36 +85,63 @@ const StockMaster = () => {
                 </div>
             </div>
             {/* Category Scroll Bar */}
-            <div className="category-scrollbar mb-3 ml-3" style={{ display: 'flex', overflowX: 'auto', paddingBottom: 8, gap: 12, scrollBehavior: 'smooth' }}>
-                <Button
-                    label="All"
-                    className={`p-button-rounded mr-2 category-btn ${selectedCategory === null ? 'category-btn-active' : ''}`}
-                    onClick={() => setSelectedCategory(null)}
-                    style={{ minWidth: 120, marginRight: 8, whiteSpace: 'nowrap', boxShadow: selectedCategory === null ? '0 2px 8px rgba(0,0,0,0.12)' : 'none', fontWeight: selectedCategory === null ? 'bold' : 'normal', transition: 'box-shadow 0.2s, font-weight 0.2s' }}
-                />
-                {categories && categories.map((cat) => (
+            <div
+                className="scroll-container"
+                style={{
+                    overflowX: 'auto',
+                    whiteSpace: 'nowrap',
+                    padding: '0 16px',
+                    msOverflowStyle: 'none', // IE/Edge
+                    scrollbarWidth: 'none' // Firefox
+                }}
+            >
+                <div
+                    className="scroll-row"
+                    style={{
+                        display: 'inline-flex',
+                        gap: 5,
+                    }}
+                >
                     <Button
-                        key={cat.Id}
-                        label={cat.Name}
-                        className={`p-button-rounded mr-2 category-btn ${selectedCategory === cat.Id ? 'category-btn-active' : ''}`}
-                        onClick={() => setSelectedCategory(cat.Id)}
-                        style={{ minWidth: 120, marginRight: 8, whiteSpace: 'nowrap', boxShadow: selectedCategory === cat.Id ? '0 2px 8px rgba(0,0,0,0.18)' : 'none', fontWeight: selectedCategory === cat.Id ? 'bold' : 'normal', transition: 'box-shadow 0.2s, font-weight 0.2s' }}
+                        label="All"
+                        className={`p-button-rounded category-btn ${selectedCategory === null ? 'category-btn-active' : ''}`}
+                        onClick={() => setSelectedCategory(null)}
+                        style={{
+                            minWidth: 120,
+                            whiteSpace: 'nowrap',
+                            boxShadow: selectedCategory === null ? '0 2px 8px rgba(0,0,0,0.12)' : 'none',
+                            fontWeight: selectedCategory === null ? 'bold' : 'normal',
+                            transition: 'box-shadow 0.2s, font-weight 0.2s',
+                        }}
                     />
-                ))}
+                    {categories.map((cat) => (
+                        <Button
+                            key={cat.Id}
+                            label={cat.Name}
+                            className={`p-button-rounded category-btn ${selectedCategory === cat.Id ? 'category-btn-active' : ''}`}
+                            onClick={() => setSelectedCategory(cat.Id)}
+                            style={{
+                                minWidth: 120,
+                                whiteSpace: 'nowrap',
+                                boxShadow: selectedCategory === cat.Id ? '0 2px 8px rgba(0,0,0,0.18)' : 'none',
+                                fontWeight: selectedCategory === cat.Id ? 'bold' : 'normal',
+                                transition: 'box-shadow 0.2s, font-weight 0.2s',
+                            }}
+                        />
+                    ))}
+                </div>
             </div>
             {/* Item List */}
-            <div className="item-list" style={{ marginLeft: 32 }}>
+            <div className="item-list" style={{ marginLeft: 32, marginTop: 10 }}>
                 {displayedData && displayedData.length > 0 && displayedData.map((item) => {
                     const received = item.CurrentQty || 0;
-                    const minStock = item.MinStockLevel || 1; 
+                    const minStock = item.MinStockLevel || 1;
                     const maxQty = 10 * minStock;
-                    const barWidth = 300;
+                    const barWidth = 900;
                     const receivedPercent = Math.min(received / maxQty, 1);
-                    const receivedWidth = barWidth * receivedPercent;
-                    const remainingWidth = barWidth - receivedWidth;
                     return (
-                        <div key={item.ItemId} style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 18 }}>
-                            <div style={{ fontWeight: 'bold', fontSize: 17, minWidth: 120 }}>{item.ItemName}</div>
+                        <div key={item.ItemId} style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 20 }}>
+                            <div style={{ fontWeight: 'bold', fontSize: 17, minWidth: 120, textAlign: 'right' }}>{item.ItemName} :</div>
                             <div
                                 style={{
                                     display: 'flex',
@@ -121,23 +149,48 @@ const StockMaster = () => {
                                     height: 32,
                                     width: barWidth,
                                     borderRadius: 8,
-                                    overflow: 'visible', // <-- changed from 'hidden'
-                                    boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
                                     background: '#eee',
-                                    position: 'relative'
+                                    position: 'relative',
+                                    overflow: 'hidden'
                                 }}
                             >
                                 <div
-                                    className="bar-received"
-                                    style={{ width: receivedWidth, background: '#43a047', height: '100%', pointerEvents: 'auto' }}
-                                    data-tooltip={`Received: ${received}`}
+                                    style={{
+                                        width: `${receivedPercent * 100}%`,
+                                        background: received<minStock ? '#FF0000': '#43a047',
+                                        height: '100%',
+                                    }}
                                 ></div>
+                                {received < maxQty && (
+                                    <div
+                                        style={{
+                                            width: `${(1 - receivedPercent) * 100}%`,
+                                            background: '#bdbdbd',
+                                            height: '100%',
+                                        }}
+                                    ></div>
+                                )}
                                 <div
-                                    className="bar-remaining"
-                                    style={{ width: remainingWidth, background: '#bdbdbd', left: receivedWidth, height: '100%', pointerEvents: 'auto' }}
-                                    data-tooltip={`Remaining: ${Math.max(maxQty - received, 0)}`}
-                                ></div>
-                                <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', color: receivedWidth > barWidth / 2 ? '#fff' : '#333', fontWeight: 500, fontSize: 14, zIndex: 3, whiteSpace: 'nowrap' }}>{item.ItemDescription}</span>
+                                    style={{
+                                        position: 'absolute',
+                                        left: 0,
+                                        top: 0,
+                                        width: '100%',
+                                        height: '100%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        paddingLeft: 8,
+                                        paddingRight: 8,
+                                        color: receivedPercent > 0.4 ? '#fff' : '#333',
+                                        fontWeight: 500,
+                                        fontSize: 14,
+                                        zIndex: 2,
+                                    }}
+                                >
+                                    <span>{item.ItemDescription} | {item.BrandName}</span>
+                                    <span>Quantity: {received}</span>
+                                </div>
                             </div>
                         </div>
                     );
