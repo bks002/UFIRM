@@ -92,21 +92,21 @@ class PropertyTower extends React.Component {
     }
     getModel = (type) => {
         var mode = [{
-            "propertyDetailsId": this.state.PropertyDetailsId,
-            "propertyId": parseInt(this.props.PropertyId),
-            "propertyTowerId": this.state.PropertyTowerId,
-            "floor": this.state.Floor,
-            "flat": this.state.FlatName,
-            "contactNumber": this.state.ContactNumber,
-            "cmdType": "" + type + "",
-            "propertyDetailTypeId": this.state.PropertyDetailTypeId,
-            "totalArea": parseFloat(this.state.TotalArea),
-            "builtupArea": parseFloat(this.state.BuitupArea),
-            "carpetArea": parseFloat(this.state.CarpetArea),
-            "superBuilUpArea": parseFloat(this.state.SuperBuilupArea),
-            "measurementUnitsId": this.state.MeasureunitId,
-            "uniteConfiguration": this.state.Configuration,
-            "userId":this.state.userId,
+            "PropertyDetailsId": this.state.PropertyDetailsId,
+            "PropertyId": parseInt(this.props.PropertyId),
+            "PropertyTowerId": this.state.PropertyTowerId,
+            "Floor": this.state.Floor,
+            "Flat": this.state.FlatName,
+            "ContactNumber": this.state.ContactNumber,
+            "CmdType": "" + type + "",
+            "PropertyDetailTypeId": this.state.PropertyDetailTypeId,
+            "TotalArea": parseFloat(this.state.TotalArea),
+            "BuiltupArea": parseFloat(this.state.BuitupArea),
+            "CarpetArea": parseFloat(this.state.CarpetArea),
+            "SuperBuilUpArea": parseFloat(this.state.SuperBuilupArea),
+            "MeasurementUnitsId": this.state.MeasureunitId,
+            "UniteConfiguration": this.state.Configuration,
+            "UserId": this.state.userId,
         }]
         return mode;
     }
@@ -131,7 +131,9 @@ class PropertyTower extends React.Component {
                 if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
                         console.log(rData)
-                        this.setState({ GridData: rData });
+                        this.setState({ GridData: rData }, () => {
+                            console.log("GridData loaded:", this.state.GridData);
+                        });
                     });
                 }
             });
@@ -176,23 +178,29 @@ class PropertyTower extends React.Component {
         this.setState({ PageMode: 'Edit' });
         await CreateValidator();
 
+        console.log("ongridedit called with Id:", Id);
         var rowData = this.findItem(Id)
-        // console.log(rowData);
+        console.log("rowData found:", rowData);
 
-        await this.loadPropertyTowers(rowData.propertyId);
-        this.onTowerChanges(rowData.propertyTowerId);
+        if (!rowData) {
+            alert("No row found for id: " + Id);
+            return;
+        }
+
+        await this.loadPropertyTowers(rowData.PropertyId);
+        this.onTowerChanges(rowData.PropertyTowerId);
         this.setState({
-            PropertyTowerId: rowData.propertyTowerId, PropertyDetailsId: rowData.propertyDetailsId, PropertyId: rowData.propertyId
-            , Floor: rowData.floor, FlatName: rowData.flat,
-            ContactNumber: rowData.contactNumber, SuperBuilupArea: rowData.superBuilUpArea
-            , TotalArea: rowData.totalArea, BuitupArea: rowData.builtupArea, CarpetArea: rowData.carpetArea, Configuration: rowData.uniteConfiguration
-            , MeasureunitId: parseInt(rowData.measurementUnitsId), PropertyDetailTypeId: parseInt(rowData.propertyDetailTypeId)
+            PropertyTowerId: rowData.PropertyTowerId, PropertyDetailsId: rowData.PropertyDetailsId, PropertyId: rowData.PropertyId
+            , Floor: rowData.Floor, FlatName: rowData.Flat,
+            ContactNumber: rowData.ContactNumber, SuperBuilupArea: rowData.SuperBuilUpArea
+            , TotalArea: rowData.TotalArea, BuitupArea: rowData.BuiltupArea, CarpetArea: rowData.CarpetArea, Configuration: rowData.UniteConfiguration
+            , MeasureunitId: parseInt(rowData.MeasurementUnitsId), PropertyDetailTypeId: parseInt(rowData.PropertyDetailTypeId)
         }, () => {
-            $('#ddlPropertyList').val(rowData.propertyId);
-            $('#ddlTowerList').val(rowData.propertyTowerId);
-            $('#ddlFloorsList').val(rowData.floor);
-            $('#ddlPropertyDetailType').val(rowData.propertyDetailTypeId);
-            $('#ddlMeasureunit').val(rowData.measurementUnitsId);
+            $('#ddlPropertyList').val(rowData.PropertyId);
+            $('#ddlTowerList').val(rowData.PropertyTowerId);
+            $('#ddlFloorsList').val(rowData.Floor);
+            $('#ddlPropertyDetailType').val(rowData.PropertyDetailTypeId);
+            $('#ddlMeasureunit').val(rowData.MeasurementUnitsId);
         });
 
     }
@@ -204,11 +212,8 @@ class PropertyTower extends React.Component {
     }
 
     findItem(id) {
-        return this.state.GridData.find((item) => {
-            if (item.propertyDetailsId == id) {
-                return item;
-            }
-        });
+        console.log("findItem called with id:", id);
+        return this.state.GridData.find((item) => String(item.PropertyDetailsId) === String(id));
     }
 
     updatetextmodel = (ctrl, val) => {
