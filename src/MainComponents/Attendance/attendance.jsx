@@ -84,6 +84,48 @@ export default function AttendanceMaster() {
         </div>
     );
 
+    // Export to CSV function for the whole month (summary per employee)
+    const exportMonthToCSV = () => {
+        // Get all records for the current month
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const monthAttendance = attendanceData.filter(record => {
+            const recordDate = new Date(record.PunchDate);
+            return recordDate.getFullYear() === year && recordDate.getMonth() === month;
+        });
+        if (!monthAttendance || monthAttendance.length === 0) return;
+
+        // Group by EmployeeName and count Present/Absent
+        const summary = {};
+        monthAttendance.forEach(record => {
+            const name = record.EmployeeName;
+            if (!summary[name]) {
+                summary[name] = { Present: 0, Absent: 0 };
+            }
+            if (record.Status === 'Present') summary[name].Present += 1;
+            if (record.Status === 'Absent') summary[name].Absent += 1;
+        });
+
+        // Prepare CSV rows
+        const header = ["EmployeeName", "Present", "Absent", "TotalWorkingDays"];
+        const rows = Object.entries(summary).map(([name, counts]) =>
+            [name, counts.Present, counts.Absent, counts.Present + counts.Absent]
+        );
+        const csv = [
+            header.join(','),
+            ...rows.map(row => row.join(','))
+        ].join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `AttendanceSummary_${year}-${String(month+1).padStart(2,'0')}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    };
+
     return (
         <div className="content-wrapper " style={{ minHeight: '100vh' }}>
 
@@ -102,6 +144,17 @@ export default function AttendanceMaster() {
                             ))}
                         </select>
                         <span style={{ fontSize: '1.3rem', fontWeight: 500 }}>{currentDate.getFullYear()}</span>
+                        <button
+                            className="btn btn-success btn-sm ms-4"
+                            style={{ marginLeft: 25 }}
+                            onClick={exportMonthToCSV}
+                            disabled={attendanceData.filter(record => {
+                                const recordDate = new Date(record.PunchDate);
+                                return recordDate.getFullYear() === currentDate.getFullYear() && recordDate.getMonth() === currentDate.getMonth();
+                            }).length === 0}
+                        >
+                            Export to CSV
+                        </button>
                     </div>
                 </div>
 

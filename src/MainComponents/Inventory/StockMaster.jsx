@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Button } from 'primereact/button';
 import { Toast } from 'primereact/toast';
-import { getCategories } from '../../Services/InventoryService';
+import { getCategories, getStock } from '../../Services/InventoryService';
 import { useSelector } from "react-redux";
-import { getStock } from '../../Services/InventoryService';
 
 const StockMaster = () => {
     const emptyallGridData = {
@@ -91,8 +90,8 @@ const StockMaster = () => {
                     overflowX: 'auto',
                     whiteSpace: 'nowrap',
                     padding: '0 16px',
-                    msOverflowStyle: 'none', // IE/Edge
-                    scrollbarWidth: 'none' // Firefox
+                    msOverflowStyle: 'none', 
+                    scrollbarWidth: 'none'
                 }}
             >
                 <div
