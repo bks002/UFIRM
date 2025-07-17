@@ -59,7 +59,7 @@ class ServiceStaffPendingApproval extends Component {
     componentDidMount() {
         let dummyData = [
             {
-                id: 1, gender: 'male', profileImageUrl: 'https://ufirm.in/assets/cdn/public/profileimg/default.jpg',
+                id: 1, gender: 'male', profileImageUrl: 'https://account.ufirm.in/assets/cdn/public/profileimg/default.jpg',
                 name: 'Rakhmaji Ghule', phone: '1234567890', type: 'staff', createdOn: '02/07/2021', status: 'Pending'
             }
         ]

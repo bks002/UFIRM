@@ -69,6 +69,10 @@ export default class DataGrid extends React.Component {
         this.props.onGridDownloadMethod(fId);
     }
     componentDidUpdate() {
+        // Destroy existing DataTable instance before re-initializing
+        if ($.fn.DataTable.isDataTable(`#${this.props.Id}`)) {
+            $(`#${this.props.Id}`).DataTable().destroy();
+        }
         let _this = this;
         var dr = this.props.ColumnCollection;
         let object = this;
@@ -332,11 +336,10 @@ export default class DataGrid extends React.Component {
             // VIEW ACTION
             //$(`#${this.props.Id} tbody`).on('click', '.fa-eye', function () {
             $(`#${this.props.Id} tbody`).on('click', '.btn-warning', function () {
-
                 let idIndex = gridBL.GetReferenceIdIndex(object.props.ColumnCollection, "Action");
-                //let index = $(this).parent().parent()[0].rowIndex;
-                let index = $(this).parent().parent()[0].rowIndex
-                var data = table.row(index - 1).data();
+                // Use DataTables API to get the row data for the clicked button
+                var row = $(this).closest('tr');
+                var data = $(`#${object.props.Id}`).DataTable().row(row).data();
                 object.onGridView(data[idIndex]);
             });
             //DELETE ACTION

@@ -310,7 +310,7 @@ const Vendor = (props) => {
     <>
       <div className="row">
                 <div className="col-12">
-                    {gridData.length > 0 && pageMode === "Home" && (
+                    {GridApproval.length > 0 && pageMode === "Home" && (
                         <ApprovalPage
                             title={"Pending For Approval"}
                             gridHeader={gridHeader}

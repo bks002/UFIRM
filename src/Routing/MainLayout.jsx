@@ -60,7 +60,7 @@ class MainLayout extends React.Component {
         super(props);
         this.state = {
             UserName: 'Test User',
-            UserProfileImg: 'https://ufirm.in/assets/cdn/public/profileimg/default.jpg',
+            UserProfileImg: 'https://account.ufirm.in/assets/cdn/public/profileimg/default.jpg',
             PropertyData: [],
             userRoles: null
         }
@@ -194,9 +194,9 @@ class MainLayout extends React.Component {
 
                     <aside className="main-sidebar elevation-4 sidebar-light-primary">
                         <Link to="/" className="brand-link">
-                            <img src="https://ufirm.in/assets/cdn/public/img/Ufirm-fabicon.png" alt="UFIRM Logo" className="brand-image"></img>
+                            <img src="https://account.ufirm.in/assets/cdn/public/img/Ufirm-fabicon.png" alt="UFIRM Logo" className="brand-image"></img>
                             <span className="brand-text">
-                                <img src="https://ufirm.in/assets/cdn/public/img/LogoShort.png" alt="UFIRM Logo" ></img>
+                                <img src="https://account.ufirm.in/assets/cdn/public/img/LogoShort.png" alt="UFIRM Logo" ></img>
                             </span>
                         </Link>
                         <div className="sidebar">

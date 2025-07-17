@@ -152,7 +152,7 @@ class UserProfile extends React.Component {
                                                         fileSizeError=" file size is too big"
                                                     />
                                                 }
-                                            <img className="profile-user-img img-fluid img-circle" src={this.state.data.profileImageUrl!=null ? this.state.data.profileImageUrl : "https://ufirm.in/assets/cdn/public/profileimg/default.jpg"} alt="User profile picture"></img>
+                                            <img className="profile-user-img img-fluid img-circle" src={this.state.data.profileImageUrl!=null ? this.state.data.profileImageUrl : "https://account.ufirm.in/assets/cdn/public/profileimg/default.jpg"} alt="User profile picture"></img>
                                         </div>
 
                                         <h3 className="profile-username text-center">{this.state.data.firstName} {this.state.data.lastName}</h3>

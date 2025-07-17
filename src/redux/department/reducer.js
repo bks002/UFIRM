@@ -16,8 +16,8 @@ import { convertEsTojson } from '../../utility/common';
 
 const initStateObj =
 {
-    userName: "Ufirm",
-    userEmail: "admin@admin.com",
+    userName: "",
+    userEmail: "",
     userId: 0,
     companyid:0,
     puidn:0,

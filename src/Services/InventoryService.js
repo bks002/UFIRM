@@ -161,11 +161,7 @@ export const getVendorById = async (id) => {
 
 export const createVendor = async (vendor) => {
     try {
-        const response = await api.post('/vendor', vendor, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
+        const response = await api.post('/vendor', vendor);
         return response.data;
     } catch (error) {
         handleApiError(error);
@@ -219,3 +215,43 @@ export const createRateCard = async (ratecard) => {
         handleApiError(error);
     }
 };
+
+export const fetchFilteredRate = async (propertyId,CategoryId,ItemId,VendorId) => {
+      try {
+        const response = await api.get(`ratecards?propertyId=${propertyId}&categoryId=${CategoryId}&itemId=${ItemId}&vendorId=${VendorId}`);
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching Rate Card:', error);
+      }
+    };
+
+// ========== Purchase Order ==========
+
+export const createPurchaseOrder = async (PurchaseOrder) => {
+      try {
+        const response = await api.post(`/CreatePurchaseOrders`,PurchaseOrder);
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching Purchase Order:', error);
+      }
+    };
+
+    export const getPurchaseOrder = async (propertyId) => {
+      try {
+        const response = await api.get(`/GetGroupedPurchaseOrderDetails?propertyId=${propertyId}`);
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching Purchase Order:', error);
+      }
+    };
+
+// ========== Stock ==========
+
+export const getStock = async (propertyId) => {
+    try {
+      const response = await api.get(`/GetStock?propId=${propertyId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching Purchase Order:', error);
+    }
+  };
