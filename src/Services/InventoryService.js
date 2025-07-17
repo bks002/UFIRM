@@ -244,3 +244,14 @@ export const createPurchaseOrder = async (PurchaseOrder) => {
         console.error('Error fetching Purchase Order:', error);
       }
     };
+
+// ========== Stock ==========
+
+export const getStock = async (propertyId) => {
+    try {
+      const response = await api.get(`/GetStock?propId=${propertyId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching Purchase Order:', error);
+    }
+  };

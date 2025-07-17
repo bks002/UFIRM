@@ -251,7 +251,6 @@ class AssetsMaster extends Component {
     });
   };
   
-  
 
   onGridDelete = (Id) => {
     var rowData = this.findItem(Id);
