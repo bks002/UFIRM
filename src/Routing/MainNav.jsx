@@ -72,8 +72,8 @@ import PPMSpreadsheet from "../pages/PPMSpreadsheet";
 import FrequencyMasterPage from "../pages/FrequencyMasterPage";
 import ItemMasterPage from "../MainComponents/Inventory/itemPage";
 import PurchaseOrderPage from "../MainComponents/Inventory/PurchaseOrderMaster";
-import StockPage from "../MainComponents/Inventory/StockMaster";
-import AttendanceRecords from "../MainComponents/Attendance/attendance.jsx";
+//import StockPage from "../MainComponents/Inventory/StockMaster";
+// import AttendanceRecords from "../MainComponents/Attendance/attendance.jsx";
 import LeavesMaster from "../MainComponents/Attendance/LeavesMaster.jsx";
 
 var currentpropertyid;
@@ -507,12 +507,12 @@ class MainNav extends React.Component {
                           <p>Purchase Orders</p>
                         </Link>
                       </li>
-                      <li className="nav-item">
+                      {/* <li className="nav-item">
                         <Link to="/Account/App/Stock" className="nav-link">
                           <i className=" fas fa-caret-right nav-icon"></i>
                           <p>Stock</p>
                         </Link>
-                      </li>
+                      </li> */}
                     </ul>
                   </li>
 
@@ -622,7 +622,7 @@ class MainNav extends React.Component {
                               <p>Create New User</p>
                             </Link>
                           </li> : null}
-                          <li className="nav-item">
+                        <li className="nav-item">
                           <Link
                             to="/Account/App/leaves"
                             className="nav-link"
@@ -1110,15 +1110,15 @@ class MainNav extends React.Component {
             <Route path="/Account/App/Employee">
               <EmployeePage />
             </Route>
-            <Route path="/Account/App/Attendance">
+            {/* <Route path="/Account/App/Attendance">
               <AttendanceRecords />
-            </Route>
+            </Route> */}
             <Route path="/Account/App/Guard">
               <GuardMasterPage />
             </Route>
-            <Route path="/Account/App/AttendanceRecords">
+            {/* <Route path="/Account/App/AttendanceRecords">
               <AttendanceRecordsPage />
-            </Route>
+            </Route> */}
             <Route path="/Account/App/ManageResidentOwners">
               <ManageResidentOwnersPage />
             </Route>
@@ -1152,9 +1152,9 @@ class MainNav extends React.Component {
             <Route path="/Account/App/PurchaseOrders">
               <PurchaseOrderPage />
             </Route>
-            <Route path="/Account/App/Stock">
+            {/* <Route path="/Account/App/Stock">
               <StockPage />
-            </Route>
+            </Route> */}
             <Route path="/Account/App/RentalAssets">
               <RentalAssets />
             </Route>
@@ -1227,6 +1227,8 @@ class MainNav extends React.Component {
             <Route path="/Account/App/UploaderPage">
               <UploaderPage />
             </Route>
+
+            <Route path="/Account/App/leaves" component={LeavesMaster} />
             {/* <Route path="/AttendanceSummary">
                             <AttendanceSummaryPage />
                         </Route> */}
