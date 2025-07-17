@@ -31,7 +31,7 @@ class PropertyTower extends React.Component {
                 // { sTitle: 'Property Name', titleValue: 'propertyName', },
                 { sTitle: 'Tower Name', titleValue: 'TowerName', },
                 { sTitle: 'Floor', titleValue: 'Floor', },
-                { sTitle: 'Flat Name', titleValue: 'Flat', },
+                { sTitle: 'Unit Name', titleValue: 'Flat', },
                 // { sTitle: 'Flat Number', titleValue: 'FlatDetailNumber',  },
                 { sTitle: 'Contact Number', titleValue: 'ContactNumber', },
                 { sTitle: 'Status', titleValue: 'PropertyStatus', },
@@ -393,7 +393,7 @@ class PropertyTower extends React.Component {
                                         </div>
                                         <div class="col-sm-6">
                                             <div class="form-group">
-                                                <label for="txtFlatName">Flat Name</label>
+                                                <label for="txtFlatName">Unit Name</label>
                                                 <InputBox Id="txtFlatName"
                                                     Value={this.state.FlatName}
                                                     onChange={this.updatetextmodel.bind(this, "flat")}
