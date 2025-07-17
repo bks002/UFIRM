@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
@@ -7,7 +8,6 @@ import { Toast } from 'primereact/toast';
 import { getCategories, fetchFilteredItems, getVendors, fetchFilteredRate } from "../../Services/InventoryService";
 import { useSelector } from "react-redux";
 import POQuantityComponent from './POQuantityComponent';
-
 const PurchaseOrderPage = () => {
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState([]);
@@ -120,10 +120,10 @@ const PurchaseOrderPage = () => {
                 life: 3000
             });
         } finally {
+
             setLoading(false);
         }
     };
-
     const handleItemSelect = (e) => {
         const itemId = e.target.value;
         setSelectedItem(itemId);
@@ -243,8 +243,8 @@ const PurchaseOrderPage = () => {
             >
                 <POQuantityComponent selectedGridData={selectedGridData} filteredGridData={filteredGridData}/>
             </Dialog>
+
         </div>
     );
 };
-
 export default PurchaseOrderPage;
