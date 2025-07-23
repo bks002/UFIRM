@@ -537,7 +537,6 @@ const $ = window.$;
       : 0;
     this.manageSubCategory(model, type, categoryId);
   }
-
   getTasks() {
     var type = "R";
     var categoryId = this.state.selectedCategoryId

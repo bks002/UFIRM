@@ -1,6 +1,5 @@
 const BASE_URL = "https://api.urest.in:8096";
 
-
 export const fetchAllLeaveRequests = async (propertyId) => {
     if (!propertyId) {
         console.error("Property ID is required to fetch leave requests.");
