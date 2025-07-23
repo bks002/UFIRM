@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Dialog } from 'primereact/dialog';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
-import { InputText } from 'primereact/inputtext'; 
+import { InputText } from 'primereact/inputtext';
 import { getAttendance } from '../../Services/AttendanceService';
 import { useSelector } from 'react-redux';
 
@@ -14,7 +14,7 @@ export default function AttendanceMaster() {
     const [selectedDayAttendance, setSelectedDayAttendance] = useState([]);
     const [selectedDay, setSelectedDay] = useState(null);
     const propertyId = useSelector((state) => state.Commonreducer.puidn);
-   
+
 
     const getAttendanceForDate = (date) => {
         const dateStr = date.toISOString().slice(0, 10);
@@ -43,7 +43,7 @@ export default function AttendanceMaster() {
             }
         };
         fetchData();
-    }, [ propertyId]);
+    }, [propertyId]);
 
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -64,34 +64,47 @@ export default function AttendanceMaster() {
         setDialogVisible(true);
     };
 
-    const customHeader = (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h4 style={{ margin: 0 }}>
-                {selectedDay ? `Attendance Details - ${selectedDay.toLocaleDateString()}` : 'Attendance Details'}
-            </h4>
-            <span className="p-inputgroup" style={{ maxWidth: 200 }}>
-                <InputText
-                    placeholder="By Employee Name"
-                    value={globalFilter}
-                    onChange={(e) => setGlobalFilter(e.target.value)}
-                    style={{
-                        height: '30px',       
-                        fontSize: '0.8rem',   
-                        padding: '2px 6px'    
-                    }}
-                />
-            </span>
-        </div>
-    );
+    const exportDayToCSV = () => {
+        if (!selectedDay) return;
+
+        const year = selectedDay.getFullYear();
+        const month = String(selectedDay.getMonth() + 1).padStart(2, '0');
+        const day = String(selectedDay.getDate()).padStart(2, '0');
+
+        const header = ["Employee Name", "Check In", "Check Out", "Working Time", "Status"];
+        const rows = selectedDayAttendance.map(record => [
+            record.EmployeeName || '',
+            record.MinCheckIn || '',
+            record.MaxCheckOut || '',
+            record.TotalWorkingTime || '',
+            record.Status || ''
+        ]);
+
+        const csv = [
+            header.join(','),
+            ...rows.map(row => row.join(','))
+        ].join('\r\n');
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `AttendanceDetails_${year}-${month}-${day}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    };
 
     // Export to CSV function for the whole month (summary per employee)
     const exportMonthToCSV = () => {
-        // Get all records for the current month
+        // Get all records for the current month, excluding Sundays
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
         const monthAttendance = attendanceData.filter(record => {
             const recordDate = new Date(record.PunchDate);
-            return recordDate.getFullYear() === year && recordDate.getMonth() === month;
+            // Exclude Sundays (getDay() === 0)
+            return recordDate.getFullYear() === year && recordDate.getMonth() === month && recordDate.getDay() !== 0;
         });
         if (!monthAttendance || monthAttendance.length === 0) return;
 
@@ -119,12 +132,42 @@ export default function AttendanceMaster() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `AttendanceSummary_${year}-${String(month+1).padStart(2,'0')}.csv`;
+        a.download = `AttendanceSummary_${year}-${String(month + 1).padStart(2, '0')}.csv`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
     };
+
+    const customHeader = (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h4 style={{ margin: 0 }}>
+                {selectedDay ? `Attendance Details - ${selectedDay.toLocaleDateString()}` : 'Attendance Details'}
+            </h4>
+            {console.log("Selected date:", selectedDay)}
+            {console.log("Attendance for selected date:", selectedDayAttendance)}
+
+            <button
+                className="btn btn-success btn-sm ms-4"
+                style={{ marginLeft: 25 }}
+                onClick={exportDayToCSV}
+            >
+                Export to CSV
+            </button>
+            <span className="p-inputgroup" style={{ maxWidth: 200 }}>
+                <InputText
+                    placeholder="By Employee Name"
+                    value={globalFilter}
+                    onChange={(e) => setGlobalFilter(e.target.value)}
+                    style={{
+                        height: '30px',
+                        fontSize: '0.8rem',
+                        padding: '2px 6px'
+                    }}
+                />
+            </span>
+        </div>
+    );
 
     return (
         <div className="content-wrapper " style={{ minHeight: '100vh' }}>
