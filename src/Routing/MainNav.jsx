@@ -75,6 +75,7 @@ import PurchaseOrderPage from "../MainComponents/Inventory/PurchaseOrderMaster";
 import StockPage from "../MainComponents/Inventory/StockMaster";
 import AttendanceMaster from "../MainComponents/Attendance/attendance.jsx";
 import LeavesMaster from "../MainComponents/Attendance/LeavesMaster.jsx";
+import Visitor from "../MainComponents/Visitor/Visitor.jsx";
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -637,6 +638,15 @@ class MainNav extends React.Component {
                             <p>Leaves </p>
                           </Link>
                         </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/Visitor"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Visitor </p>
+                          </Link>
+                        </li>
                         {/* <li className="nav-item">
                                         <Link to="/FacilityMember" className="nav-link">
                                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -831,12 +841,6 @@ class MainNav extends React.Component {
                           <Link to="/Account/App/Employee" className="nav-link">
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Employee Master</p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link to="/Account/App/Attendance" className="nav-link">
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p >Attendance</p>
                           </Link>
                         </li>
                         <li className="nav-item">
@@ -1172,6 +1176,9 @@ class MainNav extends React.Component {
             </Route>
             <Route path="/Account/App/leaves">
               <LeavesMaster />
+            </Route>
+            <Route path="/Account/App/Visitor">
+              <Visitor />
             </Route>
             <Route path="/Account/App/EscalationGroup">
               <EscalationGroupPage />
