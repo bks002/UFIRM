@@ -1,5 +1,4 @@
 const API_BASE_URL = 'https://api.urest.in:8096/api/attendance';
-//hi
 
 export const fetchVisitor = async (propertyId = 0) => {
     try {

@@ -1,11 +1,6 @@
 const BASE_URL = "https://api.urest.in:8096";
 
 
-/**
- * Fetch all leave requests based on propertyId
- * @param {number} propertyId 
- * @returns {Promise<Array>} Array of leave requests or empty array on failure
- */
 export const fetchAllLeaveRequests = async (propertyId) => {
     if (!propertyId) {
         console.error("Property ID is required to fetch leave requests.");
