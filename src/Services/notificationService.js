@@ -17,10 +17,36 @@ export const fetchNotifications = async (type, propertyId) => {
 
     try {
         const response = await fetch(url);
-        if (!response.ok) return [];
-        return await response.json();
+        
+        if (!response.ok) {
+            console.error(`${type} notification error:`, response.status, response.statusText);
+            
+            // Special handling for asset notifications - they might not be implemented yet
+            if (type === 'asset') {
+                console.warn('Asset notifications endpoint might not be implemented. Returning empty array.');
+                return [];
+            }
+            
+            return [];
+        }
+        
+        const data = await response.json();
+        
+        // Ensure data is an array
+        if (!Array.isArray(data)) {
+            console.warn(`${type} notification data is not an array:`, data);
+            return [];
+        }
+        
+        return data;
     } catch (error) {
         console.error(`Error fetching ${type} notifications:`, error);
+        
+        // Special handling for asset notifications
+        if (type === 'asset') {
+            console.warn('Asset notifications endpoint might not be available. Error:', error.message);
+        }
+        
         return [];
     }
 };
