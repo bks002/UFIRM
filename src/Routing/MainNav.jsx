@@ -56,7 +56,6 @@ import EventApproval from "../pages/EventApproval.jsx";
 import PlannerTaskPage from "../pages/PlannerTaskPage.jsx";
 import PlannerTaskAuditPage from "../pages/PlannerTaskAuditPage.jsx";
 import KYCPage from "../pages/KYCPage.jsx";
-import AttendanceRecordsPage from "../pages/AttendanceRecordsPage.jsx";
 import EmployeePage from "../pages/EmployeePage.jsx";
 import GuardMasterPage from "../pages/GuardMasterPage";
 import ResidentEventPage from "../pages/ResidentEventPage.jsx";

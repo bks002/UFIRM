@@ -21,7 +21,7 @@ import LayoutDataProvider from '../../../Routing/LayoutDataProvider'
 
 const $ = window.$;
 
- class TaskList extends Component {
+class TaskList extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -76,15 +76,15 @@ const $ = window.$;
         },
         {
           Header: "Task Status",
-          accessor:"TaskStatus"
+          accessor: "TaskStatus"
         },
         {
           Header: "Task Priority",
-          accessor:"TaskPriority"
+          accessor: "TaskPriority"
         },
         {
           Header: "Remarks",
-          accessor:"Remarks"
+          accessor: "Remarks"
         },
         {
           Header: "Action",
@@ -154,11 +154,11 @@ const $ = window.$;
         },
         {
           Header: "Task Status",
-          accessor:"TaskStatus"
+          accessor: "TaskStatus"
         },
         {
           Header: "Task Priority",
-          accessor:"TaskPriority"
+          accessor: "TaskPriority"
         },
         // {
         //   Header: "Assigned To",
@@ -229,21 +229,21 @@ const $ = window.$;
       occurance: "",
       assignTo: "",
       assign: [],
-      dashboardAssign:[],
-      taskPriorityList:[],
-      taskPriority:'',
-      filterFromDate:'',
-      filterToDate:'',
-      taskStatus:'None',
-      startDate : moment().clone().startOf("month"),
-      endDate : moment().clone().endOf("month"),
-      propertyId:0,
-      propertyData:[],
-      header :["Task Id", "Category", "Sub Category","Task Name","Occurence","Updated On","Task Status"],
-      pendingTasks:0,
-      completedTasks:0,
-      actionableTasks:0,
-      assignedProperty:[]
+      dashboardAssign: [],
+      taskPriorityList: [],
+      taskPriority: '',
+      filterFromDate: '',
+      filterToDate: '',
+      taskStatus: 'None',
+      startDate: moment().clone().startOf("month"),
+      endDate: moment().clone().endOf("month"),
+      propertyId: 0,
+      propertyData: [],
+      header: ["Task Id", "Category", "Sub Category", "Task Name", "Occurence", "Updated On", "Task Status"],
+      pendingTasks: 0,
+      completedTasks: 0,
+      actionableTasks: 0,
+      assignedProperty: []
     };
     this.ApiProvider = new ApiProvider();
     this.comdbprovider = new LayoutDataProvider();
@@ -254,7 +254,7 @@ const $ = window.$;
       fileName: `TaskList`,
       sheet: "react-export-table-to-excel",
       tablePayload: {
-        header:this.state.header,
+        header: this.state.header,
         // accept two different data structures
         body: this.state.data
       }
@@ -263,17 +263,17 @@ const $ = window.$;
 
   loadProperty() {
     this.comdbprovider.getUserAssignedproperty().then(
-        resp => {
-            if (resp && resp.ok && resp.status === 200) {
-                return resp.json().then(rData => {
-                  
-                    this.setState({ propertyData: rData });
-                });
-            }
-        });
-}
+      resp => {
+        if (resp && resp.ok && resp.status === 200) {
+          return resp.json().then(rData => {
 
-  getModel = (type, categoryId, subCategoryId,assignTo,occurance,startDate,endDate,taskStatus,propertyId,taskPriority) => {
+            this.setState({ propertyData: rData });
+          });
+        }
+      });
+  }
+
+  getModel = (type, categoryId, subCategoryId, assignTo, occurance, startDate, endDate, taskStatus, propertyId, taskPriority) => {
     var model = [];
     switch (type) {
       case "R":
@@ -283,11 +283,11 @@ const $ = window.$;
           SubCategoryId: subCategoryId,
           AssignedTo: assignTo,
           Occurrence: occurance,
-          DteFr : startDate,
-          DteTo : endDate,
-          TaskStatus : taskStatus,
-          PropertyId : propertyId,
-          TaskPriority:taskPriority
+          DteFr: startDate,
+          DteTo: endDate,
+          TaskStatus: taskStatus,
+          PropertyId: propertyId,
+          TaskPriority: taskPriority
         });
         break;
       default:
@@ -315,7 +315,7 @@ const $ = window.$;
       case "R":
         model.push({
           CmdType: type,
-          PropertyId: this.state.propertyId ? this.state.propertyId : 0,
+          PropertyId: this.props.PropertyVal ? this.props.PropertyVal : 0,
         });
         break;
       default:
@@ -359,7 +359,7 @@ const $ = window.$;
   };
 
   manageTask = (model, type) => {
-    if(this.state.filtered){
+    if (this.state.filtered) {
       this.setState({ dataLoading: true });
       this.ApiProvider.manageTask(model, type).then((resp) => {
         if (resp.ok && resp.status === 200) {
@@ -380,20 +380,20 @@ const $ = window.$;
                     TimeFrom: element.TimeFrom.split("T")[1],
                     TimeTo: element.TimeTo.split("T")[1],
                     Remarks: element.Remarks,
-                    TaskStatus:element.TaskStatus,
-                    Occurence: element.Occurence.split(" ")[0] ,
-                    OccurenceView: this.modifyOccurence(element.Occurence.split(" ")[0]) ,
+                    TaskStatus: element.TaskStatus,
+                    Occurence: element.Occurence.split(" ")[0],
+                    OccurenceView: this.modifyOccurence(element.Occurence.split(" ")[0]),
                     CategoryName: element.CategoryName,
                     SubCategoryName: element.SubCategoryName,
-                    Location:element.Location,
+                    Location: element.Location,
                     EntryType: element.EntryType,
                     AssignedTo: element.AssignedTo,
-                    AssignedToId:element.AssignedToId,
+                    AssignedToId: element.AssignedToId,
                     QRcode: element.QRCode,
-                    UpdatedOn : element.UpdatedOn,
-                    PropertyId:element.PropertyId,
-                    AssetId:element.AssetId,
-                    TaskPriority : element.TaskPriority
+                    UpdatedOn: element.UpdatedOn,
+                    PropertyId: element.PropertyId,
+                    AssetId: element.AssetId,
+                    TaskPriority: element.TaskPriority
                   });
                 });
                 this.countTasksByStatus(taskData)
@@ -417,20 +417,20 @@ const $ = window.$;
         }
       });
     }
-    
+
   };
 
-  modifyOccurence = (Occurrence)=>{
-    if(Occurrence === 'W'){
+  modifyOccurence = (Occurrence) => {
+    if (Occurrence === 'W') {
       return 'Weekly'
     }
-    if(Occurrence === 'Y'){
+    if (Occurrence === 'Y') {
       return 'Yearly'
     }
-    if(Occurrence === 'D'){
+    if (Occurrence === 'D') {
       return 'Daily'
     }
-    if(Occurrence === 'M'){
+    if (Occurrence === 'M') {
       return 'Monthly'
     }
   }
@@ -546,16 +546,16 @@ const $ = window.$;
     var subCategoryId = (this.state.selectedSubCategoryId)
       ? this.state.selectedSubCategoryId
       : 0;
-      var assignToId = this.state.assignTo
+    var assignToId = this.state.assignTo
       ? this.state.assignTo
       : 0;
-      var occurance = this.state.occurance ? this.state.occurance : 0;
-      var startDate  = this.state.filterFromDate ? this.state.filterFromDate :'';
-      var endDate  = this.state.filterToDate ? this.state.filterToDate : '';
-      var taskStatus = this.state.taskStatus === 'None'? '' : this.state.taskStatus;
-      var propertyId = this.state.propertyId ? this.state.propertyId : 0;
-      var taskPriority = this.state.taskPriority ? this.state.taskPriority : 0;
-    var model = this.getModel(type, categoryId, subCategoryId, assignToId, occurance,startDate,endDate,taskStatus,propertyId,taskPriority);
+    var occurance = this.state.occurance ? this.state.occurance : 0;
+    var startDate = this.state.filterFromDate ? this.state.filterFromDate : '';
+    var endDate = this.state.filterToDate ? this.state.filterToDate : '';
+    var taskStatus = this.state.taskStatus === 'None' ? '' : this.state.taskStatus;
+    var propertyId = this.props.PropertyVal ? this.props.PropertyVal : 0;
+    var taskPriority = this.state.taskPriority ? this.state.taskPriority : 0;
+    var model = this.getModel(type, categoryId, subCategoryId, assignToId, occurance, startDate, endDate, taskStatus, propertyId, taskPriority);
     this.manageTask(model, type);
   }
   getAssign() {
@@ -605,46 +605,46 @@ const $ = window.$;
       var startDate = picker.startDate;
       var endDate = picker.endDate;
       _this.setState({ filterFromDate: startDate.format('YYYY-MM-DD'), filterToDate: endDate.format('YYYY-MM-DD') });
-  });
+    });
   }
 
   componentDidMount() {
     const { PropertyVal } = this.props;
-    const status = this.props.status==='Completed'?'Complete':this.props.status;
+    const status = this.props.status === 'Completed' ? 'Complete' : this.props.status;
     const priority = this.props.priority;
     const subCatId = parseInt(this.props.subCatId);
-    const initialDate=this.props.dashDates;
+    const initialDate = this.props.dashDates;
     const today = moment();
     this.setState({
-      filterFromDate:(status===null && priority===null)? today.format('YYYY-MM-DD'):initialDate,
+      filterFromDate: (status === null && priority === null) ? today.format('YYYY-MM-DD') : initialDate,
       filterToDate: today.format('YYYY-MM-DD'),
       filtered: true,
-      propertyId:PropertyVal,
-      taskStatus: status===null?0:status,
-      taskPriority:priority===null?0:priority,
-      selectedSubCategoryId:subCatId===null?0:subCatId,
+      propertyId: PropertyVal,
+      taskStatus: status === null ? 0 : status,
+      taskPriority: priority === null ? 0 : priority,
+      selectedSubCategoryId: subCatId === null ? 0 : subCatId,
     },
-    // const startDate = moment().clone().startOf("month");
-    // const endDate = moment().clone().endOf("month");
-    // this.setState({
-    //   filterFromDate: startDate.format('YYYY-MM-DD'),
-    //   filterToDate: endDate.format('YYYY-MM-DD'),
-    //   filtered: true
-    // }, 
-    () => {
-      const dateTo= new Date(this.state.filterToDate)
-      const dateFrom= new Date(this.state.filterFromDate)
-      this.DateRangeConfig(dateFrom,dateTo);
-      // this.DateRangeConfig(startDate, endDate);
-      this.getCategory();
-      this.getTasks();
-      this.getTasksPriority();
-      this.getAssign()
-      this.getDashboardAssignList()
-      // this.getAllProperties();
-      this.loadProperty()
-      // this.TaskStatusConfig();
-    });
+      // const startDate = moment().clone().startOf("month");
+      // const endDate = moment().clone().endOf("month");
+      // this.setState({
+      //   filterFromDate: startDate.format('YYYY-MM-DD'),
+      //   filterToDate: endDate.format('YYYY-MM-DD'),
+      //   filtered: true
+      // }, 
+      () => {
+        const dateTo = new Date(this.state.filterToDate)
+        const dateFrom = new Date(this.state.filterFromDate)
+        this.DateRangeConfig(dateFrom, dateTo);
+        // this.DateRangeConfig(startDate, endDate);
+        this.getCategory();
+        this.getTasks();
+        this.getTasksPriority();
+        this.getAssign()
+        this.getDashboardAssignList()
+        // this.getAllProperties();
+        this.loadProperty()
+        // this.TaskStatusConfig();
+      });
   }
 
   AddNew = () => {
@@ -652,31 +652,29 @@ const $ = window.$;
   };
 
   Filter = () => {
-    if (this.state.propertyId > 0 ||this.state.assignTo > 0 || this.state.occurance !=="" || this.state.taskStatus !== "None")
-      {
+    if (this.props.PropertyVal > 0 || this.state.assignTo > 0 || this.state.occurance !== "" || this.state.taskStatus !== "None") {
       this.setState({ filtered: true }, () => {
         this.getTasks();
       });
-      
+
     } else {
       appCommon.showtextalert("", "Please Select Any Filter Attribute", "warning");
     }
-  };s
+  };
 
   Reset = () => {
     this.setState({
       filtered: false,
       selectedCategoryId: 0,
       selectedSubCategoryId: 0,
-      occurance:'',
-      assignTo:0,
-      taskStatus:"None",
-      propertyId:0,
-      completedTasks:0,
-      pendingTasks:0,
-      actionableTasks:0,
-      taskPriority:0,
-      data:[]
+      occurance: '',
+      assignTo: 0,
+      taskStatus: "None",
+      completedTasks: 0,
+      pendingTasks: 0,
+      actionableTasks: 0,
+      taskPriority: 0,
+      data: []
     });
     //this.getTasks();
   };
@@ -734,7 +732,7 @@ const $ = window.$;
         const startDate = moment().clone().startOf("month");
         const endDate = moment().clone().endOf("month");
         this.DateRangeConfig(startDate, endDate);
-        this.setState({pendingTasks:0, actionableTasks:0, completedTasks:0})
+        this.setState({ pendingTasks: 0, actionableTasks: 0, completedTasks: 0 })
 
         this.getCategory();
         this.getTasks();
@@ -758,7 +756,7 @@ const $ = window.$;
       this.getTasks();
     }
 
-    if (prevState.propertyId !== this.state.propertyId) {
+    if (prevProps.PropertyVal !== this.props.PropertyVal) {
       this.getAssign();
       this.getDashboardAssignList()
     }
@@ -770,9 +768,9 @@ const $ = window.$;
         this.componentDidMount();
       }
     }
-    
+
   }
-  onCategorySelected = (val) => {};
+  onCategorySelected = (val) => { };
 
   // TaskStatusConfig() {
   //   let _this = this;
@@ -790,15 +788,15 @@ const $ = window.$;
   // }
 
   countTasksByStatus = (data) => {
-    data.forEach((element)=>{
-      if(element.TaskStatus === 'Completed'){
-        this.setState({completedTasks:this.state.completedTasks+1})
+    data.forEach((element) => {
+      if (element.TaskStatus === 'Completed') {
+        this.setState({ completedTasks: this.state.completedTasks + 1 })
       }
-      if(element.TaskStatus === 'Pending'){
-        this.setState({pendingTasks:this.state.pendingTasks+1})
+      if (element.TaskStatus === 'Pending') {
+        this.setState({ pendingTasks: this.state.pendingTasks + 1 })
       }
-      if(element.TaskStatus === 'Actionable'){
-        this.setState({actionableTasks:this.state.actionableTasks+1})
+      if (element.TaskStatus === 'Actionable') {
+        this.setState({ actionableTasks: this.state.actionableTasks + 1 })
       }
     })
   };
@@ -813,291 +811,212 @@ const $ = window.$;
               spinner={<PropagateLoader color="#336B93" size={30} />}
             >
               <div className="col-12">
-                <div className="card">
-                  <div className="card-header d-flex p-10">
-                    <div className="p-10" style={{marginRight:'10px'}}>
-                      <h6 style={{fontWeight:'600'}}> Completed Tasks</h6>
-                      <input
-                        id="txtName"
-                        value={this.state.completedTasks}
-                        disabled
-                        type="text"
-                        className="form-control"
-                        style={{background:'#336b93',fontWeight:'600',fontSize:'18px',color:'white'}}
-                      />
+                <div className="card p-2">
+                  <div style={{ display: 'flex', gap: '16px', margin: '8px 0 8px 0' }}>
+                    <div style={{ flex: 1, background: '#40769b', color: 'white', borderRadius: '8px', padding: '12px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 600, fontSize: '1.5rem', minWidth: 0 }}>
+                      <span style={{ fontSize: '0.9rem', fontWeight: 600, marginLeft: 20 }}>Completed Tasks :</span>
+                      <span style={{ fontSize: '0.9rem', fontWeight: 600, marginRight: 20 }}>{this.state.completedTasks}</span>
                     </div>
-                    <div className="p-10" style={{marginRight:'10px'}}>
-                      <h6 style={{fontWeight:'600'}}> Pending Tasks</h6>
-                      <input
-                        id="txtName"
-                        value={this.state.pendingTasks}
-                        disabled
-                        type="text"
-                        className="form-control"
-                        style={{background:'#f44336e0',fontWeight:'600',fontSize:'18px',color:'white'}}
-                      />
+                    <div style={{ flex: 1, background: '#fa6154', color: 'white', borderRadius: '8px', padding: '12px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 600, fontSize: '1.5rem', minWidth: 0 }}>
+                      <span style={{ fontSize: '0.9rem', fontWeight: 600, marginLeft: 20 }}>Pending Tasks :</span>
+                      <span style={{ fontSize: '0.9rem', fontWeight: 600, marginRight: 20 }}>{this.state.pendingTasks}</span>
                     </div>
-                    <div className="p-10" style={{marginRight:'10px'}}>
-                      <h6 style={{fontWeight:'600'}}> Actionable Tasks</h6>
-                      <input
-                        id="txtName"
-                        value={this.state.actionableTasks}
-                        disabled
-                        type="text"
-                        className="form-control"
-                        style={{background:'#17a2b8',fontWeight:'600',fontSize:'18px',color:'white'}}
-                      />
+                    <div style={{ flex: 1, background: '#1bb2c9', color: 'white', borderRadius: '8px', padding: '12px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 600, fontSize: '1.5rem', minWidth: 0 }}>
+                      <span style={{ fontSize: '0.9rem', fontWeight: 600, marginLeft: 20 }}>Actionable Tasks :</span>
+                      <span style={{ fontSize: '0.9rem', fontWeight: 600, marginRight: 20 }}>{this.state.actionableTasks}</span>
                     </div>
                   </div>
-                  <div className="card-header d-flex p-0">
-                    <ul className="nav tableFilterContainer">
-                      <li className="nav-item">
-                        <select
-                          id="dllCategory"
-                          className="form-control"
-                          onChange={(e) =>
-                            this.setState({
-                              selectedCategoryId: e.target.value,
-                            })
-                          }
-                          disabled={this.state.filtered}
-                          value={this.state.selectedCategoryId}
-                        >
-                          <option value={0}>Select Category</option>
-                          {this.state.CategoryData
-                            ? this.state.CategoryData.map((e, key) => {
-                                return (
-                                  <option key={key} value={e.Id}>
-                                    {e.Name}
-                                  </option>
-                                );
-                              })
-                            : null}
-                        </select>
-                      </li>
-                      <li className="nav-item">
-                        <select
-                          className="form-control"
-                          onChange={(e) =>
-                            this.setState({
-                              selectedSubCategoryId: e.target.value,
-                            })
-                          }
-                          value={this.state.selectedSubCategoryId}
-                          disabled={this.state.filtered}
-
-                        >
-                          <option value={0}>Sub Category</option>
-                          {this.state.subCategory &&
-                            this.state.subCategory.map((e, key) => {
-                              return (
-                                <option key={key} value={e.SubCategoryId}>
-                                  {e.SubCategoryName}
-                                </option>
-                              );
-                            })}
-                        </select>
-                      </li>
-
-                      <li className="nav-item">
-                        <select
-                          className="form-control"
-                          onChange={(e) =>
-                            this.setState({
-                              propertyId: e.target.value,
-                            })
-                          }
-                          value={this.state.propertyId}
-                          disabled={this.state.filtered}
-
-                        >
-                          <option value={0}>Property</option>
-                          {this.state.propertyData &&
-                            this.state.propertyData.map((e, key) => {
-                              return (
-                                <option key={key} value={e.id}>
-                                  {e.text}
-                                </option>
-                              );
-                            })}
-                        </select>
-                      </li>
-                      <li>
-                        <select
-                          className="form-control"
-                          onChange={(e) =>
-                            this.setState({
-                              occurance: e.target.value,
-                            })
-                          }
-                          disabled={this.state.filtered}
-                          value={this.state.occurance}
-                        >
-                          <option value="N">Repeat</option>
-                          <option value="D">Daily</option>
-                          <option value="W">Weekly</option>
-                          <option value="M">Monthly</option>
-                          <option value="Y">Yearly</option>
-                        </select>
-                      </li>
-                      <li>
-                        <select
-                          className="form-control"
-                          onChange={(e) =>
-                            this.setState({
-                              taskStatus: e.target.value,
-                            })
-                          }
-                          disabled={this.state.filtered}
-                          value={this.state.taskStatus}
-
-                        >
-                          <option value="None">Task Status</option>
-                          <option value="Pending">Pending</option>
-                          <option value="Complete">Complete</option>
-                          <option value="Actionable">Actionable</option>
-                        </select>
-                      </li>
-
-                      <li>
-                        <select
-                          className="form-control"
-                          onChange={(e) =>
-                            this.setState({
-                              taskPriority: e.target.value,
-                            })
-                          }
-                          disabled={this.state.filtered}
-                          value={this.state.taskPriority}
-
-                        >
-                          <option value={0}>Task Priority</option>
-                          {this.state.taskPriorityList &&
-                            this.state.taskPriorityList.map((e, key) => {
-                              return (
-                                <option key={key} value={e.Id}>
-                                  {e.Name}
-                                </option>
-                              );
-                            })}
-                        </select>
-                      </li>
-
-            
-                      {/* <li className="nav-item">
-                        <div className="input-group-prepend">
-                          <select
-                            className="form-control-sm pr-0 input-group-text"
-                            data-placeholder="Status"
-                            multiple="multiple"
-                          >
-                            <option value="Scheduled">Scheduled</option>
-                            <option value="In Review">In Review</option>
-                            <option value="Completed">Completed</option>
-                            <option value="Deleted">Deleted</option>
-                            <option value="Over Due">Over Due</option>
-                          </select>
+                  <div className="card-header d-flex p-2">
+                    <div className="d-flex w-100 flex-column">
+                      {/* First Row - Main Filters */}
+                      <div className="d-flex align-items-center mb-2">
+                        <div className="d-flex flex-grow-1">
+                          <div className="nav-item mr-2">
+                            <select
+                              id="dllCategory"
+                              className="form-control"
+                              onChange={(e) =>
+                                this.setState({
+                                  selectedCategoryId: e.target.value,
+                                })
+                              }
+                              disabled={this.state.filtered}
+                              value={this.state.selectedCategoryId}
+                            >
+                              <option value={0}>Select Category</option>
+                              {this.state.CategoryData
+                                ? this.state.CategoryData.map((e, key) => {
+                                  return (
+                                    <option key={key} value={e.Id}>
+                                      {e.Name}
+                                    </option>
+                                  );
+                                })
+                                : null}
+                            </select>
+                          </div>
+                          <div className="nav-item mr-2" style={{ maxWidth: '160px' }}>
+                            <select
+                              className="form-control"
+                              onChange={(e) =>
+                                this.setState({
+                                  selectedSubCategoryId: e.target.value,
+                                })
+                              }
+                              value={this.state.selectedSubCategoryId}
+                              disabled={this.state.filtered}
+                            >
+                              <option value={0}>Sub Category</option>
+                              {this.state.subCategory &&
+                                this.state.subCategory.map((e, key) => {
+                                  return (
+                                    <option key={key} value={e.SubCategoryId}>
+                                      {e.SubCategoryName}
+                                    </option>
+                                  );
+                                })}
+                            </select>
+                          </div>
+                          <div className="nav-item mr-2">
+                            <select
+                              className="form-control"
+                              onChange={(e) =>
+                                this.setState({
+                                  occurance: e.target.value,
+                                })
+                              }
+                              disabled={this.state.filtered}
+                              value={this.state.occurance}
+                            >
+                              <option value="N">Repeat</option>
+                              <option value="D">Daily</option>
+                              <option value="W">Weekly</option>
+                              <option value="M">Monthly</option>
+                              <option value="Y">Yearly</option>
+                            </select>
+                          </div>
+                          <div className="nav-item mr-2">
+                            <select
+                              className="form-control"
+                              onChange={(e) =>
+                                this.setState({
+                                  taskStatus: e.target.value,
+                                })
+                              }
+                              disabled={this.state.filtered}
+                              value={this.state.taskStatus}
+                            >
+                              <option value="None">Task Status</option>
+                              <option value="Pending">Pending</option>
+                              <option value="Complete">Complete</option>
+                              <option value="Actionable">Actionable</option>
+                            </select>
+                          </div>
+                          <div className="nav-item mr-2">
+                            <select
+                              className="form-control"
+                              onChange={(e) =>
+                                this.setState({
+                                  taskPriority: e.target.value,
+                                })
+                              }
+                              disabled={this.state.filtered}
+                              value={this.state.taskPriority}
+                            >
+                              <option value={0}>Task Priority</option>
+                              {this.state.taskPriorityList &&
+                                this.state.taskPriorityList.map((e, key) => {
+                                  return (
+                                    <option key={key} value={e.Id}>
+                                      {e.Name}
+                                    </option>
+                                  );
+                                })}
+                            </select>
+                          </div>
+                          <div className="nav-item mr-2 style={{maxWidth: '800px'}}">
+                            <select
+                              className="form-control"
+                              onChange={(e) =>
+                                this.setState({
+                                  assignTo: e.target.value,
+                                })
+                              }
+                              disabled={this.state.filtered}
+                              value={this.state.assignTo}
+                            >
+                              <option value={0}>Assigned To</option>
+                              {this.state.dashboardAssign &&
+                                this.state.dashboardAssign.map((e, key) => {
+                                  return (
+                                    <option key={key} value={e.assignId}>
+                                      {e.assignName}
+                                    </option>
+                                  );
+                                })}
+                            </select>
+                          </div>
                         </div>
-                      </li> */}
-                      {/* <li className="nav-item">
-                        <MultiSelectDropdown
-                          id="assigneeUser"
-                          option={this.state.usersList}
-                        />
-                      </li> */}
-                      <li className="nav-item">
-                        <div className="input-group input-group-sm">
-                          <div className="form-group">
-                            <div className="input-group">
-                              <div className="input-group-prepend">
-                                <span className="input-group-text">
-                                  <i className="far fa-calendar-alt"></i>
-                                </span>
+                      </div>
+
+                      {/* Second Row - Assigned To, Date Range, and Buttons */}
+                      <div className="d-flex align-items-center">
+                        <div className="d-flex flex-grow-1">
+                          <div className="nav-item mr-2">
+                            <div className="input-group input-group-sm">
+                              <div className="form-group">
+                                <div className="input-group">
+                                  <div className="input-group-prepend">
+                                    <span className="input-group-text">
+                                      <i className="fa fa-calendar-alt"></i>
+                                    </span>
+                                  </div>
+                                  <input
+                                    type="text"
+                                    className="form-control float-right"
+                                    id="dataRange"
+                                    disabled={this.state.filtered}
+                                  ></input>
+                                </div>
                               </div>
-                              <input
-                                type="text"
-                                className="form-control float-right"
-                                id="dataRange"
-                          disabled={this.state.filtered}
-                              ></input>
                             </div>
                           </div>
                         </div>
-                      </li>
-                      <li>
-                        <select
-                          className="form-control"
-                          onChange={(e) =>
-                            this.setState({
-                              assignTo: e.target.value,
-                            })
-                          }
-                          disabled={this.state.filtered}
-                          value={this.state.assignTo}
-                        >
-                          <option value={0}>Assigned To</option>
-                          {this.state.dashboardAssign &&
-                            this.state.dashboardAssign.map((e, key) => {
-                              return (
-                                <option key={key} value={e.assignId}>
-                                  {e.assignName}
-                                </option>
-                              );
-                            })}
-                        </select>
-                      </li>
-                      {!this.state.filtered && (
-                        <li>
-                          <Button
-                            id="btnNewTask"
-                            Action={this.Filter.bind(this)}
-                            ClassName="btn btn-primary"
-                            Text="Filter"
-                          />
-                        </li>
-                      )}
-                      {this.state.filtered && (
-                        <li>
-                          <Button
-                            id="btnNewTask"
-                            Action={this.Reset.bind(this)}
-                            ClassName="btn btn-danger"
-                            Text="Reset"
-                          />
-                        </li>
-                      )}
-                      <li>
-                         
-                            <button className="btn btn-info" name="Export">
-                              <CSVLink data={this.state.data} filename={'Tasklist'} style={{ color: "white" }}><i
-                                className="fa fa-arrow-down"
-                                aria-hidden="true"
-                              ></i> Export</CSVLink>
-                              </button>
-
-                              <Button
+                        <div className="d-flex ml-auto">
+                          {!this.state.filtered && (
+                            <Button
                               id="btnNewTask"
-                              Action={this.AddNew.bind(this)}
-                              ClassName="btn btn-success mx-2"
-                              Icon={
-                                <i
-                                  className="fa fa-plus"
-                                  aria-hidden="true"
-                                ></i>
-                              }
-                              Text="Add Task"
+                              Action={this.Filter.bind(this)}
+                              ClassName="btn btn-primary mr-2 rounded shadow-sm d-flex align-items-center"
+                              Text={<><i className="fa fa-filter mr-1"></i> Filter</>}
+                              title="Apply filters"
                             />
-                        </li>
-                    </ul>
-                    <ul className="nav ml-auto tableFilterContainer">
-                      <li className="nav-item">
-                        <div className="input-group">
-                          <div className="input-group-prepend">
-                            
-                          </div>
+                          )}
+                          {this.state.filtered && (
+                            <Button
+                              id="btnNewTask"
+                              Action={this.Reset.bind(this)}
+                              ClassName="btn btn-danger mr-2 rounded shadow-sm d-flex align-items-center"
+                              Text={<><i className="fa fa-times mr-1"></i> Reset</>}
+                              title="Clear all filters"
+                            />
+                          )}
+                          <button className="btn btn-outline-success mr-2 rounded shadow-sm d-flex align-items-center" name="Export" title="Export to Excel">
+                            <CSVLink data={this.state.data} filename={'Tasklist'} style={{ color: "inherit", textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+                              <i className="fa fa-file-excel-o mr-1"></i> Export
+                            </CSVLink>
+                          </button>
+                          <Button
+                            id="btnNewTask"
+                            Action={this.AddNew.bind(this)}
+                            ClassName="btn btn-success rounded shadow-sm d-flex align-items-center px-3"
+                            Icon={<i className="fa fa-plus mr-1"></i>}
+                            Text={<span style={{fontWeight:600}}>Add Task</span>}
+                            title="Add a new task"
+                          />
                         </div>
-                      </li>
-                    </ul>
+                      </div>
+                    </div>
                   </div>
                   <div className="card-body pt-2">
                     <LoadingOverlay
@@ -1105,11 +1024,11 @@ const $ = window.$;
                       spinner={<PropagateLoader color="#336B93" size={30} />}
                     >
                       <DataTable
-                      data={this.state.data}
-                      columns={this.state.columns}
-                      hideGridSearchAndSize={true}
-                      globalSearch={true}
-                      isDefaultPagination={true}/>
+                        data={this.state.data}
+                        columns={this.state.columns}
+                        hideGridSearchAndSize={true}
+                        globalSearch={true}
+                        isDefaultPagination={true} />
                     </LoadingOverlay>
                   </div>
                 </div>
@@ -1140,9 +1059,9 @@ const $ = window.$;
             rowData={this.state.rowData}
           />
         )}
-         {this.state.PageMode === "EditTask" && (
+        {this.state.PageMode === "EditTask" && (
           <EditTask
-           showEditModal={this.state.showEditModal}
+            showEditModal={this.state.showEditModal}
             closeModal={this.closeModal}
             rowData={this.state.rowData}
             categoryData={this.state.CategoryData}
@@ -1152,7 +1071,7 @@ const $ = window.$;
     );
   }
 }
-const mapStateToProps = (state,props) => {
+const mapStateToProps = (state, props) => {
   return {
     PropertyVal: state.Commonreducer.puidn,
     Entrolval: state.Commonreducer.entrolval,
@@ -1160,8 +1079,8 @@ const mapStateToProps = (state,props) => {
   };
 };
 const mapDispatchToProps = (dispatch) => {
-    const actions = bindActionCreators(departmentAction, dispatch);
-    return { actions };
+  const actions = bindActionCreators(departmentAction, dispatch);
+  return { actions };
 };
 
-export default connect(mapStateToProps,mapDispatchToProps)(TaskList);
+export default connect(mapStateToProps, mapDispatchToProps)(TaskList);

@@ -15,12 +15,28 @@ const Notification = ({ propId }) => {
   const [showType, setShowType] = useState(null);
 
   const loadNotification = async (type) => {
-    const data = await fetchNotifications(type, propId);
-    setDataMap((prev) => ({ ...prev, [type]: data }));
+    
+    // Check if property ID is valid
+    if (!propId || propId === 0) {
+      console.warn(`Property ID is invalid: ${propId}. Skipping ${type} notification load.`);
+      return;
+    }
+    
+    try {
+      const data = await fetchNotifications(type, propId);
+      setDataMap((prev) => ({ ...prev, [type]: data }));
+    } catch (error) {
+      console.error(`Error loading ${type} notifications:`, error);
+      setDataMap((prev) => ({ ...prev, [type]: [] }));
+    }
   };
 
   useEffect(() => {
-    NOTIFICATION_TYPES.forEach((type) => loadNotification(type));
+    if (propId && propId !== 0) {
+      NOTIFICATION_TYPES.forEach((type) => loadNotification(type));
+    } else {
+      console.warn("Property ID is not set or invalid:", propId);
+    }
   }, [propId,showType]);
 
   const handleShowList = (type) => {

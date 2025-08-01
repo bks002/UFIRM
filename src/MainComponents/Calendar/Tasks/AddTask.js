@@ -4,13 +4,14 @@ import "react-datepicker/dist/react-datepicker.css";
 import { setHours, setMinutes } from "date-fns";
 import Modal from "react-awesome-modal";
 import moment from "moment";
+import { connect } from "react-redux";
 import ApiProvider from "../DataProvider";
 import Button from "../../../ReactComponents/Button/Button";
 import * as appCommon from "../../../Common/AppCommon.js";
 import { ToastContainer, toast } from "react-toastify";
 import {getFrequencyList} from "../../../Services/masterService";
 
-export default class AddTask extends Component {
+class AddTask extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -40,7 +41,7 @@ export default class AddTask extends Component {
       remarks:"",
       occurence:"",
       propertyData: [],
-      propertyId: 0,
+      // Remove propertyId from local state since we'll get it from Redux
     };
     this.onStartDateChange = this.onStartDateChange.bind(this);
     this.onEndDateChange = this.onEndDateChange.bind(this);
@@ -76,7 +77,7 @@ export default class AddTask extends Component {
       case "R":
         model.push({
           CmdType: type,
-          PropertyId: this.state.propertyId ? this.state.propertyId : 0,
+          PropertyId: this.props.PropertyId ? this.props.PropertyId : 0,
         });
         break;
       default:
@@ -274,7 +275,7 @@ export default class AddTask extends Component {
 
   getAllFrenquency= async()=>{
     try {
-      this.setState({ loading: true }); // Show loading before fetching data
+      this.setState({ loading: true }); 
       const data = await getFrequencyList();
       this.setState({ frequencyData: data, loading: false });
     } catch (error) {
@@ -298,9 +299,9 @@ export default class AddTask extends Component {
       this.getSubCategory();
     }
 
-    if (prevState.propertyId !== this.state.propertyId) {
+    if (prevProps.PropertyId !== this.props.PropertyId) {
       this.getAssign();
-      this.getAssets(this.state.propertyId);
+      this.getAssets(this.props.PropertyId);
     }
   }
 
@@ -523,11 +524,8 @@ export default class AddTask extends Component {
                       <select
                         id="ddlAssignee"
                         className="form-control"
-                        onChange={(e) =>
-                          this.setState({
-                            propertyId: e.target.value,
-                          })
-                        }
+                        value={this.props.PropertyId || 0}
+                        disabled
                       >
                         <option value={0}>Select Property</option>
                         {this.state.propertyData &&
@@ -653,3 +651,17 @@ export default class AddTask extends Component {
     );
   }
 }
+
+function mapStoreToprops(state, props) {
+  return {
+    PropertyId: state.Commonreducer.puidn,
+  }
+}
+
+function mapDispatchToProps(dispatch) {
+  return {
+    // Add any actions if needed
+  };
+}
+
+export default connect(mapStoreToprops, mapDispatchToProps)(AddTask);
