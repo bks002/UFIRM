@@ -75,6 +75,7 @@ import StockPage from "../MainComponents/Inventory/StockMaster";
 import AttendanceMaster from "../MainComponents/Attendance/attendance.jsx";
 import LeavesMaster from "../MainComponents/Attendance/LeavesMaster.jsx";
 import Visitor from "../MainComponents/Visitor/Visitor.jsx";
+import CategoryMaster from "../MainComponents/AssetsMaster/CategoryMaster.jsx";
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -432,6 +433,16 @@ class MainNav extends React.Component {
                         >
                           <i className=" fas fa-caret-right nav-icon"></i>
                           <p>Check IN & OUT</p>
+                        </Link>
+                      </li>
+
+                      <li className="nav-item">
+                        <Link
+                          to="/Account/App/CategoryMaster"
+                          className="nav-link"
+                        >
+                          <i className=" fas fa-caret-right nav-icon"></i>
+                          <p>Category Master</p>
                         </Link>
                       </li>
 
@@ -1085,6 +1096,9 @@ class MainNav extends React.Component {
             </Route>
             <Route path="/Account/App/Tenant">
               <PropertyTenatsPage/>
+            </Route>
+            <Route path="/Account/App/CategoryMaster">
+              <CategoryMaster />
             </Route>
             {/* <Route path="/Home">
                             <PropertyDashboard />
