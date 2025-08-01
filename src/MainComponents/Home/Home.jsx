@@ -225,6 +225,7 @@ const Home = ({ PropertyId }) => {
                         })}
 
                     </div>
+
                 </div>
             </section>
         </div>
