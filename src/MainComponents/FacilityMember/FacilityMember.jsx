@@ -95,7 +95,7 @@ class FacilityMember extends React.Component {
         {
           sTitle: "Action",
           titleValue: "Action",
-          Action: "Edit&Delete&Block",
+            Action: "Edit&Delete&Block&ChangePassword",
           Index: "0",
           orderable: false,
         },
@@ -509,6 +509,19 @@ class FacilityMember extends React.Component {
       }
     });
   };
+  
+ onGridChangePassword = (userId) => {
+   
+  }
+
+  removeImage() {
+    this.setState({
+      selectedFile: undefined,
+      selectedFileName: undefined,
+      imageSrc: undefined,
+      value: "",
+    });
+  }
 
   async ongridedit(Id) {
     this.setState({ PageMode: "Edit", Showimguploader: false }, () => {
@@ -1550,6 +1563,7 @@ class FacilityMember extends React.Component {
                       onEditMethod={this.ongridedit.bind(this)}
                       onGridDeleteMethod={this.onGridDelete.bind(this)}
                     onGridBlockMethod={this.onGridBlock.bind(this)}
+                    onGridChangePassword={this.onGridChangePassword.bind(this)}
                     DefaultPagination={false}
                     IsSarching="true"
                     GridData={this.state.gridFacilityMemberData}

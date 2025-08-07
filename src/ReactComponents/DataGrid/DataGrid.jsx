@@ -7,9 +7,10 @@ import DataGridBL from '../DataGrid/DataGridBL.js';
 import './DataGrid.css';
 import swal from 'sweetalert';
 import ApiProvider from '../DataGrid/DataProvider.js';
+
 const $ = window.$;
 
-//let objcommonjs = new Commonjs();
+
 let object = new DataGridBL();
 let gridBL = new DataGridBL();
 
@@ -21,7 +22,6 @@ export default class DataGrid extends React.Component {
         }
     }
     componentDidMount() {
-        // 
         $(`#${this.props.Id}`).DataTable({
             data: null,
             searching: false,
@@ -32,9 +32,6 @@ export default class DataGrid extends React.Component {
                 "sEmptyTable": " "
             },
             columns: this.props.ColumnCollection,
-            // "columns": [{
-            //     sTitle: "Id"
-            // }]
         });
         this.ApiProviderr = new ApiProvider();
     }
@@ -47,7 +44,36 @@ export default class DataGrid extends React.Component {
         returnSelectValues = [];
     }
     // Grid Event Method
+    
+   onGridChangePassword(fId) {
+    swal({
+        title: "Do you want to change password?",
+       
+        icon: "warning", // This adds the exclamatory mark
+        buttons: {
+            cancel: {
+                text: "No",
+                value: false,
+                visible: true,
+                className: "btn btn-success",
+                closeModal: true
+            },
+            confirm: {
+                text: "Yes",
+                value: true,
+                visible: true,
+                className: "btn btn-success",
+                closeModal: true
+            }
+        }
+    }).then((willChange) => {
+        if (willChange) {
+            this.props.onGridChangePassword(fId);
+        }
+    });
 
+}
+   
     onGridEdit(fId) {
         this.props.onEditMethod(fId);
     }
@@ -55,14 +81,12 @@ export default class DataGrid extends React.Component {
         this.props.onGridApprove(fId);
     }
     onGridDelete(fId) {
-        // alert('Delete' + id);
         this.props.onGridDeleteMethod(fId);
     }
     onGridBlock(fId) {
         this.props.onGridBlockMethod(fId);
     }
     onGridView(fId) {
-        //this.props.onEditMethod(fId);
         this.props.onGridViewMethod(fId);
     }
     onGridDownload(fId) {
@@ -152,85 +176,81 @@ export default class DataGrid extends React.Component {
                 //****END******/
 
                 let btnhtml = "";
+                // --- CHANGED: Loop through all buttons ---
                 if (actionButtons && actionButtons !== undefined) {
                     actionButtons.map((action, idx) => {
-                        switch (action.Buttons[0]) {
-                            case 'Edit&Delete':
-                                //btnhtml += `<a title="Edit" class="fa fa-edit" href="#"></a>`;
-                                btnhtml += '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
-                                btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
-                                break;
-                            // Added by: Rakhmaji Ghule 147/0/2021 -> show Edit, Veiw and Delete button in Action Col
-                            case 'Edit&View&Delete':
-                                btnhtml += '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
-                                btnhtml += '<button class="btn btn-sm btn-warning" title="View" ><i class="fa fa-eye"></i></button>';
-                                btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
-                                break;
-                            // Added by: Rakhmaji Ghule 26/03/2021 -> show Edit, Approve and Reject button in Action Col
-                            case 'Edit&Approve&Reject':
-                                btnhtml += '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
-                                btnhtml += '<button class="btn btn-sm btn-warning" title="Approve" ><i class="fa fa-check"></i></button>';
-                                btnhtml += '<button class="btn btn-sm btn-dark" title="Reject"><i class="fa fa-ban"></i></button>';
-                                break;
-                            // Added by: Rakhmaji Ghule 26/03/2021 -> show view and Delete button in Action Col
-                            case 'View&Delete':
-                                btnhtml += '<button class="btn btn-sm btn-warning" title="View" ><i class="fa fa-eye"></i></button>';
-                                btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
-                                break;
-                            case 'Edit&Delete&Block':
-                                //btnhtml += `<a title="Edit" class="fa fa-edit" href="#"></a>`;
-                                //RG Changes because added status col in facilty member (show block and unblock function)
-                                // if (Gridarray[IsBlockedFacilty] !== 'Old') {
+                        action.Buttons.forEach((btnType) => {
+                            switch (btnType) {
+                                case 'Edit&Delete':
                                     btnhtml += '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
+                                    btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
+                                    break;
+                                case 'Edit&View&Delete':
+                                    btnhtml += '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
+                                    btnhtml += '<button class="btn btn-sm btn-warning" title="View" ><i class="fa fa-eye"></i></button>';
+                                    btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
+                                    break;
+                                case 'Edit&Approve&Reject':
+                                    btnhtml += '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
+                                    btnhtml += '<button class="btn btn-sm btn-warning" title="Approve" ><i class="fa fa-check"></i></button>';
+                                    btnhtml += '<button class="btn btn-sm btn-dark" title="Reject"><i class="fa fa-ban"></i></button>';
+                                    break;
+                                case 'View&Delete':
+                                    btnhtml += '<button class="btn btn-sm btn-warning" title="View" ><i class="fa fa-eye"></i></button>';
+                                    btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
+                                    break;
+                                case 'Edit&Delete&Block&ChangePassword':
+                                    btnhtml += '<button class="btn btn-sm btn-info" title="Edit"><i class="fa fa-pen-alt"></i></button>';
                                     btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
                                     if (Gridarray[IsBlockedFacilty] === 'Blocked') {
                                         btnhtml += '<button class="btn btn-sm btn-secondary BlockAndUnblock" title="Unblock"><i class="fa fa-circle"></i></button>';
                                     } else {
                                         btnhtml += '<button class="btn btn-sm btn-dark BlockAndUnblock" title="Block"><i class="fa fa-ban"></i></button>';
                                     }
-                                // }
-
-                                break;
-                            case 'Edit':
-                                //btnhtml += `<a title="Edit" class="fa fa-edit" href="#"></a>`;
-                                btnhtml += '<button class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pen-alt"></i></button>';
-                                break;
+                                    btnhtml += '<button class="btn btn-sm btn-primary change-password-btn" title="Change Password"><i class="fa fa-key"></i></button>';
+                                    break;
+                                case 'Edit':
+                                    btnhtml += '<button class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pen-alt"></i></button>';
+                                    break;
                                 case 'Edit&Approve':
-                                    //btnhtml += `<a title="Edit" class="fa fa-edit" href="#"></a>`;
                                     btnhtml += '<button class="btn btn-sm btn-info" title="Edit/Approve" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pen-alt"></i></button>';
                                     break;
-                            case 'Delete':
-                                btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
-                                break;
-                            case 'View':
-                                btnhtml += '<button class="btn btn-sm btn-warning" title="View" data-toggle="modal" data-target="#ticketViewModal"><i class="fa fa-eye"></i></button>';
-                                break;
-                            case 'Download':
-                                btnhtml += '<button class="btn btn-sm btn-success" title="Download"><i class="fa fa-download"></i></button>';
-                                break;
-                            case 'DownloadNDelete':
-                                btnhtml += '<button class="btn btn-sm btn-success" title="Download"><i class="fa fa-download"></i></button>';
-                                btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
-                                break;
-                            case 'Edit&View':
-                                btnhtml += '<button class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pen-alt"></i></button>';
-                                btnhtml += '<button class="btn btn-sm btn-warning" title="View" data-toggle="modal" data-target="#ticketViewModal"><i class="fa fa-eye"></i></button>';
-                                break;
-                            case 'ALL':
-                                btnhtml += '<button class="btn btn-sm btn-warning" title="View" ><i class="fa fa-eye"></i></button>';
-                                btnhtml += '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
-                                btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
-                                break;
-                            case 'Manage':
-                                btnhtml += '<button class="btn btn-sm btn-info" title="Manage" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-tasks"></i></button>';
-                                break;
+                                case 'Delete':
+                                    btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
+                                    break;
+                               case 'ChangePassword':
+                btnhtml += '<button class="btn btn-sm btn-primary change-password-btn" title="Change Password"><i class="fa fa-key"></i></button>';
+                break;
+                                case 'View':
+                                    btnhtml += '<button class="btn btn-sm btn-warning" title="View" data-toggle="modal" data-target="#ticketViewModal"><i class="fa fa-eye"></i></button>';
+                                    break;
+                                case 'Download':
+                                    btnhtml += '<button class="btn btn-sm btn-success" title="Download"><i class="fa fa-download"></i></button>';
+                                    break;
+                                case 'DownloadNDelete':
+                                    btnhtml += '<button class="btn btn-sm btn-success" title="Download"><i class="fa fa-download"></i></button>';
+                                    btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
+                                    break;
+                                case 'Edit&View':
+                                    btnhtml += '<button class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pen-alt"></i></button>';
+                                    btnhtml += '<button class="btn btn-sm btn-warning" title="View" data-toggle="modal" data-target="#ticketViewModal"><i class="fa fa-eye"></i></button>';
+                                    break;
+                                case 'ALL':
+                                    btnhtml += '<button class="btn btn-sm btn-warning" title="View" ><i class="fa fa-eye"></i></button>';
+                                    btnhtml += '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
+                                    btnhtml += '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
+                                    break;
+                                case 'Manage':
+                                    btnhtml += '<button class="btn btn-sm btn-info" title="Manage" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-tasks"></i></button>';
+                                    break;
                                 case 'Edit&Manage':
-                                btnhtml += '<button class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pen-alt"></i></button>';
+                                    btnhtml += '<button class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pen-alt"></i></button>';
                                     btnhtml += '<button class="btn btn-sm btn-info" title="Manage" data-toggle="modal" data-target="#ticketCrudModal" style="margin-left:10px"><i class="fa fa-tasks"></i></button>';
                                     break;
-                            default:
-                                break;
-                        }
+                                default:
+                                    break;
+                            }
+                        });
                     });
                 }
                 //Creating Action button in the grid
@@ -286,10 +306,6 @@ export default class DataGrid extends React.Component {
             "autoWidth": false,
             // "responsive": true,
             "columns": this.props.ColumnCollection
-            // "columns": [{
-            //     sTitle: "Id"
-            // }]
-
         });
         //Enable hide column property
         dr.map((item, index) => {
@@ -302,81 +318,55 @@ export default class DataGrid extends React.Component {
 
             $(`#${this.props.Id} tbody`).unbind("click");
             // EDIT ACTION
-            //$(`#${this.props.Id} tbody`).on('click', '.fa-edit', function () {
             $(`#${this.props.Id} tbody`).on('click', '.btn-info', function (iid) {
                 let idIndex = gridBL.GetReferenceIdIndex(object.props.ColumnCollection, "Action");
-                //let index = $(this).parent().parent()[0].rowIndex;
                 let index = $(this).parent().parent()[0].rowIndex
-               // default pagintion
-               var currentrow = gridBL.GetCurrentRow(table,index);
-                // var currentpage  = table.page()
-                // var  page=0;
-                // if(currentpage>0){
-                // page=currentpage*10;
-
-                // }
-                // var tbldata = table.data();
-                // var currentrow = tbldata[page+index-1]
-                // end default pagination
+                var currentrow = gridBL.GetCurrentRow(table,index);
                 object.onGridEdit(currentrow[idIndex]);
-                //var data = table.row(index - 1).data();
-                //debugger
-                //object.onGridEdit(data[idIndex]);
             });
             // DOWNLOAD ACTION
-            //$(`#${this.props.Id} tbody`).on('click', '.fa-eye', function () {
             $(`#${this.props.Id} tbody`).on('click', '.btn-success', function () {
                 let idIndex = gridBL.GetReferenceIdIndexForUrl(object.props.ColumnCollection, "Action");
-                //let index = $(this).parent().parent()[0].rowIndex;
                 let index = $(this).parent().parent()[0].rowIndex
                 var data = table.row(index - 1).data();
-
                 object.onGridDownload(data[idIndex]);
             });
             // VIEW ACTION
-            //$(`#${this.props.Id} tbody`).on('click', '.fa-eye', function () {
             $(`#${this.props.Id} tbody`).on('click', '.btn-warning', function () {
                 let idIndex = gridBL.GetReferenceIdIndex(object.props.ColumnCollection, "Action");
-                // Use DataTables API to get the row data for the clicked button
                 var row = $(this).closest('tr');
                 var data = $(`#${object.props.Id}`).DataTable().row(row).data();
                 object.onGridView(data[idIndex]);
             });
             //DELETE ACTION
             $(`#${this.props.Id} tbody`).on('click', '.btn-danger', function () {
-
                 let idIndex = gridBL.GetReferenceIdIndex(object.props.ColumnCollection, "Action");
-                //let index = $(this).parent().parent()[0].rowIndex;
                 let index = $(this).parent().parent()[0].rowIndex
                 var currentrow = gridBL.GetCurrentRow(table,index);
-                // var currentpage  = table.page()
-                // var  page=0;
-                // if(currentpage>0){
-                // page=currentpage*10;
-
-                // }
-                // var tbldata = table.data();
-                // var currentrow = tbldata[page+index-1]
-                // end default pagination
                 object.onGridDelete(currentrow[idIndex]);
-                // var data = table.row(index - 1).data();
-                // debugger
-                // object.onGridDelete(data[idIndex]);
             });
 
             //Block ACTION
             $(`#${this.props.Id} tbody`).on('click', '.BlockAndUnblock', function () {
-
                 let idIndex = gridBL.GetReferenceIdIndex(object.props.ColumnCollection, "Action");
-                //let index = $(this).parent().parent()[0].rowIndex;
                 let index = $(this).parent().parent()[0].rowIndex
                 var data = table.row(index - 1).data();
                 object.onGridBlock(data[idIndex]);
+                
             });
+
+            // CHANGE PASSWORD ACTION
+            // ...existing code...
+$(`#${this.props.Id} tbody`).on('click', '.change-password-btn', function () {
+    let idIndex = gridBL.GetReferenceIdIndex(object.props.ColumnCollection, "Action");
+    var row = $(this).closest('tr');
+    var data = $(`#${object.props.Id}`).DataTable().row(row).data();
+    object.onGridChangePassword(data[idIndex]);
+});
+// ...existing code...
 
             $(`#${this.props.Id} tbody`).on('click', 'input[type=checkbox]', function () {
                 let idIndex = gridBL.GetReferenceIdIndex(object.props.ColumnCollection, "Select");
-                //let index = $(this).parent().parent()[0].rowIndex;
                 let index = $(this).parent().parent().parent()[0].rowIndex
                 var data = table.row(index - 1).data();
                 let returnVale = data[idIndex];
@@ -390,7 +380,6 @@ export default class DataGrid extends React.Component {
                     }
                 }
                 else {
-
                     let deleteIndex = undefined;
                     let searchjson = returnSelectValues.find((item, idx) => {
                         deleteIndex = idx;
@@ -400,12 +389,6 @@ export default class DataGrid extends React.Component {
                         returnSelectValues.splice(deleteIndex, 1);
                     }
                 }
-
-                // let idIndex = gridBL.GetReferenceIdIndex(object.props.ColumnCollection);
-                // let index = $(this).parent().parent()[0].rowIndex;
-                // var data = table.row(index - 1).data();
-                // object.onGridEdit(data[idIndex]);
-                //alert(`You clicked on ' ${data[0]} + '\'s row and Account Code : ${data[1]}`);
             });
 
             $(`#${this.props.Id} tbody`).on('click', '.showHideButton', function () {
@@ -413,8 +396,6 @@ export default class DataGrid extends React.Component {
                 var data = table.row(index - 1).data();
                 let val = $(this).attr("value");
                 var x = document.getElementById(val + "Protection" + data[0]);
-
-                // RG 2021/07/29 check x is null or not
                 if (x) {
                     if (x.type === "password") {
                         _this.viewInformation(val + " Showing", data[0], x);
@@ -429,11 +410,9 @@ export default class DataGrid extends React.Component {
     }
 
     viewInformation = (action, Id, x) => {
-
         var textarea = document.createElement('textarea');
         textarea.rows = 6;
         textarea.className = 'swal-content__textarea';
-        // Set swal return value every time an onkeyup event is fired in this textarea
         textarea.onkeyup = function () {
             swal.setActionValue({
                 confirm: this.value
@@ -477,19 +456,9 @@ export default class DataGrid extends React.Component {
             }
             if (value === true || value === '') {
                 swal("", "You need to write something!", "info");
-                //swal.close();
             }
         });
     }
-
-    // CreateGridButtons(data, type, row, meta) {
-    //     var parameters = meta.settings.oInit.columnDefs[meta.col].parameters;
-    //     var target_url = parameters.url;
-    //     //return '<a onclick="'+this.myEditor+'" href="'+target_url+data+'">'+data+'</a>';
-    //     //return '<a  href="#">'+data+'</a>';
-    //     return `<button  class="edit"  >Edit</button>`;
-    // };
-
 
     render() {
         return (
@@ -506,7 +475,6 @@ export default class DataGrid extends React.Component {
                         totalRows={this.props.totalrows}
                         totalPages={this.props.totalpages}
                         pageSize={this.props.pageSize}
-
                     />
                 }
             </div>
@@ -517,9 +485,7 @@ DataGrid.defaultProps = {
     IsSarching: false,
     IsPagination: false,
     DefaultPagination: false,
-
 }
-
 
 /*
 Data Grid Properties
@@ -535,8 +501,6 @@ Data Grid Properties
      Data:
     Column.visible // to hide and show the columns
      "info":     false // show info about the pagination
-
-
 
      Events
      ------------------------
@@ -555,8 +519,5 @@ Data Grid Properties
 } );
 } );
 
-
-
 /// https://datatables.net/reference/api/
-
 */
