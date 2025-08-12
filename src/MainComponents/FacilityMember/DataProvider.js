@@ -29,6 +29,11 @@ class DataProvider {
                     url = 'FacilityMemberKYCRemove';
                     return srv.CallPostNewService(url, model[0]);
 
+                    case 'ResetPassword':
+                url = `facilitymember/reset-password`;
+                // yaha PUT call honi chahiye
+                return srv.CallPutNewService(url, model[0]);
+
             default:
         }
     }

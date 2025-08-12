@@ -19,6 +19,11 @@ export default class DataGrid extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
+             showResetPasswordModal: false,
+            selectedUserId: null,
+            MobileNumber: '',
+            newPassword: '',
+            resetMessage: ''
         }
     }
     componentDidMount() {
@@ -44,12 +49,10 @@ export default class DataGrid extends React.Component {
         returnSelectValues = [];
     }
     // Grid Event Method
-    
-   onGridChangePassword(fId) {
+ onGridChangePassword(fId) {
     swal({
         title: "Do you want to change password?",
-       
-        icon: "warning", // This adds the exclamatory mark
+        icon: "warning",
         buttons: {
             cancel: {
                 text: "No",
@@ -68,12 +71,37 @@ export default class DataGrid extends React.Component {
         }
     }).then((willChange) => {
         if (willChange) {
-            this.props.onGridChangePassword(fId);
+            
+            let idIndex = gridBL.GetReferenceIdIndex(this.props.ColumnCollection, "Action");
+            let mobileIndex = gridBL.GetReferenceIdIndex(this.props.ColumnCollection, "MobileNo"); 
+            let table = $(`#${this.props.Id}`).DataTable();
+
+            let rowData = this.props.GridData.find(row => row[idIndex] === fId);
+            let MobileNumber = rowData ? rowData["MobileNo"] : "";
+
+            // 🔹 Direct API Call with MobileNo as newPassword
+            fetch(`https://api.urest.in:8096/api/facilitymember/reset-password`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    newPassword: MobileNumber
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                swal("Success", "Password reset successfully!", "success");
+            })
+            .catch(err => {
+                console.error(err);
+                swal("Error", "Failed to reset password", "error");
+            });
         }
     });
-
 }
-   
+
+
     onGridEdit(fId) {
         this.props.onEditMethod(fId);
     }
@@ -477,6 +505,10 @@ $(`#${this.props.Id} tbody`).on('click', '.change-password-btn', function () {
                         pageSize={this.props.pageSize}
                     />
                 }
+
+              
+
+
             </div>
         );
     }
