@@ -65,18 +65,20 @@ export default class DataGridBL {
     }
 
     //Sanjay Jun 25 19
-    GetActionButton(gridColumns) {
-        //
-        let index = null;
-        let actionButtons = gridColumns.find((item, idx) => {
-            index = idx;
-            return item.titleValue == "Action"
-        });
-        if (actionButtons != undefined)
-            return [{ Index: index, Buttons: actionButtons.Action.split(',') }];
-        else
-            return null;
+    // ...existing code...
+GetActionButton(ColumnCollection) {
+    let index = null;
+    let actionButtons = ColumnCollection.find((item, idx) => {
+        index = idx;
+        return item.titleValue == "Action"
+    });
+    if (actionButtons && typeof actionButtons.Action === 'string') {
+        return [{ Index: index, Buttons: actionButtons.Action.split(',') }];
+    } else {
+        return null;
     }
+}
+// ...existing code...
     //Sanjay jun 27 get reference key index
     GetReferenceIdIndex(gridColumns, Title) {
         let actionButtons = gridColumns.find((item, idx) => {
