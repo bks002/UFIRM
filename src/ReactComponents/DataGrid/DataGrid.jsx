@@ -75,10 +75,12 @@ export default class DataGrid extends React.Component {
             let idIndex = gridBL.GetReferenceIdIndex(this.props.ColumnCollection, "Action");
             let mobileIndex = gridBL.GetReferenceIdIndex(this.props.ColumnCollection, "MobileNo"); 
             let table = $(`#${this.props.Id}`).DataTable();
-
+            console.log(fId);
+            console.log();
             let rowData = this.props.GridData.find(row => row[idIndex] === fId);
+            console.log(rowData);
             let MobileNumber = rowData ? rowData["MobileNo"] : "";
-
+            console.log(MobileNumber);
             // 🔹 Direct API Call with MobileNo as newPassword
             fetch(`https://api.urest.in:8096/api/facilitymember/reset-password`, {
                 method: "POST",
@@ -86,7 +88,7 @@ export default class DataGrid extends React.Component {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    newPassword: MobileNumber
+                    MobileNumber: MobileNumber
                 })
             })
             .then(res => res.json())

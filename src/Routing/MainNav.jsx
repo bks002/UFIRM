@@ -17,6 +17,7 @@ import PropertyTower from "../pages/PropertyTowerPage";
 import PropertyAssignmentPage from "../pages/PropertyAssignmentPage";
 import ParkingDetailsPage from "../pages/ParkingDetailsPage";
 import FacilityMemberPage from "../pages/FacilityMemberPage";
+import FacilityLatlongPage from "../pages/FacilityLatlongPage";
 import ParkingAssignmentPage from "../pages/ParkingAssignmentsPage";
 import EmergencyContactPage from "../pages/EmergencyContactPage";
 import LayoutDataProvider from "./LayoutDataProvider.js";
@@ -73,9 +74,14 @@ import ItemMasterPage from "../MainComponents/Inventory/itemPage";
 import PurchaseOrderPage from "../MainComponents/Inventory/PurchaseOrderMaster";
 import StockPage from "../MainComponents/Inventory/StockMaster";
 import AttendanceMaster from "../MainComponents/Attendance/attendance.jsx";
-import LeavesMaster from "../MainComponents/Attendance/LeavesMaster.jsx";
+import Leave from "../MainComponents/Attendance/Leaves.jsx";
 import Visitor from "../MainComponents/Visitor/Visitor.jsx";
 import CategoryMaster from "../MainComponents/AssetsMaster/CategoryMaster.jsx";
+import FacilityLatlong from "../MainComponents/FacilityMember/FacilityLatlong.jsx";
+import LeaveMaster from "../MainComponents/Attendance/LeaveMaster.jsx";
+
+
+
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -623,6 +629,15 @@ class MainNav extends React.Component {
                             <p>Facility Member </p>
                           </Link>
                         </li>
+                        <li className="nav-item">
+                          <Link
+                              to="/Account/App/Facility"
+                              className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Facility Latlong </p>
+                          </Link>
+                        </li>
 
                         {this.state.userRoles && this.state.userRoles.includes("Admin") ?
                           <li className="nav-item">
@@ -640,9 +655,18 @@ class MainNav extends React.Component {
                             <p >Attendance</p>
                           </Link>
                         </li>
+                         <li className="nav-item">
+                          <Link
+                            to="/Account/App/leavemaster"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Leave Master </p>
+                          </Link>
+                        </li>
                           <li className="nav-item">
                           <Link
-                            to="/Account/App/leaves"
+                            to="/Account/App/leave"
                             className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -1076,6 +1100,10 @@ class MainNav extends React.Component {
             <Route path="/Account/App/FacilityMember">
               <FacilityMemberPage/>
             </Route>
+            <Route path="/Account/App/Facility">
+  <FacilityLatlong />
+</Route>
+
             <Route path="/Account/App/CreateNewUser">
               <CreateNewUser/>
             </Route>
@@ -1200,8 +1228,8 @@ class MainNav extends React.Component {
             <Route path="/Account/App/ServiceRecords">
               <ServiceRecords />
             </Route>
-            <Route path="/Account/App/leaves">
-              <LeavesMaster />
+            <Route path="/Account/App/leave">
+              <Leave />
             </Route>
             <Route path="/Account/App/Visitor">
               <Visitor />
@@ -1273,7 +1301,9 @@ class MainNav extends React.Component {
               <UploaderPage />
             </Route>
 
-            <Route path="/Account/App/leaves" component={LeavesMaster} />
+            <Route path="/Account/App/leave" component={Leave} />
+            <Route path="/Account/App/leavemaster" component={LeaveMaster} />
+            <Route path="/Account/App/Facility" component={FacilityLatlongPage} />
             {/* <Route path="/AttendanceSummary">
                             <AttendanceSummaryPage />
                         </Route> */}
