@@ -79,6 +79,7 @@ import Visitor from "../MainComponents/Visitor/Visitor.jsx";
 import CategoryMaster from "../MainComponents/AssetsMaster/CategoryMaster.jsx";
 import FacilityLatlong from "../MainComponents/FacilityMember/FacilityLatlong.jsx";
 import LeaveMaster from "../MainComponents/Attendance/LeaveMaster.jsx";
+import EmployeeLeave from "../MainComponents/FacilityMember/EmployeeLeave.jsx";
 
 
 
@@ -653,6 +654,16 @@ class MainNav extends React.Component {
                           <Link to="/Account/App/Attendance" className="nav-link">
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p >Attendance</p>
+                          </Link>
+                        </li>
+                        
+                         <li className="nav-item">
+                          <Link
+                              to="/Account/App/EmployeeLeave"
+                              className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Employee Leave </p>
                           </Link>
                         </li>
                          <li className="nav-item">
@@ -1304,6 +1315,8 @@ class MainNav extends React.Component {
             <Route path="/Account/App/leave" component={Leave} />
             <Route path="/Account/App/leavemaster" component={LeaveMaster} />
             <Route path="/Account/App/Facility" component={FacilityLatlongPage} />
+             <Route path="/Account/App/EmployeeLeave" component={EmployeeLeave} />
+
             {/* <Route path="/AttendanceSummary">
                             <AttendanceSummaryPage />
                         </Route> */}
