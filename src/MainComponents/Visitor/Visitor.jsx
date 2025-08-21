@@ -79,6 +79,7 @@ const Visitor = () => {
     };
 
      const header = (
+
         <div className="card-header d-flex justify-content-between align-items-center p-2">
           <div className="input-group input-group-sm">
             <span className="p-input-icon-right">
@@ -93,7 +94,7 @@ const Visitor = () => {
             </span>
           </div>
           <ExportToCSV data={gridData} className="btn btn-success btn-sm rounded mr-2" />
-            
+
         </div>
     );
 

@@ -103,6 +103,7 @@ const LeaveTypeMaster = () => {
   }
 
   // Header
+
   const header = (
     <div className="d-flex justify-content-between align-items-center p-2">
       <h5 className="m-0">Leave Master</h5>

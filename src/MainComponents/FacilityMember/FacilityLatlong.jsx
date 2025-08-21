@@ -39,6 +39,8 @@ const FacilityLatlong = () => {
   const [longitude, setLongitude] = useState("");
   const [locationName, setLocationName] = useState("");
 
+  const [Type, setVisitType] = useState(""); 
+
   useEffect(() => {
     if (propertyId) {
       loadFacilities();
@@ -58,6 +60,8 @@ const FacilityLatlong = () => {
           latitude: item.Latitude,
           longitude: item.Longitude,
           locationName: item.LocationName,
+          Type:item.Type
+
         }))
       );
     } catch (error) {
@@ -95,6 +99,7 @@ const FacilityLatlong = () => {
     setLatitude("");
     setLongitude("");
     setLocationName("");
+    setVisitType("");
     setEditingIndex(null);
   };
 
@@ -113,7 +118,8 @@ const FacilityLatlong = () => {
   };
 
   const validate = () => {
-    if (!selectedEmployee || !latitude || !longitude || !locationName) {
+    if (!selectedEmployee || !latitude || !longitude || !Type || !locationName ) {
+
       toast.current.show({
         severity: "warn",
         summary: "Validation",
@@ -135,7 +141,9 @@ const FacilityLatlong = () => {
     Latitude: parseFloat(latitude),
     Longitude: parseFloat(longitude),
     IsActive: true,
+    Type: Type,
     LocationName: locationName
+
   };
 
   try {
@@ -180,14 +188,16 @@ const FacilityLatlong = () => {
 
   const header = (
     <div className="d-flex justify-content-between align-items-center p-2">
-      <span className="p-input-icon-left">
-        <i className="pi pi-search" />
-        <InputText
-          value={globalFilterValue}
-          onChange={onGlobalFilterChange}
-          placeholder="Search..."
-        />
-      </span>
+          <h5 className="m-0">Facility Latlong</h5>
+          <div className="d-flex gap-2 align-items-center">
+            <span className="p-input-icon-left">
+              <i className="pi pi-search" />
+              <InputText
+                value={globalFilterValue}
+                onChange={onGlobalFilterChange}
+                placeholder="Search..."
+              />
+            </span>
 
       <Button
         label="Create"
@@ -196,6 +206,8 @@ const FacilityLatlong = () => {
         className="p-button-success"
       />
     </div>
+    </div>
+
   );
 
   const actionBodyTemplate = (rowData) => (
@@ -222,7 +234,7 @@ const FacilityLatlong = () => {
                 rows={10}
                 filters={filters}
                 filterDisplay="row"
-                globalFilterFields={["employeeName", "latitude", "longitude", "locationName"]}
+                globalFilterFields={["employeeName", "latitude", "longitude", "locationName", "Type"]}
                 emptyMessage="No facilities found."
                 dataKey="employeeId"
                 breakpoint="960px"
@@ -232,6 +244,7 @@ const FacilityLatlong = () => {
                 <Column field="employeeName" header="Employee Name" />
                 <Column field="latitude" header="Latitude" />
                 <Column field="longitude" header="Longitude" />
+                <Column field="Type" header="Visit Type" />
                 <Column field="locationName" header="Location Name" />
                 <Column header="Action" body={actionBodyTemplate} style={{ width: "9rem" }} />
               </DataTable>
@@ -289,6 +302,10 @@ const FacilityLatlong = () => {
           <div className="field">
             <label>Location Name</label>
             <InputText value={locationName} onChange={(e) => setLocationName(e.target.value)} />
+          </div>
+           <div className="field">
+            <label>Visit Type</label>
+            <InputText value={Type} onChange={(e) =>     setVisitType(e.target.value)} />
           </div>
         </div>
       </Dialog>

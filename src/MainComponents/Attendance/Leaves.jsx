@@ -65,13 +65,21 @@ const Leaves = () => {
     }
 
     const header = (
-        <div className="card-header d-flex justify-content-between align-items-center p-2">
-            <span className="p-input-icon-right">
-                <i className="pi pi-search" />
-                <InputText value={globalFilterValue} onChange={onGlobalFilterChange} placeholder="Search..." className="form-control" />
-            </span>
-        </div>
-    )
+        <div className="d-flex justify-content-between align-items-center p-2">
+                     <h5 className="m-0">Leaves</h5>
+                     <div className="d-flex gap-2 align-items-center">
+                       <span className="p-input-icon-left">
+                         <i className="pi pi-search" />
+                         <InputText
+                           value={globalFilterValue}
+                           onChange={onGlobalFilterChange}
+                           placeholder="Search..."
+                         />
+                       </span>
+             </div>
+           </div>
+         )
+
 
     const actionBodyTemplate = (rowData) => (
         <>
