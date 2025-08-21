@@ -79,20 +79,22 @@ const Visitor = () => {
     };
 
      const header = (
-        <div className="d-flex justify-content-between align-items-center p-2">
-                      <h5 className="m-0">Visitor</h5>
-                      <div className="d-flex gap-2 align-items-center">
-                        <span className="p-input-icon-left">
-                          <i className="pi pi-search" />
-                          <InputText
-                            value={globalFilterValue}
-                            onChange={onGlobalFilterChange}
-                            placeholder="Search..."
-                          />
-                        </span>
-          
-                          <ExportToCSV data={gridData} className="btn btn-success btn-sm rounded mr-2" />
-                      </div>
+
+        <div className="card-header d-flex justify-content-between align-items-center p-2">
+          <div className="input-group input-group-sm">
+            <span className="p-input-icon-right">
+              <i className="pi pi-search" />
+              <InputText
+                type="search"
+                value={globalFilterValue}
+                onChange={onGlobalFilterChange}
+                placeholder="Search..."
+                className="form-control"
+              />
+            </span>
+          </div>
+          <ExportToCSV data={gridData} className="btn btn-success btn-sm rounded mr-2" />
+
         </div>
     );
 

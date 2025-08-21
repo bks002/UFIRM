@@ -80,6 +80,7 @@ const Leaves = () => {
            </div>
          )
 
+
     const actionBodyTemplate = (rowData) => (
         <>
             {/* <Button icon="pi pi-eye" className="p-button-rounded p-button-info mr-2" onClick={() => viewLeave(rowData)} tooltip="View" /> */}

@@ -20,9 +20,9 @@ const handleApiError = (error) => {
     }
 };
 
-export const getAttendance = async (propertyId) => {
+export const getAttendance = async (propertyId,FromDate, ToDate) => {
     try {
-        const response = await api.get(`/monthly-summary?PropertyId=${ propertyId }` );
+        const response = await api.get(`/monthly-summary?PropertyId=${ propertyId }&FromDate=${FromDate}&ToDate=${ToDate}` );
         return response.data;
     } catch (error) {
         handleApiError(error);

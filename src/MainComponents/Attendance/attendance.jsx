@@ -37,13 +37,28 @@ export default function AttendanceMaster() {
 
     useEffect(() => {
         const fetchData = async () => {
-            if (propertyId) {
-                const data = await getAttendance(propertyId);
+            if (!propertyId) return;
+
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            const fromDate = new Date(year, month, 1);
+            const toDate = new Date(year, month + 1, 0); // last day of month
+
+            const formatDate = (date) => date.toLocaleDateString('en-CA'); // 'YYYY-MM-DD'
+
+            console.log("From:", formatDate(fromDate), "To:", formatDate(toDate));
+
+            try {
+                const data = await getAttendance(propertyId, formatDate(fromDate), formatDate(toDate));
                 setAttendanceData(data);
+            } catch (error) {
+                console.error("Failed to fetch attendance:", error);
             }
         };
+
         fetchData();
-    }, [propertyId]);
+    }, [propertyId, currentDate]);
 
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
