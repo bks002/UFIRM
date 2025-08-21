@@ -19,7 +19,7 @@ import { FacilityLatlongService } from "../../Services/FacilityLatlongService";
 const EmployeeLeave = () => {
   const toast = useRef(null);
   const propertyId = useSelector((state) => state.Commonreducer.puidn);
-
+  
 
   // Table & filters
   const [leaveData, setLeaveData] = useState([]);
