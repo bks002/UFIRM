@@ -83,8 +83,6 @@ import EmployeeLeave from "../MainComponents/FacilityMember/EmployeeLeave.jsx";
 
 
 
-
-
 var currentpropertyid;
 class MainNav extends React.Component {
   constructor(props) {

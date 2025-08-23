@@ -38,7 +38,6 @@ const FacilityLatlong = () => {
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
   const [locationName, setLocationName] = useState("");
-
   const [Type, setVisitType] = useState(""); 
 
   useEffect(() => {
@@ -61,7 +60,6 @@ const FacilityLatlong = () => {
           longitude: item.Longitude,
           locationName: item.LocationName,
           Type:item.Type
-
         }))
       );
     } catch (error) {
@@ -119,7 +117,6 @@ const FacilityLatlong = () => {
 
   const validate = () => {
     if (!selectedEmployee || !latitude || !longitude || !Type || !locationName ) {
-
       toast.current.show({
         severity: "warn",
         summary: "Validation",
@@ -143,7 +140,6 @@ const FacilityLatlong = () => {
     IsActive: true,
     Type: Type,
     LocationName: locationName
-
   };
 
   try {
@@ -207,7 +203,6 @@ const FacilityLatlong = () => {
       />
     </div>
     </div>
-
   );
 
   const actionBodyTemplate = (rowData) => (

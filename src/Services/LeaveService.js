@@ -44,5 +44,50 @@ export const updateAllLeaveRequests = async (updateAllLeaveRequests) => {
         throw error;
     }
 }
+// ✅ 1. Fetch Leave Summary (GET by mobileNo)
+export const fetchLeaveSummary = async (mobileNo) => {
+    if (!mobileNo) {
+        console.error("Mobile number is required to fetch leave summary.");
+        return [];
+    }
 
+    const url = `${BASE_URL}/api/attendance/leave-summary?mobileNo=${mobileNo}`;
+
+    try {
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            console.error(`Failed to fetch leave summary. Status: ${response.status}`);
+            return [];
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error("Error fetching leave summary:", error);
+        return [];
+    }
+};
+
+// ✅ 2. Submit Leave Request (POST)
+export const submitLeaveRequest = async (leaveRequestData) => {
+    try {
+        const response = await fetch(`${BASE_URL}/api/attendance/leave-request`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(leaveRequestData),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to submit leave request. Status: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("Error submitting leave request:", error);
+        throw error;
+    }
+};
 
