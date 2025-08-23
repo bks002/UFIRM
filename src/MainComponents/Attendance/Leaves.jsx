@@ -19,8 +19,9 @@ import "primereact/resources/primereact.min.css"
 
 const Leaves = () => {
     const [gridData, setGridData] = useState([])
+
     const [employeeLeaveSummary, setEmployeeLeaveSummary] = useState([]);
-const [showTable, setShowTable] = useState(true); 
+    const [showTable, setShowTable] = useState(true); 
 
     const [loading, setLoading] = useState(false)
     const [globalFilterValue, setGlobalFilterValue] = useState("")
@@ -139,7 +140,6 @@ const deleteLeave = async (data) => {
         life: 3000
     });
 };
-
 
 
     const onGlobalFilterChange = (e) => {
@@ -279,7 +279,6 @@ setShowTable(false);
             setEmployeeLeaveSummary([]);
         }
     };
-
     return (
         <div className="content-wrapper">
             <section className="content">
@@ -372,3 +371,4 @@ setShowTable(false);
 }
 
 export default Leaves
+

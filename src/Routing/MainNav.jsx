@@ -83,7 +83,6 @@ import EmployeeLeave from "../MainComponents/FacilityMember/EmployeeLeave.jsx";
 
 
 
-
 var currentpropertyid;
 class MainNav extends React.Component {
   constructor(props) {
@@ -666,6 +665,7 @@ class MainNav extends React.Component {
                             <p>Employee Leave </p>
                           </Link>
                         </li>
+
                          <li className="nav-item">
                           <Link
                             to="/Account/App/leavemaster"

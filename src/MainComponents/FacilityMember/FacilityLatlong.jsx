@@ -60,7 +60,6 @@ const FacilityLatlong = () => {
           longitude: item.Longitude,
           locationName: item.LocationName,
           Type:item.Type
-          
         }))
       );
     } catch (error) {
@@ -141,9 +140,6 @@ const FacilityLatlong = () => {
     IsActive: true,
     Type: Type,
     LocationName: locationName
-   
-
-    
   };
 
   try {
@@ -207,7 +203,6 @@ const FacilityLatlong = () => {
       />
     </div>
     </div>
-    
   );
 
   const actionBodyTemplate = (rowData) => (

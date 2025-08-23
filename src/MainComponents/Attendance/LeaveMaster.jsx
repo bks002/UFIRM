@@ -103,18 +103,18 @@ const LeaveTypeMaster = () => {
   }
 
   // Header
-   const header = (
+
+  const header = (
     <div className="d-flex justify-content-between align-items-center p-2">
-              <h5 className="m-0">Leaves Master</h5>
-              <div className="d-flex gap-2 align-items-center">
-                <span className="p-input-icon-left">
-                  <i className="pi pi-search" />
-                  <InputText
-                    value={globalFilterValue}
-                    onChange={onGlobalFilterChange}
-                    placeholder="Search..."
-                  />
-                </span>
+      <h5 className="m-0">Leave Master</h5>
+      <div className="d-flex gap-2 align-items-center">
+        <span className="p-input-icon-left">
+          <i className="pi pi-search" />
+          <InputText
+            value={globalFilterValue}
+            onChange={onGlobalFilterChange}
+            placeholder="Search..."
+          />
         <Button label="Create" icon="pi pi-plus" onClick={openCreateDialog} className="p-button-success" />
       </div>
     </div>

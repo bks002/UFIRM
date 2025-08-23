@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { connect } from 'react-redux';
+import { connect, useSelector } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import DataProvider from './DataProvider';
 import ChartNavigator from "../Charts/ChartNavigator";
 import DashboardCard from "../Dashboards/DashboardCard";
 import departmentActions from "../../redux/department/action";
-import {fetchSubCatTaskCounts} from "../../Services/DashboardServices";
+import { fetchSubCatTaskCounts } from "../../Services/DashboardServices";
+import { getAttendance } from '../../Services/AttendanceService';
 
 const Home = ({ PropertyId }) => {
     const [complains, setComplains] = useState([]);
@@ -23,6 +24,9 @@ const Home = ({ PropertyId }) => {
     const [assetCount, setAssetCount] = useState([]);
     const [totalAssets, setTotalAssets] = useState(0);
 
+    const [attendance, setAttendance] = useState([]);
+    const [attendanceTotal, setAttendanceTotal] = useState(0);
+
     const [initialDate, setInitialDate] = useState('');
     const [finalDate, setFinalDate] = useState('');
 
@@ -30,7 +34,7 @@ const Home = ({ PropertyId }) => {
     const [subCategoryTaskData, setSubCategoryTaskData] = useState({});
 
     const apiProvider = new DataProvider();
-
+    const propertyId = useSelector((state) => state.Commonreducer.puidn);
     const getModel = useCallback(() => {
         return [{ PropertyId: parseInt(PropertyId) }];
     }, [PropertyId]);
@@ -38,8 +42,7 @@ const Home = ({ PropertyId }) => {
     const taskStatusCount = useCallback(async (model, initialDate, finalDate) => {
         try {
             const resp = await apiProvider.manageDashTaskStatusCnt(model, initialDate, finalDate);
-            if (resp && resp.ok && resp.status === 200)
-            {
+            if (resp && resp.ok && resp.status === 200) {
                 const data = await resp.json();
                 const defaultCounts = { Actionable: 0, Completed: 0, Pending: 0 };
                 let total = 0;
@@ -73,8 +76,7 @@ const Home = ({ PropertyId }) => {
     const taskPriorityCount = useCallback(async (model, initialDate, finalDate) => {
         try {
             const resp = await apiProvider.manageDashTaskPriorityCnt(model, initialDate, finalDate);
-            if (resp && resp.ok && resp.status === 200)
-            {
+            if (resp && resp.ok && resp.status === 200) {
                 const data = await resp.json();
                 const [completed = {}, SOS = {}, High = {}, Medium = {}, Low = {}] = data;
 
@@ -104,16 +106,14 @@ const Home = ({ PropertyId }) => {
     const getAssetCount = useCallback(async (model, initialDate, finalDate) => {
         try {
             const resp = await apiProvider.manageDashAssetCardCount(model, initialDate, finalDate);
-            if (resp && resp.ok && resp.status === 200){
+            if (resp && resp.ok && resp.status === 200) {
                 const data = await resp.json();
-
                 const assetStatus = [
                     { Title: 'Service Overdue', Value: data.ServiceOverdueAssets || 0 },
                     { Title: 'Upcoming Services', Value: data.UpcomingServices || 0 },
                     { Title: 'Rented-Out Assets', Value: data.RentedOutAsset || 0 },
                     { Title: 'Checked-Out Assets', Value: data.CheckedOutAssets || 0 }
                 ];
-
                 setAssetCount(assetStatus);
                 setTotalAssets(data.TotalAsset || 0);
             }
@@ -122,27 +122,60 @@ const Home = ({ PropertyId }) => {
         }
     }, []);
 
+    const getAttendanceData = useCallback(async (model, initialDate, finalDate) => {
+    try {
+        const data = await getAttendance(model, initialDate, finalDate); // not 'resp'
+
+        console.log("Attendance data body:", data);
+
+        if (!Array.isArray(data)) {
+            throw new Error("Attendance data is not an array");
+        }
+
+        const presentCount = data.filter(emp => emp.Status === 'Present').length;
+        const absentCount = data.filter(emp => emp.Status === 'Absent').length;
+        const leaveCount = data.filter(emp => emp.Status === 'Leave').length;
+
+        const attendanceStatus = [
+            { Title: 'Present', Value: presentCount },
+            { Title: 'Absent', Value: absentCount },
+            { Title: 'Leave', Value: leaveCount }
+        ];
+
+        setAttendance(attendanceStatus);
+        setAttendanceTotal(presentCount + absentCount + leaveCount);
+
+    } catch (error) {
+        console.error('Error fetching attendance data:', error);
+
+        setAttendance([
+            { Title: 'Present', Value: 0 },
+            { Title: 'Absent', Value: 0 },
+            { Title: 'Leave', Value: 0 }
+        ]);
+        setAttendanceTotal(0);
+    }
+}, []);
+
     const loadSubCatData = async (propertyId, fromDate, toDate) => {
         const data = await fetchSubCatTaskCounts(propertyId, fromDate, toDate);
         setSubCategoryTaskData(data);
     };
 
-
-
     const getDates = useCallback(async (initialDate, finalDate) => {
         setInitialDate(initialDate);
         setFinalDate(finalDate);
         const model = getModel();
-        loadSubCatData(model[0].PropertyId,initialDate, finalDate)
+        loadSubCatData(model[0].PropertyId, initialDate, finalDate);
         taskStatusCount(model, initialDate, finalDate);
         taskPriorityCount(model, initialDate, finalDate);
         getAssetCount(model, initialDate, finalDate);
-    }, [getModel, taskStatusCount, taskPriorityCount, getAssetCount, loadSubCatData, subCategoryCards]);
+        getAttendanceData(propertyId, initialDate, finalDate);
+    }, [getModel, taskStatusCount, taskPriorityCount, getAssetCount, getAttendanceData, loadSubCatData, subCategoryCards]);
 
     const manageDashboardCnt = useCallback(async (model) => {
         const resp = await apiProvider.manageDashboardCnt(model, 'R');
-        if (resp && resp.ok && resp.status === 200)
-        {
+        if (resp && resp.ok && resp.status === 200) {
             const rData = await resp.json();
             if (rData) {
                 setTotalFlatsCnt(rData.dashbaordFlatCount.total);
@@ -176,7 +209,7 @@ const Home = ({ PropertyId }) => {
 
     return (
         <div className="content-wrapper mt-2">
-            <section className="content ">
+            <section className="content">
                 <div className="container-fluid">
                     <div className="row">
                         <div className="col-md-3">
@@ -198,10 +231,16 @@ const Home = ({ PropertyId }) => {
                             <ChartNavigator onPeriodChange={getDates} />
                         </div>
                     </section>
+
                     <div className="row">
                         <div className="col-md-3">
                             <DashboardCard CardTitle="Total Flats" HeaderValue={totalFlatsCnt} HeaderClass="card card-info cardutline" ItemJson={totalFlats} Link="/Account/App/ManageResidentOwners" />
                         </div>
+
+                        <div className="col-md-3">
+                            <DashboardCard CardTitle="Attendance" HeaderValue={attendanceTotal} HeaderClass="card card-danger cardutline" ItemJson={attendance} Link="/Account/App/Attendance" />
+                        </div>
+
                         {subCategoryCards.map((x) => {
                             const counts = subCategoryTaskData[x.id] || { Actionable: 0, Completed: 0, Pending: 0 };
                             const itemJson = [
@@ -223,7 +262,6 @@ const Home = ({ PropertyId }) => {
                                 </div>
                             );
                         })}
-
                     </div>
 
                 </div>
