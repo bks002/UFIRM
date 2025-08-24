@@ -13,9 +13,9 @@ import { useSelector } from "react-redux";
 
 import "primereact/resources/themes/lara-light-blue/theme.css";
 
-import {EmployeeLeaveService} from "../../Services/EmployeeLeaveService"
+import { EmployeeLeaveService } from "../../Services/EmployeeLeaveService"
 import { FacilityLatlongService } from "../../Services/FacilityLatlongService";
- 
+
 const EmployeeLeave = () => {
   const toast = useRef(null);
   const propertyId = useSelector((state) => state.Commonreducer.puidn);
@@ -80,34 +80,34 @@ const EmployeeLeave = () => {
 
   // ✅ GET Employees for dropdown
   const loadEmployees = async () => {
-   try {
-     const empData = await FacilityLatlongService.getFacilityMembers(propertyId);
-     setEmployees(
-  empData.map((e) => ({
-    label: e.Name,
-    value: e.FacilityMemberId   // only Id, no object
-  }))
-);
+    try {
+      const empData = await FacilityLatlongService.getFacilityMembers(propertyId);
+      setEmployees(
+        empData.map((e) => ({
+          label: e.Name,
+          value: e.FacilityMemberId   // only Id, no object
+        }))
+      );
 
-   } catch (error) {
-     console.error(error);
-   }
- };
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   // ✅ GET Leave Types for dropdown
   const loadLeaveTypes = async () => {
-  try {
-    const leaveTypeData = await EmployeeLeaveService.getLeaveTypes(propertyId);
-    setLeaveTypes(
-      leaveTypeData.map((lt) => ({
-        label: lt.LeaveType,  // for displaying
-        value: lt.Id          // actual value
-      }))
-    );
-  } catch (error) {
-    console.error(error);
-  }
-};
+    try {
+      const leaveTypeData = await EmployeeLeaveService.getLeaveTypes(propertyId);
+      setLeaveTypes(
+        leaveTypeData.map((lt) => ({
+          label: lt.LeaveType,  // for displaying
+          value: lt.Id          // actual value
+        }))
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const resetForm = () => {
     setSelectedEmployee(null);
@@ -149,19 +149,19 @@ const EmployeeLeave = () => {
   const saveLeave = async () => {
     if (!validate()) return;
 
-  const record = {
-  EmployeeId: Number(selectedEmployee),   // ensure number
-  LeaveTypeId: Number(selectedLeaveType), // ensure number
-  LeaveCount: Number(leaveCount),
-  Balance: Number(leaveBalance),
-  FinancialYear: financialYear,  // try "2025-2026" instead of just "2025"
-  PropertyId: Number(propertyId), // convert to number
-  CreatedOn:1,
-  CreatedBy:1,
-  UpdatedOn:1,
-  UpdatedBy:0,
-  IsActive:true
-};
+    const record = {
+      EmployeeId: Number(selectedEmployee),   // ensure number
+      LeaveTypeId: Number(selectedLeaveType), // ensure number
+      LeaveCount: Number(leaveCount),
+      Balance: Number(leaveBalance),
+      FinancialYear: financialYear,  // try "2025-2026" instead of just "2025"
+      PropertyId: Number(propertyId), // convert to number
+      CreatedOn: 1,
+      CreatedBy: 1,
+      UpdatedOn: 1,
+      UpdatedBy: 0,
+      IsActive: true
+    };
 
 
 
@@ -228,6 +228,17 @@ const EmployeeLeave = () => {
     </div>
   );
 
+  const employeeBodyTemplate = (rowData) => {
+    const emp = employees.find((e) => e.value === rowData.employeeId);
+    return emp ? emp.label : rowData.employeeId;
+  };
+
+  const leaveTypeBodyTemplate = (rowData) => {
+    const lt = LeaveType.find((l) => l.value === rowData.leaveTypeId);
+    return lt ? lt.label : rowData.leaveTypeId;
+  };
+
+
   const actionBodyTemplate = (rowData) => (
     <div className="d-flex gap-2">
       <Button
@@ -262,8 +273,8 @@ const EmployeeLeave = () => {
                 responsiveLayout="scroll"
               >
                 <Column header="#" body={indexTemplate} style={{ width: "5rem" }} />
-                <Column field="employeeId" header="Employee Name" />
-                <Column field="leaveTypeId" header="Leave Type" />
+                <Column field="employeeId" header="Employee Name" body={employeeBodyTemplate} />
+                <Column field="leaveTypeId" header="Leave Type" body={leaveTypeBodyTemplate} />
                 <Column field="leaveCount" header="Leave Count" />
                 <Column field="balance" header="Leave Balance" />
                 <Column field="financialYear" header="Financial Year" />
