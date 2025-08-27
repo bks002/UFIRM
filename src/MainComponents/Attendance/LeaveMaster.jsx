@@ -119,6 +119,7 @@ const LeaveTypeMaster = () => {
             onChange={onGlobalFilterChange}
             placeholder="Search..."
           />
+          </span>
         <Button label="Create" icon="pi pi-plus" onClick={openCreateDialog} className="p-button-success" />
       </div>
     </div>

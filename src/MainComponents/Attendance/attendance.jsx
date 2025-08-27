@@ -3,10 +3,20 @@ import { Dialog } from 'primereact/dialog';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
-import { getAttendance } from '../../Services/AttendanceService';
+import { Dropdown } from 'primereact/dropdown';
+import { Calendar } from 'primereact/calendar';
+import { Button } from 'primereact/button';
+import { FileUpload } from 'primereact/fileupload';
+import { getAttendance, getFacilityMembers, getAllLocations, saveManualAttendance, getManualAttendanceByProperty, processManualAttendance, rejectprocessManualAttendance  } from "../../Services/AttendanceService";
+
 import { useSelector } from 'react-redux';
 
 export default function AttendanceMaster() {
+    const formPayload = new FormData();
+    const [rejectionDialog, setRejectionDialog] = useState(false);
+const [rejectionRemark, setRejectionRemark] = useState("");
+const [selectedAttendanceId, setSelectedAttendanceId] = useState(null);
+
     const [currentDate, setCurrentDate] = useState(new Date());
     const [globalFilter, setGlobalFilter] = useState('');
     const [attendanceData, setAttendanceData] = useState([]);
@@ -14,6 +24,212 @@ export default function AttendanceMaster() {
     const [selectedDayAttendance, setSelectedDayAttendance] = useState([]);
     const [selectedDay, setSelectedDay] = useState(null);
     const propertyId = useSelector((state) => state.Commonreducer.puidn);
+const userId = useSelector((state) => state.Commonreducer.userId);
+const [previewImage, setPreviewImage] = useState(null);
+
+    const [submittedData, setSubmittedData] = useState([]);
+  const [viewDialog, setViewDialog] = useState(false);
+
+
+  // ✅ States
+  const [createDialog, setCreateDialog] = useState(false);
+  const [locations, setLocations] = useState([]);
+  const [employeeList, setEmployeeList] = useState([]); 
+  const [formData, setFormData] = useState({
+    Id:0,
+    employee: null,
+    mobile: "",
+    punchDate: null,
+    checkIn: null,
+    checkOut: null,
+    gateNo: "",
+    image: "",
+     location: ""
+  });
+
+    // ✅ Employee fetch API call
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        if (!propertyId) return;
+        const data = await getFacilityMembers(propertyId);
+        // API response ke "Name" & "MobileNumber" ko dropdown ke liye format karo
+        const formatted = data.map(emp => ({
+          ...emp,
+          label: emp.Name,
+          value: emp // pura object rakhenge
+        }));
+        console.log("Fetched Employees:", formatted);
+        setEmployeeList(formatted);
+      } catch (error) {
+        console.error("Failed to load employees:", error);
+      }
+    };
+    fetchEmployees();
+  }, [propertyId]);
+
+
+    // ✅ Location fetch API call
+    useEffect(() => {
+        const fetchLocations = async () => {
+            try {
+                const data = await getAllLocations();
+                setLocations(data);
+            } catch (error) {
+                console.error("Failed to load locations:", error);
+            }
+        };
+        fetchLocations();
+    }, []);
+
+
+    useEffect(() => {
+    const fetchSavedAttendance = async () => {
+        if (!propertyId) return;
+        try {
+            const savedData = await getManualAttendanceByProperty(propertyId);
+
+            // Transform API response to match submittedData format
+            const formattedData = savedData.map(item => ({
+                Id: item.Id,
+                employee: { Name: item.EmployeeName || `ID-${item.EmployeeId}` }, // EmployeeName agar null ho to fallback
+                mobile: item.MobileNo,
+                punchDate: item.CheckInTime ? new Date(item.CheckInTime) : null,
+                checkIn: item.CheckInTime ? new Date(item.CheckInTime) : null,
+                checkOut: item.CheckOutTime ? new Date(item.CheckOutTime) : null,
+                gateNo: item.GateNo,
+                image: item.ImageFileName,
+                location: item.LocationName || ""
+            }));
+
+            setSubmittedData(formattedData); // table me dikhega
+        } catch (error) {
+            console.error("Failed to fetch saved attendance:", error);
+        }
+    };
+
+    fetchSavedAttendance();
+}, [propertyId]);
+
+
+const handleApprove = async (record) => {
+    console.log("Approving record:", record);
+  try {
+    setSubmittedData(prev =>
+      prev.map(item =>
+        item.Id === record.Id ? { ...item, IsApproved: true, IsRejected: false } : item
+      )
+    );
+    console.log("Approving record ID:", record.Id);
+    await processManualAttendance({ id: record.Id, approve: true }); // <-- use record.Id
+    alert("Attendance approved ✅");
+  } catch (error) {
+    console.error(error);
+    alert("Failed to approve ❌");
+  }
+};
+
+
+const handleReject = (record) => {
+  setSelectedAttendanceId(record.Id);
+  setRejectionRemark("");
+  setRejectionDialog(true);
+};
+
+const submitRejection = async (record) => {
+  if (!rejectionRemark.trim()) {
+    alert("Please enter rejection remark");
+    return;
+  }
+
+  try {
+
+    setSubmittedData(prev =>
+      prev.map(item =>
+        item.Id === record.Id ? { ...item, IsApproved: false, IsRejected: true, rejectionRemark:rejectionRemark } : item
+      )
+    );
+    console.log("Approving record ID:", record.Id);
+    await rejectprocessManualAttendance({ id: record.Id, approve: false, rejectionRemark }); // <-- use record.Id
+    alert("Attendance rejected ❌");
+
+    setRejectionDialog(false);
+  } catch (error) {
+    console.error(error);
+    alert("Failed to reject ❌");
+  }
+};
+
+
+     // ✅ On employee select
+  const handleEmployeeChange = (e) => {
+    const emp = e.value;
+    setFormData({
+      ...formData,
+      employee: emp,
+       mobile: emp && emp.MobileNumber ? emp.MobileNumber : ""
+    });
+  };
+
+    const onImageUpload = async (event) => {
+  const file = event.files[0];
+  if (!file) return;
+
+  const toBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result.split(",")[1]); // remove "data:image/png;base64,"
+      reader.onerror = (error) => reject(error);
+    });
+
+  try {
+    const base64Image = await toBase64(file);
+    console.log("Base64 Image:", base64Image.substring(0, 50) + "...");
+    setFormData({ ...formData, image: base64Image });
+    setPreviewImage(URL.createObjectURL(file));
+  } catch (error) {
+    console.error("Error converting image to base64:", error);
+  }
+};
+
+     // ✅ Submit & Save to API
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            if (!formData.employee || !formData.punchDate || !formData.checkIn) {
+                alert("Please fill required fields (Employee, Punch Date, Check In).");
+                return;
+            }
+
+            const payload = {
+                Id: '',
+                EmployeeId: formData.employee.FacilityMemberId,  
+                CheckInTime: formData.checkIn ? new Date(formData.checkIn).toISOString() : null,
+                CheckOutTime: formData.checkOut ? new Date(formData.checkOut).toISOString() : null,
+                CreatedOn: new Date().toISOString(),
+                GateNo: formData.gateNo || 0,
+                CreatedBy: userId || 0, 
+                MobileNo: formData.mobile || "",
+                EmpId: formData.employee.FacilityMemberId,               
+                Status: "Present",
+                ImageFileName: formData.image ,
+                IsApproved: true,
+                IsRejected: false,
+                RejectionRemark: "",
+                PropertyId: propertyId || 0,
+                LocationName: formData.location || ""
+            };
+            await saveManualAttendance(payload);
+            setSubmittedData((prev) => [...prev, formData]);
+            alert("Attendance saved successfully ✅");
+            setCreateDialog(false);
+        } catch (error) {
+            console.error("Error saving attendance:", error);
+            alert("Error saving attendance ❌");
+        }
+    };
+
 
 
     const getAttendanceForDate = (date) => {
@@ -169,6 +385,8 @@ export default function AttendanceMaster() {
             >
                 Export to CSV
             </button>
+
+            
             <span className="p-inputgroup" style={{ maxWidth: 200 }}>
                 <InputText
                     placeholder="By Employee Name"
@@ -213,8 +431,26 @@ export default function AttendanceMaster() {
                         >
                             Export to CSV
                         </button>
+
+
+                       {/* ✅ Create Button */}
+<Button
+  label="Create"
+  className="p-button-primary p-button-sm"
+  onClick={() => setCreateDialog(true)}
+/>
+
+
+                {/* --- View Dialog --- */}
+<Button
+  label="View"
+  className="p-button-secondary p-button-sm ms-2"
+  onClick={() => setViewDialog(true)}
+/>
                     </div>
                 </div>
+
+
 
                 {/* Calendar Grid */}
                 <div className="card-body p-0 mt-0 pt-0">
@@ -317,6 +553,180 @@ export default function AttendanceMaster() {
                     />
                 </DataTable>
             </Dialog>
+             {/* ✅ Create Attendance Dialog */}
+            <Dialog
+                header="Create Attendance Entry"
+                visible={createDialog}
+                style={{ width: "40vw" }}
+                onHide={() => setCreateDialog(false)}
+                modal
+            >
+                 <div className="p-fluid">
+          <div className="p-field mb-3">
+            <label>Employee Name</label>
+            <Dropdown
+              value={formData.employee}
+              options={employeeList}
+              onChange={handleEmployeeChange}
+              placeholder="Select Employee"
+              optionLabel="Name"
+              
+              showClear
+            />
+          </div>
+
+                    <div className="p-field mb-3">
+                        <label>Mobile Number</label>
+                        <InputText value={formData.mobile} readOnly />
+                    </div>
+
+                     <div className="p-field">
+                            <label htmlFor="location">Location</label>
+                            <Dropdown
+                            id="location"
+                            name="location"
+                            value={formData.location}
+                            options={locations.map((loc) => ({ label: loc, value: loc }))}
+                            onChange={(e) => setFormData({ ...formData, location: e.value })}
+                            placeholder="Select Location"
+                            className="w-full"
+                            />
+                        </div>
+                    <div className="p-field mb-3">
+                        <label>Punch Date</label>
+                        <Calendar value={formData.punchDate} onChange={(e) => setFormData({ ...formData, punchDate: e.value })} dateFormat="yy-mm-dd" showIcon />
+                    </div>
+
+                    <div className="p-field mb-3">
+                        <label>Check In</label>
+                        <Calendar value={formData.checkIn} onChange={(e) => setFormData({ ...formData, checkIn: e.value })} showTime showIcon />
+                    </div>
+
+                    <div className="p-field mb-3">
+                        <label>Check Out</label>
+                        <Calendar value={formData.checkOut} onChange={(e) => setFormData({ ...formData, checkOut: e.value })} showTime showIcon />
+                    </div>
+
+                    <div className="p-field mb-3">
+                        <label>Gate No</label>
+                        <InputText value={formData.gateNo} onChange={(e) => setFormData({ ...formData, gateNo: e.target.value })} />
+                    </div>
+
+                    <div className="p-field mb-3">
+                        <label>Upload Image</label>
+                        <FileUpload mode="basic" name="image" accept="image/*" maxFileSize={1000000} customUpload uploadHandler={onImageUpload} auto />
+                        {previewImage && (
+  <div className="mt-2">
+    <img src={previewImage} alt="Preview" style={{ width: "120px", borderRadius: "8px" }} />
+  </div>
+)}
+                    </div>
+
+                    <div className="p-field text-right">
+                        <Button label="Submit" icon="pi pi-check" onClick={handleSubmit} />
+                    </div>
+                </div>
+            </Dialog>
+           {/* ✅ View Attendance Dialog */}
+<Dialog
+  header="View Attendance Data"
+  visible={viewDialog}
+  style={{ width: "70vw" }}
+  onHide={() => setViewDialog(false)}
+  modal
+>
+  {submittedData.length > 0 ? (
+    <DataTable value={submittedData} paginator rows={5} responsiveLayout="scroll" stripedRows>
+      <Column field="employee.Name" header="Employee" />
+      <Column field="mobile" header="Mobile" />
+      <Column
+        field="punchDate"
+        header="Punch Date"
+        body={(rowData) => rowData.punchDate ? new Date(rowData.punchDate).toLocaleDateString() : ""}
+      />
+      <Column
+        field="checkIn"
+        header="Check In"
+        body={(rowData) => rowData.checkIn ? new Date(rowData.checkIn).toLocaleString() : ""}
+      />
+      <Column
+        field="checkOut"
+        header="Check Out"
+        body={(rowData) => rowData.checkOut ? new Date(rowData.checkOut).toLocaleString() : ""}
+      />
+      <Column field="gateNo" header="Gate No" />
+      <Column
+        header="Image"
+        body={(rowData) => {
+            if (!rowData.image) return "No Image";
+            const base64String = rowData.image.startsWith("data:") 
+                ? rowData.image 
+                : `data:image/jpeg;base64,${rowData.image}`;
+            return <img src={base64String} alt="Attendance" style={{ width: "50px", borderRadius: "6px" }} />;
+        }}
+      />
+      
+      {/* ✅ Action Column */}
+      <Column
+        header="Action"
+        body={(rowData) => (
+            <div style={{ display: 'flex', gap: '6px' }}>
+                {console.log("Row Data for Action Column:", rowData)}
+                {!rowData.IsApproved && !rowData.IsRejected && (
+                    <>
+                        <Button
+                            icon="pi pi-check"
+                            className="p-button-success p-button-sm"
+                            onClick={() => handleApprove(rowData)}
+                            tooltip="Approve"
+                            tooltipOptions={{ position: 'top' }}
+                        />
+                        <Button
+                            icon="pi pi-times"
+                            className="p-button-danger p-button-sm"
+                            onClick={() => handleReject(rowData)}
+                            tooltip="Reject"
+                            tooltipOptions={{ position: 'top' }}
+                        />
+                    </>
+                )}
+                {rowData.IsApproved && <span className="text-success">Approved</span>}
+                {rowData.IsRejected && <span className="text-danger">Rejected</span>}
+            </div>
+        )}
+      />
+    </DataTable>
+  ) : (
+    <p>No records available</p>
+  )}
+</Dialog>
+
+{/* ✅ Rejection Remark Dialog */}
+<Dialog
+    header="Enter Rejection Remark"
+    visible={rejectionDialog}
+    style={{ width: '30vw' }}
+    onHide={() => setRejectionDialog(false)}
+    modal
+>
+    <div className="p-field">
+        <label>Remark</label>
+        <InputText
+            value={rejectionRemark}
+            onChange={(e) => setRejectionRemark(e.target.value)}
+            placeholder="Enter remark"
+        />
+    </div>
+    <div className="text-right mt-3">
+        <Button label="Submit" icon="pi pi-check" onClick={submitRejection} className="p-button-danger" />
+    </div>
+</Dialog>
+
+
+
+
+           
+
         </div>
     );
 }
