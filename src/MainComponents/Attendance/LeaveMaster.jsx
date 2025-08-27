@@ -11,7 +11,6 @@ import { FilterMatchMode } from "primereact/api"
 import LeaveMasterService from "../../Services/LeaveMasterService" 
 import { useSelector } from "react-redux";
 
-
 import "primereact/resources/themes/lara-light-blue/theme.css"
 import "primereact/resources/primereact.min.css"
 
@@ -28,16 +27,22 @@ const LeaveTypeMaster = () => {
   // dialog states
   const [dialogVisible, setDialogVisible] = useState(false)
   const [editMode, setEditMode] = useState(false)
-  const [formData, setFormData] = useState({ id: null, LeaveType: "", LeaveCount: "", PropertyId:propertyId, IsActive:true})
+  const [formData, setFormData] = useState({ 
+    id: null, 
+    LeaveType: "", 
+    LeaveDescription: "", 
+    PropertyId: propertyId, 
+    IsActive: true 
+  })
 
   // 🔹 Fetch data on load
-  useEffect((propertyId) => {
+  useEffect(() => {
     fetchData()
   }, [propertyId])
 
   const fetchData = async () => {
     try {
-      const res = await LeaveMasterService.getAllLeaveMasters()
+      const res = await LeaveMasterService.getAllLeaveMasters(propertyId)
       setGridData(res.data || [])
     } catch (err) {
       console.error("Error fetching data:", err)
@@ -67,7 +72,7 @@ const LeaveTypeMaster = () => {
   const handleDelete = async (rowData) => {
     try {
       await LeaveMasterService.deleteLeaveMaster(rowData.Id)
-      toast.current.show({ severity: "error", summary: "Deleted", detail: "Leave deleted successfully" })
+      toast.current.show({ severity: "warn", summary: "Deleted", detail: "Leave deleted successfully" })
       fetchData()
     } catch (err) {
       console.error("Delete Error:", err)
@@ -84,7 +89,7 @@ const LeaveTypeMaster = () => {
 
   // 🔹 Open create dialog
   const openCreateDialog = () => {
-    setFormData({ id: "", LeaveType: "", LeaveCount: "", PropertyId: propertyId  })
+    setFormData({ id: "", LeaveType: "", LeaveDescription: "", PropertyId: propertyId, IsActive:true })
     setEditMode(false)
     setDialogVisible(true)
   }
@@ -92,18 +97,17 @@ const LeaveTypeMaster = () => {
   // 🔹 Open edit dialog
   const openEditDialog = (rowData) => {
     setFormData({
-    id: rowData.Id,              
-    LeaveType: rowData.LeaveType,
-    LeaveCount: rowData.LeaveCount,
-    PropertyId: rowData.PropertyId,
-    IsActive:true
-  })
+      id: rowData.Id,              
+      LeaveType: rowData.LeaveType,
+      LeaveDescription: rowData.LeaveDescription,
+      PropertyId: rowData.PropertyId,
+      IsActive: true
+    })
     setEditMode(true)
     setDialogVisible(true)
   }
 
   // Header
-
   const header = (
     <div className="d-flex justify-content-between align-items-center p-2">
       <h5 className="m-0">Leave Master</h5>
@@ -123,7 +127,7 @@ const LeaveTypeMaster = () => {
   // Action column
   const actionBodyTemplate = (rowData) => (
     <div className="flex gap-2">
-      <Button icon="fa fa-pencil" className="btn btn-sm btn-primary" onClick={() => openEditDialog(rowData)} />
+      {/* <Button icon="fa fa-pencil" className="btn btn-sm btn-primary" onClick={() => openEditDialog(rowData)} /> */}
       <Button icon="fa fa-trash" className="btn btn-sm btn-danger" onClick={() => handleDelete(rowData)} />
     </div>
   )
@@ -142,13 +146,13 @@ const LeaveTypeMaster = () => {
                 rows={10}
                 filters={filters}
                 filterDisplay="row"
-                globalFilterFields={["LeaveType", "LeaveCount"]}
+                globalFilterFields={["LeaveType", "LeaveDescription"]}
                 emptyMessage="No leave types found."
-                dataKey="id"
+                dataKey="Id"
                 breakpoint="960px"
               >
                 <Column field="LeaveType" header="Leave Type" />
-                <Column field="LeaveCount" header="Leave Count" />
+                <Column field="LeaveDescription" header="Description" />
                 <Column header="Action" body={actionBodyTemplate} />
               </DataTable>
             </div>
@@ -180,15 +184,15 @@ const LeaveTypeMaster = () => {
                 />
               </div>
               <div className="col-12 mt-3">
-                <label htmlFor="LeaveCount">Leave Count</label>
+                <label htmlFor="LeaveDescription">Leave Description</label>
                 <input
-                  id="LeaveCount"
+                  id="LeaveDescription"
                   required
-                  placeholder="Enter Leave Count"
+                  placeholder="Enter Leave Description"
                   type="text"
                   className="form-control"
-                  value={formData.LeaveCount}
-                  onChange={(e) => setFormData({ ...formData, LeaveCount: e.target.value })}
+                  value={formData.LeaveDescription}
+                  onChange={(e) => setFormData({ ...formData, LeaveDescription: e.target.value })}
                 />
               </div>
             </div>
