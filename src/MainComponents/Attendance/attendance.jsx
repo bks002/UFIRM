@@ -394,49 +394,60 @@ export default function AttendanceMaster() {
         <div className="content-wrapper " style={{ minHeight: '100vh' }}>
 
             <div className="card" style={{ maxWidth: 1280, margin: '0 auto' }}>
-                {/* Header */}
-                <div className="card-header d-flex justify-content-center align-items-center p-3 mb-0 pb-0">
-                    <div className="d-flex align-items-center">
-                        <select
-                            className="form-select me-2"
-                            style={{ width: 160, display: 'inline-block' }}
-                            value={currentDate.getMonth()}
-                            onChange={handleMonthChange}
-                        >
-                            {monthNames.map((name, idx) => (
-                                <option value={idx} key={name}>{name}</option>
-                            ))}
-                        </select>
-                        <span style={{ fontSize: '1.3rem', fontWeight: 500 }}>{currentDate.getFullYear()}</span>
-                        <button
-                            className="btn btn-success btn-sm ms-4"
-                            style={{ marginLeft: 25 }}
-                            onClick={exportMonthToCSV}
-                            disabled={attendanceData.filter(record => {
-                                const recordDate = new Date(record.PunchDate);
-                                return recordDate.getFullYear() === currentDate.getFullYear() && recordDate.getMonth() === currentDate.getMonth();
-                            }).length === 0}
-                        >
-                            Export to CSV
-                        </button>
+               {/* Header */}
+<div className="card-header d-flex align-items-center justify-content-between p-3 mb-0 pb-0">
+  
+  {/* Empty left side (placeholder) */}
+  <div style={{ width: "200px" }}></div>
+
+  {/* 🔹 Center part: Month, Year, Export CSV */}
+  <div className="d-flex align-items-center">
+    <select
+      className="form-select me-2"
+      style={{ width: 160, display: 'inline-block' }}
+      value={currentDate.getMonth()}
+      onChange={handleMonthChange}
+    >
+      {monthNames.map((name, idx) => (
+        <option value={idx} key={name}>{name}</option>
+      ))}
+    </select>
+    <span style={{ fontSize: '1.3rem', fontWeight: 500 }}>
+      {currentDate.getFullYear()}
+    </span>
+    <button
+      className="btn btn-success btn-sm ms-4"
+      onClick={exportMonthToCSV}
+      disabled={attendanceData.filter(record => {
+        const recordDate = new Date(record.PunchDate);
+        return (
+          recordDate.getFullYear() === currentDate.getFullYear() &&
+          recordDate.getMonth() === currentDate.getMonth()
+        );
+      }).length === 0}
+    >
+      Export to CSV
+    </button>
+  </div>
+
+  {/* 🔹 Right part: Create + View */}
+  <div className="d-flex ">
+    <Button
+      label="Create Mannual Attendance"
+      className="btn btn-success btn-sm ms-4"
+       style={{ fontWeight: 500 }}
+      onClick={() => setCreateDialog(true)}
+    />
+    <Button
+      label="View Mannual Attendance"
+      className="btn btn-success btn-sm ms-4"
+      style={{ fontWeight: 500 }}
+      onClick={() => setViewDialog(true)}
+    />
+  </div>
+</div>
 
 
-                       {/* ✅ Create Button */}
-<Button
-  label="Create"
-  className="p-button-primary p-button-sm"
-  onClick={() => setCreateDialog(true)}
-/>
-
-
-                {/* --- View Dialog --- */}
-<Button
-  label="View"
-  className="p-button-secondary p-button-sm ms-2"
-  onClick={() => setViewDialog(true)}
-/>
-                    </div>
-                </div>
 
 
 
@@ -654,26 +665,24 @@ export default function AttendanceMaster() {
         }}
       />
       
-      {/* ✅ Action Column */}
-      <Column
+     {/* ✅ Action Column */}
+<Column
   header="Action"
   body={(rowData) => (
-    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+    <div className="flex gap-2 align-items-center">
       {!rowData.IsApproved && !rowData.IsRejected && (
         <>
           <Button
-            icon="pi pi-check"
-            className="p-button-success p-button-sm"
+            icon="fa fa-check"
+            className="p-button-success p-button-sm rounded"
             onClick={() => handleApprove(rowData)}
-            tooltip="Approve"
-            tooltipOptions={{ position: 'top' }}
+            disabled={rowData.IsRejected}
           />
           <Button
-            icon="pi pi-times"
-            className="p-button-danger p-button-sm"
+            icon="fa fa-times"
+            className="p-button-danger p-button-sm rounded"
             onClick={() => handleReject(rowData)}
-            tooltip="Reject"
-            tooltipOptions={{ position: 'top' }}
+            disabled={rowData.IsApproved}
           />
         </>
       )}
@@ -686,7 +695,13 @@ export default function AttendanceMaster() {
         <div className="text-danger fw-bold">
           Rejected
           {rowData.RejectionRemark && (
-            <span style={{ marginLeft: "6px", fontStyle: "italic", color: "#b02a37" }}>
+            <span
+              style={{
+                marginLeft: "6px",
+                fontStyle: "italic",
+                color: "#b02a37",
+              }}
+            >
               ({rowData.RejectionRemark})
             </span>
           )}
@@ -695,6 +710,7 @@ export default function AttendanceMaster() {
     </div>
   )}
 />
+
 
     </DataTable>
   ) : (
