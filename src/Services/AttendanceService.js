@@ -94,14 +94,15 @@ export const getManualAttendanceByProperty = async (propertyId) => {
     }
 };
 
-// ✅ Approve / Reject Manual Attendance
+// ✅ Approve Attendance
 export const processManualAttendance = async ({ id, approve }) => {
   try {
     const response = await axios.post(
-      `${BASE_URL}/ManualAttendance/ProcessManualAttendance`,
-      null, // POST body empty
+      `https://api.urest.in:8096/api/attendance/ManualAttendance/ProcessManualAttendance`,
+      {}, // empty body
       {
         params: { id, approve },
+        headers: { "Content-Type": "application/json" },
         withCredentials: false
       }
     );
@@ -112,19 +113,22 @@ export const processManualAttendance = async ({ id, approve }) => {
   }
 };
 
+// ✅ Reject Attendance
 export const rejectprocessManualAttendance = async ({ id, approve, rejectionRemark }) => {
   try {
     const response = await axios.post(
-      `${BASE_URL}/ManualAttendance/ProcessManualAttendance`,
-      null, // POST body empty
+      `https://api.urest.in:8096/api/attendance/ManualAttendance/ProcessManualAttendance`,
+      {}, // empty body
       {
         params: { id, approve, rejectionRemark },
+        headers: { "Content-Type": "application/json" },
         withCredentials: false
       }
     );
     return response.data;
   } catch (error) {
-    console.error("Error processing manual attendance:", error);
+    console.error("Error rejecting manual attendance:", error);
     throw error;
   }
 };
+

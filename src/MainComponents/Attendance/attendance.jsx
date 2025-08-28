@@ -7,15 +7,15 @@ import { Dropdown } from 'primereact/dropdown';
 import { Calendar } from 'primereact/calendar';
 import { Button } from 'primereact/button';
 import { FileUpload } from 'primereact/fileupload';
-import { getAttendance, getFacilityMembers, getAllLocations, saveManualAttendance, getManualAttendanceByProperty, processManualAttendance, rejectprocessManualAttendance  } from "../../Services/AttendanceService";
+import { getAttendance, getFacilityMembers, getAllLocations, saveManualAttendance, getManualAttendanceByProperty, processManualAttendance, rejectprocessManualAttendance } from "../../Services/AttendanceService";
 
 import { useSelector } from 'react-redux';
 
 export default function AttendanceMaster() {
     const formPayload = new FormData();
     const [rejectionDialog, setRejectionDialog] = useState(false);
-const [rejectionRemark, setRejectionRemark] = useState("");
-const [selectedAttendanceId, setSelectedAttendanceId] = useState(null);
+    const [rejectionRemark, setRejectionRemark] = useState("");
+    const [selectedAttendanceId, setSelectedAttendanceId] = useState(null);
 
     const [currentDate, setCurrentDate] = useState(new Date());
     const [globalFilter, setGlobalFilter] = useState('');
@@ -24,50 +24,47 @@ const [selectedAttendanceId, setSelectedAttendanceId] = useState(null);
     const [selectedDayAttendance, setSelectedDayAttendance] = useState([]);
     const [selectedDay, setSelectedDay] = useState(null);
     const propertyId = useSelector((state) => state.Commonreducer.puidn);
-const userId = useSelector((state) => state.Commonreducer.userId);
-const [previewImage, setPreviewImage] = useState(null);
+    const userId = useSelector((state) => state.Commonreducer.userId);
+    const [previewImage, setPreviewImage] = useState(null);
 
     const [submittedData, setSubmittedData] = useState([]);
-  const [viewDialog, setViewDialog] = useState(false);
+    const [viewDialog, setViewDialog] = useState(false);
 
-
-  // ✅ States
-  const [createDialog, setCreateDialog] = useState(false);
-  const [locations, setLocations] = useState([]);
-  const [employeeList, setEmployeeList] = useState([]); 
-  const [formData, setFormData] = useState({
-    Id:0,
-    employee: null,
-    mobile: "",
-    punchDate: null,
-    checkIn: null,
-    checkOut: null,
-    gateNo: "",
-    image: "",
-     location: ""
-  });
+    // ✅ States
+    const [createDialog, setCreateDialog] = useState(false);
+    const [locations, setLocations] = useState([]);
+    const [employeeList, setEmployeeList] = useState([]); 
+    const [formData, setFormData] = useState({
+        Id:0,
+        employee: null,
+        mobile: "",
+        punchDate: null,
+        checkIn: null,
+        checkOut: null,
+        gateNo: "",
+        image: "",
+        location: ""
+    });
 
     // ✅ Employee fetch API call
-  useEffect(() => {
-    const fetchEmployees = async () => {
-      try {
-        if (!propertyId) return;
-        const data = await getFacilityMembers(propertyId);
-        // API response ke "Name" & "MobileNumber" ko dropdown ke liye format karo
-        const formatted = data.map(emp => ({
-          ...emp,
-          label: emp.Name,
-          value: emp // pura object rakhenge
-        }));
-        console.log("Fetched Employees:", formatted);
-        setEmployeeList(formatted);
-      } catch (error) {
-        console.error("Failed to load employees:", error);
-      }
-    };
-    fetchEmployees();
-  }, [propertyId]);
-
+    useEffect(() => {
+        const fetchEmployees = async () => {
+            try {
+                if (!propertyId) return;
+                const data = await getFacilityMembers(propertyId);
+                const formatted = data.map(emp => ({
+                    ...emp,
+                    label: emp.Name,
+                    value: emp 
+                }));
+                console.log("Fetched Employees:", formatted);
+                setEmployeeList(formatted);
+            } catch (error) {
+                console.error("Failed to load employees:", error);
+            }
+        };
+        fetchEmployees();
+    }, [propertyId]);
 
     // ✅ Location fetch API call
     useEffect(() => {
@@ -82,118 +79,111 @@ const [previewImage, setPreviewImage] = useState(null);
         fetchLocations();
     }, []);
 
-
     useEffect(() => {
-    const fetchSavedAttendance = async () => {
-        if (!propertyId) return;
+        const fetchSavedAttendance = async () => {
+            if (!propertyId) return;
+            try {
+                const savedData = await getManualAttendanceByProperty(propertyId);
+                const formattedData = savedData.map(item => ({
+                    Id: item.Id,
+                    employee: { Name: item.EmployeeName || `ID-${item.EmployeeId}` },
+                    mobile: item.MobileNo,
+                    punchDate: item.CheckInTime ? new Date(item.CheckInTime) : null,
+                    checkIn: item.CheckInTime ? new Date(item.CheckInTime) : null,
+                    checkOut: item.CheckOutTime ? new Date(item.CheckOutTime) : null,
+                    gateNo: item.GateNo,
+                    image: item.ImageFileName,
+                    location: item.LocationName || "",
+                    IsApproved: item.IsApproved || false,
+                    IsRejected: item.IsRejected || false,
+                    RejectionRemark: item.RejectionRemark || ""
+                }));
+
+                setSubmittedData(formattedData);
+            } catch (error) {
+                console.error("Failed to fetch saved attendance:", error);
+            }
+        };
+        fetchSavedAttendance();
+    }, [propertyId]);
+
+    // ✅ Approve Attendance
+    const handleApprove = async (record) => {
+        console.log("Approving record:", record);
         try {
-            const savedData = await getManualAttendanceByProperty(propertyId);
-
-            // Transform API response to match submittedData format
-            const formattedData = savedData.map(item => ({
-                Id: item.Id,
-                employee: { Name: item.EmployeeName || `ID-${item.EmployeeId}` }, // EmployeeName agar null ho to fallback
-                mobile: item.MobileNo,
-                punchDate: item.CheckInTime ? new Date(item.CheckInTime) : null,
-                checkIn: item.CheckInTime ? new Date(item.CheckInTime) : null,
-                checkOut: item.CheckOutTime ? new Date(item.CheckOutTime) : null,
-                gateNo: item.GateNo,
-                image: item.ImageFileName,
-                location: item.LocationName || ""
-            }));
-
-            setSubmittedData(formattedData); // table me dikhega
+            await processManualAttendance({ id: record.Id, approve: true });
+            setSubmittedData(prev =>
+                prev.map(item =>
+                    item.Id === record.Id ? { ...item, IsApproved: true, IsRejected: false } : item
+                )
+            );
+            alert("Attendance approved ✅");
         } catch (error) {
-            console.error("Failed to fetch saved attendance:", error);
+            console.error(error);
+            alert("Failed to approve ❌");
         }
     };
 
-    fetchSavedAttendance();
-}, [propertyId]);
+    // ✅ Reject Attendance (open dialog)
+    const handleReject = (record) => {
+        setSelectedAttendanceId(record.Id);
+        setRejectionRemark("");
+        setRejectionDialog(true);
+    };
 
+    // ✅ Submit Rejection
+    const submitRejection = async () => {
+        if (!rejectionRemark.trim()) {
+            alert("Please enter rejection remark");
+            return;
+        }
+        try {
+            await rejectprocessManualAttendance({ id: selectedAttendanceId, approve: false, rejectionRemark });
+            setSubmittedData(prev =>
+                prev.map(item =>
+                    item.Id === selectedAttendanceId
+                        ? { ...item, IsApproved: false, IsRejected: true, rejectionRemark: rejectionRemark }
+                        : item
+                )
+            );
+            alert("Attendance rejected ❌");
+            setRejectionDialog(false);
+        } catch (error) {
+            console.error(error);
+            alert("Failed to reject ❌");
+        }
+    };
 
-const handleApprove = async (record) => {
-    console.log("Approving record:", record);
-  try {
-    setSubmittedData(prev =>
-      prev.map(item =>
-        item.Id === record.Id ? { ...item, IsApproved: true, IsRejected: false } : item
-      )
-    );
-    console.log("Approving record ID:", record.Id);
-    await processManualAttendance({ id: record.Id, approve: true }); // <-- use record.Id
-    alert("Attendance approved ✅");
-  } catch (error) {
-    console.error(error);
-    alert("Failed to approve ❌");
-  }
-};
-
-
-const handleReject = (record) => {
-  setSelectedAttendanceId(record.Id);
-  setRejectionRemark("");
-  setRejectionDialog(true);
-};
-
-const submitRejection = async (record) => {
-  if (!rejectionRemark.trim()) {
-    alert("Please enter rejection remark");
-    return;
-  }
-
-  try {
-
-    setSubmittedData(prev =>
-      prev.map(item =>
-        item.Id === record.Id ? { ...item, IsApproved: false, IsRejected: true, rejectionRemark:rejectionRemark } : item
-      )
-    );
-    console.log("Approving record ID:", record.Id);
-    await rejectprocessManualAttendance({ id: record.Id, approve: false, rejectionRemark }); // <-- use record.Id
-    alert("Attendance rejected ❌");
-
-    setRejectionDialog(false);
-  } catch (error) {
-    console.error(error);
-    alert("Failed to reject ❌");
-  }
-};
-
-
-     // ✅ On employee select
-  const handleEmployeeChange = (e) => {
-    const emp = e.value;
-    setFormData({
-      ...formData,
-      employee: emp,
-       mobile: emp && emp.MobileNumber ? emp.MobileNumber : ""
-    });
-  };
+    // ✅ On employee select
+    const handleEmployeeChange = (e) => {
+        const emp = e.value;
+        setFormData({
+            ...formData,
+            employee: emp,
+            mobile: emp && emp.MobileNumber ? emp.MobileNumber : ""
+        });
+    };
 
     const onImageUpload = async (event) => {
-  const file = event.files[0];
-  if (!file) return;
+        const file = event.files[0];
+        if (!file) return;
+        const toBase64 = (file) =>
+            new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result.split(",")[1]);
+                reader.onerror = (error) => reject(error);
+            });
+        try {
+            const base64Image = await toBase64(file);
+            setFormData({ ...formData, image: base64Image });
+            setPreviewImage(URL.createObjectURL(file));
+        } catch (error) {
+            console.error("Error converting image to base64:", error);
+        }
+    };
 
-  const toBase64 = (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result.split(",")[1]); // remove "data:image/png;base64,"
-      reader.onerror = (error) => reject(error);
-    });
-
-  try {
-    const base64Image = await toBase64(file);
-    console.log("Base64 Image:", base64Image.substring(0, 50) + "...");
-    setFormData({ ...formData, image: base64Image });
-    setPreviewImage(URL.createObjectURL(file));
-  } catch (error) {
-    console.error("Error converting image to base64:", error);
-  }
-};
-
-     // ✅ Submit & Save to API
+    // ✅ Submit & Save to API
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -201,7 +191,6 @@ const submitRejection = async (record) => {
                 alert("Please fill required fields (Employee, Punch Date, Check In).");
                 return;
             }
-
             const payload = {
                 Id: '',
                 EmployeeId: formData.employee.FacilityMemberId,  
@@ -221,7 +210,6 @@ const submitRejection = async (record) => {
                 LocationName: formData.location || ""
             };
             await saveManualAttendance(payload);
-            setSubmittedData((prev) => [...prev, formData]);
             alert("Attendance saved successfully ✅");
             setCreateDialog(false);
         } catch (error) {
@@ -668,33 +656,46 @@ const submitRejection = async (record) => {
       
       {/* ✅ Action Column */}
       <Column
-        header="Action"
-        body={(rowData) => (
-            <div style={{ display: 'flex', gap: '6px' }}>
-                {console.log("Row Data for Action Column:", rowData)}
-                {!rowData.IsApproved && !rowData.IsRejected && (
-                    <>
-                        <Button
-                            icon="pi pi-check"
-                            className="p-button-success p-button-sm"
-                            onClick={() => handleApprove(rowData)}
-                            tooltip="Approve"
-                            tooltipOptions={{ position: 'top' }}
-                        />
-                        <Button
-                            icon="pi pi-times"
-                            className="p-button-danger p-button-sm"
-                            onClick={() => handleReject(rowData)}
-                            tooltip="Reject"
-                            tooltipOptions={{ position: 'top' }}
-                        />
-                    </>
-                )}
-                {rowData.IsApproved && <span className="text-success">Approved</span>}
-                {rowData.IsRejected && <span className="text-danger">Rejected</span>}
-            </div>
-        )}
-      />
+  header="Action"
+  body={(rowData) => (
+    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+      {!rowData.IsApproved && !rowData.IsRejected && (
+        <>
+          <Button
+            icon="pi pi-check"
+            className="p-button-success p-button-sm"
+            onClick={() => handleApprove(rowData)}
+            tooltip="Approve"
+            tooltipOptions={{ position: 'top' }}
+          />
+          <Button
+            icon="pi pi-times"
+            className="p-button-danger p-button-sm"
+            onClick={() => handleReject(rowData)}
+            tooltip="Reject"
+            tooltipOptions={{ position: 'top' }}
+          />
+        </>
+      )}
+
+      {rowData.IsApproved && (
+        <span className="text-success fw-bold">Approved</span>
+      )}
+
+      {rowData.IsRejected && (
+        <div className="text-danger fw-bold">
+          Rejected
+          {rowData.RejectionRemark && (
+            <span style={{ marginLeft: "6px", fontStyle: "italic", color: "#b02a37" }}>
+              ({rowData.RejectionRemark})
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  )}
+/>
+
     </DataTable>
   ) : (
     <p>No records available</p>
