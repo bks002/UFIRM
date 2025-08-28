@@ -60,6 +60,7 @@ export default function AttendanceMaster() {
         fetchData();
     }, [propertyId, currentDate]);
 
+
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     const calendarDays = generateCalendarDays();
