@@ -77,9 +77,9 @@ export const ExpenseMasterService = {
   },
 
   // GET Expense Types by Office
-  getExpenseTypesByOffice: async (officeId) => {
+  getExpenseTypesByOffice: async (propertyIdId) => {
     try {
-      const res = await axios.get(`${API_EXPENSE_TYPE}/names/byOffice/${officeId}`, {
+      const res = await axios.get(`${API_EXPENSE_TYPE}/names/byOffice/${propertyIdId}`, {
         withCredentials: false,
       });
       return res.data; // array of ExpenseType names

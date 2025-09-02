@@ -89,7 +89,8 @@ const ExpenseTypePage = () => {
       setEditingRow(null);
       setExpenseTypeName("");
       setExpenseSubType("");
-      fetchExpenses();
+     
+       fetchExpenses(propertyId);
     } catch {
       toast.current.show({
         severity: "error",
@@ -108,7 +109,7 @@ const ExpenseTypePage = () => {
         summary: "Deleted",
         detail: "Expense deleted",
       });
-      fetchExpenses();
+      fetchExpenses(propertyId);
     } catch {
       toast.current.show({
         severity: "error",

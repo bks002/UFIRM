@@ -10,11 +10,13 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { ExpenseMasterService } from "../../Services/ExpenseMasterService";
 import { useSelector } from "react-redux";
+import { Dropdown } from "primereact/dropdown";
 
 const ExpenseMaster = () => {
     const [viewing, setViewing] = useState(false);
     const [expenseTypes, setExpenseTypes] = useState([]);
 const [expenseSubtypes, setExpenseSubtypes] = useState([]);
+const [file, setFile] = useState(null);
 
   const propertyId = useSelector((state) => state.Commonreducer.puidn);
   const [expenses, setExpenses] = useState([]);
@@ -47,7 +49,7 @@ const [expenseSubtypes, setExpenseSubtypes] = useState([]);
     DateTo: formatForCalendar(row.DateTo),
   });
   setViewing(true);
-  setOpen(true);
+  
 };
 
 
@@ -78,19 +80,15 @@ const formatDate = (value) => {
   };
 
   // ✅ Fetch data
-  const fetchExpenses = async (propertyId) => {
-  console.log("Fetching expenses for propertyId:", propertyId);
-  try {
-    const data = await ExpenseMasterService.getExpensesByOffice(propertyId);
-    console.log("Fetched expenses:", data);
-
-    // Filter only active records
-    const activeExpenses = data.filter(expense => expense.IsActive);
-    setExpenses(activeExpenses);
-  } catch (err) {
-    console.error("Error loading expenses:", err);
-  }
-};
+ const fetchExpenses = async (propertyId) => {
+    try {
+      const data = await ExpenseMasterService.getExpensesByOffice(propertyId);
+      const activeExpenses = data.filter(expense => expense.IsActive);
+      setExpenses(activeExpenses);
+    } catch (err) {
+      console.error("Error loading expenses:", err);
+    }
+  };
 
 
 useEffect(() => {
@@ -107,6 +105,28 @@ useEffect(() => {
   }
 }, [propertyId]);
 
+ // ✅ Fetch expense types
+  useEffect(() => {
+    if (propertyId) {
+      ExpenseMasterService.getExpenseTypesByOffice(propertyId)
+        .then((types) => setExpenseTypes(types.map(t => ({ label: t, value: t }))))
+        .catch(console.error);
+    }
+  }, [propertyId]);
+
+  // ✅ Fetch subtypes whenever ExpenseType changes
+  useEffect(() => {
+    if (form.ExpenseType) {
+      ExpenseMasterService.getExpenseSubtypesByType(form.ExpenseType)
+        .then((subtypes) => setExpenseSubtypes(subtypes.map(s => ({ label: s, value: s }))))
+        .catch(console.error);
+    } else {
+      setExpenseSubtypes([]);
+      setForm(prev => ({ ...prev, ExpenseSubtype: "" }));
+    }
+  }, [form.ExpenseType]);
+
+
 
   // ✅ Save / Update
   const handleSave = async () => {
@@ -119,10 +139,10 @@ useEffect(() => {
     const payload = {
       ...form,
       OfficeId: propertyId,
-      UpdatedOn: new Date().toISOString(),
-      UpdatedBy: 1,
       CreatedOn: new Date().toISOString(),
-      CreatedBy: 1,
+        CreatedBy: 1,
+        UpdatedOn: new Date().toISOString(),
+        UpdatedBy: 1,
       IsActive: true,
     };
 
@@ -144,6 +164,7 @@ useEffect(() => {
 
 
   const resetForm = () => {
+    const now = new Date().toISOString();
     setForm({
       Id: 0,
       ExpenseType: "",
@@ -160,31 +181,25 @@ useEffect(() => {
       UpdatedBy: 1,
       UpdatedOn: new Date().toISOString(),
     });
+     setFile(null);
   };
 
   // ✅ Edit
-  const handleEdit = (row) => {
-  const formatForCalendar = (val) => val ? new Date(new Date(val).toDateString()) : null;
-
-  setForm({
-    ...row,
-    DateFrom: formatForCalendar(row.DateFrom),
-    DateTo: formatForCalendar(row.DateTo),
-  });
-  setEditing(true);
-  setOpen(true);
-};
+ const handleEdit = (row) => {
+    const formatForCalendar = (val) => val ? new Date(new Date(val).toDateString()) : null;
+    setForm({ ...row, DateFrom: formatForCalendar(row.DateFrom), DateTo: formatForCalendar(row.DateTo) });
+    setEditing(true);
+    setOpen(true);
+  };
 
 
   // ✅ Delete
-  const handleDelete = async (id) => {
-  if (window.confirm("Are you sure to delete this record?")) {
-    await ExpenseMasterService.deleteExpense(id);
-    
-    // Remove the deleted record from local state immediately
-    setExpenses(prev => prev.filter(exp => exp.Id !== id));
-  }
-};
+    const handleDelete = async (id) => {
+    if (window.confirm("Are you sure to delete this record?")) {
+      await ExpenseMasterService.deleteExpense(id);
+      setExpenses(prev => prev.filter(exp => exp.Id !== id));
+    }
+  };
 
 
   // ✅ Action Buttons in Table
@@ -240,8 +255,9 @@ useEffect(() => {
       <Button
         label="Add Expense"
         icon="pi pi-plus"
-        onClick={() => setOpen(true)}
+        onClick={() => { resetForm(); setEditing(false); setOpen(true)}}
         className="mb-3"
+        
       />
       </div>
       </div>
@@ -290,12 +306,21 @@ useEffect(() => {
           <div className="p-fluid formgrid grid">
             <div className="field col-6">
               <label>Expense Type</label>
-              <InputText value={form.ExpenseType} onChange={(e) => setForm((prev) => ({ ...prev, ExpenseType: e.target.value }))} />
-            </div>
+<Dropdown
+                value={form.ExpenseType}
+                options={expenseTypes}
+                onChange={(e) => setForm(prev => ({ ...prev, ExpenseType: e.value }))}
+                placeholder="Select Expense Type"
+              />            </div>
            <div className="field col-6">
               <label>Expense Subtype</label>
-              <InputText value={form.ExpenseSubtype} onChange={(e) => setForm((prev) => ({ ...prev, ExpenseSubtype: e.target.value }))} />
-            </div>
+ <Dropdown
+                value={form.ExpenseSubtype}
+                options={expenseSubtypes}
+                onChange={(e) => setForm(prev => ({ ...prev, ExpenseSubtype: e.value }))}
+                placeholder="Select Expense Subtype"
+                disabled={!form.ExpenseType}
+              />            </div>
             <div className="field col-6">
               <label>Date From</label>
               <Calendar
