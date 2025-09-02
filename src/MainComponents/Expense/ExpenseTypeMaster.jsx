@@ -125,14 +125,16 @@ const ExpenseTypePage = () => {
       <Button
         icon="fa fa-eye"
         className="p-button-info p-button-sm rounded"
+        style={{ backgroundColor: "#FFD700", border: "none", color: "#000", marginRight: "4px" }}
         onClick={() => {
           setViewRow(rowData); // ✅ selected row set
           setViewVisible(true); // ✅ open dialog
         }}
       />
       <Button
-        icon="fa fa-pencil"
+        icon="fa fa-pencil-alt"
         className="p-button-warning p-button-sm rounded"
+         style={{ backgroundColor: "#00CFFF", border: "none", color: "#000", marginRight: "4px" }}
         onClick={() => {
           setEditingRow(rowData);
           setExpenseTypeName(rowData.ExpenseTypeName);
@@ -143,6 +145,7 @@ const ExpenseTypePage = () => {
       <Button
         icon="fa fa-trash"
         className="p-button-danger p-button-sm rounded"
+         style={{ backgroundColor: "#FF4D4D", border: "none", color: "#fff", marginRight: "4px" }}
         onClick={() => deleteExpense(rowData)}
       />
     </div>

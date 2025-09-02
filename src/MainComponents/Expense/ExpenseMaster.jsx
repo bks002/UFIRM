@@ -207,23 +207,24 @@ useEffect(() => {
     <div className="flex gap-2">
        <Button
       icon="fa fa-eye"
-      rounded
-      outlined
+      className="p-button-info p-button-sm rounded"
+      style={{ backgroundColor: "#FFD700", border: "none", color: "#000", marginRight: "4px" }}
       onClick={() => handleView(rowData)}
       tooltip="View"
     />
       <Button
-        icon="fa fa-pencil"
-        rounded
-        outlined
-        onClick={() => handleEdit(rowData)}
+        icon="fa fa-pencil-alt"
+      className="p-button-warning p-button-sm rounded"
+       style={{ backgroundColor: "#00CFFF", border: "none", color: "#000", marginRight: "4px" }}
+      onClick={() => handleEdit(rowData)}
+      tooltip="Edit"
       />
       <Button
         icon="fa fa-trash"
-        severity="danger"
-        rounded
-        outlined
-        onClick={() => handleDelete(rowData.Id)}
+      className="p-button-danger p-button-sm rounded"
+      style={{ backgroundColor: "#FF4D4D", border: "none", color: "#fff", marginRight: "4px" }}
+      onClick={() => handleDelete(rowData)}
+      tooltip="Delete"
       />
     </div>
   );
@@ -304,15 +305,16 @@ useEffect(() => {
           onHide={() => setOpen(false)}
         >
           <div className="p-fluid formgrid grid">
-            <div className="field col-6">
-              <label>Expense Type</label>
+            <div className="flex flex-col">
+              <label className="mb-1 font-medium">Expense Type</label>
 <Dropdown
                 value={form.ExpenseType}
                 options={expenseTypes}
                 onChange={(e) => setForm(prev => ({ ...prev, ExpenseType: e.value }))}
                 placeholder="Select Expense Type"
+                className="w-full"
               />            </div>
-           <div className="field col-6">
+           <div className="flex flex-col">
               <label>Expense Subtype</label>
  <Dropdown
                 value={form.ExpenseSubtype}
@@ -321,7 +323,7 @@ useEffect(() => {
                 placeholder="Select Expense Subtype"
                 disabled={!form.ExpenseType}
               />            </div>
-            <div className="field col-6">
+           <div className="flex flex-col">
               <label>Date From</label>
               <Calendar
                 value={form.DateFrom}
@@ -332,7 +334,7 @@ useEffect(() => {
                 showIcon
               />
             </div>
-            <div className="field col-6">
+           <div className="flex flex-col">
               <label>Date To</label>
               <Calendar
                 value={form.DateTo}
@@ -343,7 +345,7 @@ useEffect(() => {
                 showIcon
               />
             </div>
-            <div className="field col-6">
+            <div className="flex flex-col">
               <label>Amount</label>
               <InputNumber
                 value={form.Amount}
@@ -355,7 +357,7 @@ useEffect(() => {
                 locale="en-IN"
               />
             </div>
-            <div className="field col-12">
+           <div className="flex flex-col">
               <label>Description</label>
               <InputTextarea
                 rows={3}
@@ -368,7 +370,7 @@ useEffect(() => {
             <div className="field col-12">
             
             
-<div className="field col-12">
+<div className="flex flex-col">
   <label>Upload Bill Image</label>
   <FileUpload
     mode="basic"
@@ -420,31 +422,31 @@ useEffect(() => {
         onHide={() => setViewing(false)}
       >
         <div className="p-fluid formgrid grid">
-          <div className="field col-6">
+          <div className="flex flex-col">
             <label>Expense Type</label>
             <InputText value={form.ExpenseType} readOnly />
           </div>
-          <div className="field col-6">
+         <div className="flex flex-col">
             <label>Expense Subtype</label>
             <InputText value={form.ExpenseSubtype} readOnly />
           </div>
-          <div className="field col-6">
+          <div className="flex flex-col">
             <label>Date From</label>
             <InputText value={formatDate(form.DateFrom)} readOnly />
           </div>
-          <div className="field col-6">
+          <div className="flex flex-col">
             <label>Date To</label>
             <InputText value={formatDate(form.DateTo)} readOnly />
           </div>
-          <div className="field col-6">
+          <div className="flex flex-col">
             <label>Amount</label>
             <InputText value={form.Amount} readOnly />
           </div>
-          <div className="field col-12">
+          <div className="flex flex-col">
             <label>Description</label>
             <InputTextarea value={form.Description} rows={3} readOnly />
           </div>
-          <div className="field col-12">
+          <div className="flex flex-col">
             <label>Bill Image</label>
             {form.BillImage ? (
               <img
