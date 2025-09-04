@@ -76,7 +76,6 @@ import StockPage from "../MainComponents/Inventory/StockMaster";
 import AttendanceMaster from "../MainComponents/Attendance/attendance.jsx";
 import Leave from "../MainComponents/Attendance/Leaves.jsx";
 import Visitor from "../MainComponents/Visitor/Visitor.jsx";
-import CategoryMaster from "../MainComponents/AssetsMaster/CategoryMaster.jsx";
 import FacilityLatlong from "../MainComponents/FacilityMember/FacilityLatlong.jsx";
 import LeaveMaster from "../MainComponents/Attendance/LeaveMaster.jsx";
 import EmployeeLeave from "../MainComponents/FacilityMember/EmployeeLeave.jsx";
@@ -439,16 +438,6 @@ class MainNav extends React.Component {
                         >
                           <i className=" fas fa-caret-right nav-icon"></i>
                           <p>Check IN & OUT</p>
-                        </Link>
-                      </li>
-
-                      <li className="nav-item">
-                        <Link
-                          to="/Account/App/CategoryMaster"
-                          className="nav-link"
-                        >
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Category Master</p>
                         </Link>
                       </li>
 
@@ -1141,9 +1130,7 @@ class MainNav extends React.Component {
             <Route path="/Account/App/Tenant">
               <PropertyTenatsPage/>
             </Route>
-            <Route path="/Account/App/CategoryMaster">
-              <CategoryMaster />
-            </Route>
+           
             {/* <Route path="/Home">
                             <PropertyDashboard />
                         </Route> */}
