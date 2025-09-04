@@ -59,8 +59,8 @@ const RentAssetPage = (actions) => {
 
   const handleSubmit = async (formData) => {
     const url = actionType === "return" 
-      ? "http://localhost:62929/ManageRentInAsset"
-      : "http://localhost:62929/ManageRentOutAsset";
+      ? "https://api.urest.in:8096/ManageRentInAsset"
+      : "https://api.urest.in:8096/ManageRentOutAsset";
     
     try {
       const response = await fetch(url, {
