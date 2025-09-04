@@ -15,8 +15,8 @@ const RentAssetPage = (actions) => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const url=`http://localhost:62929/api/Asset/GetRentalAssetData?PropId=${actions.propId}`;
-      // const url=`https://api.urest.in:8096/api/Asset/GetRentalAssetData?PropId=${actions.propId}`;
+        //const url=`http://localhost:62929/api/Asset/GetRentalAssetData?PropId=${actions.propId}`;
+      const url=`https://api.urest.in:8096/api/Asset/GetRentalAssetData?PropId=${actions.propId}`;
         const response = await fetch(url, {
           method: "GET",
           headers: {
