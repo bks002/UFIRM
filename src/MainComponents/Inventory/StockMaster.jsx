@@ -3,6 +3,9 @@ import { Button } from 'primereact/button';
 import { Toast } from 'primereact/toast';
 import { getCategories, getStock } from '../../Services/InventoryService';
 import { useSelector } from "react-redux";
+import { Dialog } from 'primereact/dialog';
+import { Dropdown } from 'primereact/dropdown';
+import { InputNumber } from 'primereact/inputnumber';
 
 const StockMaster = () => {
     const emptyallGridData = {
@@ -25,6 +28,10 @@ const StockMaster = () => {
     const toast = useRef(null);
     const [categories, setCategories] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState(null);
+    const [showAddQtyDialog, setShowAddQtyDialog] = useState(false);
+    const [selectedItem, setSelectedItem] = useState(null);
+    const [addQty, setAddQty] = useState(0);
+    const [addQtyDialogCategory, setAddQtyDialogCategory] = useState(null);
 
 
     useEffect(() => {
@@ -34,11 +41,9 @@ const StockMaster = () => {
             return;
         }
 
-        // Fetch stock
         const fetchStock = async () => {
             try {
                 const stockData = await getStock(propertyId);
-                // Optional: Deduplicate by ItemId
                 const uniqueStock = Array.isArray(stockData)
                     ? Array.from(new Map(stockData.map(item => [item.ItemId, item])).values())
                     : [];
@@ -48,7 +53,6 @@ const StockMaster = () => {
             }
         };
 
-        // Fetch categories
         const fetchCategoriesAsync = async () => {
             try {
                 const cats = await getCategories(propertyId);
@@ -62,7 +66,6 @@ const StockMaster = () => {
         fetchCategoriesAsync();
     }, [propertyId]);
 
-    // Filter items by selected category
     const displayedData = selectedCategory
         ? filteredGridData.filter(item => item.CategoryId === selectedCategory)
         : filteredGridData;
@@ -71,19 +74,74 @@ const StockMaster = () => {
         return null;
     }
 
+    // Prepare dropdown options for items, filtered by selected category in dialog
+    const filteredDialogItems = addQtyDialogCategory
+        ? filteredGridData.filter(item => item.CategoryId === addQtyDialogCategory)
+        : filteredGridData;
+    const itemOptions = filteredDialogItems.map(item => ({
+        label: `${item.ItemName} (${item.ItemDescription})`,
+        value: item.ItemId,
+        item: item
+    }));
+
+    // Find the selected item object
+    const selectedItemObj = filteredGridData.find(i => i.ItemId === selectedItem);
+
+    // Dialog footer
+    const dialogFooter = (
+        <div>
+            <Button label="Cancel" icon="pi pi-times" className="p-button-text" onClick={() => setShowAddQtyDialog(false)} />
+            <Button label="Add Quantity" icon="pi pi-check" onClick={() => setShowAddQtyDialog(false)} autoFocus />
+        </div>
+    );
+
     return (
         <div className="content-wrapper">
             <Toast ref={toast} />
             <div className="content-header">
                 <div>
                     <div className="row ">
-                        <div className="col">
-                            <h1 className="m-0 pl-3 text-dark">Stock Page</h1>
+                        <div className="col d-flex align-items-center">
+                            <h1 className="m-0 pl-3 text-dark" style={{ flex: 1 }}>Stock Page</h1>
+                            <Button label="Add Quantity" icon="pi pi-plus" className="p-button-success" onClick={() => setShowAddQtyDialog(true)} style={{ marginLeft: 16 }} />
                         </div>
                     </div>
                 </div>
             </div>
-            {/* Category Scroll Bar */}
+            <Dialog header="Add Quantity to Item" visible={showAddQtyDialog} style={{ width: '400px' }} modal onHide={() => setShowAddQtyDialog(false)} footer={dialogFooter}>
+                <div className="p-fluid">
+                    <div className="p-field" style={{ marginBottom: 16 }}>
+                        <label htmlFor="categorySelect">Select Category</label>
+                        <Dropdown
+                            id="categorySelect"
+                            value={addQtyDialogCategory}
+                            options={[
+                                { label: 'All', value: null },
+                                ...categories.map(cat => ({ label: cat.Name, value: cat.Id }))
+                            ]}
+                            onChange={e => {
+                                setAddQtyDialogCategory(e.value);
+                                setSelectedItem(null); // Reset item selection when category changes
+                            }}
+                            placeholder="Select a category"
+                            showClear
+                        />
+                    </div>
+                    <div className="p-field" style={{ marginBottom: 16 }}>
+                        <label htmlFor="itemSelect">Select Item</label>
+                        <Dropdown id="itemSelect" value={selectedItem} options={itemOptions} onChange={e => setSelectedItem(e.value)} placeholder="Select an item" filter showClear optionLabel="label" />
+                    </div>
+                    <div className="p-field" style={{ marginBottom: 16 }}>
+                        <label htmlFor="qtyInput">Quantity to Add</label>
+                        <InputNumber id="qtyInput" value={addQty} onValueChange={e => setAddQty(e.value)} min={1} showButtons />
+                    </div>
+                    {selectedItemObj && (
+                        <div style={{ fontSize: 13, color: '#888' }}>
+                            Current Quantity: {selectedItemObj.CurrentQty}
+                        </div>
+                    )}
+                </div>
+            </Dialog>
             <div
                 className="scroll-container"
                 style={{
@@ -130,7 +188,6 @@ const StockMaster = () => {
                     ))}
                 </div>
             </div>
-            {/* Item List */}
             <div className="item-list" style={{ marginLeft: 32, marginTop: 10 }}>
                 {displayedData && displayedData.length > 0 && displayedData.map((item) => {
                     const received = item.CurrentQty || 0;

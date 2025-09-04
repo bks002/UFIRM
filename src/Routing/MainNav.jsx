@@ -17,6 +17,7 @@ import PropertyTower from "../pages/PropertyTowerPage";
 import PropertyAssignmentPage from "../pages/PropertyAssignmentPage";
 import ParkingDetailsPage from "../pages/ParkingDetailsPage";
 import FacilityMemberPage from "../pages/FacilityMemberPage";
+import FacilityLatlongPage from "../pages/FacilityLatlongPage";
 import ParkingAssignmentPage from "../pages/ParkingAssignmentsPage";
 import EmergencyContactPage from "../pages/EmergencyContactPage";
 import LayoutDataProvider from "./LayoutDataProvider.js";
@@ -56,7 +57,6 @@ import EventApproval from "../pages/EventApproval.jsx";
 import PlannerTaskPage from "../pages/PlannerTaskPage.jsx";
 import PlannerTaskAuditPage from "../pages/PlannerTaskAuditPage.jsx";
 import KYCPage from "../pages/KYCPage.jsx";
-import AttendanceRecordsPage from "../pages/AttendanceRecordsPage.jsx";
 import EmployeePage from "../pages/EmployeePage.jsx";
 import GuardMasterPage from "../pages/GuardMasterPage";
 import ResidentEventPage from "../pages/ResidentEventPage.jsx";
@@ -74,8 +74,12 @@ import ItemMasterPage from "../MainComponents/Inventory/itemPage";
 import PurchaseOrderPage from "../MainComponents/Inventory/PurchaseOrderMaster";
 import StockPage from "../MainComponents/Inventory/StockMaster";
 import AttendanceMaster from "../MainComponents/Attendance/attendance.jsx";
-import LeavesMaster from "../MainComponents/Attendance/LeavesMaster.jsx";
+import Leave from "../MainComponents/Attendance/Leaves.jsx";
 import Visitor from "../MainComponents/Visitor/Visitor.jsx";
+import FacilityLatlong from "../MainComponents/FacilityMember/FacilityLatlong.jsx";
+import LeaveMaster from "../MainComponents/Attendance/LeaveMaster.jsx";
+import EmployeeLeave from "../MainComponents/FacilityMember/EmployeeLeave.jsx";
+
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -119,9 +123,10 @@ class MainNav extends React.Component {
 
   componentDidMount() {
 
-    //var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
+    var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
 
-    var token = window.sessionStorage.getItem("userinfo_key")
+    //var token = window.sessionStorage.getItem("userinfo_key")
+
 
     if (token === null) {
       const timerId = setTimeout(() => {
@@ -613,6 +618,15 @@ class MainNav extends React.Component {
                             <p>Facility Member </p>
                           </Link>
                         </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/Facility"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Facility Latlong </p>
+                          </Link>
+                        </li>
 
                         {this.state.userRoles && this.state.userRoles.includes("Admin") ?
                           <li className="nav-item">
@@ -630,9 +644,28 @@ class MainNav extends React.Component {
                             <p >Attendance</p>
                           </Link>
                         </li>
-                          <li className="nav-item">
+
+                        <li className="nav-item">
                           <Link
-                            to="/Account/App/leaves"
+                            to="/Account/App/leavemaster"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Leave Master </p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/EmployeeLeave"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Employee Leave </p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/leave"
                             className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -1072,6 +1105,16 @@ class MainNav extends React.Component {
             <Route path="/Account/App/AddNewUser">
               <AddNewUser/>
             </Route>
+            <Route path="/Account/App/Facility">
+              <FacilityLatlong />
+            </Route>
+
+            <Route path="/Account/App/CreateNewUser">
+              <CreateNewUser />
+            </Route>
+            <Route path="/Account/App/AddNewUser">
+              <AddNewUser />
+            </Route>
             <Route path="/Account/App/CreateNewUser">
               <CreateNewUser />
             </Route>
@@ -1087,6 +1130,7 @@ class MainNav extends React.Component {
             <Route path="/Account/App/Tenant">
               <PropertyTenatsPage/>
             </Route>
+           
             {/* <Route path="/Home">
                             <PropertyDashboard />
                         </Route> */}
@@ -1187,8 +1231,14 @@ class MainNav extends React.Component {
             <Route path="/Account/App/ServiceRecords">
               <ServiceRecords />
             </Route>
-            <Route path="/Account/App/leaves">
-              <LeavesMaster />
+            <Route path="/Account/App/leave">
+              <Leave />
+            </Route>
+            <Route path="/Account/App/Visitor">
+              <Visitor />
+            </Route>
+            <Route path="/Account/App/ServiceRecords">
+              <ServiceRecords />
             </Route>
             <Route path="/Account/App/Visitor">
               <Visitor />
@@ -1260,7 +1310,11 @@ class MainNav extends React.Component {
               <UploaderPage />
             </Route>
 
-            <Route path="/Account/App/leaves" component={LeavesMaster} />
+            <Route path="/Account/App/leave" component={Leave} />
+            <Route path="/Account/App/leavemaster" component={LeaveMaster} />
+            <Route path="/Account/App/Facility" component={FacilityLatlongPage} />
+            <Route path="/Account/App/EmployeeLeave" component={EmployeeLeave} />
+
             {/* <Route path="/AttendanceSummary">
                             <AttendanceSummaryPage />
                         </Route> */}

@@ -223,7 +223,7 @@ oncityChange=(value)=>{
                                     Action={this.Addnew.bind(this)}
                                     ClassName="btn btn-success btn-sm"
                                     Icon={<i className="fa fa-plus" aria-hidden="true"></i>}
-                                    Text=" Create New" />
+                                    Text=" Create New Property" />
                                     </div>
                                     </div>
                             </li>
