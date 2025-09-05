@@ -315,48 +315,79 @@ export default function AttendanceMaster() {
         window.URL.revokeObjectURL(url);
     };
 
-    // Export to CSV function for the whole month (summary per employee)
-    const exportMonthToCSV = () => {
-        // Get all records for the current month, excluding Sundays
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
-        const monthAttendance = attendanceData.filter(record => {
-            const recordDate = new Date(record.PunchDate);
-            // Exclude Sundays (getDay() === 0)
-            return recordDate.getFullYear() === year && recordDate.getMonth() === month && recordDate.getDay() !== 0;
-        });
-        if (!monthAttendance || monthAttendance.length === 0) return;
+        // ✅ New: Export to CSV function for the whole month (detailed per day)
+   const exportMonthToCSV = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
 
-        // Group by EmployeeName and count Present/Absent
-        const summary = {};
-        monthAttendance.forEach(record => {
-            const name = record.EmployeeName;
-            if (!summary[name]) {
-                summary[name] = { Present: 0, Absent: 0 };
+    // Get all records of this month
+    const monthAttendance = attendanceData.filter(record => {
+        const recordDate = new Date(record.PunchDate);
+        return recordDate.getFullYear() === year && recordDate.getMonth() === month;
+    });
+
+    if (!monthAttendance || monthAttendance.length === 0) return;
+
+     // 🔹 Get all dates of month (INCLUDING Sundays)
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const dates = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+        // 👇 force yyyy-mm-dd string without timezone
+        const key = `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+        dates.push(key);
+    }
+
+    // 🔹 Group by Employee
+    const employees = {};
+    monthAttendance.forEach(record => {
+        const name = record.EmployeeName;
+        const dateKey = new Date(record.PunchDate).toISOString().split("T")[0]; // yyyy-mm-dd
+        if (!employees[name]) employees[name] = {};
+        employees[name][dateKey] = {
+            CheckIn: record.MinCheckIn || "--",
+            CheckOut: record.MaxCheckOut || "--",
+            WorkingTime: record.TotalWorkingTime || "0h",
+            Status: record.Status || "Absent"
+        };
+    });
+
+    // 🔹 Prepare header row (Employee Name + all dates)
+    const header = ["Employee Name", ...dates.map(d => {
+        const [y, m, dd] = d.split("-");
+        return `${dd}-${m}-${y}`; // show as dd-mm-yyyy
+    })];
+
+    // 🔹 Prepare rows
+    const rows = Object.entries(employees).map(([name, attMap]) => {
+        const row = [name];
+        dates.forEach(dateKey => {
+            if (attMap[dateKey]) {
+                const { CheckIn, CheckOut, WorkingTime, Status } = attMap[dateKey];
+                row.push(`In:${CheckIn} Out:${CheckOut} WT:${WorkingTime} Status:${Status}`);
+            } else {
+                row.push("In:-- Out:-- WT:0h Status:Absent");
             }
-            if (record.Status === 'Present') summary[name].Present += 1;
-            if (record.Status === 'Absent') summary[name].Absent += 1;
         });
+        return row;
+    });
 
-        // Prepare CSV rows
-        const header = ["EmployeeName", "Present", "Absent", "TotalWorkingDays"];
-        const rows = Object.entries(summary).map(([name, counts]) =>
-            [name, counts.Present, counts.Absent, counts.Present + counts.Absent]
-        );
-        const csv = [
-            header.join(','),
-            ...rows.map(row => row.join(','))
-        ].join('\r\n');
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `AttendanceSummary_${year}-${String(month + 1).padStart(2, '0')}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-    };
+    // 🔹 Make CSV
+    const csv = [
+        header.join(","),
+        ...rows.map(r => r.join(","))
+    ].join("\r\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `AttendanceDetailed_${year}-${String(month + 1).padStart(2, "0")}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+};
+
 
     const customHeader = (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -366,13 +397,20 @@ export default function AttendanceMaster() {
             {console.log("Selected date:", selectedDay)}
             {console.log("Attendance for selected date:", selectedDayAttendance)}
 
-            <button
-                className="btn btn-success btn-sm ms-4"
-                style={{ marginLeft: 25 }}
-                onClick={exportDayToCSV}
-            >
-                Export to CSV
-            </button>
+               <button
+      className="btn btn-primary btn-sm ms-2"
+      onClick={exportMonthToCSV}
+      disabled={attendanceData.filter(record => {
+        const recordDate = new Date(record.PunchDate);
+        return (
+          recordDate.getFullYear() === currentDate.getFullYear() &&
+          recordDate.getMonth() === currentDate.getMonth()
+        );
+      }).length === 0}
+    >
+      Export Detailed CSV
+    </button>
+
 
             
             <span className="p-inputgroup" style={{ maxWidth: 200 }}>
