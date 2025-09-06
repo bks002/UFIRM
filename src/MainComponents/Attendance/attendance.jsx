@@ -8,7 +8,7 @@ import { Calendar } from 'primereact/calendar';
 import { Button } from 'primereact/button';
 import { FileUpload } from 'primereact/fileupload';
 import { getAttendance, getFacilityMembers, getAllLocations, saveManualAttendance, getManualAttendanceByProperty, processManualAttendance, rejectprocessManualAttendance } from "../../Services/AttendanceService";
-
+import * as XLSX from "xlsx";
 import { useSelector } from 'react-redux';
 
 export default function AttendanceMaster() {
@@ -283,110 +283,99 @@ export default function AttendanceMaster() {
         setDialogVisible(true);
     };
 
-    const exportDayToCSV = () => {
-        if (!selectedDay) return;
+    // ✅ New: Export to CSV (Vertical format)
 
-        const year = selectedDay.getFullYear();
-        const month = String(selectedDay.getMonth() + 1).padStart(2, '0');
-        const day = String(selectedDay.getDate()).padStart(2, '0');
 
-        const header = ["Employee Name", "Check In", "Check Out", "Working Time", "Status"];
-        const rows = selectedDayAttendance.map(record => [
-            record.EmployeeName || '',
-            record.MinCheckIn || '',
-            record.MaxCheckOut || '',
-            record.TotalWorkingTime || '',
-            record.Status || ''
-        ]);
+const exportMonthToCSV = (attendanceData, currentDate) => {
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-        const csv = [
-            header.join(','),
-            ...rows.map(row => row.join(','))
-        ].join('\r\n');
+  // Dates of the month
+  const allDates = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    allDates.push(key);
+  }
 
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `AttendanceDetails_${year}-${month}-${day}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
+  // Employees grouping
+  const employees = {};
+  attendanceData.forEach(record => {
+    const emp = record.EmployeeName;
+    const dateKey = new Date(record.PunchDate).toISOString().split("T")[0];
+    if (!employees[emp]) employees[emp] = {};
+    employees[emp][dateKey] = {
+      CheckIn: record.MinCheckIn || "--",
+      CheckOut: record.MaxCheckOut || "--",
+      WorkingTime: record.TotalWorkingTime || "0h",
+      Status: record.Status || "Absent"
     };
+  });
 
-        // ✅ New: Export to CSV function for the whole month (detailed per day)
-   const exportMonthToCSV = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
+  let ws_data = [];
 
-    // Get all records of this month
-    const monthAttendance = attendanceData.filter(record => {
-        const recordDate = new Date(record.PunchDate);
-        return recordDate.getFullYear() === year && recordDate.getMonth() === month;
+  Object.entries(employees).forEach(([emp, attMap]) => {
+    let present = 0, absent = 0, weekOff = 0, totalWTmin = 0;
+
+    // Count summary
+    allDates.forEach(dateKey => {
+      const rec = attMap[dateKey];
+      let status = rec ? rec.Status : "Absent";
+
+      if (status === "Present") present++;
+      else if (status === "WeekOff") weekOff++;
+      else absent++;
+
+      if (rec && rec.WorkingTime && rec.WorkingTime !== "0h") {
+        let parts = rec.WorkingTime.split(":");
+        let h = parseInt(parts[0]) || 0;
+        let m = parseInt(parts[1]) || 0;
+        totalWTmin += h * 60 + m;
+      }
     });
 
-    if (!monthAttendance || monthAttendance.length === 0) return;
+    const totalHours = `${Math.floor(totalWTmin / 60)}h ${totalWTmin % 60}m`;
 
-     // 🔹 Get all dates of month (INCLUDING Sundays)
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const dates = [];
-    for (let d = 1; d <= daysInMonth; d++) {
-        // 👇 force yyyy-mm-dd string without timezone
-        const key = `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-        dates.push(key);
-    }
+    // Employee Summary Row
+    ws_data.push([`Employee: ${emp}`]);
+    ws_data.push([
+      `Present: ${present}`,
+      `Absent: ${absent}`,
+      `WeekOff: ${weekOff}`,
+      `Working Hours: ${totalHours}`
+    ]);
+    ws_data.push([]);
 
-    // 🔹 Group by Employee
-    const employees = {};
-    monthAttendance.forEach(record => {
-        const name = record.EmployeeName;
-        const dateKey = new Date(record.PunchDate).toISOString().split("T")[0]; // yyyy-mm-dd
-        if (!employees[name]) employees[name] = {};
-        employees[name][dateKey] = {
-            CheckIn: record.MinCheckIn || "--",
-            CheckOut: record.MaxCheckOut || "--",
-            WorkingTime: record.TotalWorkingTime || "0h",
-            Status: record.Status || "Absent"
-        };
+    // Header Row (Dates)
+    const displayDates = allDates.map(dateKey => {
+      const [y, m, d] = dateKey.split("-");
+      return `${d}-${m}-${y}`;
     });
+    ws_data.push(["Date", ...displayDates]);
 
-    // 🔹 Prepare header row (Employee Name + all dates)
-    const header = ["Employee Name", ...dates.map(d => {
-        const [y, m, dd] = d.split("-");
-        return `${dd}-${m}-${y}`; // show as dd-mm-yyyy
-    })];
+   // In Row
+ws_data.push(["In", ...allDates.map(d => attMap[d] ? attMap[d].CheckIn : "--")]);
 
-    // 🔹 Prepare rows
-    const rows = Object.entries(employees).map(([name, attMap]) => {
-        const row = [name];
-        dates.forEach(dateKey => {
-            if (attMap[dateKey]) {
-                const { CheckIn, CheckOut, WorkingTime, Status } = attMap[dateKey];
-                row.push(`In:${CheckIn} Out:${CheckOut} WT:${WorkingTime} Status:${Status}`);
-            } else {
-                row.push("In:-- Out:-- WT:0h Status:Absent");
-            }
-        });
-        return row;
-    });
+// Out Row
+ws_data.push(["Out", ...allDates.map(d => attMap[d] ? attMap[d].CheckOut : "--")]);
 
-    // 🔹 Make CSV
-    const csv = [
-        header.join(","),
-        ...rows.map(r => r.join(","))
-    ].join("\r\n");
+// WT Row
+ws_data.push(["WT", ...allDates.map(d => attMap[d] ? attMap[d].WorkingTime : "0h")]);
 
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `AttendanceDetailed_${year}-${String(month + 1).padStart(2, "0")}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+// Status Row
+ws_data.push(["Status", ...allDates.map(d => attMap[d] ? attMap[d].Status : "Absent")]);
+
+    ws_data.push([]); // spacing before next employee
+  });
+
+  // Export to Excel
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  XLSX.utils.book_append_sheet(wb, ws, "Attendance");
+  XLSX.writeFile(wb, `Attendance_${month + 1}_${year}.xlsx`);
 };
+
+
 
 
     const customHeader = (
@@ -396,20 +385,22 @@ export default function AttendanceMaster() {
             </h4>
             {console.log("Selected date:", selectedDay)}
             {console.log("Attendance for selected date:", selectedDayAttendance)}
+<button
+  className="btn btn-success btn-sm ms-4"
+  onClick={() => exportMonthToCSV(attendanceData, currentDate)}
+  disabled={attendanceData.filter(record => {
+    const recordDate = new Date(record.PunchDate);
+    return (
+      recordDate.getFullYear() === currentDate.getFullYear() &&
+      recordDate.getMonth() === currentDate.getMonth()
+    );
+  }).length === 0}
+>
+  Export to CSV
+</button>
 
-               <button
-      className="btn btn-primary btn-sm ms-2"
-      onClick={exportMonthToCSV}
-      disabled={attendanceData.filter(record => {
-        const recordDate = new Date(record.PunchDate);
-        return (
-          recordDate.getFullYear() === currentDate.getFullYear() &&
-          recordDate.getMonth() === currentDate.getMonth()
-        );
-      }).length === 0}
-    >
-      Export Detailed CSV
-    </button>
+
+
 
 
             
@@ -455,7 +446,7 @@ export default function AttendanceMaster() {
     </span>
     <button
       className="btn btn-success btn-sm ms-4"
-      onClick={exportMonthToCSV}
+      onClick={() => exportMonthToCSV(attendanceData, currentDate)}
       disabled={attendanceData.filter(record => {
         const recordDate = new Date(record.PunchDate);
         return (
