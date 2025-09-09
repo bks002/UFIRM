@@ -79,6 +79,7 @@ import Visitor from "../MainComponents/Visitor/Visitor.jsx";
 import FacilityLatlong from "../MainComponents/FacilityMember/FacilityLatlong.jsx";
 import LeaveMaster from "../MainComponents/Attendance/LeaveMaster.jsx";
 import EmployeeLeave from "../MainComponents/FacilityMember/EmployeeLeave.jsx";
+import SpotVisitCalendar from "../MainComponents/Calendar/SpotVisitCalendar.jsx";
 
 
 var currentpropertyid;
@@ -400,6 +401,15 @@ class MainNav extends React.Component {
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Spot Visits</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                              to="/Account/App/SpotVisitCalendar"
+                              className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Spot Visit Calendar</p>
                           </Link>
                         </li>
                         {/* <li className="nav-item">
@@ -1309,7 +1319,7 @@ class MainNav extends React.Component {
             <Route path="/Account/App/UploaderPage">
               <UploaderPage />
             </Route>
-
+            <Route path="/Account/App/SpotVisitCalendar" component={SpotVisitCalendar} />
             <Route path="/Account/App/leave" component={Leave} />
             <Route path="/Account/App/leavemaster" component={LeaveMaster} />
             <Route path="/Account/App/Facility" component={FacilityLatlongPage} />
