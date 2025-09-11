@@ -7,11 +7,16 @@ import DashboardCard from "../Dashboards/DashboardCard";
 import departmentActions from "../../redux/department/action";
 import { fetchSubCatTaskCounts } from "../../Services/DashboardServices";
 import { getAttendance } from '../../Services/AttendanceService';
+import { getTaskPriorityCountDash } from "../../Services/TaskPriorityService";
+
 import { Chart } from 'primereact/chart';
+import { Link } from 'react-router-dom';
 
 const Home = ({ PropertyId }) => {
     const [complains, setComplains] = useState([]);
     const [complainsCnt, setComplainsCnt] = useState(0);
+    
+
 
     const [totalFlats, setTotalFlats] = useState([]);
     const [totalFlatsCnt, setTotalFlatsCnt] = useState(0);
@@ -40,6 +45,7 @@ const Home = ({ PropertyId }) => {
         return [{ PropertyId: parseInt(PropertyId) }];
     }, [PropertyId]);
 
+    
     const taskStatusCount = useCallback(async (model, initialDate, finalDate) => {
         try {
             const resp = await apiProvider.manageDashTaskStatusCnt(model, initialDate, finalDate);
@@ -75,34 +81,55 @@ const Home = ({ PropertyId }) => {
     }, []);
 
     const taskPriorityCount = useCallback(async (model, initialDate, finalDate) => {
-        try {
-            const resp = await apiProvider.manageDashTaskPriorityCnt(model, initialDate, finalDate);
-            if (resp && resp.ok && resp.status === 200) {
-                const data = await resp.json();
-                const [completed = {}, SOS = {}, High = {}, Medium = {}, Low = {}] = data;
+    try {
+        const data = await getTaskPriorityCountDash(
+            model[0].PropertyId,
+            null, // categoryId
+            null, // subCategoryId
+            null, // occurance
+            null, // status
+            null, // priorityId
+            
+            initialDate,
+            finalDate
+        );
 
-                const priorities = [
-                    { Title: 'SOS', Value: SOS.Count || 0 },
-                    { Title: 'High Priority', Value: High.Count || 0 },
-                    { Title: 'Medium Priority', Value: Medium.Count || 0 },
-                    { Title: 'Low Priority', Value: Low.Count || 0 }
-                ];
+        // API se response aata hai jaise:
+        // [ { "TaskPriority": "Medium Priority", "Count": 6 } ]
+        const prioritiesMap = {
+            "SOS": 0,
+            "High Priority": 0,
+            "Medium Priority": 0,
+            "Low Priority": 0,
+        };
 
-                setTaskPriority(priorities);
-                setTotalActTasks(priorities.reduce((sum, p) => sum + p.Value, 0));
-            } else {
-                setTaskPriority([
-                    { Title: 'SOS', Value: 0 },
-                    { Title: 'High Priority', Value: 0 },
-                    { Title: 'Medium Priority', Value: 0 },
-                    { Title: 'Low Priority', Value: 0 }
-                ]);
-                setTotalActTasks(0);
+        data.forEach(item => {
+            if (prioritiesMap.hasOwnProperty(item.TaskPriority)) {
+                prioritiesMap[item.TaskPriority] = item.Count;
             }
-        } catch (error) {
-            console.error('Error fetching task priority:', error);
-        }
-    }, []);
+        });
+
+        const priorities = [
+            { Title: "SOS", Value: prioritiesMap["SOS"] },
+            { Title: "High Priority", Value: prioritiesMap["High Priority"] },
+            { Title: "Medium Priority", Value: prioritiesMap["Medium Priority"] },
+            { Title: "Low Priority", Value: prioritiesMap["Low Priority"] },
+        ];
+
+        setTaskPriority(priorities);
+        setTotalActTasks(priorities.reduce((sum, p) => sum + p.Value, 0));
+    } catch (error) {
+        console.error("Error fetching task priority:", error);
+        setTaskPriority([
+            { Title: "SOS", Value: 0 },
+            { Title: "High Priority", Value: 0 },
+            { Title: "Medium Priority", Value: 0 },
+            { Title: "Low Priority", Value: 0 },
+        ]);
+        setTotalActTasks(0);
+    }
+}, []);
+
 
     const getAssetCount = useCallback(async (model, initialDate, finalDate) => {
         try {
@@ -218,12 +245,14 @@ const Home = ({ PropertyId }) => {
 
             {/* 1. Tasks Pie Chart */}
             <div className="col-md-3">
-                <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
+                
+                <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}  >
                     <h5 className="text-center">Tasks</h5>
                     <Chart
                         type="pie"
                         data={{
                             labels: taskStatus.map(t => t.Title),
+                            // Link: `/Account/App/PlannerTask?status=${taskStatus.map(t => t.Title)}`,
                             datasets: [
                                 {
                                     data: taskStatus.map(t => t.Value),
@@ -234,15 +263,28 @@ const Home = ({ PropertyId }) => {
                         options={{
                             responsive: true,
                             maintainAspectRatio: false,
-                            plugins: { legend: { position: 'bottom' } }
+                            plugins: { legend: { position: 'bottom' } },
+                            onClick: (e, elements) => {
+                                if (elements.length > 0) {
+                                    const chart = elements[0].element.$context.chart;
+                                    const index = elements[0].index;
+                                    const label = chart.data.labels[index];
+                                    // Navigate to the desired URL
+                                    window.location.href = `/Account/App/PlannerTask?status=${label}`;
+                                }
+                            }
+
                         }}
                         style={{ width: "100%", height: "220px" }}
+                       
                     />
+                    
                 </div>
             </div>
 
            {/* 2. Priority Tasks Table */}
 <div className="col-md-3">
+     <Link to="/Account/App/PlannerTask" style={{ textDecoration: 'none', color: 'inherit' }}>
     <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
         <h5 className="text-center">Priority Tasks</h5>
         <div style={{ overflowX: "auto", maxHeight: "220px" }}>
@@ -253,7 +295,9 @@ const Home = ({ PropertyId }) => {
                         <th>Title</th>
                         <th>Value</th>
                     </tr>
+                    
                 </thead>
+
                 <tbody>
                     {taskPriority.map((p, index) => (
                         <tr key={index}>
@@ -261,15 +305,23 @@ const Home = ({ PropertyId }) => {
                             <td>{p.Title}</td>
                             <td>{p.Value}</td>
                         </tr>
-                    ))}
+
+                    ))
+                    
+                    }
+
                 </tbody>
+                
             </table>
+                
         </div>
     </div>
+    </Link>
 </div>
 
             {/* 3. Total Assets Bar Chart */}
             <div className="col-md-3">
+                 <Link to="/Account/App/Assets" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
                     <h5 className="text-center">Total Assets</h5>
                     <Chart
@@ -288,14 +340,18 @@ const Home = ({ PropertyId }) => {
                             responsive: true,
                             maintainAspectRatio: false,
                             plugins: { legend: { display: false } }
+                           
+
                         }}
                         style={{ width: "100%", height: "220px" }}
                     />
                 </div>
+                </Link>
             </div>
 
             {/* 4. Complains Donut Chart */}
 <div className="col-md-3">
+    <Link to="/Account/App/TicketComplains" style={{ textDecoration: 'none', color: 'inherit' }}>
     <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
         <h5 className="text-center">Complains</h5>
         <Chart
@@ -317,10 +373,12 @@ const Home = ({ PropertyId }) => {
                         position: 'bottom'
                     }
                 }
+                
             }}
             style={{ width: "100%", height: "220px" }}
         />
     </div>
+   </Link>
 </div>
 
         </div>
@@ -337,6 +395,7 @@ const Home = ({ PropertyId }) => {
 
             {/* 1. Attendance Bar Chart */}
             <div className="col-md-3">
+                <Link to="/Account/App/Attendance" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
                     <h5 className="text-center">Attendance</h5>
                     <Chart
@@ -355,10 +414,13 @@ const Home = ({ PropertyId }) => {
                             responsive: true,
                             maintainAspectRatio: false,
                             plugins: { legend: { display: false } }
+                            
+
                         }}
                         style={{ width: "100%", height: "220px" }}
                     />
                 </div>
+                </Link>
             </div>
 
             {/* 2. Lift (API based DashboardCard) */}
