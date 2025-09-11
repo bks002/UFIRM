@@ -80,7 +80,9 @@ import FacilityLatlong from "../MainComponents/FacilityMember/FacilityLatlong.js
 import LeaveMaster from "../MainComponents/Attendance/LeaveMaster.jsx";
 import EmployeeLeave from "../MainComponents/FacilityMember/EmployeeLeave.jsx";
 import SpotVisitCalendar from "../MainComponents/Calendar/SpotVisitCalendar.jsx";
-
+import ExpenseMaster from "../MainComponents/Expense/ExpenseMaster.jsx";
+import ExpenseTypeMaster from "../MainComponents/Expense/ExpenseTypeMaster.jsx";
+import ExpenseReport from "../MainComponents/Expense/ExpenseReport.jsx";
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -680,6 +682,33 @@ class MainNav extends React.Component {
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Leaves </p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/ExpenseMaster"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Expense Master </p>
+                          </Link>
+                        </li>
+                         <li className="nav-item">
+                          <Link
+                            to="/Account/App/ExpenseTypeMaster"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Expense Type Master </p>
+                          </Link>
+                        </li>
+                         <li className="nav-item">
+                          <Link
+                            to="/Account/App/ExpenseReport"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Expense Report </p>
                           </Link>
                         </li>
                         <li className="nav-item">
@@ -1320,6 +1349,9 @@ class MainNav extends React.Component {
               <UploaderPage />
             </Route>
             <Route path="/Account/App/SpotVisitCalendar" component={SpotVisitCalendar} />
+             <Route path="/Account/App/ExpenseReport" component={ExpenseReport} />
+             <Route path="/Account/App/ExpenseTypeMaster" component={ExpenseTypeMaster} />
+            <Route path="/Account/App/ExpenseMaster" component={ExpenseMaster} />
             <Route path="/Account/App/leave" component={Leave} />
             <Route path="/Account/App/leavemaster" component={LeaveMaster} />
             <Route path="/Account/App/Facility" component={FacilityLatlongPage} />
