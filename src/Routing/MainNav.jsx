@@ -80,6 +80,8 @@ import FacilityLatlong from "../MainComponents/FacilityMember/FacilityLatlong.js
 import LeaveMaster from "../MainComponents/Attendance/LeaveMaster.jsx";
 import EmployeeLeave from "../MainComponents/FacilityMember/EmployeeLeave.jsx";
 import SpotVisitCalendar from "../MainComponents/Calendar/SpotVisitCalendar.jsx";
+import AllowanceDeduction from "../MainComponents/Payroll/AllowanceDeduction.jsx";
+import SalaryGroups from "../MainComponents/Payroll/SalaryGroups.jsx";
 
 
 var currentpropertyid;
@@ -689,6 +691,24 @@ class MainNav extends React.Component {
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Visitor </p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/AllowanceDeduction"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Allowance Deduction </p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/SalaryGroups"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Salary Groups </p>
                           </Link>
                         </li>
                         {/* <li className="nav-item">
@@ -1319,6 +1339,8 @@ class MainNav extends React.Component {
             <Route path="/Account/App/UploaderPage">
               <UploaderPage />
             </Route>
+            <Route path="/Account/App/SalaryGroups" component={SalaryGroups} />
+            <Route path="/Account/App/AllowanceDeduction" component={AllowanceDeduction} />
             <Route path="/Account/App/SpotVisitCalendar" component={SpotVisitCalendar} />
             <Route path="/Account/App/leave" component={Leave} />
             <Route path="/Account/App/leavemaster" component={LeaveMaster} />
