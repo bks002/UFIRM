@@ -101,6 +101,7 @@ const Home = ({ PropertyId }) => {
             "High Priority": 0,
             "Medium Priority": 0,
             "Low Priority": 0,
+            "On Hold": 0,
         };
 
         data.forEach(item => {
@@ -114,6 +115,7 @@ const Home = ({ PropertyId }) => {
             { Title: "High Priority", Value: prioritiesMap["High Priority"] },
             { Title: "Medium Priority", Value: prioritiesMap["Medium Priority"] },
             { Title: "Low Priority", Value: prioritiesMap["Low Priority"] },
+            { Title: "On Hold", Value: prioritiesMap["On Hold"] },
         ];
 
         setTaskPriority(priorities);
@@ -125,6 +127,7 @@ const Home = ({ PropertyId }) => {
             { Title: "High Priority", Value: 0 },
             { Title: "Medium Priority", Value: 0 },
             { Title: "Low Priority", Value: 0 },
+            { Title: "On Hold", Value: 0 },
         ]);
         setTotalActTasks(0);
     }
