@@ -7,10 +7,16 @@ import DashboardCard from "../Dashboards/DashboardCard";
 import departmentActions from "../../redux/department/action";
 import { fetchSubCatTaskCounts } from "../../Services/DashboardServices";
 import { getAttendance } from '../../Services/AttendanceService';
+import { getTaskPriorityCountDash } from "../../Services/TaskPriorityService";
+
+import { Chart } from 'primereact/chart';
+import { Link } from 'react-router-dom';
 
 const Home = ({ PropertyId }) => {
     const [complains, setComplains] = useState([]);
     const [complainsCnt, setComplainsCnt] = useState(0);
+    
+
 
     const [totalFlats, setTotalFlats] = useState([]);
     const [totalFlatsCnt, setTotalFlatsCnt] = useState(0);
@@ -39,6 +45,7 @@ const Home = ({ PropertyId }) => {
         return [{ PropertyId: parseInt(PropertyId) }];
     }, [PropertyId]);
 
+    
     const taskStatusCount = useCallback(async (model, initialDate, finalDate) => {
         try {
             const resp = await apiProvider.manageDashTaskStatusCnt(model, initialDate, finalDate);
@@ -74,34 +81,58 @@ const Home = ({ PropertyId }) => {
     }, []);
 
     const taskPriorityCount = useCallback(async (model, initialDate, finalDate) => {
-        try {
-            const resp = await apiProvider.manageDashTaskPriorityCnt(model, initialDate, finalDate);
-            if (resp && resp.ok && resp.status === 200) {
-                const data = await resp.json();
-                const [completed = {}, SOS = {}, High = {}, Medium = {}, Low = {}] = data;
+    try {
+        const data = await getTaskPriorityCountDash(
+            model[0].PropertyId,
+            null, // categoryId
+            null, // subCategoryId
+            null, // occurance
+            null, // status
+            null, // priorityId
+            
+            initialDate,
+            finalDate
+        );
 
-                const priorities = [
-                    { Title: 'SOS', Value: SOS.Count || 0 },
-                    { Title: 'High Priority', Value: High.Count || 0 },
-                    { Title: 'Medium Priority', Value: Medium.Count || 0 },
-                    { Title: 'Low Priority', Value: Low.Count || 0 }
-                ];
+        // API se response aata hai jaise:
+        // [ { "TaskPriority": "Medium Priority", "Count": 6 } ]
+        const prioritiesMap = {
+            "SOS": 0,
+            "High Priority": 0,
+            "Medium Priority": 0,
+            "Low Priority": 0,
+            "On Hold": 0,
+        };
 
-                setTaskPriority(priorities);
-                setTotalActTasks(priorities.reduce((sum, p) => sum + p.Value, 0));
-            } else {
-                setTaskPriority([
-                    { Title: 'SOS', Value: 0 },
-                    { Title: 'High Priority', Value: 0 },
-                    { Title: 'Medium Priority', Value: 0 },
-                    { Title: 'Low Priority', Value: 0 }
-                ]);
-                setTotalActTasks(0);
+        data.forEach(item => {
+            if (prioritiesMap.hasOwnProperty(item.TaskPriority)) {
+                prioritiesMap[item.TaskPriority] = item.Count;
             }
-        } catch (error) {
-            console.error('Error fetching task priority:', error);
-        }
-    }, []);
+        });
+
+        const priorities = [
+            { Title: "SOS", Value: prioritiesMap["SOS"] },
+            { Title: "High Priority", Value: prioritiesMap["High Priority"] },
+            { Title: "Medium Priority", Value: prioritiesMap["Medium Priority"] },
+            { Title: "Low Priority", Value: prioritiesMap["Low Priority"] },
+            { Title: "On Hold", Value: prioritiesMap["On Hold"] },
+        ];
+
+        setTaskPriority(priorities);
+        setTotalActTasks(priorities.reduce((sum, p) => sum + p.Value, 0));
+    } catch (error) {
+        console.error("Error fetching task priority:", error);
+        setTaskPriority([
+            { Title: "SOS", Value: 0 },
+            { Title: "High Priority", Value: 0 },
+            { Title: "Medium Priority", Value: 0 },
+            { Title: "Low Priority", Value: 0 },
+            { Title: "On Hold", Value: 0 },
+        ]);
+        setTotalActTasks(0);
+    }
+}, []);
+
 
     const getAssetCount = useCallback(async (model, initialDate, finalDate) => {
         try {
@@ -209,64 +240,234 @@ const Home = ({ PropertyId }) => {
 
     return (
         <div className="content-wrapper mt-2">
-            <section className="content">
-                <div className="container-fluid">
-                    <div className="row">
-                        <div className="col-md-3">
-                            <DashboardCard CardTitle="Task Status" HeaderValue={totalTasks} HeaderClass="card card-danger cardutline" ItemJson={taskStatus} Link="/Account/App/PlannerTask" />
-                        </div>
-                        <div className="col-md-3">
-                            <DashboardCard CardTitle="Priority Tasks" HeaderValue={totalActTasks} HeaderClass="card card-danger cardutline" ItemJson={taskPriority} Link="/Account/App/PlannerTask" />
-                        </div>
-                        <div className="col-md-3">
-                            <DashboardCard CardTitle="Total Assets" HeaderValue={totalAssets} HeaderClass="card card-danger cardutline" ItemJson={assetCount} Link="/Account/App/ServiceRecords" />
-                        </div>
-                        <div className="col-md-3">
-                            <DashboardCard CardTitle="Complains" HeaderValue={complainsCnt} HeaderClass="card card-danger cardutline" ItemJson={complains} Link="/Account/App/TicketComplains" />
-                        </div>
-                    </div>
+        <section className="content px-2">
+    <div className="container-fluid">
+        
+        {/* ===== First Row: 4 Cards ===== */}
+        <div className="row mt-3">
 
-                    <section className="content px-2">
-                        <div className="container-fluid card p-2 shadow-sm">
-                            <ChartNavigator onPeriodChange={getDates} />
-                        </div>
-                    </section>
+            {/* 1. Tasks Pie Chart */}
+            <div className="col-md-3">
+                
+                <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}  >
+                    <h5 className="text-center">Tasks</h5>
+                    <Chart
+                        type="pie"
+                        data={{
+                            labels: taskStatus.map(t => t.Title),
+                            // Link: `/Account/App/PlannerTask?status=${taskStatus.map(t => t.Title)}`,
+                            datasets: [
+                                {
+                                    data: taskStatus.map(t => t.Value),
+                                    backgroundColor: ['#42A5F5', '#66BB6A', '#EF5350']
+                                }
+                            ]
+                        }}
+                        options={{
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { position: 'bottom' } },
+                            onClick: (e, elements) => {
+                                if (elements.length > 0) {
+                                    const chart = elements[0].element.$context.chart;
+                                    const index = elements[0].index;
+                                    const label = chart.data.labels[index];
+                                    // Navigate to the desired URL
+                                    window.location.href = `/Account/App/PlannerTask?status=${label}`;
+                                }
+                            }
 
-                    <div className="row">
-                        <div className="col-md-3">
-                            <DashboardCard CardTitle="Total Flats" HeaderValue={totalFlatsCnt} HeaderClass="card card-info cardutline" ItemJson={totalFlats} Link="/Account/App/ManageResidentOwners" />
-                        </div>
-
-                        <div className="col-md-3">
-                            <DashboardCard CardTitle="Attendance" HeaderValue={attendanceTotal} HeaderClass="card card-danger cardutline" ItemJson={attendance} Link="/Account/App/Attendance" />
-                        </div>
-
-                        {subCategoryCards.map((x) => {
-                            const counts = subCategoryTaskData[x.id] || { Actionable: 0, Completed: 0, Pending: 0 };
-                            const itemJson = [
-                                { Title: "Actionable", Value: counts.Actionable || 0 },
-                                { Title: "Completed", Value: counts.Completed || 0 },
-                                { Title: "Pending", Value: counts.Pending || 0 }
-                            ];
-                            const total = itemJson.reduce((sum, i) => sum + i.Value, 0);
-
-                            return (
-                                <div className="col-md-3" key={x.id}>
-                                    <DashboardCard
-                                        CardTitle={x.name}
-                                        HeaderValue={total}
-                                        HeaderClass="card card-danger cardutline"
-                                        ItemJson={itemJson}
-                                        Link="/Account/App/PlannerTask"
-                                    />
-                                </div>
-                            );
-                        })}
-                    </div>
-
+                        }}
+                        style={{ width: "100%", height: "220px" }}
+                       
+                    />
+                    
                 </div>
-            </section>
+            </div>
+
+           {/* 2. Priority Tasks Table */}
+<div className="col-md-3">
+     <Link to="/Account/App/PlannerTask" style={{ textDecoration: 'none', color: 'inherit' }}>
+    <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
+        <h5 className="text-center">Priority Tasks</h5>
+        <div style={{ overflowX: "auto", maxHeight: "220px" }}>
+            <table className="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Title</th>
+                        <th>Value</th>
+                    </tr>
+                    
+                </thead>
+
+                <tbody>
+                    {taskPriority.map((p, index) => (
+                        <tr key={index}>
+                            <td>{index + 1}</td>
+                            <td>{p.Title}</td>
+                            <td>{p.Value}</td>
+                        </tr>
+
+                    ))
+                    
+                    }
+
+                </tbody>
+                
+            </table>
+                
         </div>
+    </div>
+    </Link>
+</div>
+
+            {/* 3. Total Assets Bar Chart */}
+            <div className="col-md-3">
+                 <Link to="/Account/App/Assets" style={{ textDecoration: 'none', color: 'inherit' }}>
+                <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
+                    <h5 className="text-center">Total Assets</h5>
+                    <Chart
+                        type="bar"
+                        data={{
+                            labels: assetCount.map(a => a.Title),
+                            datasets: [
+                                {
+                                    label: 'Assets',
+                                    data: assetCount.map(a => a.Value),
+                                    backgroundColor: ['#42A5F5', '#66BB6A', '#FFA726', '#AB47BC']
+                                }
+                            ]
+                        }}
+                        options={{
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } }
+                           
+
+                        }}
+                        style={{ width: "100%", height: "220px" }}
+                    />
+                </div>
+                </Link>
+            </div>
+
+            {/* 4. Complains Donut Chart */}
+<div className="col-md-3">
+    <Link to="/Account/App/TicketComplains" style={{ textDecoration: 'none', color: 'inherit' }}>
+    <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
+        <h5 className="text-center">Complains</h5>
+        <Chart
+            type="doughnut"
+            data={{
+                labels: complains.map(c => c.Title),
+                datasets: [
+                    {
+                        data: complains.map(c => c.Value),
+                        backgroundColor: ['#42A5F5', '#66BB6A', '#FFA726', '#AB47BC']
+                    }
+                ]
+            }}
+            options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+                
+            }}
+            style={{ width: "100%", height: "220px" }}
+        />
+    </div>
+   </Link>
+</div>
+
+        </div>
+
+        {/* ===== Chart Navigator ===== */}
+        <section className="content px-2">
+            <div className="container-fluid card p-2 shadow-sm">
+                <ChartNavigator onPeriodChange={getDates} />
+            </div>
+        </section>
+
+        {/* ===== Second Row: 3 Cards ===== */}
+        <div className="row mt-3">
+
+            {/* 1. Attendance Bar Chart */}
+            <div className="col-md-3">
+                <Link to="/Account/App/Attendance" style={{ textDecoration: 'none', color: 'inherit' }}>
+                <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
+                    <h5 className="text-center">Attendance</h5>
+                    <Chart
+                        type="bar"
+                        data={{
+                            labels: attendance.map(a => a.Title),
+                            datasets: [
+                                {
+                                    label: 'Employees',
+                                    data: attendance.map(a => a.Value),
+                                    backgroundColor: ['#42A5F5', '#EF5350', '#FFCA28']
+                                }
+                            ]
+                        }}
+                        options={{
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } }
+                            
+
+                        }}
+                        style={{ width: "100%", height: "220px" }}
+                    />
+                </div>
+                </Link>
+            </div>
+
+            {/* 2. Lift (API based DashboardCard) */}
+            <div className="col-md-3">
+                <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
+                <DashboardCard
+                    CardTitle="Lift"
+                    HeaderValue={(subCategoryTaskData[4]
+                        ? Object.values(subCategoryTaskData[4]).reduce((a, b) => a + b, 0)
+                        : 0)}
+                    HeaderClass="card card-danger cardutline"
+                    ItemJson={[
+                        { Title: "Actionable", Value: subCategoryTaskData[4] ? subCategoryTaskData[4].Actionable || 0 : 0 },
+                        { Title: "Completed", Value: subCategoryTaskData[4] ? subCategoryTaskData[4].Completed || 0 : 0 },
+                        { Title: "Pending", Value: subCategoryTaskData[4] ? subCategoryTaskData[4].Pending || 0 : 0 }
+                    ]}
+                    Link="/Account/App/PlannerTask"
+                />
+                </div>
+            </div>
+
+            {/* 3. DG (API based DashboardCard) */}
+            <div className="col-md-3">
+                <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
+                <DashboardCard
+                    CardTitle="DG"
+                    HeaderValue={(subCategoryTaskData[69]
+                        ? Object.values(subCategoryTaskData[69]).reduce((a, b) => a + b, 0)
+                        : 0)}
+                    HeaderClass="card card-danger cardutline"
+                    ItemJson={[
+                        { Title: "Actionable", Value: subCategoryTaskData[69] ? subCategoryTaskData[69].Actionable || 0 : 0 },
+                        { Title: "Completed", Value: subCategoryTaskData[69] ? subCategoryTaskData[69].Completed || 0 : 0 },
+                        { Title: "Pending", Value: subCategoryTaskData[69] ? subCategoryTaskData[69].Pending || 0 : 0 }
+                    ]}
+                    Link="/Account/App/PlannerTask"
+                />
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+</div>
     );
 };
 
