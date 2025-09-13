@@ -76,14 +76,13 @@ import StockPage from "../MainComponents/Inventory/StockMaster";
 import AttendanceMaster from "../MainComponents/Attendance/attendance.jsx";
 import Leave from "../MainComponents/Attendance/Leaves.jsx";
 import Visitor from "../MainComponents/Visitor/Visitor.jsx";
-import CategoryMaster from "../MainComponents/AssetsMaster/CategoryMaster.jsx";
 import FacilityLatlong from "../MainComponents/FacilityMember/FacilityLatlong.jsx";
 import LeaveMaster from "../MainComponents/Attendance/LeaveMaster.jsx";
 import EmployeeLeave from "../MainComponents/FacilityMember/EmployeeLeave.jsx";
+import SpotVisitCalendar from "../MainComponents/Calendar/SpotVisitCalendar.jsx";
 import ExpenseMaster from "../MainComponents/Expense/ExpenseMaster.jsx";
 import ExpenseTypeMaster from "../MainComponents/Expense/ExpenseTypeMaster.jsx";
 import ExpenseReport from "../MainComponents/Expense/ExpenseReport.jsx";
-
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -130,6 +129,10 @@ class MainNav extends React.Component {
     var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
 
     //var token = window.sessionStorage.getItem("userinfo_key")
+<<<<<<< HEAD
+=======
+
+>>>>>>> 7f39e53f23be79c8f636866b46c1fbc4276e8522
 
     if (token === null) {
       const timerId = setTimeout(() => {
@@ -405,6 +408,15 @@ class MainNav extends React.Component {
                             <p>Spot Visits</p>
                           </Link>
                         </li>
+                        <li className="nav-item">
+                          <Link
+                              to="/Account/App/SpotVisitCalendar"
+                              className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Spot Visit Calendar</p>
+                          </Link>
+                        </li>
                         {/* <li className="nav-item">
                                                         <Link to="/AttendanceSummary" className="nav-link">
                                                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -441,16 +453,6 @@ class MainNav extends React.Component {
                         >
                           <i className=" fas fa-caret-right nav-icon"></i>
                           <p>Check IN & OUT</p>
-                        </Link>
-                      </li>
-
-                      <li className="nav-item">
-                        <Link
-                          to="/Account/App/CategoryMaster"
-                          className="nav-link"
-                        >
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Category Master</p>
                         </Link>
                       </li>
 
@@ -1164,9 +1166,7 @@ class MainNav extends React.Component {
             <Route path="/Account/App/Tenant">
               <PropertyTenatsPage />
             </Route>
-            <Route path="/Account/App/CategoryMaster">
-              <CategoryMaster />
-            </Route>
+           
             {/* <Route path="/Home">
                             <PropertyDashboard />
                         </Route> */}
@@ -1276,6 +1276,12 @@ class MainNav extends React.Component {
             <Route path="/Account/App/ServiceRecords">
               <ServiceRecords />
             </Route>
+            <Route path="/Account/App/Visitor">
+              <Visitor />
+             </Route>
+            <Route path="/Account/App/ServiceRecords">
+              <ServiceRecords/>
+            </Route>
             <Route path="/Account/App/EscalationGroup">
               <EscalationGroupPage />
             </Route>
@@ -1339,6 +1345,7 @@ class MainNav extends React.Component {
             <Route path="/Account/App/UploaderPage">
               <UploaderPage />
             </Route>
+            <Route path="/Account/App/SpotVisitCalendar" component={SpotVisitCalendar} />
              <Route path="/Account/App/ExpenseReport" component={ExpenseReport} />
              <Route path="/Account/App/ExpenseTypeMaster" component={ExpenseTypeMaster} />
             <Route path="/Account/App/ExpenseMaster" component={ExpenseMaster} />

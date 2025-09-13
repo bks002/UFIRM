@@ -105,7 +105,7 @@ const Home = ({ PropertyId }) => {
         };
 
         data.forEach(item => {
-            if (prioritiesMap.hasOwnProperty(item.TaskPriority)) {
+            if (prioritiesMap.hasOwnProperty(item.TaskPriority)) {n
                 prioritiesMap[item.TaskPriority] = item.Count;
             }
         });
