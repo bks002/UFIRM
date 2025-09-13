@@ -129,10 +129,6 @@ class MainNav extends React.Component {
     var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
 
     //var token = window.sessionStorage.getItem("userinfo_key")
-<<<<<<< HEAD
-=======
-
->>>>>>> 7f39e53f23be79c8f636866b46c1fbc4276e8522
 
     if (token === null) {
       const timerId = setTimeout(() => {
@@ -292,8 +288,8 @@ class MainNav extends React.Component {
                           <Fragment>
                             <li className="nav-item">
                               <Link
-                                to="/Account/App/CalendarCategory"
-                                className="nav-link"
+                                  to="/Account/App/CalendarCategory"
+                                  className="nav-link"
                               >
                                 <i className=" fas fa-caret-right nav-icon"></i>
                                 <p>Category </p>
@@ -301,8 +297,8 @@ class MainNav extends React.Component {
                             </li>
                             <li className="nav-item">
                               <Link
-                                to="/Account/App/CalendarSubCategory"
-                                className="nav-link"
+                                  to="/Account/App/CalendarSubCategory"
+                                  className="nav-link"
                               >
                                 <i className=" fas fa-caret-right nav-icon"></i>
                                 <p>Sub Category </p>
@@ -365,8 +361,8 @@ class MainNav extends React.Component {
                         </li> */}
                         <li className="nav-item">
                           <Link
-                            to="/Account/App/TaskEventsCalender"
-                            className="nav-link"
+                              to="/Account/App/TaskEventsCalender"
+                              className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Task Calendar</p>
@@ -401,8 +397,8 @@ class MainNav extends React.Component {
                         {/*</li>*/}
                         <li className="nav-item">
                           <Link
-                            to="/Account/App/GuardList"
-                            className="nav-link"
+                              to="/Account/App/GuardList"
+                              className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Spot Visits</p>
@@ -551,8 +547,8 @@ class MainNav extends React.Component {
                       <ul className="nav nav-treeview">
                         <li className="nav-item">
                           <Link
-                            to="/Account/App/ManageResidentOwners"
-                            className="nav-link"
+                              to="/Account/App/ManageResidentOwners"
+                              className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Manage Resident/Owners</p>
@@ -560,8 +556,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                            to="/Account/App/RwaMember"
-                            className="nav-link"
+                              to="/Account/App/RwaMember"
+                              className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Rwa Member</p>
@@ -576,8 +572,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                            to="/Account/App/EmergencyContact"
-                            className="nav-link"
+                              to="/Account/App/EmergencyContact"
+                              className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Emergency Contact </p>
@@ -591,8 +587,8 @@ class MainNav extends React.Component {
                                             </li> */}
                         <li className="nav-item">
                           <Link
-                            to="/Account/App/Employeeassignment"
-                            className="nav-link"
+                              to="/Account/App/Employeeassignment"
+                              className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Employee Assignment</p>
@@ -600,8 +596,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item ">
                           <Link
-                            to="/Account/App/PropertyMember"
-                            className="nav-link"
+                              to="/Account/App/PropertyMember"
+                              className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Rent Agreement</p>
@@ -626,8 +622,8 @@ class MainNav extends React.Component {
                       <ul className="nav nav-treeview">
                         <li className="nav-item">
                           <Link
-                            to="/Account/App/FacilityMember"
-                            className="nav-link"
+                              to="/Account/App/FacilityMember"
+                              className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Facility Member </p>
@@ -753,8 +749,8 @@ class MainNav extends React.Component {
                       <ul className="nav nav-treeview">
                         <li className="nav-item">
                           <Link
-                            to="/Account/App/ParkingZone"
-                            className="nav-link"
+                              to="/Account/App/ParkingZone"
+                              className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Parking Zone </p>
@@ -762,8 +758,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                            to="/Account/App/ParkingDetails"
-                            className="nav-link"
+                              to="/Account/App/ParkingDetails"
+                              className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Parking Details </p>
@@ -771,8 +767,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                            to="/Account/App/ParkingAssignment"
-                            className="nav-link"
+                              to="/Account/App/ParkingAssignment"
+                              className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Parking Assignment </p>
@@ -861,8 +857,8 @@ class MainNav extends React.Component {
                       <ul className="nav nav-treeview">
                         <li className="nav-item">
                           <Link
-                            to="/Account/App/DocumentType"
-                            className="nav-link"
+                              to="/Account/App/DocumentType"
+                              className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Document Type</p>
@@ -900,8 +896,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                            to="/Account/App/department"
-                            className="nav-link"
+                              to="/Account/App/department"
+                              className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Department </p>
@@ -947,13 +943,13 @@ class MainNav extends React.Component {
                         </p>
                       </a>
                       <ul
-                        className="nav nav-treeview"
-                        style={{ display: "none" }}
+                          className="nav nav-treeview"
+                          style={{display: "none"}}
                       >
                         <li className="nav-item">
                           <Link
-                            to="/Account/App/PropertyMaster"
-                            className="nav-link"
+                              to="/Account/App/PropertyMaster"
+                              className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Property Master </p>
@@ -961,8 +957,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                            to="/Account/App/PropertyTower"
-                            className="nav-link"
+                              to="/Account/App/PropertyTower"
+                              className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Property Towers </p>
@@ -970,8 +966,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                            to="/Account/App/PropertyDetails"
-                            className="nav-link"
+                              to="/Account/App/PropertyDetails"
+                              className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Property Details </p>
@@ -994,8 +990,8 @@ class MainNav extends React.Component {
                       </a>
 
                       <ul
-                        className="nav nav-treeview"
-                        style={{ display: "none" }}
+                          className="nav nav-treeview"
+                          style={{display: "none"}}
                       >
                         {/*<li className="nav-item">*/}
                         {/*  <Link to="/Complain" className="nav-link">*/}
@@ -1006,8 +1002,8 @@ class MainNav extends React.Component {
 
                         <li className="nav-item">
                           <Link
-                            to="/Account/App/TicketComplains"
-                            className="nav-link"
+                              to="/Account/App/TicketComplains"
+                              className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Complaints</p>
@@ -1015,8 +1011,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                            to="/Account/App/TicketCategories"
-                            className="nav-link"
+                              to="/Account/App/TicketCategories"
+                              className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Category</p>
@@ -1064,8 +1060,8 @@ class MainNav extends React.Component {
                       <ul className="nav nav-treeview">
                         <li className="nav-item">
                           <Link
-                            to="/Account/App/AmenitiesMaster"
-                            className="nav-link"
+                              to="/Account/App/AmenitiesMaster"
+                              className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Amenities Master </p>
@@ -1073,8 +1069,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                            to="/Account/App/AmenitiesAssignment"
-                            className="nav-link"
+                              to="/Account/App/AmenitiesAssignment"
+                              className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Amenities Assignment</p>
@@ -1082,8 +1078,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                            to="/Account/App/AmenitiesBooking"
-                            className="nav-link"
+                              to="/Account/App/AmenitiesBooking"
+                              className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Amenities Booking</p>
@@ -1120,26 +1116,32 @@ class MainNav extends React.Component {
 
             <Route exact path="/Account/App" component={Home} />
             <Route exact path="/Account/App/ticket">
-              <TicketingDashboard />
+              <TicketingDashboard/>
             </Route>
             <Route path="/Account/App/department">
-              <Department />
+              <Department/>
             </Route>
             <Route path="/Account/App/ChangePassword">
-              <ChangePassword />
+              <ChangePassword/>
             </Route>
             <Route path="/Account/App/team"></Route>
             <Route path="/Account/App/EmergencyContact">
-              <EmergencyContactPage />
+              <EmergencyContactPage/>
             </Route>
             <Route path="/Account/App/user">
-              <User />
+              <User/>
             </Route>
             <Route path="/Account/App/UserProfile">
-              <UserProfile />
+              <UserProfile/>
             </Route>
             <Route path="/Account/App/FacilityMember">
-              <FacilityMemberPage />
+              <FacilityMemberPage/>
+            </Route>
+            <Route path="/Account/App/CreateNewUser">
+              <CreateNewUser/>
+            </Route>
+            <Route path="/Account/App/AddNewUser">
+              <AddNewUser/>
             </Route>
             <Route path="/Account/App/Facility">
               <FacilityLatlong />
@@ -1158,13 +1160,13 @@ class MainNav extends React.Component {
               <AddNewUser />
             </Route>
             <Route path="/Account/App/PropertyMember">
-              <PropertyMember />
+              <PropertyMember/>
             </Route>
             <Route path="/Account/App/PropertyOwner">
-              <PropertyOwnerPage />
+              <PropertyOwnerPage/>
             </Route>
             <Route path="/Account/App/Tenant">
-              <PropertyTenatsPage />
+              <PropertyTenatsPage/>
             </Route>
            
             {/* <Route path="/Home">
@@ -1172,16 +1174,16 @@ class MainNav extends React.Component {
                         </Route> */}
 
             <Route path="/Account/App/Complain">
-              <ComplainManagement />
+              <ComplainManagement/>
             </Route>
             <Route path="/Account/App/PropertyMaster">
-              <PropertyMaster />
+              <PropertyMaster/>
             </Route>
             <Route path="/Account/App/PropertyDetails">
-              <PropertyDetailsPage />
+              <PropertyDetailsPage/>
             </Route>
             <Route path="/Account/App/ParkingDetails">
-              <ParkingDetailsPage />
+              <ParkingDetailsPage/>
             </Route>
             <Route path="/Account/App/ParkingZone">
               <ParkingZonePage />
