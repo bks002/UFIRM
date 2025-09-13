@@ -307,7 +307,6 @@ const Home = ({ PropertyId }) => {
                     ))
                     
                     }
-
                 </tbody>
                 
             </table>
@@ -412,7 +411,6 @@ const Home = ({ PropertyId }) => {
                             responsive: true,
                             maintainAspectRatio: false,
                             plugins: { legend: { display: false } }
-                            
 
                         }}
                         style={{ width: "100%", height: "220px" }}
