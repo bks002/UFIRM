@@ -16,8 +16,6 @@ const Home = ({ PropertyId }) => {
     const [complains, setComplains] = useState([]);
     const [complainsCnt, setComplainsCnt] = useState(0);
     
-
-
     const [totalFlats, setTotalFlats] = useState([]);
     const [totalFlatsCnt, setTotalFlatsCnt] = useState(0);
 
@@ -156,9 +154,6 @@ const Home = ({ PropertyId }) => {
     const getAttendanceData = useCallback(async (model, initialDate, finalDate) => {
     try {
         const data = await getAttendance(model, initialDate, finalDate); // not 'resp'
-
-        console.log("Attendance data body:", data);
-
         if (!Array.isArray(data)) {
             throw new Error("Attendance data is not an array");
         }
@@ -273,7 +268,7 @@ const Home = ({ PropertyId }) => {
                                     const index = elements[0].index;
                                     const label = chart.data.labels[index];
                                     // Navigate to the desired URL
-                                    window.location.href = `/Account/App/PlannerTask?status=${label}`;
+                                    window.location.href = `/Account/App/PlannerTask?status=${label}&fromDate=${initialDate}&toDate=${finalDate}`;
                                 }
                             }
 
@@ -312,7 +307,6 @@ const Home = ({ PropertyId }) => {
                     ))
                     
                     }
-
                 </tbody>
                 
             </table>
@@ -417,7 +411,6 @@ const Home = ({ PropertyId }) => {
                             responsive: true,
                             maintainAspectRatio: false,
                             plugins: { legend: { display: false } }
-                            
 
                         }}
                         style={{ width: "100%", height: "220px" }}
