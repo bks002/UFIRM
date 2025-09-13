@@ -79,7 +79,6 @@ const Visitor = () => {
     };
 
      const header = (
-
         <div className="d-flex justify-content-between align-items-center p-2">
                       <h5 className="m-0">Visitor</h5>
                       <div className="d-flex gap-2 align-items-center">
@@ -94,7 +93,6 @@ const Visitor = () => {
           
                           <ExportToCSV data={gridData} className="btn btn-success btn-sm rounded mr-2" />
                       </div>
-
         </div>
     );
 
