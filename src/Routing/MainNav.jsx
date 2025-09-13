@@ -83,6 +83,7 @@ import SpotVisitCalendar from "../MainComponents/Calendar/SpotVisitCalendar.jsx"
 import ExpenseMaster from "../MainComponents/Expense/ExpenseMaster.jsx";
 import ExpenseTypeMaster from "../MainComponents/Expense/ExpenseTypeMaster.jsx";
 import ExpenseReport from "../MainComponents/Expense/ExpenseReport.jsx";
+import Formula from "../MainComponents/FacilityMember/Formula.jsx";
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -719,6 +720,15 @@ class MainNav extends React.Component {
                             <p>Visitor </p>
                           </Link>
                         </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/Formula"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Formula</p>
+                          </Link>
+                        </li>
                         {/* <li className="nav-item">
                                         <Link to="/FacilityMember" className="nav-link">
                                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -1347,6 +1357,7 @@ class MainNav extends React.Component {
             <Route path="/Account/App/UploaderPage">
               <UploaderPage />
             </Route>
+            <Route path="/Account/App/Formula" component={Formula} />
             <Route path="/Account/App/SpotVisitCalendar" component={SpotVisitCalendar} />
              <Route path="/Account/App/ExpenseReport" component={ExpenseReport} />
              <Route path="/Account/App/ExpenseTypeMaster" component={ExpenseTypeMaster} />
