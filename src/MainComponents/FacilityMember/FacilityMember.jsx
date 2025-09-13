@@ -1758,8 +1758,6 @@ handleCloseResetForm = () => {
   </div>
 )}
 
-
-
       </div>
     );
   }
