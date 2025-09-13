@@ -127,7 +127,7 @@ const Leaves = () => {
         toast.current.show({
             severity: "success",
             summary: "Approved",
-            detail: `Leave ID ${data.LeaveId} Approved`,
+            detail:` Leave ID ${data.LeaveId} Approved`,
             life: 3000,
         });
     };
