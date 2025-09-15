@@ -8,6 +8,8 @@ import departmentActions from "../../redux/department/action";
 import { fetchSubCatTaskCounts } from "../../Services/DashboardServices";
 import { getAttendance } from '../../Services/AttendanceService';
 import { getTaskPriorityCountDash } from "../../Services/TaskPriorityService";
+import {  getAllExpenses } from "../../Services/ExpenseReportService";
+
 
 import { Chart } from 'primereact/chart';
 import { Link } from 'react-router-dom';
@@ -37,13 +39,37 @@ const Home = ({ PropertyId }) => {
     const [subCategoryCards] = useState([{ name: "Lift", id: 4 }, { name: "DG", id: 69 }]);
     const [subCategoryTaskData, setSubCategoryTaskData] = useState({});
 
+    const [expenses, setExpenses] = useState([]);
+    const [totalExpenses, setTotalExpenses] = useState(0);
+
+
     const apiProvider = new DataProvider();
     const propertyId = useSelector((state) => state.Commonreducer.puidn);
     const getModel = useCallback(() => {
         return [{ PropertyId: parseInt(PropertyId) }];
     }, [PropertyId]);
 
-    
+  const getExpenseData = useCallback(async (model, initialDate, finalDate) => {
+    try {
+        const data = await getAllExpenses({
+            dateFrom: initialDate,
+            dateTo: finalDate,
+            officeId: model[0].PropertyId,   // mapping officeId with PropertyId
+        });
+
+        // API returns array of expenses → group by category
+        setExpenses(data);
+
+    // Total calculate karna ho to reduce use karo
+    setTotalExpenses(data.reduce((sum, e) => sum + (e.TotalAmount || 0), 0));
+    } catch (error) {
+        console.error("Error fetching expenses:", error);
+        setExpenses([]);
+        setTotalExpenses(0);
+    }
+}, []);
+
+
     const taskStatusCount = useCallback(async (model, initialDate, finalDate) => {
         try {
             const resp = await apiProvider.manageDashTaskStatusCnt(model, initialDate, finalDate);
@@ -197,6 +223,9 @@ const Home = ({ PropertyId }) => {
         taskPriorityCount(model, initialDate, finalDate);
         getAssetCount(model, initialDate, finalDate);
         getAttendanceData(propertyId, initialDate, finalDate);
+        getExpenseData(model, initialDate, finalDate);
+
+
     }, [getModel, taskStatusCount, taskPriorityCount, getAssetCount, getAttendanceData, loadSubCatData, subCategoryCards]);
 
     const manageDashboardCnt = useCallback(async (model) => {
@@ -232,6 +261,8 @@ const Home = ({ PropertyId }) => {
             getDates(initialDate, finalDate);
         }
     }, [PropertyId]);
+    
+
 
     return (
         <div className="content-wrapper mt-2">
@@ -418,6 +449,39 @@ const Home = ({ PropertyId }) => {
                 </div>
                 </Link>
             </div>
+
+           {/* 2. Expense Pie Chart */}
+                <div className="col-md-3">
+                    <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
+                        <h5 className="text-center">Expenses</h5>
+<Chart
+  type="pie"
+  data={{
+    labels: expenses.map(e => e.ExpenseSubType),   // SubType ko label banaya
+    datasets: [
+      {
+        data: expenses.map(e => e.TotalAmount),   // TotalAmount ko value banaya
+        backgroundColor: ["#42A5F5", "#66BB6A", "#FFA726", "#AB47BC"],
+        borderWidth: 1,
+      },
+    ],
+  }}
+  options={{
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: "bottom" },
+    },
+  }}
+  style={{ width: "100%", height: "220px" }}
+/>
+
+
+
+                    </div>
+                </div>
+
+
 
             {/* 2. Lift (API based DashboardCard) */}
             <div className="col-md-3">
