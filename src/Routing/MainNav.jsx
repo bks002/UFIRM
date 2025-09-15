@@ -86,6 +86,9 @@ import ExpenseMaster from "../MainComponents/Expense/ExpenseMaster.jsx";
 import ExpenseTypeMaster from "../MainComponents/Expense/ExpenseTypeMaster.jsx";
 import ExpenseReport from "../MainComponents/Expense/ExpenseReport.jsx";
 
+import ExpenseMaster from "../MainComponents/Expense/ExpenseMaster.jsx";
+import ExpenseTypeMaster from "../MainComponents/Expense/ExpenseTypeMaster.jsx";
+import ExpenseReport from "../MainComponents/Expense/ExpenseReport.jsx";
 
 var currentpropertyid;
 class MainNav extends React.Component {

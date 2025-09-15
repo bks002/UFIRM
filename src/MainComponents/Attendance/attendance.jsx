@@ -295,7 +295,9 @@ const exportMonthToCSV = (attendanceData, currentDate) => {
   // Dates of the month
   const allDates = [];
   for (let d = 1; d <= daysInMonth; d++) {
-    const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    // Create date at noon to avoid timezone issues
+    const dateObj = new Date(year, month, d, 12, 0, 0);
+    const key = dateObj.toISOString().slice(0, 10); // 'YYYY-MM-DD'
     allDates.push(key);
   }
 
@@ -303,7 +305,11 @@ const exportMonthToCSV = (attendanceData, currentDate) => {
   const employees = {};
   attendanceData.forEach(record => {
     const emp = record.EmployeeName;
-    const dateKey = new Date(record.PunchDate).toISOString().split("T")[0];
+    // always parse attendance as local date at noon, avoids UTC problem
+    const recordDateObj = new Date(record.PunchDate);
+    recordDateObj.setHours(12, 0, 0, 0);
+    const dateKey = recordDateObj.toISOString().slice(0, 10);
+
     if (!employees[emp]) employees[emp] = {};
     employees[emp][dateKey] = {
       CheckIn: record.MinCheckIn || "--",
@@ -322,7 +328,6 @@ const exportMonthToCSV = (attendanceData, currentDate) => {
     allDates.forEach(dateKey => {
       const rec = attMap[dateKey];
       let status = rec ? rec.Status : "Absent";
-
       if (status === "Present") present++;
       else if (status === "WeekOff") weekOff++;
       else absent++;
@@ -354,17 +359,14 @@ const exportMonthToCSV = (attendanceData, currentDate) => {
     });
     ws_data.push(["Date", ...displayDates]);
 
-   // In Row
-ws_data.push(["In", ...allDates.map(d => attMap[d] ? attMap[d].CheckIn : "--")]);
-
-// Out Row
-ws_data.push(["Out", ...allDates.map(d => attMap[d] ? attMap[d].CheckOut : "--")]);
-
-// WT Row
-ws_data.push(["WT", ...allDates.map(d => attMap[d] ? attMap[d].WorkingTime : "0h")]);
-
-// Status Row
-ws_data.push(["Status", ...allDates.map(d => attMap[d] ? attMap[d].Status : "Absent")]);
+    // In Row
+    ws_data.push(["In", ...allDates.map(d => attMap[d] ? attMap[d].CheckIn : "--")]);
+    // Out Row
+    ws_data.push(["Out", ...allDates.map(d => attMap[d] ? attMap[d].CheckOut : "--")]);
+    // WT Row
+    ws_data.push(["WT", ...allDates.map(d => attMap[d] ? attMap[d].WorkingTime : "0h")]);
+    // Status Row
+    ws_data.push(["Status", ...allDates.map(d => attMap[d] ? attMap[d].Status : "Absent")]);
 
     ws_data.push([]); // spacing before next employee
   });
