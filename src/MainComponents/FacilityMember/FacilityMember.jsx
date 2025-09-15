@@ -21,13 +21,14 @@ import {
   UNBLOCK_CONFIRMATION_MSG,
 } from "../../Contants/Common";
 import DocumentUploader from "../../ReactComponents/FileUploader/DocumentUploader.jsx";
+import SalaryGroupView from "../../ReactComponents/DataGrid/SalaryGroupView.jsx";
 import SelectBox from "../../ReactComponents/SelectBox/Selectbox.jsx";
 import UrlProvider from "../../Common/ApiUrlProvider.js";
 import axios from "axios";
 import ImageUploader from "react-images-upload";
 import * as appCommonJs from "../../Common/AppCommon.js";
 import "./FacilityMember.css";
-import {withRouter} from "react-router-dom";
+import { withRouter } from "react-router-dom";
 import { connect } from "react-redux";
 import departmentAction from "../../redux/department/action";
 import { convertEsTojson, promiseWrapper } from "../../utility/common";
@@ -35,7 +36,6 @@ import { bindActionCreators } from "redux";
 
 const $ = window.$;
 const documentBL = new DocumentBL();
-
 
 const toBase64 = (file) =>
   new Promise((resolve, reject) => {
@@ -99,7 +99,7 @@ class FacilityMember extends React.Component {
         {
           sTitle: "Action",
           titleValue: "Action",
-            Action: "Edit&Delete&Block&ChangePassword",
+          Action: "Edit&Delete&Block&ChangePassword&ViewSalary",
           Index: "0",
           orderable: false,
         },
@@ -170,9 +170,11 @@ class FacilityMember extends React.Component {
       FileData: [],
       File: "",
       FileExt: "",
-      addKYCData : [],
-      gridAddKYCData : [],
-      showDocfile:""
+      addKYCData: [],
+      gridAddKYCData: [],
+      showDocfile: "",
+      showSalaryGroupView: false,
+      selectedFacilityMemberId: null,
     };
     this.onDrop = this.onDrop.bind(this);
     this.removeImage = this.removeImage.bind(this);
@@ -348,9 +350,9 @@ class FacilityMember extends React.Component {
               this.handleCancel();
               break;
             case "R":
-              rData.facilityMember.map((item,index)=>{
-                item['sNo']=index+1;
-            })
+              rData.facilityMember.map((item, index) => {
+                item["sNo"] = index + 1;
+              });
               this.setState({ grdTotalPages: rData.totalPages });
               this.setState({ grdTotalRows: rData.totalRows });
               this.setState({ gridFacilityMemberData: rData.facilityMember });
@@ -376,13 +378,13 @@ class FacilityMember extends React.Component {
 
     //load tower
     this.loadPropertyTowers(this.state.PropertyId);
-        //load documents panel
-        this.getDocumentType();
-        $("#grdFacilityMember").find("[aria-label=Action]").addClass("addWidth");
-        let arrayCopy = [...this.state.DocumentType];
-        this.setState({ documentType: arrayCopy });
-        this.setState({ documentTypeId: "0" });
-        this.getFacilityMaster(parseInt(this.state.FacilityTypeId));
+    //load documents panel
+    this.getDocumentType();
+    $("#grdFacilityMember").find("[aria-label=Action]").addClass("addWidth");
+    let arrayCopy = [...this.state.DocumentType];
+    this.setState({ documentType: arrayCopy });
+    this.setState({ documentTypeId: "0" });
+    this.getFacilityMaster(parseInt(this.state.FacilityTypeId));
   }
 
   addDocs() {
@@ -425,7 +427,7 @@ class FacilityMember extends React.Component {
   }
 
   onGridDelete = (Id) => {
-    var rowData = this.findByRowId(Id)
+    var rowData = this.findByRowId(Id);
     let myhtml = document.createElement("div");
     myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
     alert: swal({
@@ -440,7 +442,9 @@ class FacilityMember extends React.Component {
     }).then((value) => {
       switch (value) {
         case "ok":
-          var model = [{ facilityMemberId: parseInt(rowData.facilityMemberId) }];
+          var model = [
+            { facilityMemberId: parseInt(rowData.facilityMemberId) },
+          ];
           this.manageFacilityMember(model, "D");
           break;
         case "cancel":
@@ -467,8 +471,10 @@ class FacilityMember extends React.Component {
       switch (value) {
         case "ok":
           this.setState({
-            gridAddKYCData : this.state.gridAddKYCData.filter((item) => item.id !== Id),
-          })
+            gridAddKYCData: this.state.gridAddKYCData.filter(
+              (item) => item.id !== Id
+            ),
+          });
           break;
         case "cancel":
           break;
@@ -480,10 +486,10 @@ class FacilityMember extends React.Component {
 
   onDocView = (Id) => {
     this.setState({ PageMode: "docView" }, () => {
-    var doc = this.state.gridAddKYCData.find((item) => item.id == Id);
-    this.setState({ showDocfile: doc.docURl });
-    })
-  }
+      var doc = this.state.gridAddKYCData.find((item) => item.id == Id);
+      this.setState({ showDocfile: doc.docURl });
+    });
+  };
 
   onGridBlock = (Id) => {
     let val = this.findByRowId(parseInt(Id)).isBlocked;
@@ -513,45 +519,68 @@ class FacilityMember extends React.Component {
       }
     });
   };
-  
+
+  openSalaryGroupView = (facilityMemberId) => {
+    // Optionally store which facility member requested salary view if needed
+    this.setState({
+      showSalaryGroupView: true,
+      selectedFacilityMemberId: facilityMemberId,
+    });
+  };
+
+  closeSalaryGroupView = () => {
+    this.setState({
+      showSalaryGroupView: false,
+      selectedFacilityMemberId: null,
+    });
+  };
+
+  onGridViewSalary = (Id) => {
+    // id is facilityMember row identifier passed from DataGrid
+    var rowData = this.findByRowId(Id);
+    this.setState({ FacilityMemberId: rowData.facilityMemberId });
+    console.log(rowData.facilityMemberId);
+    this.openSalaryGroupView(rowData.facilityMemberId);
+  };
+
   // -------------------- Reset password related methods ------------------
   // Called by DataGrid click handler via props
- onGridChangePassword = (id) => {
-  const row = this.findByRowId(id);
-  if (row) {
-    this.setState({
-      showResetPasswordForm: true,
-      mobileNumber: row.mobileNumber || "",
-      resetMessage: ""
-    });
-  }
-}
+  onGridChangePassword = (id) => {
+    const row = this.findByRowId(id);
+    if (row) {
+      this.setState({
+        showResetPasswordForm: true,
+        mobileNumber: row.mobileNumber || "",
+        resetMessage: "",
+      });
+    }
+  };
 
+  handleResetPasswordChange = (e) => {
+    this.setState({ mobileNumber: e.target.value });
+  };
 
-handleResetPasswordChange = (e) => {
-  this.setState({ mobileNumber: e.target.value });
-}
+  handleResetPassword = () => {
+    if (!this.state.mobileNumber) {
+      this.setState({ resetMessage: "Please enter mobile number" });
+      return;
+    }
 
-handleResetPassword = () => {
-  if (!this.state.mobileNumber) {
-    this.setState({ resetMessage: "Please enter mobile number" });
-    return;
-  }
+    const url = new UrlProvider().MainUrl + "facilitymember/reset-password";
+    axios
+      .put(url, { MobileNumber: this.state.mobileNumber })
+      .then(() => {
+        appCommon.showtextalert("Password reset successfully", "", "success");
+        this.setState({ showResetPasswordForm: false });
+      })
+      .catch(() => {
+        this.setState({ resetMessage: "Error while resetting password" });
+      });
+  };
 
-  const url = new UrlProvider().MainUrl + 'facilitymember/reset-password';
-  axios.put(url, { MobileNumber: this.state.mobileNumber })
-    .then(() => {
-      appCommon.showtextalert("Password reset successfully", "", "success");
-      this.setState({ showResetPasswordForm: false });
-    })
-    .catch(() => {
-      this.setState({ resetMessage: "Error while resetting password" });
-    });
-}
-
-handleCloseResetForm = () => {
-  this.setState({ showResetPasswordForm: false, resetMessage: "" });
-}
+  handleCloseResetForm = () => {
+    this.setState({ showResetPasswordForm: false, resetMessage: "" });
+  };
 
   // ---------------------------------------------------------------------
 
@@ -770,70 +799,97 @@ handleCloseResetForm = () => {
   };
 
   handleSave = (saveType) => {
-      let url = new UrlProvider().MainUrl;
-      if (ValidateControls()) {
-          const formData = new FormData();
-          formData.append("propertyId", this.props.PropertyId);
-          formData.append("name", this.state.Name);
-          formData.append("mobileNumber", this.state.Contact);
-          formData.append("address", this.state.Address);
-          formData.append("gender", this.state.Gender);
-          formData.append("facilityMasterId", this.state.FacilityMasterId);
-          formData.append("saveType", saveType);
-          this.state.gridAddKYCData.map((item,index) => {
-              formData.append(`fileData[${index}].file`, item.file);
-              formData.append(`fileData[${index}].DocumentTypeId`, item.documentTypeId);
-              formData.append(`fileData[${index}].DocumentNumber`, item.documentNumber);
-              formData.append(`fileData[${index}].DocumentName`, item.documentName);
+    let url = new UrlProvider().MainUrl;
+    if (ValidateControls()) {
+      const formData = new FormData();
+      formData.append("propertyId", this.props.PropertyId);
+      formData.append("name", this.state.Name);
+      formData.append("mobileNumber", this.state.Contact);
+      formData.append("address", this.state.Address);
+      formData.append("gender", this.state.Gender);
+      formData.append("facilityMasterId", this.state.FacilityMasterId);
+      formData.append("saveType", saveType);
+      this.state.gridAddKYCData.map((item, index) => {
+        formData.append(`fileData[${index}].file`, item.file);
+        formData.append(
+          `fileData[${index}].DocumentTypeId`,
+          item.documentTypeId
+        );
+        formData.append(
+          `fileData[${index}].DocumentNumber`,
+          item.documentNumber
+        );
+        formData.append(`fileData[${index}].DocumentName`, item.documentName);
+      });
+      formData.append("document", JSON.stringify(this.state.gridAddKYCData));
+      if (
+        this.state.FacilityTypeId == 1 &&
+        this.state.PropertyDetailsIds.length > 0
+      ) {
+        if (this.state.gridAddKYCData.length > 0) {
+          this.ApiProviderr.saveFacilityMember(formData).then((res) => {
+            if (res.data <= 0) {
+              appCommon.ShownotifyError(
+                "Facility Member Contact is already created"
+              );
+            } else {
+              if (this.props.PageMode != "Edit") {
+                appCommon.showtextalert(
+                  "Facility Member Created Successfully",
+                  "",
+                  "success"
+                );
+              } else {
+                appCommon.showtextalert(
+                  "Facility Member Updated Successfully",
+                  "",
+                  "success"
+                );
+              }
+              this.handleCancel();
+            }
           });
-          formData.append('document', JSON.stringify(this.state.gridAddKYCData));
-          if (this.state.FacilityTypeId == 1 && this.state.PropertyDetailsIds.length > 0) {
-              if (this.state.gridAddKYCData.length > 0) {
-                  this.ApiProviderr.saveFacilityMember(formData)
-                      .then(res => {
-                          if (res.data <= 0) {
-                              appCommon.ShownotifyError("Facility Member Contact is already created");
-                          }
-                          else {
-                              if (this.props.PageMode != "Edit") {
-                                  appCommon.showtextalert("Facility Member Created Successfully", "", "success");
-                              }
-                              else {
-                                  appCommon.showtextalert("Facility Member Updated Successfully", "", "success");
-                              }
-                              this.handleCancel();
-                          }
-                      });
+        } else
+          appCommon.showtextalert(
+            "At least one document is required",
+            "",
+            "error"
+          );
+      } else if (this.state.FacilityTypeId == 2) {
+        if (this.state.gridAddKYCData.length > 0) {
+          this.ApiProviderr.saveFacilityMember(formData).then((res) => {
+            if (res.data <= 0) {
+              appCommon.ShownotifyError(
+                "Facility Member Contact is already created"
+              );
+            } else {
+              if (this.props.PageMode != "Edit") {
+                appCommon.showtextalert(
+                  "Facility Member Created Successfully",
+                  "",
+                  "success"
+                );
+              } else {
+                appCommon.showtextalert(
+                  "Facility Member Updated Successfully",
+                  "",
+                  "success"
+                );
               }
-              else
-                  appCommon.showtextalert("At least one document is required", "", "error");
-          }
-          else if (this.state.FacilityTypeId == 2) {
-              if (this.state.gridAddKYCData.length > 0) {
-                  this.ApiProviderr.saveFacilityMember(formData)
-                      .then(res => {
-                          if (res.data <= 0) {
-                              appCommon.ShownotifyError("Facility Member Contact is already created");
-                          }
-                          else {
-                              if (this.props.PageMode != "Edit") {
-                                  appCommon.showtextalert("Facility Member Created Successfully", "", "success");
-                              }
-                              else {
-                                  appCommon.showtextalert("Facility Member Updated Successfully", "", "success");
-                              }
-                              this.handleCancel();
-                          }
-                      });
-              }
-              else
-                  appCommon.showtextalert("At least one document is required", "", "error");
-          }
-          else {
-              appCommon.showtextalert("At least one flat is required", "", "error");
-          }
+              this.handleCancel();
+            }
+          });
+        } else
+          appCommon.showtextalert(
+            "At least one document is required",
+            "",
+            "error"
+          );
+      } else {
+        appCommon.showtextalert("At least one flat is required", "", "error");
       }
-  }
+    }
+  };
 
   getFacilityModel = (type, value) => {
     var model = [];
@@ -846,20 +902,20 @@ handleCloseResetForm = () => {
           address: this.state.Address,
           gender: this.state.Gender,
           facilityMasterId: this.state.FacilityMasterId,
-          fileData : this.state.gridAddKYCData,
+          fileData: this.state.gridAddKYCData,
         });
         break;
-        case "U":
-          model.push({
-            facilityMemberId: parseInt(this.state.FacilityMemberId),
-            propertyId: parseInt(this.props.PropertyId),
-            name: this.state.Name,
-            mobileNumber: this.state.Contact,
-            address: this.state.Address,
-            gender: this.state.Gender,
-            facilityMasterId: this.state.FacilityMasterId,
-          });
-          break;
+      case "U":
+        model.push({
+          facilityMemberId: parseInt(this.state.FacilityMemberId),
+          propertyId: parseInt(this.props.PropertyId),
+          name: this.state.Name,
+          mobileNumber: this.state.Contact,
+          address: this.state.Address,
+          gender: this.state.Gender,
+          facilityMasterId: this.state.FacilityMasterId,
+        });
+        break;
       case "R":
         model.push({
           CmdType: type,
@@ -959,11 +1015,11 @@ handleCloseResetForm = () => {
         var model = this.getFacilityModel(type);
         this.ApiProviderr.manageFacilityMember(model, type).then((res) => {
           if (res.data <= 0) {
-              appCommon.showtextalert(
-                "Facility Member Updated Successfully",
-                "",
-                "success"
-              );
+            appCommon.showtextalert(
+              "Facility Member Updated Successfully",
+              "",
+              "success"
+            );
             this.handleCancel();
           }
         });
@@ -1003,23 +1059,20 @@ handleCloseResetForm = () => {
     let upfile = this.state.ImageData;
     let fileD = await toBase64(upfile);
     this.state.addKYCData.push({
-      id:this.state.gridAddKYCData.length+1,
+      id: this.state.gridAddKYCData.length + 1,
       //Have to implement a formData
-      file:this.state.ImageData,
+      file: this.state.ImageData,
       documentTypeId: parseInt(this.state.documentTypeId),
       documentTypeName: this.state.DocumentTypeName,
       documentNumber: this.state.DocumentNumber,
-      docURl : fileD[1],
+      docURl: fileD[1],
     });
-    console.log(this.state.addKYCData)
+    console.log(this.state.addKYCData);
     this.setState({
-      gridAddKYCData: [
-        ...this.state.gridAddKYCData,
-        ...this.state.addKYCData,
-      ],
+      gridAddKYCData: [...this.state.gridAddKYCData, ...this.state.addKYCData],
     });
-    console.log(this.state)
-    this.handleCancelAddUpload()
+    console.log(this.state);
+    this.handleCancelAddUpload();
   };
 
   uploadFile = async (e) => {
@@ -1068,7 +1121,7 @@ handleCloseResetForm = () => {
         if (res.data == "Success") {
           appCommon.ShownotifyError("File Uploaded Successfully");
         }
-        this.handleSaveUpload()
+        this.handleSaveUpload();
       });
     }
 
@@ -1153,19 +1206,19 @@ handleCloseResetForm = () => {
   handleCancelUpload = () => {
     this.setState({ PageMode: "Edit" }, () => {
       this.state.gridDocumentData = [];
-      var rowId = this.state.gridFacilityMemberData.find((item)=>{
-        return item.facilityMemberId == this.state.FacilityMemberId
-      })
+      var rowId = this.state.gridFacilityMemberData.find((item) => {
+        return item.facilityMemberId == this.state.FacilityMemberId;
+      });
       this.ongridedit(rowId.sNo);
     });
   };
 
   handleSaveUpload = () => {
-    this.setState({ PageMode: "Edit" },()=>{
-      var rowId = this.state.gridFacilityMemberData.find((item)=>{
-        return item.facilityMemberId == this.state.FacilityMemberId
-      })
-      this.ongridShow(rowId.sNo)
+    this.setState({ PageMode: "Edit" }, () => {
+      var rowId = this.state.gridFacilityMemberData.find((item) => {
+        return item.facilityMemberId == this.state.FacilityMemberId;
+      });
+      this.ongridShow(rowId.sNo);
     });
   };
 
@@ -1512,11 +1565,11 @@ handleCloseResetForm = () => {
     this.openInNewTab(data.documentUrl);
   }
 
-  addUser (){
+  addUser() {
     console.log("Add User Clicked");
-    console.log(this.props.history)
-    this.props.history.push('/about');
-  };
+    console.log(this.props.history);
+    this.props.history.push("/about");
+  }
 
   render() {
     return (
@@ -1576,16 +1629,16 @@ handleCloseResetForm = () => {
                         <div className="input-group input-group-sm">
                           <div className="input-group-prepend">
                             <Button
-                                id="btnNewComplain"
-                                Action={this.addNew.bind(this)}
-                                ClassName="btn btn-success btn-sm"
-                                Icon={
-                                  <i
-                                      className="fa fa-plus"
-                                      aria-hidden="true"
-                                  ></i>
-                                }
-                                Text={`Add ${this.state.isServiceStaff}`}
+                              id="btnNewComplain"
+                              Action={this.addNew.bind(this)}
+                              ClassName="btn btn-success btn-sm"
+                              Icon={
+                                <i
+                                  className="fa fa-plus"
+                                  aria-hidden="true"
+                                ></i>
+                              }
+                              Text={`Add ${this.state.isServiceStaff}`}
                             />
                           </div>
                         </div>
@@ -1595,28 +1648,58 @@ handleCloseResetForm = () => {
                 </div>
                 <div className="card-body pt-2">
                   <DataGrid
-                      Id="grdFacilityMember"
-                      IsPagination={true}
-                      ColumnCollection={this.state.gridFacilityMemberHeader}
-                      totalpages={this.state.grdTotalPages}
-                      totalrows={this.state.grdTotalRows}
-                      Onpageindexchanged={this.onPagechange.bind(this)}
-                      onEditMethod={this.ongridedit.bind(this)}
-                      onGridDeleteMethod={this.onGridDelete.bind(this)}
+                    Id="grdFacilityMember"
+                    IsPagination={true}
+                    ColumnCollection={this.state.gridFacilityMemberHeader}
+                    totalpages={this.state.grdTotalPages}
+                    totalrows={this.state.grdTotalRows}
+                    Onpageindexchanged={this.onPagechange.bind(this)}
+                    onEditMethod={this.ongridedit.bind(this)}
+                    onGridDeleteMethod={this.onGridDelete.bind(this)}
                     onGridBlockMethod={this.onGridBlock.bind(this)}
                     onGridChangePassword={this.onGridChangePassword.bind(this)}
+                    onGridViewSalary={this.onGridViewSalary.bind(this)}
                     DefaultPagination={false}
                     IsSarching="true"
                     GridData={this.state.gridFacilityMemberData}
                     pageSize="500"
                   />
 
+                  {/* Render the SalaryGroupView modal conditionally here */}
+                  {this.state.showSalaryGroupView && (
+                    <SalaryGroupView
+                      propertyId={this.state.PropertyId}
+                      facilityMemberId={this.state.selectedFacilityMemberId}
+                      onClose={this.closeSalaryGroupView}
+                      // optionally pass selectedFacilityMemberId={this.state.selectedFacilityMemberId}
+                    />
+                  )}
+
                   {/* Reset Password Form: rendered inline on same page below the grid */}
                   {this.state.showResetPasswordForm && (
-                    <div id="reset-password-form" style={{ marginTop: "20px", padding: "15px", border: "1px solid #ccc", borderRadius: "5px" }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div
+                      id="reset-password-form"
+                      style={{
+                        marginTop: "20px",
+                        padding: "15px",
+                        border: "1px solid #ccc",
+                        borderRadius: "5px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
                         <h5 style={{ margin: 0 }}>Reset Password</h5>
-                        <button className="btn btn-sm btn-secondary" onClick={this.handleCloseResetForm}>Close</button>
+                        <button
+                          className="btn btn-sm btn-secondary"
+                          onClick={this.handleCloseResetForm}
+                        >
+                          Close
+                        </button>
                       </div>
                       <div style={{ marginTop: 10 }}>
                         <input
@@ -1627,12 +1710,20 @@ handleCloseResetForm = () => {
                           className="form-control"
                           style={{ marginBottom: "10px" }}
                         />
-                        <button className="btn btn-primary" onClick={this.handleResetPassword}>Reset Password</button>
-                        {this.state.resetMessage && <p style={{ marginTop: "10px", color: 'red' }}>{this.state.resetMessage}</p>}
+                        <button
+                          className="btn btn-primary"
+                          onClick={this.handleResetPassword}
+                        >
+                          Reset Password
+                        </button>
+                        {this.state.resetMessage && (
+                          <p style={{ marginTop: "10px", color: "red" }}>
+                            {this.state.resetMessage}
+                          </p>
+                        )}
                       </div>
                     </div>
                   )}
-
                 </div>
               </div>
             </div>
@@ -1640,7 +1731,6 @@ handleCloseResetForm = () => {
         )}
 
         {/* ... other PageMode blocks (Add, Edit, UploadDocs etc.) remain unchanged ... */}
-
       </div>
     );
   }
