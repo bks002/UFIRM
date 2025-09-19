@@ -7,22 +7,25 @@ import {
   updateAllowanceDeduction,
   deleteAllowanceDeduction,
 } from "../../Services/PayrollService";
-import "font-awesome/css/font-awesome.min.css"; // Ensure FontAwesome CSS is imported
+import FormulaService from "../../Services/FormulaService";
+import "font-awesome/css/font-awesome.min.css";
 
 export default function AllowanceDeduction() {
   const propertyId = useSelector((state) => state.Commonreducer.puidn);
 
   const [data, setData] = useState([]);
+  const [formulas, setFormulas] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [dialogVisible, setDialogVisible] = useState(false);
   const [formData, setFormData] = useState({
     Type: "Allowance",
     Name: "",
-    Percentage: "",
+    FormulaId: null,
   });
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Load allowance/deductions
   const loadData = async () => {
     if (!propertyId) return;
     setLoading(true);
@@ -36,21 +39,44 @@ export default function AllowanceDeduction() {
     }
   };
 
+  // Load formulas
+  const loadFormulas = async () => {
+    try {
+      const formulaData = await FormulaService.getAllFormulas();
+      setFormulas(formulaData || []);
+    } catch (error) {
+      console.error("Failed to load formulas:", error);
+    }
+  };
+
   useEffect(() => {
     loadData();
+    loadFormulas();
   }, [propertyId]);
 
+  // Get formula display string by formulaId
+  const getFormulaDisplayById = (id) => {
+    if (!id) return "";
+    const formula = formulas.find((f) => f.Id === id);
+    if (!formula) return "";
+    const expr = formula.Formula || "";
+    const fixedVal = formula.FixedValue != null ? formula.FixedValue : "";
+    return fixedVal ? `${expr}(${fixedVal})` : expr;
+  };
+
+  // Open create dialog
   const openCreateDialog = () => {
-    setFormData({ Type: "Allowance", Name: "", Percentage: "" });
+    setFormData({ Type: "Allowance", Name: "", FormulaId: null });
     setEditId(null);
     setDialogVisible(true);
   };
 
+  // Open edit dialog
   const openEditDialog = (item) => {
     setFormData({
       Type: item.Type,
       Name: item.Name,
-      Percentage: item.Percentage,
+      FormulaId: item.FormulaId || null,
     });
     setEditId(item.ID);
     setDialogVisible(true);
@@ -70,16 +96,19 @@ export default function AllowanceDeduction() {
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "FormulaId") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value ? Number(value) : null,
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSave = async () => {
     if (!formData.Name.trim()) {
       alert("Name is required");
-      return;
-    }
-    if (formData.Percentage === "" || isNaN(formData.Percentage)) {
-      alert("Valid Percentage is required");
       return;
     }
 
@@ -89,13 +118,14 @@ export default function AllowanceDeduction() {
       ID: editId || 0,
       Type: formData.Type,
       Name: formData.Name,
-      Percentage: Number(formData.Percentage),
       Property_ID: Number(propertyId),
       CreatedOn: nowIso,
       CreatedBy: 1,
       UpdatedOn: nowIso,
       UpdatedBy: 1,
       IsActive: true,
+      FormulaId: formData.FormulaId,
+      CalculatedAmount: 0,
     };
 
     try {
@@ -204,7 +234,7 @@ export default function AllowanceDeduction() {
                   <th style={{ fontWeight: 600, fontSize: "1.1rem" }}>Type</th>
                   <th style={{ fontWeight: 600, fontSize: "1.1rem" }}>Name</th>
                   <th style={{ fontWeight: 600, fontSize: "1.1rem" }}>
-                    Percentage
+                    Formula
                   </th>
                   <th style={{ fontWeight: 600, fontSize: "1.1rem" }}>
                     Action
@@ -228,7 +258,7 @@ export default function AllowanceDeduction() {
                       <td style={{ verticalAlign: "middle" }}>{item.Type}</td>
                       <td style={{ verticalAlign: "middle" }}>{item.Name}</td>
                       <td style={{ verticalAlign: "middle" }}>
-                        {item.Percentage}%
+                        {getFormulaDisplayById(item.FormulaId)}
                       </td>
                       <td>
                         <button
@@ -303,21 +333,27 @@ export default function AllowanceDeduction() {
           </div>
 
           <div className="mb-3">
-            <label htmlFor="percentage" className="form-label">
-              Percentage
+            <label htmlFor="formula" className="form-label">
+              Formula
             </label>
-            <input
-              type="number"
-              id="percentage"
-              name="Percentage"
-              className="form-control"
-              value={formData.Percentage}
+            <select
+              id="formula"
+              name="FormulaId"
+              className="form-select"
+              value={formData.FormulaId || ""}
               onChange={handleFormChange}
-              placeholder="Enter percentage"
-              min="0"
-              max="100"
-              step="0.01"
-            />
+            >
+              <option value="">-- Select Formula --</option>
+              {formulas.map((f) => {
+                const fixedPart =
+                  f.FixedValue != null ? `-${f.FixedValue}` : "";
+                return (
+                  <option key={f.Id} value={f.Id}>
+                    {`${f.Name}-${f.Formula || ""}${fixedPart}`}
+                  </option>
+                );
+              })}
+            </select>
           </div>
         </form>
       </Dialog>

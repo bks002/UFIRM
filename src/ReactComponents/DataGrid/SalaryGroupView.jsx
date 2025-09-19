@@ -146,16 +146,16 @@ export default function SalaryGroupView({
           {(allowances[i] && allowances[i].Name) || ""}
         </td>
         <td style={styles.cellCenter}>
-          {allowances[i] && allowances[i].Percentage != null
-            ? allowances[i].Percentage
+          {allowances[i] && allowances[i].CalculatedAmount != null
+            ? `₹${allowances[i].CalculatedAmount}`
             : ""}
         </td>
         <td style={styles.cell}>
           {(deductions[i] && deductions[i].Name) || ""}
         </td>
         <td style={styles.cellCenter}>
-          {deductions[i] && deductions[i].Percentage != null
-            ? deductions[i].Percentage
+          {deductions[i] && deductions[i].CalculatedAmount != null
+            ? `₹${deductions[i].CalculatedAmount}`
             : ""}
         </td>
       </tr>
@@ -163,8 +163,8 @@ export default function SalaryGroupView({
   };
 
   return (
-    <div style={styles.overlay}>
-      <div style={styles.modal}>
+    <div style={styles.overlay} onClick={onClose}>
+      <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
         <header style={styles.header}>
           <h3 style={styles.title}>View Salary Group</h3>
           <button
@@ -195,15 +195,19 @@ export default function SalaryGroupView({
           </label>
         </div>
 
-        {/* Fixed Salary */}
+        {/* Fixed Salary and Base Salary */}
         {selectedGroupData && (
           <div style={styles.formGroup}>
             <label style={styles.label}>
-              Fixed Salary
+              Fixed Salary & Base Salary
               <input
                 type="text"
                 readOnly
-                value={selectedGroupData.FixedSalary || ""}
+                value={
+                  `₹${selectedGroupData.FixedSalary || 0} (Base Salary: ₹${
+                    selectedGroupData.BaseSalary || 0
+                  })`
+                }
                 style={styles.input}
               />
             </label>
@@ -230,9 +234,9 @@ export default function SalaryGroupView({
               </tr>
               <tr>
                 <th style={styles.subHeader}>Name</th>
-                <th style={styles.subHeader}>Percentage</th>
+                <th style={styles.subHeader}>Amount</th>
                 <th style={styles.subHeader}>Name</th>
-                <th style={styles.subHeader}>Percentage</th>
+                <th style={styles.subHeader}>Amount</th>
               </tr>
             </thead>
             <tbody>
@@ -285,7 +289,7 @@ export default function SalaryGroupView({
                   <span style={styles.groupName}>
                     {group.SalaryGroup}{" "}
                     <span style={styles.fixedSalary}>
-                      (Fixed Salary: ₹{group.FixedSalary})
+                      (Fixed Salary: ₹{group.FixedSalary}, Base Salary: ₹{group.BaseSalary})
                     </span>
                   </span>
                 </div>
@@ -313,9 +317,9 @@ export default function SalaryGroupView({
                     </tr>
                     <tr>
                       <th style={styles.subHeader}>Name</th>
-                      <th style={styles.subHeader}>Percentage</th>
+                      <th style={styles.subHeader}>Amount</th>
                       <th style={styles.subHeader}>Name</th>
-                      <th style={styles.subHeader}>Percentage</th>
+                      <th style={styles.subHeader}>Amount</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -430,11 +434,13 @@ const styles = {
     backgroundColor: "#d1fae5",
     borderRight: "1.5px solid #a7f3d0",
     color: "#065f46",
+    textAlign: "center",
   },
   deductionHeader: {
     backgroundColor: "#fee2e2",
     borderLeft: "1.5px solid #fca5a5",
     color: "#991b1b",
+    textAlign: "center",
   },
   subHeader: {
     padding: "10px 12px",
@@ -451,6 +457,8 @@ const styles = {
     padding: "10px 12px",
     fontSize: 14,
     color: "#344054",
+    textAlign: "center", // Changed from left to center alignment
+    fontWeight: "500",
   },
   cellCenter: {
     padding: "10px 12px",
