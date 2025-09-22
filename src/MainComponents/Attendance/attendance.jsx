@@ -378,8 +378,89 @@ const exportMonthToCSV = (attendanceData, currentDate) => {
   XLSX.writeFile(wb, `Attendance_${month + 1}_${year}.xlsx`);
 };
 
+const exportMonthToCSV_Horizontal = (attendanceData, currentDate) => {
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
 
+  // Dates of the month
+  const allDates = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateObj = new Date(year, month, d, 12, 0, 0);
+    const key = dateObj.toISOString().slice(0, 10);
+    const dayName = dateObj.toLocaleDateString("en-US", { weekday: "short" });
+    allDates.push({ key, label: `Day ${d} (${dayName})` });
+  }
 
+  // Group employees
+  const employees = {};
+  attendanceData.forEach(record => {
+    const emp = record.EmployeeName;
+    const recordDateObj = new Date(record.PunchDate);
+    recordDateObj.setHours(12, 0, 0, 0);
+    const dateKey = recordDateObj.toISOString().slice(0, 10);
+
+    if (!employees[emp]) employees[emp] = {};
+    employees[emp][dateKey] = {
+      WorkingTime: record.TotalWorkingTime || "00:00:00",
+      Status: record.Status || "A"
+    };
+  });
+
+  let ws_data = [];
+
+  // Header Row
+  ws_data.push([
+    "Employee Name", 
+    ...allDates.map(d => d.label),
+    "Total P", "Total A", "Total WO", "Payable Days", "Total WT"
+  ]);
+
+  // Helper: sum time in HH:MM:SS format
+  const sumTimes = (times) => {
+    let totalSeconds = times.reduce((acc, t) => {
+      const [h,m,s] = t.split(':').map(Number);
+      return acc + h*3600 + m*60 + s;
+    }, 0);
+    const h = Math.floor(totalSeconds/3600);
+    const m = Math.floor((totalSeconds%3600)/60);
+    const s = totalSeconds%60;
+    return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+  };
+
+  // Add each employee row
+  Object.entries(employees).forEach(([emp, attMap]) => {
+    let row = [emp];
+    let totalP = 0, totalA = 0, totalWO = 0;
+    let dailyTimes = [];
+
+    allDates.forEach(({ key }) => {
+      const att = attMap[key];
+      if(att){
+        row.push(`Status: ${att.Status}   WT: ${att.WorkingTime}`);
+        if(att.Status === "P") totalP++;
+        else if(att.Status === "A") totalA++;
+        else if(att.Status === "WO") totalWO++;
+        if(att.WorkingTime && att.WorkingTime !== "--") dailyTimes.push(att.WorkingTime);
+      } else {
+        row.push("Status: A   WT: --");
+        totalA++;
+      }
+    });
+
+    const payableDays = totalP + totalWO;
+    const totalWT = dailyTimes.length ? sumTimes(dailyTimes) : "00:00:00";
+
+    row.push(totalP, totalA, totalWO, payableDays, totalWT);
+    ws_data.push(row);
+  });
+
+  // Export
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  XLSX.utils.book_append_sheet(wb, ws, "Attendance");
+  XLSX.writeFile(wb, `Attendance_${month + 1}_${year}.xlsx`);
+};
 
 
     const customHeader = (
@@ -402,12 +483,6 @@ const exportMonthToCSV = (attendanceData, currentDate) => {
 >
   Export to CSV
 </button>
-
-
-
-
-
-            
             <span className="p-inputgroup" style={{ maxWidth: 200 }}>
                 <InputText
                     placeholder="By Employee Name"
@@ -448,19 +523,20 @@ const exportMonthToCSV = (attendanceData, currentDate) => {
     <span style={{ fontSize: '1.3rem', fontWeight: 500 }}>
       {currentDate.getFullYear()}
     </span>
-    <button
-      className="btn btn-success btn-sm ms-4"
-      onClick={() => exportMonthToCSV(attendanceData, currentDate)}
-      disabled={attendanceData.filter(record => {
-        const recordDate = new Date(record.PunchDate);
-        return (
-          recordDate.getFullYear() === currentDate.getFullYear() &&
-          recordDate.getMonth() === currentDate.getMonth()
-        );
-      }).length === 0}
-    >
-      Export to CSV
-    </button>
+   <button
+  className="btn btn-success btn-sm ms-4"
+  onClick={() => {
+    if (propertyId == 27) {
+      exportMonthToCSV(attendanceData, currentDate); // vertical layout
+    } else {
+      exportMonthToCSV_Horizontal(attendanceData, currentDate); // horizontal layout
+    }
+  }}
+>
+  Export to CSV
+</button>
+
+
   </div>
 
   {/* 🔹 Right part: Create + View */}
@@ -479,11 +555,6 @@ const exportMonthToCSV = (attendanceData, currentDate) => {
     />
   </div>
 </div>
-
-
-
-
-
                 {/* Calendar Grid */}
                 <div className="card-body p-0 mt-0 pt-0">
                     <div className="table-responsive">
@@ -771,12 +842,6 @@ const exportMonthToCSV = (attendanceData, currentDate) => {
         <Button label="Submit" icon="pi pi-check" onClick={submitRejection} className="p-button-danger" />
     </div>
 </Dialog>
-
-
-
-
-           
-
         </div>
     );
 }
