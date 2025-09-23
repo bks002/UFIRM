@@ -15,37 +15,30 @@ export default function SalaryGroupView({
   const [selectedGroupId, setSelectedGroupId] = useState("");
   const [selectedGroupData, setSelectedGroupData] = useState(null);
   const [finalAddedGroups, setFinalAddedGroups] = useState([]);
-  const [facilityMemberSalaryData, setFacilityMemberSalaryData] =
-    useState(null);
+  const [facilityMemberSalaryData, setFacilityMemberSalaryData] = useState([]);
 
-  // Load salary groups by property as before
   useEffect(() => {
     if (propertyId) {
       getSalaryAllowancesByProperty(propertyId)
-        .then((data) => {
-          setSalaryGroups(data || []);
-        })
-        .catch((err) => {
-          console.error("Failed to load salary groups", err);
-        });
+        .then((data) => setSalaryGroups(data || []))
+        .catch(() => setSalaryGroups([]));
     }
   }, [propertyId]);
 
-  // Load salary allowances by facility member when facilityMemberId changes
   useEffect(() => {
-    if (facilityMemberId) {
-      getSalaryAllowancesByFacilityMember(facilityMemberId)
-        .then((data) => {
-          setFacilityMemberSalaryData(data || null);
-        })
-        .catch((err) => {
-          console.error("Failed to load facility member salary data", err);
-          setFacilityMemberSalaryData(null);
-        });
+    async function fetchData() {
+      try {
+        const data = await getSalaryAllowancesByFacilityMember(
+          facilityMemberId
+        );
+        setFacilityMemberSalaryData(data.SalaryGroups || []);
+      } catch {
+        setFacilityMemberSalaryData([]);
+      }
     }
+    if (facilityMemberId) fetchData();
   }, [facilityMemberId]);
 
-  // Set selected group info when selection changes
   useEffect(() => {
     if (selectedGroupId) {
       const group = salaryGroups.find(
@@ -57,107 +50,137 @@ export default function SalaryGroupView({
     }
   }, [selectedGroupId, salaryGroups]);
 
-  // Combine existing and newly added salary groups for rendering, removing duplicates
-  var existingGroups =
-    (facilityMemberSalaryData && facilityMemberSalaryData.SalaryGroups) || [];
-  var combinedSalaryGroups = existingGroups
+  const safeArray = (arr) => (Array.isArray(arr) ? arr : []);
+  const existingGroups = safeArray(facilityMemberSalaryData);
+  const combinedSalaryGroups = existingGroups
     .concat(finalAddedGroups)
-    .filter(function (group, index, self) {
-      return (
-        index ===
-        self.findIndex(function (g) {
-          return g.SalaryGroup_ID === group.SalaryGroup_ID;
-        })
-      );
-    });
+    .filter(
+      (group, idx, arr) =>
+        idx === arr.findIndex((g) => g.SalaryGroup_ID === group.SalaryGroup_ID)
+    );
 
   const handleAdd = async () => {
-    if (selectedGroupData) {
-      // Prevent adding duplicate groups
-      if (
-        finalAddedGroups.some(
-          (g) => g.SalaryGroup_ID === selectedGroupData.SalaryGroup_ID
-        ) ||
-        (facilityMemberSalaryData &&
-          facilityMemberSalaryData.SalaryGroups &&
-          facilityMemberSalaryData.SalaryGroups.some(
-            (g) => g.SalaryGroup_ID === selectedGroupData.SalaryGroup_ID
-          ))
-      ) {
-        alert("This salary group is already assigned.");
-        return;
-      }
-
-      try {
-        const model = {
-          FacilityMemberId: facilityMemberId,
-          SalaryGroup_ID: selectedGroupData.SalaryGroup_ID,
-        };
-        // Call POST API to assign salary group
-        await assignSalaryGroupToFacilityMember(model);
-
-        // Update UI state on success
-        setFinalAddedGroups([...finalAddedGroups, selectedGroupData]);
-        // Optionally, update facilityMemberSalaryData if needed or refetch data
-      } catch (error) {
-        console.error("Failed to assign salary group:", error);
-        alert("Failed to add salary group. Please try again.");
-      }
+    if (!selectedGroupData) return;
+    if (
+      finalAddedGroups.some(
+        (g) => g.SalaryGroup_ID === selectedGroupData.SalaryGroup_ID
+      ) ||
+      safeArray(facilityMemberSalaryData).some(
+        (g) => g.SalaryGroup_ID === selectedGroupData.SalaryGroup_ID
+      )
+    ) {
+      alert("This salary group is already assigned.");
+      return;
+    }
+    try {
+      await assignSalaryGroupToFacilityMember({
+        FacilityMemberId: facilityMemberId,
+        SalaryGroup_ID: selectedGroupData.SalaryGroup_ID,
+      });
+      setFinalAddedGroups([...finalAddedGroups, { ...selectedGroupData }]);
+    } catch {
+      alert("Failed to add salary group. Please try again.");
     }
   };
 
   const handleDelete = async (id) => {
     try {
       await deleteSalaryGroupFromFacilityMember(facilityMemberId, id);
-
-      // Remove from both state arrays if present
       setFinalAddedGroups(
         finalAddedGroups.filter((g) => g.SalaryGroup_ID !== id)
       );
       setFacilityMemberSalaryData((prev) =>
-        prev
-          ? {
-              ...prev,
-              SalaryGroups: prev.SalaryGroups.filter(
-                (g) => g.SalaryGroup_ID !== id
-              ),
-            }
-          : prev
+        safeArray(prev).filter((g) => g.SalaryGroup_ID !== id)
       );
-    } catch (error) {
-      console.error("Failed to delete salary group:", error);
+    } catch {
       alert("Failed to delete salary group. Please try again.");
     }
   };
 
-  // Helper to render the allowances and deductions table rows
-  const renderAllowanceDeductionRows = (allowancesDeductions) => {
-    const allowances = allowancesDeductions.filter(
-      (a) => a.Type === "Allowance"
-    );
-    const deductions = allowancesDeductions.filter(
-      (d) => d.Type === "Deduction"
-    );
-    const maxRows = Math.max(allowances.length, deductions.length);
+  function getTotals(items, salaryValue = 0) {
+    const totalAllowance =
+      salaryValue +
+      items
+        .filter((a) => a.Type === "Allowance")
+        .reduce((sum, a) => sum + (Number(a.CalculatedAmount) || 0), 0);
+    const totalDeduction = items
+      .filter((d) => d.Type === "Deduction")
+      .reduce((sum, d) => sum + (Number(d.CalculatedAmount) || 0), 0);
+    return { totalAllowance, totalDeduction };
+  }
 
+  function getTotalSalary(salaryGroup, items) {
+    const salaryValue =
+      Number(salaryGroup.FixedSalary) > 0
+        ? Number(salaryGroup.FixedSalary)
+        : Number(salaryGroup.BaseSalary);
+    const { totalAllowance, totalDeduction } = getTotals(items, salaryValue);
+    return totalAllowance - totalDeduction;
+  }
+
+  const selectedTotals = selectedGroupData
+    ? getTotals(
+        selectedGroupData.AllowancesDeductions,
+        Number(selectedGroupData.FixedSalary) > 0
+          ? Number(selectedGroupData.FixedSalary)
+          : Number(selectedGroupData.BaseSalary)
+      )
+    : { totalAllowance: 0, totalDeduction: 0 };
+
+  const selectedTotalSalary = selectedGroupData
+    ? getTotalSalary(selectedGroupData, selectedGroupData.AllowancesDeductions)
+    : 0;
+
+  const isSelectedFixed = selectedGroupData
+    ? Number(selectedGroupData.FixedSalary) > 0
+    : false;
+
+  // Cleaned render: no tax row at all!
+  const renderAllowanceDeductionRows = (items, salaryGroup) => {
+    const allowances = items.filter((a) => a.Type === "Allowance");
+    const deductions = items.filter((d) => d.Type === "Deduction");
+    const isFixedSalary = salaryGroup && Number(salaryGroup.FixedSalary) > 0;
+    let salaryAllowanceRow = null;
+    if (isFixedSalary) {
+      salaryAllowanceRow = {
+        ID: "fixed",
+        Name: "Fixed Salary",
+        CalculatedAmount: salaryGroup.FixedSalary,
+      };
+    } else if (Number(salaryGroup.BaseSalary) > 0) {
+      salaryAllowanceRow = {
+        ID: "base",
+        Name: "Base Salary",
+        CalculatedAmount: salaryGroup.BaseSalary,
+      };
+    }
+    const allAllowances = salaryAllowanceRow
+      ? [salaryAllowanceRow, ...allowances]
+      : allowances;
+    const maxDeductionRows = isFixedSalary ? 0 : deductions.length;
+    const maxRows = Math.max(allAllowances.length, maxDeductionRows);
     return Array.from({ length: maxRows }).map((_, i) => (
       <tr key={i} style={i % 2 === 0 ? styles.stripedRow : undefined}>
         <td style={styles.cell}>
-          {(allowances[i] && allowances[i].Name) || ""}
+          {allAllowances[i] ? allAllowances[i].Name : ""}
         </td>
         <td style={styles.cellCenter}>
-          {allowances[i] && allowances[i].CalculatedAmount != null
-            ? `₹${allowances[i].CalculatedAmount}`
+          {allAllowances[i] && allAllowances[i].CalculatedAmount != null
+            ? `₹${allAllowances[i].CalculatedAmount}`
             : ""}
         </td>
-        <td style={styles.cell}>
-          {(deductions[i] && deductions[i].Name) || ""}
-        </td>
-        <td style={styles.cellCenter}>
-          {deductions[i] && deductions[i].CalculatedAmount != null
-            ? `₹${deductions[i].CalculatedAmount}`
-            : ""}
-        </td>
+        {!isFixedSalary && (
+          <>
+            <td style={styles.cell}>
+              {deductions[i] ? deductions[i].Name : ""}
+            </td>
+            <td style={styles.cellCenter}>
+              {deductions[i] && deductions[i].CalculatedAmount != null
+                ? `₹${deductions[i].CalculatedAmount}`
+                : ""}
+            </td>
+          </>
+        )}
       </tr>
     ));
   };
@@ -175,8 +198,6 @@ export default function SalaryGroupView({
             ×
           </button>
         </header>
-
-        {/* Salary Group Selector */}
         <div style={styles.formGroup}>
           <label style={styles.label}>
             Salary Group Name
@@ -194,60 +215,86 @@ export default function SalaryGroupView({
             </select>
           </label>
         </div>
-
-        {/* Fixed Salary and Base Salary */}
         {selectedGroupData && (
-          <div style={styles.formGroup}>
-            <label style={styles.label}>
-              Fixed Salary & Base Salary
-              <input
-                type="text"
-                readOnly
-                value={
-                  `₹${selectedGroupData.FixedSalary || 0} (Base Salary: ₹${
-                    selectedGroupData.BaseSalary || 0
-                  })`
-                }
-                style={styles.input}
-              />
-            </label>
-          </div>
+          <>
+            <table style={styles.table} cellSpacing={0}>
+              <thead>
+                <tr>
+                  <th
+                    colSpan={2}
+                    style={{ ...styles.tableHeader, ...styles.allowanceHeader }}
+                  >
+                    Allowance
+                  </th>
+                  {!isSelectedFixed && (
+                    <th
+                      colSpan={2}
+                      style={{
+                        ...styles.tableHeader,
+                        ...styles.deductionHeader,
+                      }}
+                    >
+                      Deduction
+                    </th>
+                  )}
+                </tr>
+                <tr>
+                  <th style={styles.subHeader}>Name</th>
+                  <th style={styles.subHeader}>Amount</th>
+                  {!isSelectedFixed && (
+                    <>
+                      <th style={styles.subHeader}>Name</th>
+                      <th style={styles.subHeader}>Amount</th>
+                    </>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {renderAllowanceDeductionRows(
+                  selectedGroupData.AllowancesDeductions,
+                  selectedGroupData
+                )}
+                <tr>
+                  <td />
+                  <td
+                    style={{
+                      ...styles.cellCenter,
+                      fontWeight: "700",
+                      borderTop: "2px solid #64748b",
+                    }}
+                  >
+                    Total Allowance: ₹{selectedTotals.totalAllowance}
+                  </td>
+                  {!isSelectedFixed && (
+                    <>
+                      <td />
+                      <td
+                        style={{
+                          ...styles.cellCenter,
+                          fontWeight: "700",
+                          borderTop: "2px solid #64748b",
+                        }}
+                      >
+                        Total Deduction: ₹{selectedTotals.totalDeduction}
+                      </td>
+                    </>
+                  )}
+                </tr>
+              </tbody>
+            </table>
+            <div
+              style={{
+                fontWeight: "800",
+                fontSize: "19px",
+                textAlign: "center",
+                margin: "16px 0",
+                color: "#1e40af",
+              }}
+            >
+              Total Salary: ₹{selectedTotalSalary}
+            </div>
+          </>
         )}
-
-        {/* Allowance & Deduction Table */}
-        {selectedGroupData && (
-          <table style={styles.table} cellSpacing={0}>
-            <thead>
-              <tr>
-                <th
-                  colSpan={2}
-                  style={{ ...styles.tableHeader, ...styles.allowanceHeader }}
-                >
-                  Allowance
-                </th>
-                <th
-                  colSpan={2}
-                  style={{ ...styles.tableHeader, ...styles.deductionHeader }}
-                >
-                  Deduction
-                </th>
-              </tr>
-              <tr>
-                <th style={styles.subHeader}>Name</th>
-                <th style={styles.subHeader}>Amount</th>
-                <th style={styles.subHeader}>Name</th>
-                <th style={styles.subHeader}>Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {renderAllowanceDeductionRows(
-                selectedGroupData.AllowancesDeductions
-              )}
-            </tbody>
-          </table>
-        )}
-
-        {/* Add Button */}
         <button
           onClick={handleAdd}
           disabled={
@@ -264,70 +311,123 @@ export default function SalaryGroupView({
         >
           Add
         </button>
-
-        {/* Combined Salary Groups List */}
         {combinedSalaryGroups.length > 0 && (
           <section style={styles.addedSection}>
             <h4 style={styles.addedTitle}>Added Salary Groups</h4>
-
-            {combinedSalaryGroups.map((group) => (
-              <div
-                key={group.SalaryGroup_ID}
-                style={{ ...styles.finalGroupCard, position: "relative" }}
-              >
-                <button
-                  onClick={() => handleDelete(group.SalaryGroup_ID)}
-                  style={styles.deleteBtn}
-                  aria-label={`Delete salary group ${group.SalaryGroup}`}
-                  title="Delete This Entry"
-                  onMouseOver={(e) => (e.currentTarget.style.color = "#ef4444")}
-                  onMouseOut={(e) => (e.currentTarget.style.color = "#64748b")}
+            {combinedSalaryGroups.map((group) => {
+              const isFixed = Number(group.FixedSalary) > 0;
+              const groupTotals = getTotals(
+                group.AllowancesDeductions,
+                isFixed ? Number(group.FixedSalary) : Number(group.BaseSalary)
+              );
+              const groupTotalSalary = getTotalSalary(
+                group,
+                group.AllowancesDeductions
+              );
+              return (
+                <div
+                  key={group.SalaryGroup_ID}
+                  style={{ ...styles.finalGroupCard, position: "relative" }}
                 >
-                  🗑️
-                </button>
-                <div style={styles.groupHeader}>
-                  <span style={styles.groupName}>
-                    {group.SalaryGroup}{" "}
-                    <span style={styles.fixedSalary}>
-                      (Fixed Salary: ₹{group.FixedSalary}, Base Salary: ₹{group.BaseSalary})
-                    </span>
-                  </span>
+                  <button
+                    onClick={() => handleDelete(group.SalaryGroup_ID)}
+                    style={styles.deleteBtn}
+                    aria-label={`Delete salary group ${group.SalaryGroup}`}
+                    title="Delete This Entry"
+                    onMouseOver={(e) =>
+                      (e.currentTarget.style.color = "#ef4444")
+                    }
+                    onMouseOut={(e) =>
+                      (e.currentTarget.style.color = "#64748b")
+                    }
+                  >
+                    🗑️
+                  </button>
+                  <div style={styles.groupHeader}>
+                    <span style={styles.groupName}>{group.SalaryGroup}</span>
+                  </div>
+                  <table style={styles.table} cellSpacing={0}>
+                    <thead>
+                      <tr>
+                        <th
+                          colSpan={2}
+                          style={{
+                            ...styles.tableHeader,
+                            ...styles.allowanceHeader,
+                          }}
+                        >
+                          Allowance
+                        </th>
+                        {!isFixed && (
+                          <th
+                            colSpan={2}
+                            style={{
+                              ...styles.tableHeader,
+                              ...styles.deductionHeader,
+                            }}
+                          >
+                            Deduction
+                          </th>
+                        )}
+                      </tr>
+                      <tr>
+                        <th style={styles.subHeader}>Name</th>
+                        <th style={styles.subHeader}>Amount</th>
+                        {!isFixed && (
+                          <>
+                            <th style={styles.subHeader}>Name</th>
+                            <th style={styles.subHeader}>Amount</th>
+                          </>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {renderAllowanceDeductionRows(
+                        group.AllowancesDeductions,
+                        group
+                      )}
+                      <tr>
+                        <td />
+                        <td
+                          style={{
+                            ...styles.cellCenter,
+                            fontWeight: "700",
+                            borderTop: "2px solid #64748b",
+                          }}
+                        >
+                          Total Allowance: ₹{groupTotals.totalAllowance}
+                        </td>
+                        {!isFixed && (
+                          <>
+                            <td />
+                            <td
+                              style={{
+                                ...styles.cellCenter,
+                                fontWeight: "700",
+                                borderTop: "2px solid #64748b",
+                              }}
+                            >
+                              Total Deduction: ₹{groupTotals.totalDeduction}
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div
+                    style={{
+                      fontWeight: "800",
+                      fontSize: "19px",
+                      textAlign: "center",
+                      margin: "16px 0",
+                      color: "#1e40af",
+                    }}
+                  >
+                    Total Salary: ₹{groupTotalSalary}
+                  </div>
                 </div>
-                <table style={styles.table} cellSpacing={0}>
-                  <thead>
-                    <tr>
-                      <th
-                        colSpan={2}
-                        style={{
-                          ...styles.tableHeader,
-                          ...styles.allowanceHeader,
-                        }}
-                      >
-                        Allowance
-                      </th>
-                      <th
-                        colSpan={2}
-                        style={{
-                          ...styles.tableHeader,
-                          ...styles.deductionHeader,
-                        }}
-                      >
-                        Deduction
-                      </th>
-                    </tr>
-                    <tr>
-                      <th style={styles.subHeader}>Name</th>
-                      <th style={styles.subHeader}>Amount</th>
-                      <th style={styles.subHeader}>Name</th>
-                      <th style={styles.subHeader}>Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {renderAllowanceDeductionRows(group.AllowancesDeductions)}
-                  </tbody>
-                </table>
-              </div>
-            ))}
+              );
+            })}
           </section>
         )}
       </div>

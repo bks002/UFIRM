@@ -515,7 +515,6 @@ export default class DataGrid extends React.Component {
         );
         var row = $(this).closest("tr");
         var data = $(`#${object.props.Id}`).DataTable().row(row).data();
-        console.log(data);
         if (typeof object.props.onGridViewSalary === "function") {
           object.props.onGridViewSalary(data[idIndex]);
         }

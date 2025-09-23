@@ -19,6 +19,7 @@ export default function SalaryGroups() {
   const [alDtOptions, setAlDtOptions] = useState([]);
   const [alDtInput, setAlDtInput] = useState("");
   const [useFixedValue, setUseFixedValue] = useState(false);
+  const [selectedType, setSelectedType] = useState("Allowance");
   const [selectedAllowancesDeductions, setSelectedAllowancesDeductions] =
     useState([]);
   const [formulas, setFormulas] = useState([]);
@@ -41,6 +42,20 @@ export default function SalaryGroups() {
 
   const [editId, setEditId] = useState(null);
   const [isViewMode, setIsViewMode] = useState(false);
+
+  // Derived state for functional logic
+  const fixedSalaryNum = Number(formData.FixedSalary);
+  const baseSalaryNum = Number(formData.BaseSalary);
+  const isFixedActive = fixedSalaryNum > 0;
+  const isBaseActive = baseSalaryNum > 0;
+  const canSelectType =
+    !isFixedActive && (isBaseActive || formData.BaseSalary === "");
+  const canShowTable =
+    canSelectType && (selectedAllowancesDeductions.length > 0 || !isViewMode);
+  const canCreate = isFixedActive || isBaseActive;
+  const filteredAlDtOptions = alDtOptions.filter(
+    (opt) => opt.Type === selectedType
+  );
 
   // Amount calculation utility
   const calculateAmount = (item, fixedSalary, baseSalary) => {
@@ -120,6 +135,7 @@ export default function SalaryGroups() {
     setEditId(null);
     setIsViewMode(false);
     setUseFixedValue(false);
+    setSelectedType("Allowance");
     setDialogVisible(true);
   };
 
@@ -146,11 +162,11 @@ export default function SalaryGroups() {
     setEditId(item.SalaryGroup_ID);
     setIsViewMode(false);
     setUseFixedValue(false);
+    setSelectedType("Allowance");
     setDialogVisible(true);
   };
 
   const openViewDialog = (item) => {
-    // Infer UseFixedValue for each AD based on FixedValue and CalculatedAmount match
     const initialAllowances = (item.AllowancesDeductions || []).map((ad) => {
       let useFixedValue = false;
       if (
@@ -163,7 +179,6 @@ export default function SalaryGroups() {
       return { ...ad, UseFixedValue: useFixedValue };
     });
 
-    // Then recalc amounts using fixedSalary and baseSalary
     const recalculatedAD = recalculateAmounts(
       initialAllowances,
       Number(item.FixedSalary),
@@ -179,6 +194,7 @@ export default function SalaryGroups() {
     setAlDtInput("");
     setEditId(item.SalaryGroup_ID);
     setIsViewMode(true);
+    setSelectedType("Allowance");
     setDialogVisible(true);
   };
 
@@ -186,23 +202,29 @@ export default function SalaryGroups() {
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => {
-      const updatedForm = { ...prev, [name]: value };
+      let updatedForm = { ...prev, [name]: value };
 
-      if (name === "FixedSalary" || name === "BaseSalary") {
-        const fixedSalaryNum =
-          name === "FixedSalary"
-            ? Number(value)
-            : Number(updatedForm.FixedSalary);
-        const baseSalaryNum =
-          name === "BaseSalary"
-            ? Number(value)
-            : Number(updatedForm.BaseSalary);
+      let newFixed =
+        name === "FixedSalary"
+          ? Number(value)
+          : Number(updatedForm.FixedSalary);
+      let newBase =
+        name === "BaseSalary" ? Number(value) : Number(updatedForm.BaseSalary);
 
-        if (!isNaN(fixedSalaryNum) && !isNaN(baseSalaryNum)) {
-          setSelectedAllowancesDeductions((prevAD) =>
-            recalculateAmounts(prevAD, fixedSalaryNum, baseSalaryNum)
-          );
-        }
+      // Mutual exclusivity logic
+      if (name === "FixedSalary" && Number(value) > 0) {
+        updatedForm.BaseSalary = "";
+      } else if (name === "BaseSalary" && Number(value) > 0) {
+        updatedForm.FixedSalary = "";
+      }
+
+      newFixed = Number(updatedForm.FixedSalary);
+      newBase = Number(updatedForm.BaseSalary);
+
+      if (!isNaN(newFixed) && !isNaN(newBase)) {
+        setSelectedAllowancesDeductions((prevAD) =>
+          recalculateAmounts(prevAD, newFixed, newBase)
+        );
       }
 
       return updatedForm;
@@ -213,17 +235,20 @@ export default function SalaryGroups() {
 
   const addAlDtItem = () => {
     if (!alDtInput.trim()) return;
-    const lowerInput = alDtInput.trim().toLowerCase();
+    const inputName = alDtInput.trim();
     const existingOption = alDtOptions.find(
-      (opt) => `${opt.Type} - ${opt.Name}`.toLowerCase() === lowerInput
+      (opt) =>
+        opt.Type === selectedType &&
+        opt.Name.toLowerCase() === inputName.toLowerCase()
     );
     let matchedFormula = existingOption
       ? formulas.find(
           (f) => f.Name.toLowerCase() === existingOption.Name.toLowerCase()
         ) || null
       : formulas.find(
-          (f) => f.Name.toLowerCase() === alDtInput.trim().toLowerCase()
+          (f) => f.Name.toLowerCase() === inputName.toLowerCase()
         ) || null;
+
     if (existingOption) {
       if (
         !selectedAllowancesDeductions.some(
@@ -244,11 +269,10 @@ export default function SalaryGroups() {
         );
       }
     } else {
-      let type = lowerInput.startsWith("deduction") ? "Deduction" : "Allowance";
       const customItem = {
         ID: Date.now() * -1,
-        Type: type,
-        Name: alDtInput.trim(),
+        Type: selectedType,
+        Name: inputName,
         Percentage: 0,
         Property_ID: propertyId || 0,
         CreatedOn: new Date().toISOString(),
@@ -277,19 +301,39 @@ export default function SalaryGroups() {
     );
 
   const handleSave = async () => {
+    const fixedSalaryNum = Number(formData.FixedSalary);
+    const baseSalaryNum = Number(formData.BaseSalary);
+
+    if (
+      (formData.FixedSalary === "" ||
+        isNaN(fixedSalaryNum) ||
+        fixedSalaryNum < 0) &&
+      (formData.BaseSalary === "" || isNaN(baseSalaryNum) || baseSalaryNum < 0)
+    ) {
+      return alert(
+        "Please enter either Fixed Salary or Base Salary (one must be greater than 0)."
+      );
+    }
+
     if (!formData.SalaryGroup.trim())
       return alert("Salary Group Name is required");
-    const fixedSalaryNum = Number(formData.FixedSalary);
+
+    // Only allow when at least one salary field filled
+    if (fixedSalaryNum <= 0 && baseSalaryNum <= 0) {
+      return alert("You must fill at least one salary: Fixed or Base Salary.");
+    }
+
+    // If user has given Base Salary, then at least one Allowance or Deduction must be present
     if (
-      formData.FixedSalary === "" ||
-      isNaN(fixedSalaryNum) ||
-      fixedSalaryNum < 0
-    )
-      return alert("Valid Fixed Salary is required");
-    const baseSalaryNum =
-      formData.BaseSalary === "" ? 0 : Number(formData.BaseSalary);
-    if (isNaN(baseSalaryNum) || baseSalaryNum < 0)
-      return alert("Valid Base Salary is required");
+      baseSalaryNum > 0 &&
+      (!selectedAllowancesDeductions ||
+        selectedAllowancesDeductions.length === 0)
+    ) {
+      return alert(
+        "When Base Salary is entered, please add at least one Allowance or Deduction."
+      );
+    }
+
     const nowIso = new Date().toISOString();
     const model = {
       ...formData,
@@ -366,7 +410,12 @@ export default function SalaryGroups() {
       >
         Cancel
       </button>
-      <button className="btn btn-primary" onClick={handleSave} type="submit">
+      <button
+        className="btn btn-primary"
+        onClick={handleSave}
+        type="submit"
+        disabled={!canCreate}
+      >
         Save
       </button>
     </>
@@ -540,6 +589,7 @@ export default function SalaryGroups() {
               readOnly={isViewMode}
             />
           </div>
+
           <div className="mb-3">
             <label className="form-label">Fixed Salary</label>
             <input
@@ -551,11 +601,11 @@ export default function SalaryGroups() {
               placeholder="Enter fixed salary"
               min="0"
               step="0.01"
-              required
-              disabled={isViewMode}
-              readOnly={isViewMode}
+              required={!isBaseActive}
+              disabled={isBaseActive || isViewMode}
             />
           </div>
+
           <div className="mb-3">
             <label className="form-label">Base Salary</label>
             <input
@@ -567,65 +617,98 @@ export default function SalaryGroups() {
               placeholder="Enter base salary"
               min="0"
               step="0.01"
-              required
-              disabled={isViewMode}
-              readOnly={isViewMode}
+              required={!isFixedActive}
+              disabled={isFixedActive || isViewMode}
             />
           </div>
-          {!isViewMode && (
-            <div className="mb-3 d-flex align-items-center">
-              <div style={{ flex: 1 }}>
-                <label htmlFor="alDtInput" className="form-label">
-                  Allowance and Deduction Names
-                </label>
+
+          {/* Only show select type and table if allowed by logic */}
+          {!isViewMode && canSelectType && (
+            <div className="mb-3">
+              <div className="mb-2">
+                <label className="form-label me-3">Select Type:</label>
+                <div className="form-check form-check-inline">
+                  <input
+                    className="form-check-input"
+                    type="radio"
+                    name="alDtType"
+                    id="allowanceRadio"
+                    value="Allowance"
+                    checked={selectedType === "Allowance"}
+                    onChange={() => setSelectedType("Allowance")}
+                  />
+                  <label className="form-check-label" htmlFor="allowanceRadio">
+                    Allowance
+                  </label>
+                </div>
+                <div className="form-check form-check-inline">
+                  <input
+                    className="form-check-input"
+                    type="radio"
+                    name="alDtType"
+                    id="deductionRadio"
+                    value="Deduction"
+                    checked={selectedType === "Deduction"}
+                    onChange={() => setSelectedType("Deduction")}
+                  />
+                  <label className="form-check-label" htmlFor="deductionRadio">
+                    Deduction
+                  </label>
+                </div>
+              </div>
+              <div className="d-flex align-items-center">
                 <input
                   list="alDtOptionsList"
                   id="alDtInput"
                   className="form-control"
                   value={alDtInput}
                   onChange={handleAlDtInputChange}
-                  placeholder="Select or type Allowance or Deduction"
+                  placeholder={`Select or type ${selectedType}`}
+                  disabled={!canSelectType}
+                  style={{ flex: 1 }}
                 />
-                <datalist id="alDtOptionsList">
-                  {alDtOptions.map((opt) => (
-                    <option
-                      key={opt.ID}
-                      value={`${opt.Type} - ${opt.Name}`}
-                      label={`${opt.Type} | ${opt.Name}`}
-                    />
-                  ))}
-                </datalist>
-              </div>
-              <button
-                type="button"
-                className="btn btn-success ms-2"
-                style={{ height: "38px", marginTop: "26px" }}
-                onClick={addAlDtItem}
-              >
-                Add
-              </button>
-              <div
-                className="form-check ms-3"
-                style={{ marginTop: "40px", userSelect: "none" }}
-              >
-                <input
-                  className="form-check-input"
-                  type="checkbox"
-                  id="useFixedValueCheckbox"
-                  checked={useFixedValue}
-                  onChange={(e) => setUseFixedValue(e.target.checked)}
-                />
-                <label
-                  className="form-check-label"
-                  htmlFor="useFixedValueCheckbox"
-                  style={{ fontSize: "14px" }}
+                <button
+                  type="button"
+                  className="btn btn-success ms-2"
+                  style={{ height: "38px", marginTop: "0" }}
+                  onClick={addAlDtItem}
+                  disabled={!canSelectType}
                 >
-                  Use Fixed Amount
-                </label>
+                  Add
+                </button>
+                <div
+                  className="form-check ms-3"
+                  style={{ userSelect: "none", marginTop: 0 }}
+                >
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="useFixedValueCheckbox"
+                    checked={useFixedValue}
+                    onChange={(e) => setUseFixedValue(e.target.checked)}
+                  />
+                  <label
+                    className="form-check-label"
+                    htmlFor="useFixedValueCheckbox"
+                    style={{ fontSize: "14px" }}
+                  >
+                    Use Fixed Amount
+                  </label>
+                </div>
               </div>
+              <datalist id="alDtOptionsList">
+                {filteredAlDtOptions.map((opt) => (
+                  <option
+                    key={opt.ID}
+                    value={opt.Name}
+                    label={`${opt.Type} | ${opt.Name}`}
+                  />
+                ))}
+              </datalist>
             </div>
           )}
-          {(selectedAllowancesDeductions.length > 0 || !isViewMode) && (
+
+          {(canShowTable || isViewMode) && (
             <div className="table-responsive mt-3">
               <table className="table table-bordered">
                 <thead>

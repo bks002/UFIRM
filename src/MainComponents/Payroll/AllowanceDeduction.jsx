@@ -188,7 +188,7 @@ export default function AllowanceDeduction() {
             fontSize: "2.2rem",
           }}
         >
-          Allocation and Deduction
+          Allowance and Deduction
         </h2>
 
         <div

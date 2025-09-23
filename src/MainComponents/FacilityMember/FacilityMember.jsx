@@ -539,7 +539,6 @@ class FacilityMember extends React.Component {
     // id is facilityMember row identifier passed from DataGrid
     var rowData = this.findByRowId(Id);
     this.setState({ FacilityMemberId: rowData.facilityMemberId });
-    console.log(rowData.facilityMemberId);
     this.openSalaryGroupView(rowData.facilityMemberId);
   };
 
