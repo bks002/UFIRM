@@ -17,6 +17,7 @@ import PropertyTower from "../pages/PropertyTowerPage";
 import PropertyAssignmentPage from "../pages/PropertyAssignmentPage";
 import ParkingDetailsPage from "../pages/ParkingDetailsPage";
 import FacilityMemberPage from "../pages/FacilityMemberPage";
+import FacilityMember from "../MainComponents/FacilityMember/FacilityMember.jsx";
 import FacilityLatlongPage from "../pages/FacilityLatlongPage";
 import ParkingAssignmentPage from "../pages/ParkingAssignmentsPage";
 import EmergencyContactPage from "../pages/EmergencyContactPage";
@@ -1145,7 +1146,7 @@ class MainNav extends React.Component {
               <UserProfile/>
             </Route>
             <Route path="/Account/App/FacilityMember">
-              <FacilityMemberPage/>
+              <FacilityMember/>
             </Route>
             <Route path="/Account/App/CreateNewUser">
               <CreateNewUser/>
