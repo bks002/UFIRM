@@ -11,9 +11,9 @@ const FMResponseModal = ({ notification, onClose, onReply }) => {
     <Modal show={!!notification} onHide={onClose}>
       <Modal.Header closeButton>
         <Modal.Title>
-          {isTaskNotification ? 'Task Notification' : 
-           isAssetNotification ? 'Asset Notification' : 
-           isTicketNotification ? 'Complaint Notification' : 'Notification'}
+          {isTaskNotification ? 'Task Notification' :
+            isAssetNotification ? 'Asset Notification' :
+              isTicketNotification ? 'Complaint Notification' : 'Notification'}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
@@ -27,28 +27,29 @@ const FMResponseModal = ({ notification, onClose, onReply }) => {
                 <p><strong>Task Name:</strong> {notification.TaskName}</p>
                 <p><strong>Property ID:</strong> {notification.PropertyId}</p>
 
-                <ChatBox 
-                  remark={notification.SupRemark} 
-                  name={notification.SupName} 
+                <ChatBox
+                  remark={notification.SupRemark}
+                  name={notification.SupName}
                   remarkDateTime={notification.SUPdateTime}
                   status={notification.CurrentStatus}
-                  onSend={onReply} 
+                  onSend={onReply}
                 />
               </>
             ) : isAssetNotification ? (
+              // Asset Notification Content
               // Asset Notification Content
               <>
                 <p><strong>Asset ID:</strong> {notification.AssetId}</p>
                 <p><strong>Asset Name:</strong> {notification.AssetName}</p>
                 <p><strong>Location:</strong> {notification.Location || 'Not specified'}</p>
-                <p><strong>Supervisor ID:</strong> {notification.SupId}</p>
+                <p><strong>Supervisor:</strong> {notification.SupName}</p>  {/* Updated here */}
 
-                <ChatBox 
-                  remark={notification.SupRemark} 
-                  name="Supervisor" 
+                <ChatBox
+                  remark={notification.SupRemark}
+                  name={notification.SupName}   // Keep using SupName for chat
                   remarkDateTime={notification.SupDateTime}
                   status={notification.CurrentStatus}
-                  onSend={onReply} 
+                  onSend={onReply}
                 />
               </>
             ) : isTicketNotification ? (
@@ -57,16 +58,16 @@ const FMResponseModal = ({ notification, onClose, onReply }) => {
                 <p><strong>Ticket ID:</strong> {notification.TicketId}</p>
                 <p><strong>Ticket Number:</strong> {notification.TicketNumber}</p>
                 <p><strong>Location:</strong> {notification.Location}</p>
-                <p><strong>Reported By:</strong> {notification.ReportedBy}</p>
+                <p><strong>Reported To:</strong> {notification.SupName}</p> {/* Updated here */}
                 <p><strong>Created On:</strong> {new Date(notification.CreatedOn).toLocaleString()}</p>
                 <p><strong>Status:</strong> {notification.CurrentStatus}</p>
 
-                <ChatBox 
-                  remark={notification.SupRemark} 
-                  name="Reporter" 
+                <ChatBox
+                  remark={notification.SupRemark}
+                  name="Customer"  // Updated here
                   remarkDateTime={notification.CreatedOn}
                   status={notification.CurrentStatus}
-                  onSend={onReply} 
+                  onSend={onReply}
                 />
               </>
             ) : (
