@@ -349,7 +349,7 @@ const Home = ({ PropertyId }) => {
 
             {/* 3. Total Assets Bar Chart */}
             <div className="col-md-3">
-                 <Link to="/Account/App/Assets" style={{ textDecoration: 'none', color: 'inherit' }}>
+                 <Link to="/Account/App/ServiceRecords" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
                     <h5 className="text-center">Total Assets</h5>
                     <Chart
