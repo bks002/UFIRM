@@ -285,7 +285,7 @@ const Home = ({ PropertyId }) => {
                     <Chart
                         type="pie"
                         data={{
-                            labels: taskStatus.map(t => t.Title),
+                            labels: taskStatus.map(t => `${t.Title} (${t.Value})`),
                             // Link: `/Account/App/PlannerTask?status=${taskStatus.map(t => t.Title)}`,
                             datasets: [
                                 {
@@ -391,7 +391,7 @@ const Home = ({ PropertyId }) => {
         <Chart
             type="doughnut"
             data={{
-                labels: complains.map(c => c.Title),
+                 labels: complains.map(c => `${c.Title} (${c.Value})`),
                 datasets: [
                     {
                         data: complains.map(c => c.Value),
@@ -496,6 +496,7 @@ const Home = ({ PropertyId }) => {
 <div className="col-md-3">
     <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
         <h5 className="text-center">Lift</h5>
+         <Link to="/Account/App/PlannerTask" style={{ textDecoration: "none" }}>
         <Chart
             type="line"
             data={{
@@ -521,7 +522,9 @@ const Home = ({ PropertyId }) => {
                 scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
             }}
             style={{ width: "100%", height: "220px" }}
+           
         />
+        </Link>
     </div>
 </div>
 
@@ -529,6 +532,7 @@ const Home = ({ PropertyId }) => {
 <div className="col-md-3">
     <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
         <h5 className="text-center">DG</h5>
+        <Link to="/Account/App/PlannerTask" style={{ textDecoration: "none" }}>
         <Chart
             type="line"
             data={{
@@ -554,7 +558,9 @@ const Home = ({ PropertyId }) => {
                 scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
             }}
             style={{ width: "100%", height: "220px" }}
+           
         />
+        </Link>
     </div>
 </div>
 
