@@ -16,6 +16,7 @@ import { useSelector } from "react-redux";
 import 'primereact/resources/primereact.min.css';
 import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primeicons/primeicons.css';
+import {createEmployee} from "../../Services/FacilityService";
 
 const StaffPage = () => {
   const toast = useRef(null);
@@ -23,7 +24,6 @@ const StaffPage = () => {
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
   const [globalFilterValue, setGlobalFilterValue] = useState("");
   const [selectedRow, setSelectedRow] = useState(null);
 
@@ -31,13 +31,42 @@ const StaffPage = () => {
   const [dialogVisible, setDialogVisible] = useState(false);
 
   // Form fields
+const [officeName, setOfficeName] = useState("");
+const [employeeCode, setEmployeeCode] = useState("");
+const [employeeName, setEmployeeName] = useState("");
+ const [addressLine1, setAddressLine1] = useState("");
+  const [addressLine2, setAddressLine2] = useState("");
   const [name, setName] = useState("");
   const [gender, setGender] = useState("");
   const [mobile, setMobile] = useState("");
   const [designation, setDesignation] = useState("");
+  const [otherDesignation, setOtherDesignation] = useState("");
   const [address, setAddress] = useState("");
   const [family, setFamily] = useState("");
   const [profileImage, setProfileImage] = useState(null);
+   const [dateOfBirth, setDateOfBirth] = useState("");
+const [email, setEmail] = useState("");
+const [department, setDepartment] = useState("");
+const [city, setCity] = useState("");
+const [stateName, setStateName] = useState("");
+const [panCard, setPanCard] = useState("");
+const [aadharCard, setAadharCard] = useState("");
+const [bankAccountNumber, setBankAccountNumber] = useState("");
+const [bankIFSCCode, setBankIFSCCode] = useState("");
+const [bankName, setBankName] = useState("");
+const [uanNumber, setUanNumber] = useState("");
+const [panNumber, setPanNumber] = useState("");
+const [companyName, setCompanyName] = useState("");
+const [role, setRole] = useState("");
+const [startDate, setStartDate] = useState("");
+const [endDate, setEndDate] = useState("");
+const [dateOfJoining, setDateOfJoining] = useState("");
+const [relievingDate, setRelievingDate] = useState("");
+const [tpv, setTpv] = useState(false);
+const [uploadResume, setUploadResume] = useState(null);
+
+
+
    const propertyId = useSelector((state) => state.Commonreducer.puidn);
 
   const genders = [
@@ -46,9 +75,9 @@ const StaffPage = () => {
   ];
 
   const designations = [
-    { label: "Manager", value: "Manager" },
-    { label: "Supervisor", value: "Supervisor" },
-    { label: "Staff", value: "Staff" },
+    { label: "H.K. SUPERVISOR", value: "H.K. SUPERVISOR" },
+    { label: "TECHNICAL SUPERVISOR", value: "TECHNICAL SUPERVISOR" },
+    { label: "OTHER", value: "OTHER" },
   ];
 
   // Fetch staff data on component mount
@@ -86,24 +115,114 @@ const StaffPage = () => {
     setProfileImage(null);
   };
 
-  const saveStaff = () => {
-    if (!name || !gender || !mobile || !designation) {
-      toast.current.show({
-        severity: "warn",
-        summary: "Validation",
-        detail: "Please fill all required fields",
-      });
-      return;
-    }
+  
 
-    // Here you should call POST API to save staff
+   const saveStaff = async () => {
+  if (!employeeName || !employeeCode || !mobile || !gender) {
+    toast.current.show({
+      severity: "warn",
+      summary: "Validation",
+      detail: "Please fill all required fields",
+    });
+    return;
+  }
+
+  const now = new Date().toISOString();
+
+  // ✅ Prepare employeeData exactly as API expects
+  const employeeData = {
+    Profile: {
+      OfficeId: 0,
+      EmployeeCode: employeeCode,
+      EmployeeName: employeeName,
+      EmploymentType: designation,
+      CreatedOn:new Date().toISOString(),
+      UpdatedOn:new Date().toISOString(),
+      IsActive: true,
+      Email: email,
+      PhoneNumber: mobile,
+      Designation: designation,
+      Department: department,
+      Gender: gender,
+      DateOfBirth: dateOfBirth,
+      PanCard:  panCard,
+      AadharCard:  aadharCard,
+      AddressLine1: addressLine1,
+      AddressLine2: addressLine2,
+      City: city,
+      State: stateName,
+    },
+    WorkHistory: {
+      CompanyName: companyName,
+      Role: role,
+      StartDate: new Date().toISOString(),
+      EndDate: new Date().toISOString(),
+      DateOfJoining: new Date().toISOString(),
+      RelievingDate:new Date().toISOString(),
+      ThirdPartyVerification: false,
+      UploadResume: uploadResume ? uploadResume.name : "",
+      CreatedOn: new Date().toISOString(),
+      UpdatedOn:new Date().toISOString(),
+      IsActive: true
+    },
+    FinancialInfo: {
+      BankAccountNumber:bankAccountNumber,
+      BankIFSCCode: bankIFSCCode,
+      BankName: bankName,
+      UANNumber: uanNumber,
+      PANNumber: panNumber,
+      CreatedOn:new Date().toISOString(),
+      UpdatedOn: new Date().toISOString(),
+      IsActive: true
+    },
+    FacilityMember: {
+      PropertyId: propertyId || 0,
+      Address: address,
+      FacilityMasterId: 0,
+      ProfileImageUrl: profileImage || "",
+      IsBlocked: false,
+      AccessCode: "",
+      IsApproved: false,
+      ApprovedOn: now,
+      ApprovedBy: 0,
+      IsActive: true,
+      IsDeleted: false,
+      CreatedBy: 0,
+      CreatedOn: new Date().toISOString(),
+      UpdatedBy: 0,
+      UpdatedOn: new Date().toISOString(),
+      oldID: 0,
+      Password: "",
+      SG_Link_ID: 0,
+      tax_amount: 0
+    },
+    EmployeeList: {
+      FatherName: family,
+      IsDeleted: 0,
+      Approved: 0
+    }
+  };
+
+  try {
+    const response = await createEmployee(employeeData);
     toast.current.show({
       severity: "success",
       summary: "Added",
       detail: "Staff member added successfully",
     });
     setDialogVisible(false);
-  };
+    setStaff([...staff, response]);
+  } catch (error) {
+    toast.current.show({
+      severity: "error",
+      summary: "Error",
+      detail: "Failed to create employee",
+    });
+  }
+};
+
+
+    
 
   const deleteStaff = () => {
     if (selectedRow) {
@@ -163,14 +282,14 @@ const StaffPage = () => {
           </>
         )}
 
-        <span className="p-input-icon-left">
-          <i className="pi pi-search" />
-          <InputText
-            value={globalFilterValue}
-            onChange={(e) => setGlobalFilterValue(e.target.value)}
-            placeholder="Search..."
-          />
-        </span>
+       <div className="p-input-left">
+  
+  <InputText
+    value={globalFilterValue}
+    onChange={(e) => setGlobalFilterValue(e.target.value)}
+    placeholder="Search..."
+  />
+</div>
 
         <Button label="Add Staff" icon="pi pi-plus" onClick={openDialog} className="p-button-success" />
       </div>
@@ -222,160 +341,54 @@ const StaffPage = () => {
     </div>
   }
 >
-  <TabView>
-    {/* ✅ Tab 1: Personal Details */}
-    <TabPanel header="Personal Details">
-      <div className="p-fluid">
-        <div className="field">
-          <label>Office Name</label>
-          <InputText value={name} disabled />
-        </div>
+   <TabView>
+          {/* Personal Details */}
+          <TabPanel header="Personal Details">
+            <div className="p-fluid">
+              <InputText placeholder="Employee Code" value={employeeCode} onChange={(e) => setEmployeeCode(e.target.value)} className="mb-2" />
+              <InputText placeholder="Employee Name" value={employeeName} onChange={(e) => setEmployeeName(e.target.value)} className="mb-2" />
+              <Dropdown placeholder="Employment Type" value={designation} options={designations} onChange={(e) => setDesignation(e.value)} className="mb-2" />
+              {designation === "OTHER" && <InputText placeholder="Other Designation" value={otherDesignation} onChange={(e) => setOtherDesignation(e.target.value)} className="mb-2" />}
+              <InputText placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="mb-2" />
+              <InputText placeholder="Mobile" value={mobile} onChange={(e) => setMobile(e.target.value)} className="mb-2" />
+              <Dropdown placeholder="Department" value={department} options={[{ label: "HR", value: "HR" }, { label: "IT", value: "IT" }]}  onChange={(e) => setDepartment(e.value)} placeholder="Select Department"className="mb-2" />
+              <Dropdown placeholder="Gender" value={gender} options={genders} onChange={(e) => setGender(e.value)} className="mb-2" />
+              <InputText type="date" placeholder="Date of Birth" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className="mb-2" />
+              <InputText placeholder="Pan Card" value={panCard} onChange={(e) => setPanCard(e.target.value)} className="mb-2" />
+              <InputText placeholder="Aadhar Card" value={aadharCard} onChange={(e) => setAadharCard(e.target.value)} className="mb-2" />
+              <InputText placeholder="Address Line 1" value={addressLine1} onChange={(e) => setAddressLine1(e.target.value)} className="mb-2" />
+              <InputText placeholder="Address Line 2" value={addressLine2} onChange={(e) => setAddressLine2(e.target.value)} className="mb-2" />
+              <InputText placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} className="mb-2" />
+              <InputText placeholder="State" value={stateName} onChange={(e) => setStateName(e.target.value)} className="mb-2" />
+            </div>
+          </TabPanel>
 
-        <div className="field">
-          <label>Employee Code</label>
-          <InputText value={name} onChange={(e) => setName(e.target.value)} />
-        </div>
+          {/* Bank Details */}
+          <TabPanel header="Bank Details">
+            <div className="p-fluid">
+              <InputText placeholder="Bank Account Number" value={bankAccountNumber} onChange={(e) => setBankAccountNumber(e.target.value)} className="mb-2" />
+              <InputText placeholder="Bank IFSC Code" value={bankIFSCCode} onChange={(e) => setBankIFSCCode(e.target.value)} className="mb-2" />
+              <InputText placeholder="Bank Name" value={bankName} onChange={(e) => setBankName(e.target.value)} className="mb-2" />
+              <InputText placeholder="UAN Number" value={uanNumber} onChange={(e) => setUanNumber(e.target.value)} className="mb-2" />
+              <InputText placeholder="PAN Number" value={panNumber} onChange={(e) => setPanNumber(e.target.value)} className="mb-2" />
+            </div>
+          </TabPanel>
 
-        <div className="field">
-          <label>Employee Name</label>
-          <InputText value={name} onChange={(e) => setName(e.target.value)} />
-        </div>
-
-        <div className="field">
-          <label>Employment Type</label>
-          <Dropdown value={designation} options={designations} onChange={(e) => setDesignation(e.value)} placeholder="Select Type" />
-        </div>
-
-        <div className="field">
-          <label>Email</label>
-          <InputText />
-        </div>
-
-        <div className="field">
-          <label>Phone Number</label>
-          <InputText value={mobile} onChange={(e) => setMobile(e.target.value)} />
-        </div>
-
-        <div className="field">
-          <label>Designation</label>
-          <Dropdown value={designation} options={designations} onChange={(e) => setDesignation(e.value)} placeholder="Select Designation" />
-        </div>
-
-        <div className="field">
-          <label>Department</label>
-          <Dropdown options={[{ label: "HR", value: "HR" }, { label: "IT", value: "IT" }]} placeholder="Select Department" />
-        </div>
-
-        <div className="field">
-          <label>Gender</label>
-          <Dropdown value={gender} options={genders} onChange={(e) => setGender(e.value)} placeholder="Select Gender" />
-        </div>
-
-        <div className="field">
-          <label>Date of Birth</label>
-          <InputText type="date" />
-        </div>
-
-        <div className="field">
-          <label>Pan Card</label>
-          <InputText />
-        </div>
-
-        <div className="field">
-          <label>Aadhar Card</label>
-          <InputText />
-        </div>
-
-        <div className="field">
-          <label>Address Line 1</label>
-          <InputText value={address} onChange={(e) => setAddress(e.target.value)} />
-        </div>
-
-        <div className="field">
-          <label>Address Line 2</label>
-          <InputText />
-        </div>
-
-        <div className="field">
-          <label>City</label>
-          <InputText />
-        </div>
-
-        <div className="field">
-          <label>State</label>
-          <InputText />
-        </div>
-      </div>
-    </TabPanel>
-
-    {/* ✅ Tab 2: Bank Details */}
-    <TabPanel header="Bank Details">
-      <div className="p-fluid">
-        <div className="field">
-          <label>Bank Account Number</label>
-          <InputText />
-        </div>
-        <div className="field">
-          <label>Bank IFSC Code</label>
-          <InputText />
-        </div>
-        <div className="field">
-          <label>Bank Name</label>
-          <InputText />
-        </div>
-        <div className="field">
-          <label>UAN Number</label>
-          <InputText />
-        </div>
-        <div className="field">
-          <label>PAN Number</label>
-          <InputText />
-        </div>
-      </div>
-    </TabPanel>
-
-    {/* ✅ Tab 3: Work History */}
-    <TabPanel header="Work History">
-      <div className="p-fluid">
-        <div className="field">
-          <label>Company Name</label>
-          <InputText />
-        </div>
-        <div className="field">
-          <label>Role</label>
-          <InputText />
-        </div>
-        <div className="field">
-          <label>Start Date</label>
-          <InputText type="date" />
-        </div>
-        <div className="field">
-          <label>End Date</label>
-          <InputText type="date" />
-        </div>
-
-        <div className="field">
-          <label>Date of Joining</label>
-          <InputText type="date" />
-        </div>
-
-        <div className="field">
-          <label>Relieving Date</label>
-          <InputText type="date" />
-        </div>
-
-        <div className="field">
-          <Checkbox inputId="tpv" />
-          <label htmlFor="tpv" className="ml-2">Third-Party Verification</label>
-        </div>
-
-        <div className="field">
-          <label>Upload Resume</label>
-          <input type="file" accept=".pdf,.doc,.docx" />
-        </div>
-      </div>
-    </TabPanel>
-  </TabView>
+          {/* Work History */}
+          <TabPanel header="Work History">
+            <div className="p-fluid">
+              <InputText placeholder="Company Name" value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="mb-2" />
+              <InputText placeholder="Role" value={role} onChange={(e) => setRole(e.target.value)} className="mb-2" />
+              <InputText type="date" placeholder="Start Date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="mb-2" />
+              <InputText type="date" placeholder="End Date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="mb-2" />
+              <InputText type="date" placeholder="Date Of Joining" value={dateOfJoining} onChange={(e) => setDateOfJoining(e.target.value)} className="mb-2" />
+              <InputText type="date" placeholder="Relieving Date" value={relievingDate} onChange={(e) => setRelievingDate(e.target.value)} className="mb-2" />
+              <Checkbox inputId="tpv" checked={tpv} onChange={(e) => setTpv(e.checked)} />
+              <label htmlFor="tpv" className="ml-2">Third Party Verification</label>
+              <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setUploadResume(e.target.files[0])} className="mt-2" />
+            </div>
+          </TabPanel>
+        </TabView>
 </Dialog>
     </div>
   );

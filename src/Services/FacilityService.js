@@ -83,4 +83,22 @@ export const FacilityMemberService = {
     }
   },
 };
+const API_URL = "https://api.urest.in:8096/api/employee"; 
+
+
+export const createEmployee = async (employeeData) => {
+  try {
+    const response = await axios.post(`${API_URL}/create`, employeeData, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      withCredentials: false,
+    },
+   );
+    return response.data; 
+  } catch (error) {
+    console.error("Error creating employee:", error);
+    throw error;
+  }
+};
 export default FacilityService;
