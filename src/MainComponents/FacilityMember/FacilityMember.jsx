@@ -11,14 +11,13 @@ import { Dropdown } from "primereact/dropdown";
 import { Checkbox } from "primereact/checkbox";
 import { TabView, TabPanel } from "primereact/tabview";
 import "primeicons/primeicons.css";
-import FacilityService, { FacilityMemberService } from "../../Services/FacilityService";
+import FacilityService, { FacilityMemberService ,getEmployeesByOffice} from "../../Services/FacilityService";
 import { useSelector } from "react-redux";
 import 'primereact/resources/primereact.min.css';
 import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primeicons/primeicons.css';
 import {createEmployee} from "../../Services/FacilityService";
 import { Calendar } from "primereact/calendar";
-import EmployeeService from "../../Services/FacilityService";
 
 const StaffPage = () => {
   const toast = useRef(null);
@@ -28,6 +27,9 @@ const StaffPage = () => {
   const [error, setError] = useState("");
   const [globalFilterValue, setGlobalFilterValue] = useState("");
   const [selectedRow, setSelectedRow] = useState(null);
+  const [viewDialogVisible, setViewDialogVisible] = useState(false);
+const [viewData, setViewData] = useState(null);
+
 
   // Dialog
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -83,22 +85,32 @@ const [uploadResume, setUploadResume] = useState(null);
   ];
 
   // Fetch staff data on component mount
-   useEffect(() => {
-    const fetchEmployee = async () => {
-      try {
-        const data = await EmployeeService.getEmployeeById(propertyId);
-        setEmployee(data);
-      } catch (err) {
-        console.error("Failed to load employee", err);
-      }
-    };
-
-    if (employeeId) {
-      fetchEmployee();
+  useEffect(() => {
+  const fetchEmployee = async () => {
+    try {
+      const data = await getEmployeesByOffice(propertyId);
+      console.log("API response:", data);
+      setStaff(Array.isArray(data) ? data : [data]); // 👈 ensure array
+    } catch (err) {
+      console.error("Failed to load employee", err);
+      setError("Failed to load employee");
+    } finally {
+      setLoading(false);
     }
-  }, [propertyId]);
+  };
+
+  if (propertyId) {
+    fetchEmployee();
+  } else {
+    setLoading(false);
+  }
+}, [propertyId]);
 
 
+const viewStaff = (row) => {
+  setViewData(row); // store selected row data
+  setViewDialogVisible(true);
+};
   // Handlers
   const openDialog = () => {
     resetForm();
@@ -257,14 +269,23 @@ const [uploadResume, setUploadResume] = useState(null);
           <>
             <Button icon="pi pi-pencil" className="p-button-rounded p-button-text p-button-info" />
             <Button icon="pi pi-trash" className="p-button-rounded p-button-text p-button-danger" onClick={deleteStaff} />
-            <Button icon="pi pi-ban" className="p-button-rounded p-button-text p-button-warning" />
+            <Button
+  icon="pi pi-ban"
+  className="p-button-rounded p-button-text p-button-warning"
+/>
+
+<Button
+  icon="pi pi-eye"
+  className="p-button-rounded p-button-text p-button-help"
+  onClick={() => viewStaff(selectedRow)}
+/>
             <Button
               icon="pi pi-key"
               className="p-button-rounded p-button-text p-button-secondary"
               onClick={async () => {
                 if (!selectedRow) return;
                 try {
-                  const response = await FacilityService.resetPassword(selectedRow.MobileNumber);
+                  const response = await FacilityService.resetPassword(selectedRow.FacilityMember.MobileNumber);
                   toast.current.show({
                     severity: response.Success ? "success" : "error",
                     summary: "Reset Password",
@@ -305,23 +326,23 @@ const [uploadResume, setUploadResume] = useState(null);
           <div className="card">
             <div className="p-3">
               <DataTable
-                value={staff}
-                header={header}
-                paginator
-                rows={5}
-                loading={loading}
-                responsiveLayout="scroll"
-                emptyMessage="No staff found."
-              >
-                <Column field="FacilityMemberId" header="ID" style={{ width: "5rem" }} />
-                <Column field="Name" header="Name" />
-                <Column field="Gender" header="Gender" />
-                <Column field="MobileNumber" header="Contact" />
-                <Column field="FacilityMasterId" header="Facility Type" />
-                <Column field="AccessCode" header="Access" />
-                <Column field="IsApproved" header="Status" body={(row) => (row.IsApproved ? "Yes" : "No")} />
-                <Column header="Action" body={actionBody} style={{ width: "5rem" }} />
-              </DataTable>
+  value={staff}
+  header={header}
+  paginator
+  rows={5}
+  loading={loading}
+  responsiveLayout="scroll"
+  emptyMessage="No staff found."
+>
+ <Column header="Name" body={(row) => row.FacilityMember.Name} />
+<Column header="Gender" body={(row) => row.FacilityMember.Gender} />
+<Column header="Contact" body={(row) => row.FacilityMember.MobileNumber} />
+<Column header="Access" body={(row) => row.FacilityMember.AccessCode} />
+<Column header="Approved" body={(row) => row.FacilityMember.IsApproved ? "Yes" : "No"} />
+
+  <Column header="Action" body={actionBody} style={{ width: "5rem" }} />
+</DataTable>
+
             </div>
           </div>
         </div>
@@ -443,8 +464,11 @@ const [uploadResume, setUploadResume] = useState(null);
     />
   </div>
 </TabPanel>
+
         </TabView>
 </Dialog>
+
+
     </div>
   );
 };
