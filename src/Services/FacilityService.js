@@ -101,4 +101,25 @@ export const createEmployee = async (employeeData) => {
     throw error;
   }
 };
+
+const API_BASE = "https://api.urest.in:8096/api/employee";
+
+class EmployeeService {
+  // Get employee details by ID
+  async getEmployeeById(employeeId) {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/get/${employeeId}`, {
+        headers: {
+          Accept: "application/json",
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching employee details:", error);
+      throw error;
+    }
+  }
+}
+
+
 export default FacilityService;

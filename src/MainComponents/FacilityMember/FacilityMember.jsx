@@ -17,10 +17,12 @@ import 'primereact/resources/primereact.min.css';
 import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primeicons/primeicons.css';
 import {createEmployee} from "../../Services/FacilityService";
+import { Calendar } from "primereact/calendar";
+import EmployeeService from "../../Services/FacilityService";
 
 const StaffPage = () => {
   const toast = useRef(null);
-
+  const [employee, setEmployee] = useState(null);
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -81,22 +83,20 @@ const [uploadResume, setUploadResume] = useState(null);
   ];
 
   // Fetch staff data on component mount
-  useEffect(() => {
-  const fetchStaff = async () => {
-    try {
-      setLoading(true);
-      const data = await FacilityMemberService.getFacilityMembers(propertyId); // no propertyId
-      setStaff(data);
-    } catch (err) {
-      setError("Failed to load facility members");
-      toast.current.show({ severity: "error", summary: "Error", detail: "Failed to load staff data" });
-    } finally {
-      setLoading(false);
-    }
-  };
+   useEffect(() => {
+    const fetchEmployee = async () => {
+      try {
+        const data = await EmployeeService.getEmployeeById(propertyId);
+        setEmployee(data);
+      } catch (err) {
+        console.error("Failed to load employee", err);
+      }
+    };
 
-  fetchStaff();
-}, [propertyId]);
+    if (employeeId) {
+      fetchEmployee();
+    }
+  }, [propertyId]);
 
 
   // Handlers
@@ -129,10 +129,10 @@ const [uploadResume, setUploadResume] = useState(null);
 
   const now = new Date().toISOString();
 
-  // ✅ Prepare employeeData exactly as API expects
+  
   const employeeData = {
     Profile: {
-      OfficeId: 0,
+      OfficeId: propertyId,
       EmployeeCode: employeeCode,
       EmployeeName: employeeName,
       EmploymentType: designation,
@@ -318,7 +318,7 @@ const [uploadResume, setUploadResume] = useState(null);
                 <Column field="Gender" header="Gender" />
                 <Column field="MobileNumber" header="Contact" />
                 <Column field="FacilityMasterId" header="Facility Type" />
-               <Column field="AccessCode" header="Access" />
+                <Column field="AccessCode" header="Access" />
                 <Column field="IsApproved" header="Status" body={(row) => (row.IsApproved ? "Yes" : "No")} />
                 <Column header="Action" body={actionBody} style={{ width: "5rem" }} />
               </DataTable>
@@ -376,18 +376,73 @@ const [uploadResume, setUploadResume] = useState(null);
 
           {/* Work History */}
           <TabPanel header="Work History">
-            <div className="p-fluid">
-              <InputText placeholder="Company Name" value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="mb-2" />
-              <InputText placeholder="Role" value={role} onChange={(e) => setRole(e.target.value)} className="mb-2" />
-              <InputText type="date" placeholder="Start Date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="mb-2" />
-              <InputText type="date" placeholder="End Date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="mb-2" />
-              <InputText type="date" placeholder="Date Of Joining" value={dateOfJoining} onChange={(e) => setDateOfJoining(e.target.value)} className="mb-2" />
-              <InputText type="date" placeholder="Relieving Date" value={relievingDate} onChange={(e) => setRelievingDate(e.target.value)} className="mb-2" />
-              <Checkbox inputId="tpv" checked={tpv} onChange={(e) => setTpv(e.checked)} />
-              <label htmlFor="tpv" className="ml-2">Third Party Verification</label>
-              <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setUploadResume(e.target.files[0])} className="mt-2" />
-            </div>
-          </TabPanel>
+  <div className="p-fluid">
+    <InputText
+      placeholder="Company Name"
+      value={companyName}
+      onChange={(e) => setCompanyName(e.target.value)}
+      className="mb-2"
+    />
+    <InputText
+      placeholder="Role"
+      value={role}
+      onChange={(e) => setRole(e.target.value)}
+      className="mb-2"
+    />
+
+    <Calendar
+      placeholder="Start Date"
+      value={startDate}
+      onChange={(e) => setStartDate(e.value)}
+      className="mb-2 w-full"
+      dateFormat="dd-mm-yy"
+      showIcon
+    />
+
+    <Calendar
+      placeholder="End Date"
+      value={endDate}
+      onChange={(e) => setEndDate(e.value)}
+      className="mb-2 w-full"
+      dateFormat="dd-mm-yy"
+      showIcon
+    />
+
+    <Calendar
+      placeholder="Date Of Joining"
+      value={dateOfJoining}
+      onChange={(e) => setDateOfJoining(e.value)}
+      className="mb-2 w-full"
+      dateFormat="dd-mm-yy"
+      showIcon
+    />
+
+    <Calendar
+      placeholder="Relieving Date"
+      value={relievingDate}
+      onChange={(e) => setRelievingDate(e.value)}
+      className="mb-2 w-full"
+      dateFormat="dd-mm-yy"
+      showIcon
+    />
+
+    <div className="flex align-items-center mt-2">
+      <Checkbox
+        inputId="tpv"
+        checked={tpv}
+        onChange={(e) => setTpv(e.checked)}
+      />
+      <label htmlFor="tpv" className="ml-2">Third Party Verification</label>
+    </div>
+
+    <input
+      type="file"
+      accept=".pdf,.doc,.docx"
+      onChange={(e) => setUploadResume(e.target.files[0])}
+      className="mt-2"
+    />
+  </div>
+</TabPanel>
         </TabView>
 </Dialog>
     </div>
