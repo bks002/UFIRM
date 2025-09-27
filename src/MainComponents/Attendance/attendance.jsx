@@ -462,7 +462,36 @@ const exportMonthToCSV_Horizontal = (attendanceData, currentDate) => {
   XLSX.writeFile(wb, `Attendance_${month + 1}_${year}.xlsx`);
 };
 
+const exportDailyToCSV = (attendanceList, selectedDay) => {
+  if (!attendanceList || attendanceList.length === 0) {
+    alert("No attendance data available for export.");
+    return;
+  }
 
+  const columns = [
+    "Employee Name", "Check In", "Check Out", "Working Time", "Status"
+  ];
+
+  const rows = attendanceList.map(record => [
+    record.EmployeeName || "",
+    record.MinCheckIn || "",
+    record.MaxCheckOut || "",
+    record.TotalWorkingTime || "",
+    record.Status || ""
+  ]);
+
+  const wsData = [
+    [`Attendance for: ${selectedDay ? selectedDay.toLocaleDateString() : ""}`],
+    columns,
+    ...rows,
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Daily Attendance");
+  const fileName = `Attendance_${selectedDay ? selectedDay.toISOString().slice(0,10) : "date"}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+};
     const customHeader = (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h4 style={{ margin: 0 }}>
@@ -471,18 +500,13 @@ const exportMonthToCSV_Horizontal = (attendanceData, currentDate) => {
             {console.log("Selected date:", selectedDay)}
             {console.log("Attendance for selected date:", selectedDayAttendance)}
 <button
-  className="btn btn-success btn-sm ms-4"
-  onClick={() => exportMonthToCSV(attendanceData, currentDate)}
-  disabled={attendanceData.filter(record => {
-    const recordDate = new Date(record.PunchDate);
-    return (
-      recordDate.getFullYear() === currentDate.getFullYear() &&
-      recordDate.getMonth() === currentDate.getMonth()
-    );
-  }).length === 0}
+  className="btn btn-primary btn-sm"
+  onClick={() => exportDailyToCSV(selectedDayAttendance, selectedDay)}
+  disabled={!selectedDayAttendance || selectedDayAttendance.length === 0}
 >
-  Export to CSV
+  Export to Daily
 </button>
+
             <span className="p-inputgroup" style={{ maxWidth: 200 }}>
                 <InputText
                     placeholder="By Employee Name"

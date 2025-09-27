@@ -253,11 +253,11 @@ const viewStaff = (row) => {
   <Checkbox
     inputId={"cb-" + rowData.FacilityMemberId}
     checked={selectedRow && selectedRow.FacilityMemberId === rowData.FacilityMemberId}
-    onChange={(e) => {
-      setSelectedRow(e.checked ? rowData : null);
-    }}
+    onChange={(e) => setSelectedRow(e.checked ? rowData : null)}
   />
 );
+
+
 
 
 
@@ -327,20 +327,22 @@ const viewStaff = (row) => {
             <div className="p-3">
               <DataTable
   value={staff}
+  dataKey="FacilityMember.FacilityMemberId"
   header={header}
   paginator
   rows={5}
   loading={loading}
   responsiveLayout="scroll"
   emptyMessage="No staff found."
+  selection={selectedRow}
+  onSelectionChange={(e) => setSelectedRow(e.value)}
 >
+  <Column selectionMode="single" headerStyle={{ width: '3em' }} />
  <Column header="Name" body={(row) => row.FacilityMember.Name} />
 <Column header="Gender" body={(row) => row.FacilityMember.Gender} />
 <Column header="Contact" body={(row) => row.FacilityMember.MobileNumber} />
 <Column header="Access" body={(row) => row.FacilityMember.AccessCode} />
 <Column header="Approved" body={(row) => row.FacilityMember.IsApproved ? "Yes" : "No"} />
-
-  <Column header="Action" body={actionBody} style={{ width: "5rem" }} />
 </DataTable>
 
             </div>
@@ -468,9 +470,67 @@ const viewStaff = (row) => {
         </TabView>
 </Dialog>
 
+  <Dialog
+        header="View Facility Member"
+        visible={viewDialogVisible}
+        style={{ width: "800px" }}
+        modal
+        onHide={() => setViewDialogVisible(false)}
+      >
+        {viewData && (
+          <TabView>
+            <TabPanel header="Personal Details">
+              <div className="p-fluid">
+                <InputText placeholder="Employee Code" value={viewData.Profile && viewData.Profile.EmployeeCode ? viewData.Profile.EmployeeCode : ""} readOnly className="mb-2" />
+                <InputText placeholder="Employee Name" value={viewData.Profile && viewData.Profile.EmployeeName ? viewData.Profile.EmployeeName : ""} readOnly className="mb-2" />
+                <InputText placeholder="Employment Type" value={viewData.Profile && viewData.Profile.EmploymentType ? viewData.Profile.EmploymentType : ""} readOnly className="mb-2" />
+                <InputText placeholder="Email" value={viewData.Profile && viewData.Profile.Email ? viewData.Profile.Email : ""} readOnly className="mb-2" />
+                <InputText placeholder="Mobile" value={viewData.Profile && viewData.Profile.PhoneNumber ? viewData.Profile.PhoneNumber : ""} readOnly className="mb-2" />
+                <InputText placeholder="Department" value={viewData.Profile && viewData.Profile.Department ? viewData.Profile.Department : ""} readOnly className="mb-2" />
+                <InputText placeholder="Gender" value={viewData.Profile && viewData.Profile.Gender ? viewData.Profile.Gender : ""} readOnly className="mb-2" />
+                <InputText placeholder="Date of Birth" value={viewData.Profile && viewData.Profile.DateOfBirth ? viewData.Profile.DateOfBirth.slice(0, 10) : ""} readOnly className="mb-2" />
+                <InputText placeholder="Pan Card" value={viewData.Profile && viewData.Profile.PanCard ? viewData.Profile.PanCard : ""} readOnly className="mb-2" />
+                <InputText placeholder="Aadhar Card" value={viewData.Profile && viewData.Profile.AadharCard ? viewData.Profile.AadharCard : ""} readOnly className="mb-2" />
+                <InputText placeholder="Address Line 1" value={viewData.Profile && viewData.Profile.AddressLine1 ? viewData.Profile.AddressLine1 : ""} readOnly className="mb-2" />
+                <InputText placeholder="Address Line 2" value={viewData.Profile && viewData.Profile.AddressLine2 ? viewData.Profile.AddressLine2 : ""} readOnly className="mb-2" />
+                <InputText placeholder="City" value={viewData.Profile && viewData.Profile.City ? viewData.Profile.City : ""} readOnly className="mb-2" />
+                <InputText placeholder="State" value={viewData.Profile && viewData.Profile.State ? viewData.Profile.State : ""} readOnly className="mb-2" />
+              </div>
+            </TabPanel>
+            <TabPanel header="Bank Details">
+              <div className="p-fluid">
+                <InputText placeholder="Bank Account Number" value={viewData.FinancialInfo && viewData.FinancialInfo.BankAccountNumber ? viewData.FinancialInfo.BankAccountNumber : ""} readOnly className="mb-2" />
+                <InputText placeholder="Bank IFSC Code" value={viewData.FinancialInfo && viewData.FinancialInfo.BankIFSCCode ? viewData.FinancialInfo.BankIFSCCode : ""} readOnly className="mb-2" />
+                <InputText placeholder="Bank Name" value={viewData.FinancialInfo && viewData.FinancialInfo.BankName ? viewData.FinancialInfo.BankName : ""} readOnly className="mb-2" />
+                <InputText placeholder="UAN Number" value={viewData.FinancialInfo && viewData.FinancialInfo.UANNumber ? viewData.FinancialInfo.UANNumber : ""} readOnly className="mb-2" />
+                <InputText placeholder="PAN Number" value={viewData.FinancialInfo && viewData.FinancialInfo.PANNumber ? viewData.FinancialInfo.PANNumber : ""} readOnly className="mb-2" />
+              </div>
+            </TabPanel>
+            <TabPanel header="Work History">
+              <div className="p-fluid">
+                <InputText placeholder="Company Name" value={viewData.WorkHistory && viewData.WorkHistory.CompanyName ? viewData.WorkHistory.CompanyName : ""} readOnly className="mb-2" />
+                <InputText placeholder="Role" value={viewData.WorkHistory && viewData.WorkHistory.Role ? viewData.WorkHistory.Role : ""} readOnly className="mb-2" />
+                <InputText placeholder="Start Date" value={viewData.WorkHistory && viewData.WorkHistory.StartDate ? viewData.WorkHistory.StartDate.slice(0, 10) : ""} readOnly className="mb-2" />
+                <InputText placeholder="End Date" value={viewData.WorkHistory && viewData.WorkHistory.EndDate ? viewData.WorkHistory.EndDate.slice(0, 10) : ""} readOnly className="mb-2" />
+                <InputText placeholder="Date Of Joining" value={viewData.WorkHistory && viewData.WorkHistory.DateOfJoining ? viewData.WorkHistory.DateOfJoining.slice(0, 10) : ""} readOnly className="mb-2" />
+                <InputText placeholder="Relieving Date" value={viewData.WorkHistory && viewData.WorkHistory.RelievingDate ? viewData.WorkHistory.RelievingDate.slice(0, 10) : ""} readOnly className="mb-2" />
+                <div className="flex align-items-center mt-2 mb-2">
+                  <Checkbox inputId="tpv-view" checked={viewData.WorkHistory ? !!viewData.WorkHistory.ThirdPartyVerification : false} readOnly />
+                  <label htmlFor="tpv-view" className="ml-2">Third Party Verification</label>
+                </div>
+                <div className="mb-2">
+                  <label>Resume</label>
+                  <InputText value={viewData.WorkHistory ? (viewData.WorkHistory.UploadResume || "") : ""} readOnly className="w-full" />
+                </div>
+              </div>
+            </TabPanel>
+          </TabView>
+        )}
+      </Dialog>
 
     </div>
   );
 };
 
 export default StaffPage;
+
