@@ -32,12 +32,13 @@ const Notification = ({ propId }) => {
   };
 
   useEffect(() => {
-    if (propId && propId !== 0) {
-      NOTIFICATION_TYPES.forEach((type) => loadNotification(type));
-    } else {
-      console.warn("Property ID is not set or invalid:", propId);
-    }
-  }, [propId,showType]);
+  if (propId && propId !== 0) {
+    NOTIFICATION_TYPES.forEach((type) => loadNotification(type));
+  } else {
+    console.warn("Property ID is not set or invalid:", propId);
+  }
+}, [propId]); // only reload when property changes
+
 
   const handleShowList = (type) => {
     setShowType((prev) => (prev === type ? null : type));
