@@ -15,7 +15,6 @@ import FacilityService, { FacilityMemberService ,getEmployeesByOffice} from "../
 import { useSelector } from "react-redux";
 import 'primereact/resources/primereact.min.css';
 import 'primereact/resources/themes/lara-light-indigo/theme.css';
-import 'primeicons/primeicons.css';
 import {createEmployee} from "../../Services/FacilityService";
 import { Calendar } from "primereact/calendar";
 
