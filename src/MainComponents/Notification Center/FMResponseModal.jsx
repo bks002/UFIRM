@@ -37,7 +37,6 @@ const FMResponseModal = ({ notification, onClose, onReply }) => {
               </>
             ) : isAssetNotification ? (
               // Asset Notification Content
-              // Asset Notification Content
               <>
                 <p><strong>Asset ID:</strong> {notification.AssetId}</p>
                 <p><strong>Asset Name:</strong> {notification.AssetName}</p>
@@ -54,22 +53,32 @@ const FMResponseModal = ({ notification, onClose, onReply }) => {
               </>
             ) : isTicketNotification ? (
               // Ticket/Complaint Notification Content
-              <>
-                <p><strong>Ticket ID:</strong> {notification.TicketId}</p>
-                <p><strong>Ticket Number:</strong> {notification.TicketNumber}</p>
-                <p><strong>Location:</strong> {notification.Location}</p>
-                <p><strong>Reported To:</strong> {notification.SupName}</p> {/* Updated here */}
-                <p><strong>Created On:</strong> {new Date(notification.CreatedOn).toLocaleString()}</p>
-                <p><strong>Status:</strong> {notification.CurrentStatus}</p>
+  <>
+    <p><strong>Ticket ID:</strong> {notification.TicketId}</p>
+    <p><strong>Ticket Number:</strong> {notification.TicketNumber}</p>
+    <p><strong>Location:</strong> {notification.Location || 'Not specified'}</p>
+    <p><strong>Reported To:</strong> {notification.SupName}</p>
+    <p><strong>Created On:</strong> {new Date(notification.CreatedOn).toLocaleString()}</p>
+    <p><strong>Status:</strong> {notification.Status}</p>
+    <p><strong>Description:</strong> {notification.Description}</p>
 
-                <ChatBox
-                  remark={notification.SupRemark}
-                  name="Customer"  // Updated here
-                  remarkDateTime={notification.CreatedOn}
-                  status={notification.CurrentStatus}
-                  onSend={onReply}
-                />
-              </>
+    {notification.AttachmentUrl && (
+      <p>
+        <strong>Attachment:</strong>{' '}
+        <a href={notification.AttachmentUrl} target="_blank" rel="noopener noreferrer">
+          {notification.AttachmentName}
+        </a>
+      </p>
+    )}
+
+    <ChatBox
+      remark={notification.SupRemark}
+      name={notification.SupName}
+      remarkDateTime={notification.CreatedOn}
+      status={notification.Status}
+      onSend={onReply}
+    />
+  </>
             ) : (
               // Fallback for unknown notification type
               <p>Unknown notification type</p>
