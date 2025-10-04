@@ -280,7 +280,7 @@ const Home = ({ PropertyId }) => {
                     <Chart
                         type="pie"
                         data={{
-                            labels: taskStatus.map(t => t.Title),
+                            labels: taskStatus.map(t => `${t.Title} (${t.Value})`),
                             // Link: `/Account/App/PlannerTask?status=${taskStatus.map(t => t.Title)}`,
                             datasets: [
                                 {
@@ -385,7 +385,7 @@ const Home = ({ PropertyId }) => {
         <Chart
             type="doughnut"
             data={{
-                labels: complains.map(c => c.Title),
+                 labels: complains.map(c => `${c.Title} (${c.Value})`),
                 datasets: [
                     {
                         data: complains.map(c => c.Value),
@@ -484,42 +484,80 @@ const Home = ({ PropertyId }) => {
 
 
             {/* 2. Lift (API based DashboardCard) */}
-            <div className="col-md-3">
-                <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
-                <DashboardCard
-                    CardTitle="Lift"
-                    HeaderValue={(subCategoryTaskData[4]
-                        ? Object.values(subCategoryTaskData[4]).reduce((a, b) => a + b, 0)
-                        : 0)}
-                    HeaderClass="card card-danger cardutline"
-                    ItemJson={[
-                        { Title: "Actionable", Value: subCategoryTaskData[4] ? subCategoryTaskData[4].Actionable || 0 : 0 },
-                        { Title: "Completed", Value: subCategoryTaskData[4] ? subCategoryTaskData[4].Completed || 0 : 0 },
-                        { Title: "Pending", Value: subCategoryTaskData[4] ? subCategoryTaskData[4].Pending || 0 : 0 }
-                    ]}
-                    Link="/Account/App/PlannerTask"
-                />
-                </div>
-            </div>
+           {/* 2. Lift Line Chart */}
+{/* 2. Lift Line Chart */}
+<div className="col-md-3">
+    <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
+        <h5 className="text-center">Lift</h5>
+         <Link to="/Account/App/PlannerTask" style={{ textDecoration: "none" }}>
+        <Chart
+            type="line"
+            data={{
+                labels: ["Actionable", "Completed", "Pending"],
+                datasets: [
+                    {
+                        label: "Lift Tasks",
+                        data: [
+                            subCategoryTaskData[4] ? subCategoryTaskData[4].Actionable || 0 : 0,
+                            subCategoryTaskData[4] ? subCategoryTaskData[4].Completed || 0 : 0,
+                            subCategoryTaskData[4] ? subCategoryTaskData[4].Pending || 0 : 0
+                        ],
+                        fill: false,
+                        borderColor: "#42A5F5",
+                        tension: 0.4
+                    }
+                ]
+            }}
+            options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }}
+            style={{ width: "100%", height: "220px" }}
+           
+        />
+        </Link>
+    </div>
+</div>
 
-            {/* 3. DG (API based DashboardCard) */}
-            <div className="col-md-3">
-                <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
-                <DashboardCard
-                    CardTitle="DG"
-                    HeaderValue={(subCategoryTaskData[69]
-                        ? Object.values(subCategoryTaskData[69]).reduce((a, b) => a + b, 0)
-                        : 0)}
-                    HeaderClass="card card-danger cardutline"
-                    ItemJson={[
-                        { Title: "Actionable", Value: subCategoryTaskData[69] ? subCategoryTaskData[69].Actionable || 0 : 0 },
-                        { Title: "Completed", Value: subCategoryTaskData[69] ? subCategoryTaskData[69].Completed || 0 : 0 },
-                        { Title: "Pending", Value: subCategoryTaskData[69] ? subCategoryTaskData[69].Pending || 0 : 0 }
-                    ]}
-                    Link="/Account/App/PlannerTask"
-                />
-                </div>
-            </div>
+{/* 3. DG Line Chart */}
+<div className="col-md-3">
+    <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
+        <h5 className="text-center">DG</h5>
+        <Link to="/Account/App/PlannerTask" style={{ textDecoration: "none" }}>
+        <Chart
+            type="line"
+            data={{
+                labels: ["Actionable", "Completed", "Pending"],
+                datasets: [
+                    {
+                        label: "DG Tasks",
+                        data: [
+                            subCategoryTaskData[69] ? subCategoryTaskData[69].Actionable || 0 : 0,
+                            subCategoryTaskData[69] ? subCategoryTaskData[69].Completed || 0 : 0,
+                            subCategoryTaskData[69] ? subCategoryTaskData[69].Pending || 0 : 0
+                        ],
+                        fill: false,
+                        borderColor: "#EF5350",
+                        tension: 0.4
+                    }
+                ]
+            }}
+            options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }}
+            style={{ width: "100%", height: "220px" }}
+           
+        />
+        </Link>
+    </div>
+</div>
+
+
 
         </div>
     </div>
