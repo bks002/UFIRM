@@ -533,4 +533,3 @@ const viewStaff = (row) => {
 };
 
 export default StaffPage;
-

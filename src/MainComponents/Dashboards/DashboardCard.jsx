@@ -30,7 +30,6 @@ class DashboardCard extends React.Component {
                     <ul className="nav flex-column">
                         {this.props.ItemJson.map((item, idx) => (
                             <li className="nav-item" key={idx}>
-                                
                                 {(this.props.CardTitle === "Task Status" &&
                                     <Link to={`${this.props.Link}?status=${item.Title}`} className="nav-link"
                                         style={
@@ -69,6 +68,7 @@ class DashboardCard extends React.Component {
                                     </Link>
                                 )}
                                 {(this.props.CardTitle === "DG" &&
+
                                     <Link to={`${this.props.Link}?status=${item.Title}&subCat=69`} className="nav-link"
                                         style={
                                             this.props.Entrolval.includes("Admin") || this.props.Entrolval.includes("Property Manager") ?
