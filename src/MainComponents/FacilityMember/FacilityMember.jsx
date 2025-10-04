@@ -373,7 +373,7 @@ const viewStaff = (row) => {
               {designation === "OTHER" && <InputText placeholder="Other Designation" value={otherDesignation} onChange={(e) => setOtherDesignation(e.target.value)} className="mb-2" />}
               <InputText placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="mb-2" />
               <InputText placeholder="Mobile" value={mobile} onChange={(e) => setMobile(e.target.value)} className="mb-2" />
-              <Dropdown placeholder="Department" value={department} options={[{ label: "HR", value: "HR" }, { label: "IT", value: "IT" }]}  onChange={(e) => setDepartment(e.value)} placeholder="Select Department"className="mb-2" />
+              <Dropdown placeholder="Department" value={department} options={[{ label: "HR", value: "HR" }, { label: "IT", value: "IT" }]}  onChange={(e) => setDepartment(e.value)} className="mb-2" />
               <Dropdown placeholder="Gender" value={gender} options={genders} onChange={(e) => setGender(e.value)} className="mb-2" />
               <InputText type="date" placeholder="Date of Birth" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className="mb-2" />
               <InputText placeholder="Pan Card" value={panCard} onChange={(e) => setPanCard(e.target.value)} className="mb-2" />
