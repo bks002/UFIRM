@@ -11,7 +11,7 @@ import { Dropdown } from "primereact/dropdown";
 import { Checkbox } from "primereact/checkbox";
 import { TabView, TabPanel } from "primereact/tabview";
 import "primeicons/primeicons.css";
-import FacilityService, { FacilityMemberService ,getEmployeesByOffice} from "../../Services/FacilityService";
+import FacilityService, { getEmployeesByOffice} from "../../Services/FacilityService";
 import { useSelector } from "react-redux";
 import 'primereact/resources/primereact.min.css';
 import 'primereact/resources/themes/lara-light-indigo/theme.css';
