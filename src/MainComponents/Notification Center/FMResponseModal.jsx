@@ -37,6 +37,7 @@ const FMResponseModal = ({ notification, onClose, onReply }) => {
               </>
             ) : isAssetNotification ? (
               // Asset Notification Content
+              // Asset Notification Content
               <>
                 <p><strong>Asset ID:</strong> {notification.AssetId}</p>
                 <p><strong>Asset Name:</strong> {notification.AssetName}</p>
