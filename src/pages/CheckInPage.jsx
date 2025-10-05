@@ -66,8 +66,7 @@ const CheckIn = ({sendData , close}) => {
   // Handle form submission
   const handleSubmit = (event) => {
     event.preventDefault();
-    sendData(formData);
-    console.log({formData}); // Replace with actual form submission logic
+    sendData(formData); // Replace with actual form submission logic
     // Example: Send formData to server, reset form, etc.
     setFormData({
       returnedBy: "",

@@ -67,7 +67,6 @@ const CheckOut = ({sendData, close} ) => {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    console.log(formData);
     sendData(formData);
     // Replace with actual form submission logic
     // Example: Send formData to server, reset form, etc.

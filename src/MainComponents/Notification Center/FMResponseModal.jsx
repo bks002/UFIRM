@@ -11,16 +11,19 @@ const FMResponseModal = ({ notification, onClose, onReply }) => {
     <Modal show={!!notification} onHide={onClose}>
       <Modal.Header closeButton>
         <Modal.Title>
-          {isTaskNotification ? 'Task Notification' :
-            isAssetNotification ? 'Asset Notification' :
-              isTicketNotification ? 'Complaint Notification' : 'Notification'}
+          {isTaskNotification
+            ? 'Task Notification'
+            : isAssetNotification
+            ? 'Asset Notification'
+            : isTicketNotification
+            ? 'Complaint Notification'
+            : 'Notification'}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
         {notification && (
           <div>
             {isTaskNotification ? (
-              // Task Notification Content
               <>
                 <p><strong>Task ID:</strong> {notification.TaskId}</p>
                 <p><strong>Question ID:</strong> {notification.QuestionId}</p>
@@ -32,56 +35,55 @@ const FMResponseModal = ({ notification, onClose, onReply }) => {
                   name={notification.SupName}
                   remarkDateTime={notification.SUPdateTime}
                   status={notification.CurrentStatus}
+                  context="task"  // Task context
                   onSend={onReply}
                 />
               </>
             ) : isAssetNotification ? (
-              // Asset Notification Content
-              // Asset Notification Content
               <>
                 <p><strong>Asset ID:</strong> {notification.AssetId}</p>
                 <p><strong>Asset Name:</strong> {notification.AssetName}</p>
                 <p><strong>Location:</strong> {notification.Location || 'Not specified'}</p>
-                <p><strong>Supervisor:</strong> {notification.SupName}</p>  {/* Updated here */}
+                <p><strong>Supervisor:</strong> {notification.SupName}</p>
 
                 <ChatBox
                   remark={notification.SupRemark}
-                  name={notification.SupName}   // Keep using SupName for chat
+                  name={notification.SupName}
                   remarkDateTime={notification.SupDateTime}
                   status={notification.CurrentStatus}
+                  context="asset" // Asset context
                   onSend={onReply}
                 />
               </>
             ) : isTicketNotification ? (
-              // Ticket/Complaint Notification Content
-  <>
-    <p><strong>Ticket ID:</strong> {notification.TicketId}</p>
-    <p><strong>Ticket Number:</strong> {notification.TicketNumber}</p>
-    <p><strong>Location:</strong> {notification.Location || 'Not specified'}</p>
-    <p><strong>Reported To:</strong> {notification.SupName}</p>
-    <p><strong>Created On:</strong> {new Date(notification.CreatedOn).toLocaleString()}</p>
-    <p><strong>Status:</strong> {notification.Status}</p>
-    <p><strong>Description:</strong> {notification.Description}</p>
+              <>
+                <p><strong>Ticket ID:</strong> {notification.TicketId}</p>
+                <p><strong>Ticket Number:</strong> {notification.TicketNumber}</p>
+                <p><strong>Location:</strong> {notification.Title || 'Not specified'}</p>
+                <p><strong>Reported To:</strong> {notification.SupName}</p>
+                <p><strong>Created On:</strong> {new Date(notification.CreatedOn).toLocaleString()}</p>
+                <p><strong>Status:</strong> {notification.Status}</p>
+                <p><strong>Description:</strong> {notification.Description}</p>
 
-    {notification.AttachmentUrl && (
-      <p>
-        <strong>Attachment:</strong>{' '}
-        <a href={notification.AttachmentUrl} target="_blank" rel="noopener noreferrer">
-          {notification.AttachmentName}
-        </a>
-      </p>
-    )}
+                {notification.AttachmentUrl && (
+                  <p>
+                    <strong>Attachment:</strong>{' '}
+                    <a href={notification.AttachmentUrl} target="_blank" rel="noopener noreferrer">
+                      {notification.AttachmentName}
+                    </a>
+                  </p>
+                )}
 
-    <ChatBox
-      remark={notification.SupRemark}
-      name={notification.SupName}
-      remarkDateTime={notification.CreatedOn}
-      status={notification.Status}
-      onSend={onReply}
-    />
-  </>
+                <ChatBox
+                  remark={notification.SupRemark}
+                  name={notification.SupName}
+                  remarkDateTime={notification.CreatedOn}
+                  status={notification.Status}
+                  context="ticket" // Ticket context
+                  onSend={onReply}
+                />
+              </>
             ) : (
-              // Fallback for unknown notification type
               <p>Unknown notification type</p>
             )}
           </div>

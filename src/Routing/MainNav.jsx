@@ -611,7 +611,7 @@ class MainNav extends React.Component {
                   }
 
                   {
-                    // this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager")) ?
+                     this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager") || this.state.userRoles.includes("Facility Manager") || this.state.userRoles.includes("HR")) ?
 
                     <li className="nav-item has-treeview">
                       <a href="#" className="nav-link">
@@ -744,7 +744,7 @@ class MainNav extends React.Component {
                                     </li> */}
                       </ul>
                     </li>
-                    // : null
+                     : null
                   }
 
                   {

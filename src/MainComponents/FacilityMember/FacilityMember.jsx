@@ -11,11 +11,11 @@ import { Dropdown } from "primereact/dropdown";
 import { Checkbox } from "primereact/checkbox";
 import { TabView, TabPanel } from "primereact/tabview";
 import "primeicons/primeicons.css";
-import FacilityService, { getEmployeesByOffice} from "../../Services/FacilityService";
+import FacilityService, { getEmployeesByOffice } from "../../Services/FacilityService";
 import { useSelector } from "react-redux";
 import 'primereact/resources/primereact.min.css';
 import 'primereact/resources/themes/lara-light-indigo/theme.css';
-import {createEmployee} from "../../Services/FacilityService";
+import { createEmployee, updateEmployee, deleteEmployee } from "../../Services/FacilityService";
 import { Calendar } from "primereact/calendar";
 
 const StaffPage = () => {
@@ -27,17 +27,17 @@ const StaffPage = () => {
   const [globalFilterValue, setGlobalFilterValue] = useState("");
   const [selectedRow, setSelectedRow] = useState(null);
   const [viewDialogVisible, setViewDialogVisible] = useState(false);
-const [viewData, setViewData] = useState(null);
+  const [viewData, setViewData] = useState(null);
 
 
   // Dialog
   const [dialogVisible, setDialogVisible] = useState(false);
 
   // Form fields
-const [officeName, setOfficeName] = useState("");
-const [employeeCode, setEmployeeCode] = useState("");
-const [employeeName, setEmployeeName] = useState("");
- const [addressLine1, setAddressLine1] = useState("");
+  const [officeName, setOfficeName] = useState("");
+  const [employeeCode, setEmployeeCode] = useState("");
+  const [employeeName, setEmployeeName] = useState("");
+  const [addressLine1, setAddressLine1] = useState("");
   const [addressLine2, setAddressLine2] = useState("");
   const [name, setName] = useState("");
   const [gender, setGender] = useState("");
@@ -47,30 +47,29 @@ const [employeeName, setEmployeeName] = useState("");
   const [address, setAddress] = useState("");
   const [family, setFamily] = useState("");
   const [profileImage, setProfileImage] = useState(null);
-   const [dateOfBirth, setDateOfBirth] = useState("");
-const [email, setEmail] = useState("");
-const [department, setDepartment] = useState("");
-const [city, setCity] = useState("");
-const [stateName, setStateName] = useState("");
-const [panCard, setPanCard] = useState("");
-const [aadharCard, setAadharCard] = useState("");
-const [bankAccountNumber, setBankAccountNumber] = useState("");
-const [bankIFSCCode, setBankIFSCCode] = useState("");
-const [bankName, setBankName] = useState("");
-const [uanNumber, setUanNumber] = useState("");
-const [panNumber, setPanNumber] = useState("");
-const [companyName, setCompanyName] = useState("");
-const [role, setRole] = useState("");
-const [startDate, setStartDate] = useState("");
-const [endDate, setEndDate] = useState("");
-const [dateOfJoining, setDateOfJoining] = useState("");
-const [relievingDate, setRelievingDate] = useState("");
-const [tpv, setTpv] = useState(false);
-const [uploadResume, setUploadResume] = useState(null);
-
-
-
-   const propertyId = useSelector((state) => state.Commonreducer.puidn);
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [email, setEmail] = useState("");
+  const [department, setDepartment] = useState("");
+  const [city, setCity] = useState("");
+  const [stateName, setStateName] = useState("");
+  const [panCard, setPanCard] = useState("");
+  const [aadharCard, setAadharCard] = useState("");
+  const [bankAccountNumber, setBankAccountNumber] = useState("");
+  const [bankIFSCCode, setBankIFSCCode] = useState("");
+  const [bankName, setBankName] = useState("");
+  const [uanNumber, setUanNumber] = useState("");
+  const [panNumber, setPanNumber] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [role, setRole] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [dateOfJoining, setDateOfJoining] = useState("");
+  const [relievingDate, setRelievingDate] = useState("");
+  const [tpv, setTpv] = useState(false);
+  const [uploadResume, setUploadResume] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editEmployeeId, setEditEmployeeId] = useState(null);
+  const propertyId = useSelector((state) => state.Commonreducer.puidn);
 
   const genders = [
     { label: "Male", value: "Male" },
@@ -85,31 +84,30 @@ const [uploadResume, setUploadResume] = useState(null);
 
   // Fetch staff data on component mount
   useEffect(() => {
-  const fetchEmployee = async () => {
-    try {
-      const data = await getEmployeesByOffice(propertyId);
-      console.log("API response:", data);
-      setStaff(Array.isArray(data) ? data : [data]); // 👈 ensure array
-    } catch (err) {
-      console.error("Failed to load employee", err);
-      setError("Failed to load employee");
-    } finally {
+    const fetchEmployee = async () => {
+      try {
+        const data = await getEmployeesByOffice(propertyId);
+        setStaff(Array.isArray(data) ? data : [data]); // 👈 ensure array
+      } catch (err) {
+        console.error("Failed to load employee", err);
+        setError("Failed to load employee");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (propertyId) {
+      fetchEmployee();
+    } else {
       setLoading(false);
     }
+  }, [propertyId]);
+
+
+  const viewStaff = (row) => {
+    setViewData(row); // store selected row data
+    setViewDialogVisible(true);
   };
-
-  if (propertyId) {
-    fetchEmployee();
-  } else {
-    setLoading(false);
-  }
-}, [propertyId]);
-
-
-const viewStaff = (row) => {
-  setViewData(row); // store selected row data
-  setViewDialogVisible(true);
-};
   // Handlers
   const openDialog = () => {
     resetForm();
@@ -126,138 +124,163 @@ const viewStaff = (row) => {
     setProfileImage(null);
   };
 
-  
+  const openEditDialog = (row) => {
+    setIsEditMode(true);
+    setEditEmployeeId(row.Profile.EmployeeId);
 
-   const saveStaff = async () => {
-  if (!employeeName || !employeeCode || !mobile || !gender) {
-    toast.current.show({
-      severity: "warn",
-      summary: "Validation",
-      detail: "Please fill all required fields",
-    });
-    return;
-  }
+    // Prefill form
+    setEmployeeCode(row.Profile.EmployeeCode || "");
+    setEmployeeName(row.Profile.EmployeeName || "");
+    setDesignation(row.Profile.EmploymentType || "");
+    setEmail(row.Profile.Email || "");
+    setMobile(row.Profile.PhoneNumber || "");
+    setDepartment(row.Profile.Department || "");
+    setGender(row.Profile.Gender || "");
+    setDateOfBirth(row.Profile.DateOfBirth.slice(0, 10) || "");
+    setPanCard(row.Profile.PanCard || "");
+    setAadharCard(row.Profile.AadharCard || "");
+    setAddressLine1(row.Profile.AddressLine1 || "");
+    setAddressLine2(row.Profile.AddressLine2 || "");
+    setCity(row.Profile.City || "");
+    setStateName(row.Profile.State || "");
+    setCompanyName(row.WorkHistory.CompanyName || "");
+    setRole(row.WorkHistory.Role || "");
+    setStartDate(row.WorkHistory.StartDate ? new Date(row.WorkHistory.StartDate) : "");
+    setEndDate(row.WorkHistory.EndDate ? new Date(row.WorkHistory.EndDate) : "");
+    setDateOfJoining(row.WorkHistory.DateOfJoining ? new Date(row.WorkHistory.DateOfJoining) : "");
+    setRelievingDate(row.WorkHistory.RelievingDate ? new Date(row.WorkHistory.RelievingDate) : "");
+    setTpv(row.WorkHistory.ThirdPartyVerification || false);
+    setUploadResume(null);
+    setBankAccountNumber(row.FinancialInfo.BankAccountNumber || "");
+    setBankIFSCCode(row.FinancialInfo.BankIFSCCode || "");
+    setBankName(row.FinancialInfo.BankName || "");
+    setUanNumber(row.FinancialInfo.UANNumber || "");
+    setPanNumber(row.FinancialInfo.PANNumber || "");
 
-  const now = new Date().toISOString();
+    setDialogVisible(true);
+  };
 
-  
-  const employeeData = {
-    Profile: {
-      OfficeId: propertyId,
-      EmployeeCode: employeeCode,
-      EmployeeName: employeeName,
-      EmploymentType: designation,
-      CreatedOn:new Date().toISOString(),
-      UpdatedOn:new Date().toISOString(),
-      IsActive: true,
-      Email: email,
-      PhoneNumber: mobile,
-      Designation: designation,
-      Department: department,
-      Gender: gender,
-      DateOfBirth: dateOfBirth,
-      PanCard:  panCard,
-      AadharCard:  aadharCard,
-      AddressLine1: addressLine1,
-      AddressLine2: addressLine2,
-      City: city,
-      State: stateName,
-    },
-    WorkHistory: {
-      CompanyName: companyName,
-      Role: role,
-      StartDate: new Date().toISOString(),
-      EndDate: new Date().toISOString(),
-      DateOfJoining: new Date().toISOString(),
-      RelievingDate:new Date().toISOString(),
-      ThirdPartyVerification: false,
-      UploadResume: uploadResume ? uploadResume.name : "",
-      CreatedOn: new Date().toISOString(),
-      UpdatedOn:new Date().toISOString(),
-      IsActive: true
-    },
-    FinancialInfo: {
-      BankAccountNumber:bankAccountNumber,
-      BankIFSCCode: bankIFSCCode,
-      BankName: bankName,
-      UANNumber: uanNumber,
-      PANNumber: panNumber,
-      CreatedOn:new Date().toISOString(),
-      UpdatedOn: new Date().toISOString(),
-      IsActive: true
-    },
-    FacilityMember: {
-      PropertyId: propertyId || 0,
-      Address: address,
-      FacilityMasterId: 0,
-      ProfileImageUrl: profileImage || "",
-      IsBlocked: false,
-      AccessCode: "",
-      IsApproved: false,
-      ApprovedOn: now,
-      ApprovedBy: 0,
-      IsActive: true,
-      IsDeleted: false,
-      CreatedBy: 0,
-      CreatedOn: new Date().toISOString(),
-      UpdatedBy: 0,
-      UpdatedOn: new Date().toISOString(),
-      oldID: 0,
-      Password: "",
-      SG_Link_ID: 0,
-      tax_amount: 0
-    },
-    EmployeeList: {
-      FatherName: family,
-      IsDeleted: 0,
-      Approved: 0
+  const saveStaff = async () => {
+    if (!employeeName || !employeeCode || !mobile || !gender) {
+      toast.current.show({ severity: "warn", summary: "Validation", detail: "Please fill all required fields" });
+      return;
+    }
+
+    // Determine FacilityMasterId based on designation
+    let facilityMasterId = 0;
+    if (designation === "H.K. SUPERVISOR") facilityMasterId = 19;
+    else if (designation === "TECHNICAL SUPERVISOR") facilityMasterId = 34;
+
+    const employeeData = {
+      Profile: {
+        OfficeId: propertyId,
+        EmployeeCode: employeeCode,
+        EmployeeName: employeeName,
+        EmploymentType: designation,
+        CreatedOn: new Date().toISOString(),
+        UpdatedOn: new Date().toISOString(),
+        IsActive: true,
+        Email: email,
+        PhoneNumber: mobile,
+        Designation: designation,
+        Department: department,
+        Gender: gender,
+        DateOfBirth: dateOfBirth,
+        PanCard: panCard,
+        AadharCard: aadharCard,
+        AddressLine1: addressLine1,
+        AddressLine2: addressLine2,
+        City: city,
+        State: stateName,
+      },
+      WorkHistory: {
+        CompanyName: companyName,
+        Role: role,
+        StartDate: startDate ? startDate.toISOString() : new Date().toISOString(),
+        EndDate: endDate ? endDate.toISOString() : new Date().toISOString(),
+        DateOfJoining: dateOfJoining ? dateOfJoining.toISOString() : new Date().toISOString(),
+        RelievingDate: relievingDate ? relievingDate.toISOString() : new Date().toISOString(),
+        ThirdPartyVerification: tpv,
+        UploadResume: uploadResume ? uploadResume.name : "",
+        CreatedOn: new Date().toISOString(),
+        UpdatedOn: new Date().toISOString(),
+        IsActive: true
+      },
+      FinancialInfo: {
+        BankAccountNumber: bankAccountNumber,
+        BankIFSCCode: bankIFSCCode,
+        BankName: bankName,
+        UANNumber: uanNumber,
+        PANNumber: panNumber,
+        CreatedOn: new Date().toISOString(),
+        UpdatedOn: new Date().toISOString(),
+        IsActive: true
+      },
+      FacilityMember: {
+        PropertyId: propertyId || 0,
+        Address: address,
+        FacilityMasterId: facilityMasterId, // ✅ Set based on designation
+        ProfileImageUrl: profileImage || "",
+        IsBlocked: false,
+        AccessCode: "",
+        IsApproved: false,
+        ApprovedOn: new Date().toISOString(),
+        ApprovedBy: 0,
+        IsActive: true,
+        IsDeleted: false,
+        CreatedBy: 0,
+        CreatedOn: new Date().toISOString(),
+        UpdatedBy: 0,
+        UpdatedOn: new Date().toISOString(),
+        oldID: 0,
+        Password: "",
+        SG_Link_ID: 0,
+        tax_amount: 0
+      },
+      EmployeeList: {
+        FatherName: family,
+        IsDeleted: 0,
+        Approved: 0
+      }
+    };
+
+    try {
+      if (isEditMode) {
+        await updateEmployee(editEmployeeId, employeeData);
+        toast.current.show({ severity: "success", summary: "Updated", detail: "Staff updated successfully" });
+        setStaff(staff.map(s => (s.Profile.EmployeeID === editEmployeeId ? { ...s, ...employeeData } : s)));
+      } else {
+        const response = await createEmployee(employeeData);
+        toast.current.show({ severity: "success", summary: "Added", detail: "Staff member added successfully" });
+        setStaff([...staff, response]);
+      }
+      setDialogVisible(false);
+      setIsEditMode(false);
+      setEditEmployeeId(null);
+    } catch (error) {
+      toast.current.show({ severity: "error", summary: "Error", detail: isEditMode ? "Failed to update employee" : "Failed to create employee" });
     }
   };
 
-  try {
-    const response = await createEmployee(employeeData);
-    toast.current.show({
-      severity: "success",
-      summary: "Added",
-      detail: "Staff member added successfully",
-    });
-    setDialogVisible(false);
-    setStaff([...staff, response]);
-  } catch (error) {
-    toast.current.show({
-      severity: "error",
-      summary: "Error",
-      detail: "Failed to create employee",
-    });
-  }
-};
-
-
-    
-
-  const deleteStaff = () => {
-    if (selectedRow) {
-      // Here you should call DELETE API to remove staff
-      setStaff(staff.filter((s) => s.FacilityMemberId !== selectedRow.FacilityMemberId));
-      toast.current.show({
-        severity: "success",
-        summary: "Deleted",
-        detail: "Staff deleted successfully",
-      });
+  const deleteStaff = async () => {
+    if (!selectedRow) return;
+    try {
+      await deleteEmployee(selectedRow.Profile.EmployeeId);
+      setStaff(staff.filter(s => s.Profile.EmployeeId !== selectedRow.Profile.EmployeeId));
+      toast.current.show({ severity: "success", summary: "Deleted", detail: "Staff deleted successfully" });
       setSelectedRow(null);
+    } catch (error) {
+      toast.current.show({ severity: "error", summary: "Error", detail: "Failed to delete staff" });
     }
   };
 
   const actionBody = (rowData) => (
-  <Checkbox
-    inputId={"cb-" + rowData.FacilityMemberId}
-    checked={selectedRow && selectedRow.FacilityMemberId === rowData.FacilityMemberId}
-    onChange={(e) => setSelectedRow(e.checked ? rowData : null)}
-  />
-);
-
-
-
+    <Checkbox
+      inputId={"cb-" + rowData.FacilityMemberId}
+      checked={selectedRow && selectedRow.FacilityMemberId === rowData.FacilityMemberId}
+      onChange={(e) => setSelectedRow(e.checked ? rowData : null)}
+    />
+  );
 
 
   const header = (
@@ -266,18 +289,21 @@ const viewStaff = (row) => {
       <div className="d-flex align-items-center gap-2">
         {selectedRow && (
           <>
-            <Button icon="pi pi-pencil" className="p-button-rounded p-button-text p-button-info" />
-            <Button icon="pi pi-trash" className="p-button-rounded p-button-text p-button-danger" onClick={deleteStaff} />
             <Button
-  icon="pi pi-ban"
-  className="p-button-rounded p-button-text p-button-warning"
-/>
-
-<Button
-  icon="pi pi-eye"
-  className="p-button-rounded p-button-text p-button-help"
-  onClick={() => viewStaff(selectedRow)}
-/>
+              icon="pi pi-pencil"
+              className="p-button-rounded p-button-text p-button-info"
+              onClick={() => openEditDialog(selectedRow)}
+            />
+            <Button
+              icon="pi pi-trash"
+              className="p-button-rounded p-button-text p-button-danger"
+              onClick={deleteStaff}
+            />
+            <Button
+              icon="pi pi-eye"
+              className="p-button-rounded p-button-text p-button-help"
+              onClick={() => viewStaff(selectedRow)}
+            />
             <Button
               icon="pi pi-key"
               className="p-button-rounded p-button-text p-button-secondary"
@@ -288,28 +314,24 @@ const viewStaff = (row) => {
                   toast.current.show({
                     severity: response.Success ? "success" : "error",
                     summary: "Reset Password",
-                    detail: response.Message || (response.Success ? "Password reset successfully" : "Failed to reset password"),
+                    detail: response.Message || (response.Success ? "Password reset successfully" : "Failed"),
                   });
                 } catch (error) {
-                  toast.current.show({
-                    severity: "error",
-                    summary: "Reset Password",
-                    detail: error.Message || "Server Error",
-                  });
+                  toast.current.show({ severity: "error", summary: "Reset Password", detail: "Server Error" });
                 }
               }}
             />
           </>
         )}
 
-       <div className="p-input-left">
-  
-  <InputText
-    value={globalFilterValue}
-    onChange={(e) => setGlobalFilterValue(e.target.value)}
-    placeholder="Search..."
-  />
-</div>
+        <div className="p-input-left">
+
+          <InputText
+            value={globalFilterValue}
+            onChange={(e) => setGlobalFilterValue(e.target.value)}
+            placeholder="Search..."
+          />
+        </div>
 
         <Button label="Add Staff" icon="pi pi-plus" onClick={openDialog} className="p-button-success" />
       </div>
@@ -325,24 +347,24 @@ const viewStaff = (row) => {
           <div className="card">
             <div className="p-3">
               <DataTable
-  value={staff}
-  dataKey="FacilityMember.FacilityMemberId"
-  header={header}
-  paginator
-  rows={5}
-  loading={loading}
-  responsiveLayout="scroll"
-  emptyMessage="No staff found."
-  selection={selectedRow}
-  onSelectionChange={(e) => setSelectedRow(e.value)}
->
-  <Column selectionMode="single" headerStyle={{ width: '3em' }} />
- <Column header="Name" body={(row) => row.FacilityMember.Name} />
-<Column header="Gender" body={(row) => row.FacilityMember.Gender} />
-<Column header="Contact" body={(row) => row.FacilityMember.MobileNumber} />
-<Column header="Access" body={(row) => row.FacilityMember.AccessCode} />
-<Column header="Approved" body={(row) => row.FacilityMember.IsApproved ? "Yes" : "No"} />
-</DataTable>
+                value={staff}
+                dataKey="FacilityMember.FacilityMemberId"
+                header={header}
+                paginator
+                rows={5}
+                loading={loading}
+                responsiveLayout="scroll"
+                emptyMessage="No staff found."
+                selection={selectedRow}
+                onSelectionChange={(e) => setSelectedRow(e.value)}
+              >
+                <Column selectionMode="single" headerStyle={{ width: '3em' }} />
+                <Column header="Name" body={(row) => row.FacilityMember.Name} />
+                <Column header="Gender" body={(row) => row.FacilityMember.Gender} />
+                <Column header="Contact" body={(row) => row.FacilityMember.MobileNumber} />
+                <Column header="Access" body={(row) => row.FacilityMember.AccessCode} />
+                <Column header="Approved" body={(row) => row.FacilityMember.IsApproved ? "Yes" : "No"} />
+              </DataTable>
 
             </div>
           </div>
@@ -351,19 +373,19 @@ const viewStaff = (row) => {
 
       {/* Dialog remains same */}
       <Dialog
-  header="Add Facility Member"
-  visible={dialogVisible}
-  style={{ width: "800px" }}
-  modal
-  onHide={() => setDialogVisible(false)}
-  footer={
-    <div className="d-flex justify-content-end gap-2">
-      <Button label="Cancel" className="p-button-text" onClick={() => setDialogVisible(false)} />
-      <Button label="Save" icon="pi pi-check" onClick={saveStaff} />
-    </div>
-  }
->
-   <TabView>
+        header="Add Facility Member"
+        visible={dialogVisible}
+        style={{ width: "800px" }}
+        modal
+        onHide={() => setDialogVisible(false)}
+        footer={
+          <div className="d-flex justify-content-end gap-2">
+            <Button label="Cancel" className="p-button-text" onClick={() => setDialogVisible(false)} />
+            <Button label="Save" icon="pi pi-check" onClick={saveStaff} />
+          </div>
+        }
+      >
+        <TabView>
           {/* Personal Details */}
           <TabPanel header="Personal Details">
             <div className="p-fluid">
@@ -373,7 +395,7 @@ const viewStaff = (row) => {
               {designation === "OTHER" && <InputText placeholder="Other Designation" value={otherDesignation} onChange={(e) => setOtherDesignation(e.target.value)} className="mb-2" />}
               <InputText placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="mb-2" />
               <InputText placeholder="Mobile" value={mobile} onChange={(e) => setMobile(e.target.value)} className="mb-2" />
-              <Dropdown placeholder="Department" value={department} options={[{ label: "HR", value: "HR" }, { label: "IT", value: "IT" }]}  onChange={(e) => setDepartment(e.value)} className="mb-2" />
+              <Dropdown placeholder="Department" value={department} options={[{ label: "HR", value: "HR" }, { label: "IT", value: "IT" }]} onChange={(e) => setDepartment(e.value)} className="mb-2" />
               <Dropdown placeholder="Gender" value={gender} options={genders} onChange={(e) => setGender(e.value)} className="mb-2" />
               <InputText type="date" placeholder="Date of Birth" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className="mb-2" />
               <InputText placeholder="Pan Card" value={panCard} onChange={(e) => setPanCard(e.target.value)} className="mb-2" />
@@ -398,78 +420,78 @@ const viewStaff = (row) => {
 
           {/* Work History */}
           <TabPanel header="Work History">
-  <div className="p-fluid">
-    <InputText
-      placeholder="Company Name"
-      value={companyName}
-      onChange={(e) => setCompanyName(e.target.value)}
-      className="mb-2"
-    />
-    <InputText
-      placeholder="Role"
-      value={role}
-      onChange={(e) => setRole(e.target.value)}
-      className="mb-2"
-    />
+            <div className="p-fluid">
+              <InputText
+                placeholder="Company Name"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                className="mb-2"
+              />
+              <InputText
+                placeholder="Role"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="mb-2"
+              />
 
-    <Calendar
-      placeholder="Start Date"
-      value={startDate}
-      onChange={(e) => setStartDate(e.value)}
-      className="mb-2 w-full"
-      dateFormat="dd-mm-yy"
-      showIcon
-    />
+              <Calendar
+                placeholder="Start Date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.value)}
+                className="mb-2 w-full"
+                dateFormat="dd-mm-yy"
+                showIcon
+              />
 
-    <Calendar
-      placeholder="End Date"
-      value={endDate}
-      onChange={(e) => setEndDate(e.value)}
-      className="mb-2 w-full"
-      dateFormat="dd-mm-yy"
-      showIcon
-    />
+              <Calendar
+                placeholder="End Date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.value)}
+                className="mb-2 w-full"
+                dateFormat="dd-mm-yy"
+                showIcon
+              />
 
-    <Calendar
-      placeholder="Date Of Joining"
-      value={dateOfJoining}
-      onChange={(e) => setDateOfJoining(e.value)}
-      className="mb-2 w-full"
-      dateFormat="dd-mm-yy"
-      showIcon
-    />
+              <Calendar
+                placeholder="Date Of Joining"
+                value={dateOfJoining}
+                onChange={(e) => setDateOfJoining(e.value)}
+                className="mb-2 w-full"
+                dateFormat="dd-mm-yy"
+                showIcon
+              />
 
-    <Calendar
-      placeholder="Relieving Date"
-      value={relievingDate}
-      onChange={(e) => setRelievingDate(e.value)}
-      className="mb-2 w-full"
-      dateFormat="dd-mm-yy"
-      showIcon
-    />
+              <Calendar
+                placeholder="Relieving Date"
+                value={relievingDate}
+                onChange={(e) => setRelievingDate(e.value)}
+                className="mb-2 w-full"
+                dateFormat="dd-mm-yy"
+                showIcon
+              />
 
-    <div className="flex align-items-center mt-2">
-      <Checkbox
-        inputId="tpv"
-        checked={tpv}
-        onChange={(e) => setTpv(e.checked)}
-      />
-      <label htmlFor="tpv" className="ml-2">Third Party Verification</label>
-    </div>
+              <div className="flex align-items-center mt-2">
+                <Checkbox
+                  inputId="tpv"
+                  checked={tpv}
+                  onChange={(e) => setTpv(e.checked)}
+                />
+                <label htmlFor="tpv" className="ml-2">Third Party Verification</label>
+              </div>
 
-    <input
-      type="file"
-      accept=".pdf,.doc,.docx"
-      onChange={(e) => setUploadResume(e.target.files[0])}
-      className="mt-2"
-    />
-  </div>
-</TabPanel>
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx"
+                onChange={(e) => setUploadResume(e.target.files[0])}
+                className="mt-2"
+              />
+            </div>
+          </TabPanel>
 
         </TabView>
-</Dialog>
+      </Dialog>
 
-  <Dialog
+      <Dialog
         header="View Facility Member"
         visible={viewDialogVisible}
         style={{ width: "800px" }}
