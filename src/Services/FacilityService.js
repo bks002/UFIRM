@@ -113,4 +113,22 @@ export const getEmployeesByOffice = async (officeId) => {
   }
 };
 
+// Update employee
+export const updateEmployee = async (employeeId, data) => {
+  const response = await fetch(`${EMPLOYEE_API_BASE_URL}/update/${employeeId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Failed to update employee");
+  return response.json();
+};
+
+// Delete employee
+export const deleteEmployee = async (employeeId) => {
+  const response = await fetch(`${EMPLOYEE_API_BASE_URL}/delete/${employeeId}`, { method: "DELETE" });
+  if (!response.ok) throw new Error("Failed to delete employee");
+  return response.json();
+};
+
 export default FacilityService;

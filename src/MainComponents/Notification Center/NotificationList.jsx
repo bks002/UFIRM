@@ -40,19 +40,14 @@ const NotificationList = ({ nList, apiCall }) => {
     } else if (selectedNotification && selectedNotification.TicketId) {
       // Ticket notification
       newResponse = {
-        NotificationId: selectedNotification.NotificationId,
-        TicketId: selectedNotification.TicketId,
-        TicketNumber: selectedNotification.TicketNumber,
-        Title: selectedNotification.Title,
-        Description: selectedNotification.Description,
-        Priority: selectedNotification.Priority,
-        TicketType: selectedNotification.TicketType,
-        CurrentStatus: currentStatus,
-        FmRemark: message,
-        FmDateTime: new Date().toLocaleString("en-US", {
-          timeZone: "Asia/Kolkata",
-        }),
-      };
+    TicketId: selectedNotification.TicketId,
+    LocationName: selectedNotification.Title || "Unknown",
+    CurrentStatus: currentStatus,
+    FMdateTime: new Date().toISOString(),   // ISO format instead of locale string
+    FMRemark: message,
+    TicketDate: selectedNotification.TaskDate || new Date().toISOString(),
+    TransactionDate: selectedNotification.TaskDate,
+  };
     }
 
     handleSendReply(newResponse);
@@ -65,7 +60,7 @@ const NotificationList = ({ nList, apiCall }) => {
     if (newResponse.TaskId) {
       apiUrl = "https://api.urest.in:8096/FMResponse"; // complaints endpoint
     } else if (newResponse.TicketId) {
-      apiUrl = "https://api.urest.in:8096/TicketResponse"; // tickets endpoint
+      apiUrl = "https://api.urest.in:8096/FMComplaintResponse"; // tickets endpoint
     }
 
     try {
@@ -95,11 +90,7 @@ const NotificationList = ({ nList, apiCall }) => {
     <div className="notification-list-container">
       {nList.map((notification) => (
         <div
-          key={
-            notification.TaskId
-              ? notification.TaskId + notification.QuestionId
-              : notification.NotificationId
-          }
+          key={notification.TicketId || notification.TaskId || notification.NotificationId}
           className="notification-item-card"
           onClick={() => handleNotificationClick(notification)}
         >
