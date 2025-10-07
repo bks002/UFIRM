@@ -9,6 +9,7 @@ import {
 export default function SalaryGroupView({
   propertyId,
   facilityMemberId,
+  employeeName,
   onClose,
 }) {
   const [salaryGroups, setSalaryGroups] = useState([]);
@@ -16,7 +17,6 @@ export default function SalaryGroupView({
   const [selectedGroupData, setSelectedGroupData] = useState(null);
   const [finalAddedGroups, setFinalAddedGroups] = useState([]);
   const [facilityMemberSalaryData, setFacilityMemberSalaryData] = useState([]);
-
   useEffect(() => {
     if (propertyId) {
       getSalaryAllowancesByProperty(propertyId)
@@ -52,12 +52,12 @@ export default function SalaryGroupView({
 
   const safeArray = (arr) => (Array.isArray(arr) ? arr : []);
   const existingGroups = safeArray(facilityMemberSalaryData);
-  const combinedSalaryGroups = existingGroups
-    .concat(finalAddedGroups)
-    .filter(
-      (group, idx, arr) =>
-        idx === arr.findIndex((g) => g.SalaryGroup_ID === group.SalaryGroup_ID)
-    );
+  const combinedSalaryGroups =
+    finalAddedGroups.length > 0
+      ? [finalAddedGroups[finalAddedGroups.length - 1]]
+      : existingGroups.length > 0
+      ? [existingGroups[existingGroups.length - 1]]
+      : [];
 
   const handleAdd = async () => {
     if (!selectedGroupData) return;
@@ -77,7 +77,7 @@ export default function SalaryGroupView({
         FacilityMemberId: facilityMemberId,
         SalaryGroup_ID: selectedGroupData.SalaryGroup_ID,
       });
-      setFinalAddedGroups([...finalAddedGroups, { ...selectedGroupData }]);
+      setFinalAddedGroups([{ ...selectedGroupData }]);
     } catch {
       alert("Failed to add salary group. Please try again.");
     }
@@ -200,6 +200,17 @@ export default function SalaryGroupView({
         </header>
         <div style={styles.formGroup}>
           <label style={styles.label}>
+            Employee Name
+            <input
+              type="text"
+              value={employeeName || ""}
+              disabled
+              style={styles.input}
+            />
+          </label>
+        </div>
+        <div style={styles.formGroup}>
+          <label style={styles.label}>
             Salary Group Name
             <select
               value={selectedGroupId}
@@ -313,7 +324,14 @@ export default function SalaryGroupView({
         </button>
         {combinedSalaryGroups.length > 0 && (
           <section style={styles.addedSection}>
-            <h4 style={styles.addedTitle}>Added Salary Groups</h4>
+            {/* Removed <h4 style={styles.addedTitle}>Added Salary Groups</h4> */}
+            <div
+              style={{
+                borderBottom: "2px solid #e2e8f0",
+                paddingBottom: 6,
+                marginBottom: 20,
+              }}
+            ></div>
             {combinedSalaryGroups.map((group) => {
               const isFixed = Number(group.FixedSalary) > 0;
               const groupTotals = getTotals(

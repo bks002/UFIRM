@@ -242,35 +242,39 @@ export default class DataGrid extends React.Component {
               switch (btnType) {
                 case "Edit&Delete":
                   btnhtml +=
-                    '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
+                    '<button class="btn btn-sm btn-info edit-btn" title="Edit"><i class="fa fa-pen-alt"></i></button>';
                   btnhtml +=
                     '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
                   break;
+
                 case "Edit&View&Delete":
                   btnhtml +=
-                    '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
+                    '<button class="btn btn-sm btn-info edit-btn" title="Edit"><i class="fa fa-pen-alt"></i></button>';
                   btnhtml +=
-                    '<button class="btn btn-sm btn-warning" title="View" ><i class="fa fa-eye"></i></button>';
+                    '<button class="btn btn-sm btn-warning" title="View"><i class="fa fa-eye"></i></button>';
                   btnhtml +=
                     '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
                   break;
+
                 case "Edit&Approve&Reject":
                   btnhtml +=
-                    '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
+                    '<button class="btn btn-sm btn-info edit-btn" title="Edit"><i class="fa fa-pen-alt"></i></button>';
                   btnhtml +=
-                    '<button class="btn btn-sm btn-warning" title="Approve" ><i class="fa fa-check"></i></button>';
+                    '<button class="btn btn-sm btn-warning" title="Approve"><i class="fa fa-check"></i></button>';
                   btnhtml +=
                     '<button class="btn btn-sm btn-dark" title="Reject"><i class="fa fa-ban"></i></button>';
                   break;
+
                 case "View&Delete":
                   btnhtml +=
-                    '<button class="btn btn-sm btn-warning" title="View" ><i class="fa fa-eye"></i></button>';
+                    '<button class="btn btn-sm btn-warning" title="View"><i class="fa fa-eye"></i></button>';
                   btnhtml +=
                     '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
                   break;
-                case "Edit&Delete&Block&ChangePassword&ViewSalary": // CUSTOM multiaction
+
+                case "Edit&Delete&Block&ChangePassword&ViewSalary&LoanAdvances": // CUSTOM multiaction
                   btnhtml +=
-                    '<button class="btn btn-sm btn-info" title="Edit"><i class="fa fa-pen-alt"></i></button>';
+                    '<button class="btn btn-sm btn-info edit-btn" title="Edit"><i class="fa fa-pen-alt"></i></button>';
                   btnhtml +=
                     '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
                   if (Gridarray[IsBlockedFacilty] === "Blocked") {
@@ -284,10 +288,13 @@ export default class DataGrid extends React.Component {
                     '<button class="btn btn-sm btn-primary change-password-btn" title="Change Password"><i class="fa fa-key"></i></button>';
                   btnhtml +=
                     '<button class="btn btn-sm btn-secondary view-salary-btn" title="View Salary"><i class="fas fa-rupee-sign"></i></button>';
+                  btnhtml +=
+                    '<button class="btn btn-sm btn-info view-loan-advances-btn" title="Loan Advances"><i class="fas fa-hand-holding-usd"></i></button>'; // New button
                   break;
+
                 case "Edit&Delete&Block&ChangePassword":
                   btnhtml +=
-                    '<button class="btn btn-sm btn-info" title="Edit"><i class="fa fa-pen-alt"></i></button>';
+                    '<button class="btn btn-sm btn-info edit-btn" title="Edit"><i class="fa fa-pen-alt"></i></button>';
                   btnhtml +=
                     '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
                   if (Gridarray[IsBlockedFacilty] === "Blocked") {
@@ -300,64 +307,82 @@ export default class DataGrid extends React.Component {
                   btnhtml +=
                     '<button class="btn btn-sm btn-primary change-password-btn" title="Change Password"><i class="fa fa-key"></i></button>';
                   break;
+
                 case "ViewSalary":
                   btnhtml +=
                     '<button class="btn btn-sm btn-secondary view-salary-btn" title="View Salary"><i class="fas fa-rupee-sign"></i></button>';
                   break;
+
+                case "LoanAdvances":
+                  btnhtml +=
+                    '<button class="btn btn-sm btn-info view-loan-advances-btn" title="Loan Advances"><i class="fas fa-hand-holding-usd"></i></button>';
+                  break;
+
                 case "Edit":
                   btnhtml +=
-                    '<button class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pen-alt"></i></button>';
+                    '<button class="btn btn-sm btn-info edit-btn" title="Edit" data-toggle="modal" data-target="#ticketCrudModal"><i class="fa fa-pen-alt"></i></button>';
                   break;
+
                 case "Edit&Approve":
                   btnhtml +=
-                    '<button class="btn btn-sm btn-info" title="Edit/Approve" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pen-alt"></i></button>';
+                    '<button class="btn btn-sm btn-info edit-btn" title="Edit/Approve" data-toggle="modal" data-target="#ticketCrudModal"><i class="fa fa-pen-alt"></i></button>';
                   break;
+
                 case "Delete":
                   btnhtml +=
                     '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
                   break;
+
                 case "ChangePassword":
                   btnhtml +=
                     '<button class="btn btn-sm btn-primary change-password-btn" title="Change Password"><i class="fa fa-key"></i></button>';
                   break;
+
                 case "View":
                   btnhtml +=
                     '<button class="btn btn-sm btn-warning" title="View" data-toggle="modal" data-target="#ticketViewModal"><i class="fa fa-eye"></i></button>';
                   break;
+
                 case "Download":
                   btnhtml +=
                     '<button class="btn btn-sm btn-success" title="Download"><i class="fa fa-download"></i></button>';
                   break;
+
                 case "DownloadNDelete":
                   btnhtml +=
                     '<button class="btn btn-sm btn-success" title="Download"><i class="fa fa-download"></i></button>';
                   btnhtml +=
                     '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
                   break;
+
                 case "Edit&View":
                   btnhtml +=
-                    '<button class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pen-alt"></i></button>';
+                    '<button class="btn btn-sm btn-info edit-btn" title="Edit" data-toggle="modal" data-target="#ticketCrudModal"><i class="fa fa-pen-alt"></i></button>';
                   btnhtml +=
                     '<button class="btn btn-sm btn-warning" title="View" data-toggle="modal" data-target="#ticketViewModal"><i class="fa fa-eye"></i></button>';
                   break;
+
                 case "ALL":
                   btnhtml +=
-                    '<button class="btn btn-sm btn-warning" title="View" ><i class="fa fa-eye"></i></button>';
+                    '<button class="btn btn-sm btn-warning" title="View"><i class="fa fa-eye"></i></button>';
                   btnhtml +=
-                    '<button class="btn btn-sm btn-info" title="Edit" ><i class="fa fa-pen-alt"></i></button>';
+                    '<button class="btn btn-sm btn-info edit-btn" title="Edit"><i class="fa fa-pen-alt"></i></button>';
                   btnhtml +=
                     '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
                   break;
+
                 case "Manage":
                   btnhtml +=
-                    '<button class="btn btn-sm btn-info" title="Manage" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-tasks"></i></button>';
+                    '<button class="btn btn-sm btn-info" title="Manage" data-toggle="modal" data-target="#ticketCrudModal"><i class="fa fa-tasks"></i></button>';
                   break;
+
                 case "Edit&Manage":
                   btnhtml +=
-                    '<button class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pen-alt"></i></button>';
+                    '<button class="btn btn-sm btn-info edit-btn" title="Edit" data-toggle="modal" data-target="#ticketCrudModal"><i class="fa fa-pen-alt"></i></button>';
                   btnhtml +=
                     '<button class="btn btn-sm btn-info" title="Manage" data-toggle="modal" data-target="#ticketCrudModal" style="margin-left:10px"><i class="fa fa-tasks"></i></button>';
                   break;
+
                 default:
                   break;
               }
@@ -439,7 +464,7 @@ export default class DataGrid extends React.Component {
     if (this.props.GridData != null) {
       $(`#${this.props.Id} tbody`).unbind("click");
       // EDIT ACTION
-      $(`#${this.props.Id} tbody`).on("click", ".btn-info", function (iid) {
+      $(`#${this.props.Id} tbody`).on("click", ".edit-btn", function () {
         let idIndex = gridBL.GetReferenceIdIndex(
           object.props.ColumnCollection,
           "Action"
@@ -506,6 +531,23 @@ export default class DataGrid extends React.Component {
         }
       );
       // ...existing code...
+
+      $(`#${this.props.Id} tbody`).on(
+        "click",
+        ".view-loan-advances-btn",
+        function () {
+          let idIndex = gridBL.GetReferenceIdIndex(
+            object.props.ColumnCollection,
+            "Action"
+          );
+          var row = $(this).closest("tr");
+          var data = $(`#${object.props.Id}`).DataTable().row(row).data();
+          if (
+            typeof object.props.onGridViewLoanAdvances === "function") {
+            object.props.onGridViewLoanAdvances(data[idIndex]);
+          }
+        }
+      );
 
       // VIEW SALARY ACTION
       $(`#${this.props.Id} tbody`).on("click", ".view-salary-btn", function () {

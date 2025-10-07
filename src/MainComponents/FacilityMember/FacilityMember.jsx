@@ -22,6 +22,7 @@ import {
 } from "../../Contants/Common";
 import DocumentUploader from "../../ReactComponents/FileUploader/DocumentUploader.jsx";
 import SalaryGroupView from "../../ReactComponents/DataGrid/SalaryGroupView.jsx";
+import LoanAdvanceDialog from "../../ReactComponents/DataGrid/LoanAdvances.jsx";
 import SelectBox from "../../ReactComponents/SelectBox/Selectbox.jsx";
 import UrlProvider from "../../Common/ApiUrlProvider.js";
 import axios from "axios";
@@ -99,7 +100,7 @@ class FacilityMember extends React.Component {
         {
           sTitle: "Action",
           titleValue: "Action",
-          Action: "Edit&Delete&Block&ChangePassword&ViewSalary",
+          Action: "Edit&Delete&Block&ChangePassword&ViewSalary&LoanAdvances",
           Index: "0",
           orderable: false,
         },
@@ -175,6 +176,9 @@ class FacilityMember extends React.Component {
       showDocfile: "",
       showSalaryGroupView: false,
       selectedFacilityMemberId: null,
+      showLoanAdvanceDialog: false,
+      selectedLoanAdvanceId: null,
+      selectedFacilityMemberName: "",
     };
     this.onDrop = this.onDrop.bind(this);
     this.removeImage = this.removeImage.bind(this);
@@ -520,11 +524,31 @@ class FacilityMember extends React.Component {
     });
   };
 
+  onGridViewLoanAdvances = (id) => {
+    const rowData = this.findByRowId(id);
+    this.setState({
+      selectedLoanAdvanceId: rowData.facilityMemberId,
+      showLoanAdvanceDialog: true,
+    });
+  };
+
+  closeLoanAdvanceDialog = () => {
+    this.setState({
+      showLoanAdvanceDialog: false,
+      selectedLoanAdvanceId: null,
+    });
+  };
+
   openSalaryGroupView = (facilityMemberId) => {
-    // Optionally store which facility member requested salary view if needed
+    const member = this.state.gridFacilityMemberData.find(
+      (m) => m.facilityMemberId === facilityMemberId
+    );
+    const memberName = member ? member.name : "";
+
     this.setState({
       showSalaryGroupView: true,
       selectedFacilityMemberId: facilityMemberId,
+      selectedFacilityMemberName: memberName,
     });
   };
 
@@ -1658,6 +1682,9 @@ class FacilityMember extends React.Component {
                     onGridBlockMethod={this.onGridBlock.bind(this)}
                     onGridChangePassword={this.onGridChangePassword.bind(this)}
                     onGridViewSalary={this.onGridViewSalary.bind(this)}
+                    onGridViewLoanAdvances={this.onGridViewLoanAdvances.bind(
+                      this
+                    )}
                     DefaultPagination={false}
                     IsSarching="true"
                     GridData={this.state.gridFacilityMemberData}
@@ -1669,8 +1696,17 @@ class FacilityMember extends React.Component {
                     <SalaryGroupView
                       propertyId={this.state.PropertyId}
                       facilityMemberId={this.state.selectedFacilityMemberId}
+                      employeeName={this.state.selectedFacilityMemberName}
                       onClose={this.closeSalaryGroupView}
                       // optionally pass selectedFacilityMemberId={this.state.selectedFacilityMemberId}
+                    />
+                  )}
+
+                  {this.state.showLoanAdvanceDialog && (
+                    <LoanAdvanceDialog
+                      show={this.state.showLoanAdvanceDialog}
+                      onClose={this.closeLoanAdvanceDialog}
+                      facilityMemberId={this.state.selectedLoanAdvanceId} // Pass as prop
                     />
                   )}
 
@@ -1731,132 +1767,158 @@ class FacilityMember extends React.Component {
 
         {/* ... Add Staff from ... */}
 
-            {this.state.PageMode === "Add" && (
-  <div className="row justify-content-center">
-    <div className="col-12 col-sm-8 col-md-6 col-lg-5">
-      <div className="card p-2">
-        <div className="card-header py-2">
-          <h6 className="mb-0">Add Staff Member</h6>
-        </div>
-        <div className="card-body p-2">
-          {/* Name */}
-          <div className="form-group mb-2">
-            <label className="mb-1" style={{ fontSize: '0.95em' }}>Name</label>
-            <InputBox
-              Value={this.state.Name}
-              onChange={value => this.updateData("Name", value)}
-              ClassName="form-control form-control-sm"
-            />
-          </div>
-          
-          {/* Gender */}
-          <div className="form-group mb-2">
-            <label className="mb-1" style={{ fontSize: '0.95em' }}>Gender</label>
-            <DropDownList
-              Options={this.state.GenderList}
-              Value={this.state.Gender}
-              onChange={e => this.onDropdownChanges("Gender", e.target.value)}
-              ClassName="form-control form-control-sm"
-            />
-          </div>
-          
-          {/* Mobile Number */}
-          <div className="form-group mb-2">
-            <label className="mb-1" style={{ fontSize: '0.95em' }}>Mobile Number</label>
-            <InputBox
-              Value={this.state.Contact}
-              onChange={value => this.updateData("Contact", value)}
-              ClassName="form-control form-control-sm"
-            />
-          </div>
-          
-          {/* Designition Dropdown */}
-          <div className="form-group mb-2">
-            <label className="mb-1" style={{ fontSize: '0.95em' }}>Designition</label>
-            <select
-              className="form-control form-control-sm"
-              value={this.state.Designition || ""}
-              onChange={e => this.setState({ Designition: e.target.value, ShowOtherText: e.target.value === "OTHER" })}
-            >
-              <option value="">Select Designition</option>
-              <option value="H.K. SUPERVISOR">H.K. SUPERVISOR</option>
-              <option value="TECHNICAL SUPERVISOR">TECHNICAL SUPERVISOR</option>
-              <option value="OTHER">OTHER</option>
-            </select>
-          </div>
-          
-          {/* Other Designition Textbox */}
-          {this.state.ShowOtherText && (
-            <div className="form-group mb-2">
-              <label className="mb-1" style={{ fontSize: '0.95em' }}>Other Designition</label>
-              <InputBox
-                Value={this.state.OtherDesignition || ""}
-                onChange={value => this.setState({ OtherDesignition: value })}
-                ClassName="form-control form-control-sm"
-              />
+        {this.state.PageMode === "Add" && (
+          <div className="row justify-content-center">
+            <div className="col-12 col-sm-8 col-md-6 col-lg-5">
+              <div className="card p-2">
+                <div className="card-header py-2">
+                  <h6 className="mb-0">Add Staff Member</h6>
+                </div>
+                <div className="card-body p-2">
+                  {/* Name */}
+                  <div className="form-group mb-2">
+                    <label className="mb-1" style={{ fontSize: "0.95em" }}>
+                      Name
+                    </label>
+                    <InputBox
+                      Value={this.state.Name}
+                      onChange={(value) => this.updateData("Name", value)}
+                      ClassName="form-control form-control-sm"
+                    />
+                  </div>
+
+                  {/* Gender */}
+                  <div className="form-group mb-2">
+                    <label className="mb-1" style={{ fontSize: "0.95em" }}>
+                      Gender
+                    </label>
+                    <DropDownList
+                      Options={this.state.GenderList}
+                      Value={this.state.Gender}
+                      onChange={(e) =>
+                        this.onDropdownChanges("Gender", e.target.value)
+                      }
+                      ClassName="form-control form-control-sm"
+                    />
+                  </div>
+
+                  {/* Mobile Number */}
+                  <div className="form-group mb-2">
+                    <label className="mb-1" style={{ fontSize: "0.95em" }}>
+                      Mobile Number
+                    </label>
+                    <InputBox
+                      Value={this.state.Contact}
+                      onChange={(value) => this.updateData("Contact", value)}
+                      ClassName="form-control form-control-sm"
+                    />
+                  </div>
+
+                  {/* Designition Dropdown */}
+                  <div className="form-group mb-2">
+                    <label className="mb-1" style={{ fontSize: "0.95em" }}>
+                      Designition
+                    </label>
+                    <select
+                      className="form-control form-control-sm"
+                      value={this.state.Designition || ""}
+                      onChange={(e) =>
+                        this.setState({
+                          Designition: e.target.value,
+                          ShowOtherText: e.target.value === "OTHER",
+                        })
+                      }
+                    >
+                      <option value="">Select Designition</option>
+                      <option value="H.K. SUPERVISOR">H.K. SUPERVISOR</option>
+                      <option value="TECHNICAL SUPERVISOR">
+                        TECHNICAL SUPERVISOR
+                      </option>
+                      <option value="OTHER">OTHER</option>
+                    </select>
+                  </div>
+
+                  {/* Other Designition Textbox */}
+                  {this.state.ShowOtherText && (
+                    <div className="form-group mb-2">
+                      <label className="mb-1" style={{ fontSize: "0.95em" }}>
+                        Other Designition
+                      </label>
+                      <InputBox
+                        Value={this.state.OtherDesignition || ""}
+                        onChange={(value) =>
+                          this.setState({ OtherDesignition: value })
+                        }
+                        ClassName="form-control form-control-sm"
+                      />
+                    </div>
+                  )}
+
+                  {/* Address */}
+                  <div className="form-group mb-2">
+                    <label className="mb-1" style={{ fontSize: "0.95em" }}>
+                      Address
+                    </label>
+                    <InputBox
+                      Value={this.state.Address}
+                      onChange={(value) => this.updateData("Address", value)}
+                      ClassName="form-control form-control-sm"
+                    />
+                  </div>
+
+                  {/* Facility Member Dropdown */}
+                  <div className="form-group mb-2">
+                    <label className="mb-1" style={{ fontSize: "0.95em" }}>
+                      Facility Member
+                    </label>
+                    <DropDownList
+                      Options={this.state.FacilityMaster}
+                      Value={this.state.FacilityMasterId}
+                      onChange={(e) =>
+                        this.onDropdownChanges("FacilityMaster", e.target.value)
+                      }
+                      ClassName="form-control form-control-sm"
+                    />
+                  </div>
+
+                  {/* Image upload */}
+                  <div className="form-group mb-2">
+                    <label className="mb-1" style={{ fontSize: "0.95em" }}>
+                      Profile Image
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={this.onImageChange.bind(this)}
+                      className="form-control form-control-sm"
+                    />
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="form-group mb-1 d-flex justify-content-end">
+                    <Button
+                      ClassName="btn btn-success btn-sm"
+                      Action={() => this.handleSave("Add")}
+                      Text="Save"
+                    />
+                    <Button
+                      ClassName="btn btn-secondary btn-sm ml-2"
+                      Action={this.handleCancel}
+                      Text="Cancel"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
-          
-          {/* Address */}
-          <div className="form-group mb-2">
-            <label className="mb-1" style={{ fontSize: '0.95em' }}>Address</label>
-            <InputBox
-              Value={this.state.Address}
-              onChange={value => this.updateData("Address", value)}
-              ClassName="form-control form-control-sm"
-            />
           </div>
-          
-          {/* Facility Member Dropdown */}
-          <div className="form-group mb-2">
-            <label className="mb-1" style={{ fontSize: '0.95em' }}>Facility Member</label>
-            <DropDownList
-              Options={this.state.FacilityMaster}
-              Value={this.state.FacilityMasterId}
-              onChange={e => this.onDropdownChanges("FacilityMaster", e.target.value)}
-              ClassName="form-control form-control-sm"
-            />
-          </div>
-          
-          {/* Image upload */}
-          <div className="form-group mb-2">
-            <label className="mb-1" style={{ fontSize: '0.95em' }}>Profile Image</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={this.onImageChange.bind(this)}
-              className="form-control form-control-sm"
-            />
-          </div>
-          
-          {/* Buttons */}
-          <div className="form-group mb-1 d-flex justify-content-end">
-            <Button
-              ClassName="btn btn-success btn-sm"
-              Action={() => this.handleSave("Add")}
-              Text="Save"
-            />
-            <Button
-              ClassName="btn btn-secondary btn-sm ml-2"
-              Action={this.handleCancel}
-              Text="Cancel"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-
-
-
+        )}
       </div>
     );
   }
 }
 
 function mapStoreToprops(state, props) {
-  return {  
+  return {
     PropertyId: state.Commonreducer.puidn,
   };
 }

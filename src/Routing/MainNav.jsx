@@ -86,6 +86,10 @@ import ExpenseMaster from "../MainComponents/Expense/ExpenseMaster.jsx";
 import ExpenseTypeMaster from "../MainComponents/Expense/ExpenseTypeMaster.jsx";
 import ExpenseReport from "../MainComponents/Expense/ExpenseReport.jsx";
 import Formula from "../MainComponents/FacilityMember/Formula.jsx";
+import GenerateSalary from "../MainComponents/Payroll/GenerateSalary.jsx";  
+import ProfessionalTax from "../MainComponents/Payroll/ProfessionalTax.jsx";
+import LabourFund from "../MainComponents/Payroll/LabourFund.jsx";
+import AttendanceSheet from "../MainComponents/Payroll/AttendanceSheet.jsx";
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -632,15 +636,51 @@ class MainNav extends React.Component {
                             <p>Facility Member </p>
                           </Link>
                         </li>
-                        <li className="nav-item">
+                         <li className="nav-item">
                           <Link
-                            to="/Account/App/Formula"
+                            to="/Account/App/GenerateSalary"
                             className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Formula</p>
+                            <p>Generate Salary</p>
                           </Link>
                         </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/ProfessionalTax"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Professional Tax</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/LabourFund"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Labour Welfare Fund</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/AttendanceSheet"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p> Attendance Sheet </p>
+                          </Link>
+                        </li> 
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/SalaryGroups"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p> Salary Groups </p>
+                          </Link>
+                        </li> 
                         <li className="nav-item">
                           <Link
                             to="/Account/App/AllowanceDeduction"
@@ -652,13 +692,13 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                            to="/Account/App/SalaryGroups"
+                            to="/Account/App/Formula"
                             className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Salary Groups </p>
+                            <p>Formula</p>
                           </Link>
-                        </li>    
+                        </li>   
                         <li className="nav-item">
                           <Link
                             to="/Account/App/Facility"
@@ -1371,6 +1411,10 @@ class MainNav extends React.Component {
             <Route path="/Account/App/UploaderPage">
               <UploaderPage />
             </Route>
+            <Route path="/Account/App/AttendanceSheet" component={AttendanceSheet} />
+            <Route path="/Account/App/LabourFund" component={LabourFund} />
+            <Route path="/Account/App/ProfessionalTax" component={ProfessionalTax} />
+            <Route path="/Account/App/GenerateSalary" component={GenerateSalary} />
             <Route path="/Account/App/SalaryGroups" component={SalaryGroups} />
             <Route path="/Account/App/AllowanceDeduction" component={AllowanceDeduction} />
             <Route path="/Account/App/Formula" component={Formula} />
