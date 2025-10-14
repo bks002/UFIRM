@@ -105,7 +105,7 @@ const NotificationList = ({ nList, apiCall }) => {
               // Ticket notification display
               <span>
                 <b>{notification.TicketNumber}</b> ({notification.Status}) –{" "}
-                {notification.SupName}: {notification.SupRemark}
+                {notification.SupName || 'All'}: {notification.SupRemark || 'No remarks'}
               </span>
             )}
           </div>
