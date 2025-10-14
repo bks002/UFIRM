@@ -126,9 +126,9 @@ const StaffPage = () => {
 
   const openEditDialog = (row) => {
     setIsEditMode(true);
-    setEditEmployeeId(row.Profile.EmployeeId);
+    setEditEmployeeId(row.FacilityMember.FacilityMemberId); // ✅ use FacilityMemberId
 
-    // Prefill form
+    // Prefill the form (same as before)
     setEmployeeCode(row.Profile.EmployeeCode || "");
     setEmployeeName(row.Profile.EmployeeName || "");
     setDesignation(row.Profile.EmploymentType || "");
@@ -136,7 +136,7 @@ const StaffPage = () => {
     setMobile(row.Profile.PhoneNumber || "");
     setDepartment(row.Profile.Department || "");
     setGender(row.Profile.Gender || "");
-    setDateOfBirth(row.Profile.DateOfBirth.slice(0, 10) || "");
+    setDateOfBirth(row.Profile.DateOfBirth ? row.Profile.DateOfBirth.slice(0, 10) : "");
     setPanCard(row.Profile.PanCard || "");
     setAadharCard(row.Profile.AadharCard || "");
     setAddressLine1(row.Profile.AddressLine1 || "");
@@ -166,11 +166,66 @@ const StaffPage = () => {
       return;
     }
 
-    // Determine FacilityMasterId based on designation
+    let profileImageUrl = "";
+
+    if (profileImage && profileImage instanceof File) {
+      if (!["image/jpeg", "image/png"].includes(profileImage.type)) {
+        toast.current.show({
+          severity: "warn",
+          summary: "Validation",
+          detail: "Only JPG or PNG images are allowed",
+        });
+        return;
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append("images", profileImage); // use key 'images' as API expects
+
+        const res = await fetch("http://194.238.18.39:8000/upload/", {
+          method: "POST",
+          body: formData,
+        });
+
+        let data;
+        try {
+          data = await res.json();
+        } catch {
+          data = await res.text(); // fallback for plain text
+        }
+
+        console.log("Response data:", data);
+
+        if (!res.ok) throw new Error(`Upload failed with status ${res.status}`);
+
+        console.log("Response status:", res.status);
+
+        // const text = await res.text(); // <-- use text instead of json
+        // console.log("Response text:", text);
+
+        //         profileImageUrl =
+        //           text.uploaded && text.uploaded.length > 0 ? text.uploaded[0] : "";
+
+        if (!profileImageUrl) throw new Error("No image URL returned from server");
+      } catch (err) {
+        console.error("Image upload error:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to upload profile image",
+        });
+        return; // stop saving if upload fails
+      }
+    }
+
+
+
+    // 2️⃣ Determine FacilityMasterId
     let facilityMasterId = 0;
     if (designation === "H.K. SUPERVISOR") facilityMasterId = 19;
     else if (designation === "TECHNICAL SUPERVISOR") facilityMasterId = 34;
 
+    // 3️⃣ Prepare employee payload
     const employeeData = {
       Profile: {
         OfficeId: propertyId,
@@ -219,11 +274,11 @@ const StaffPage = () => {
       FacilityMember: {
         PropertyId: propertyId || 0,
         Address: address,
-        FacilityMasterId: facilityMasterId, // ✅ Set based on designation
-        ProfileImageUrl: profileImage || "",
+        FacilityMasterId: facilityMasterId,
+        ProfileImageUrl: profileImageUrl, // ✅ use uploaded image URL
         IsBlocked: false,
         AccessCode: "",
-        IsApproved: false,
+        IsApproved: true,
         ApprovedOn: new Date().toISOString(),
         ApprovedBy: 0,
         IsActive: true,
@@ -240,7 +295,7 @@ const StaffPage = () => {
       EmployeeList: {
         FatherName: family,
         IsDeleted: 0,
-        Approved: 0
+        Approved: 1
       }
     };
 
@@ -248,12 +303,15 @@ const StaffPage = () => {
       if (isEditMode) {
         await updateEmployee(editEmployeeId, employeeData);
         toast.current.show({ severity: "success", summary: "Updated", detail: "Staff updated successfully" });
-        setStaff(staff.map(s => (s.Profile.EmployeeID === editEmployeeId ? { ...s, ...employeeData } : s)));
+        setStaff(staff.map(s => (
+          s.FacilityMember.FacilityMemberId === editEmployeeId ? { ...s, ...employeeData } : s
+        )));
       } else {
         const response = await createEmployee(employeeData);
         toast.current.show({ severity: "success", summary: "Added", detail: "Staff member added successfully" });
         setStaff([...staff, response]);
       }
+
       setDialogVisible(false);
       setIsEditMode(false);
       setEditEmployeeId(null);
@@ -262,11 +320,13 @@ const StaffPage = () => {
     }
   };
 
+
   const deleteStaff = async () => {
     if (!selectedRow) return;
+
     try {
-      await deleteEmployee(selectedRow.Profile.EmployeeId);
-      setStaff(staff.filter(s => s.Profile.EmployeeId !== selectedRow.Profile.EmployeeId));
+      await deleteEmployee(selectedRow.FacilityMember.FacilityMemberId); // ✅ delete by FacilityMemberId
+      setStaff(staff.filter(s => s.FacilityMember.FacilityMemberId !== selectedRow.FacilityMember.FacilityMemberId)); // ✅ remove from state
       toast.current.show({ severity: "success", summary: "Deleted", detail: "Staff deleted successfully" });
       setSelectedRow(null);
     } catch (error) {
@@ -404,6 +464,7 @@ const StaffPage = () => {
               <InputText placeholder="Address Line 2" value={addressLine2} onChange={(e) => setAddressLine2(e.target.value)} className="mb-2" />
               <InputText placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} className="mb-2" />
               <InputText placeholder="State" value={stateName} onChange={(e) => setStateName(e.target.value)} className="mb-2" />
+              <InputText type="file" accept="image/*" onChange={(e) => setProfileImage(e.target.files[0])} className="mb-2" />
             </div>
           </TabPanel>
 

@@ -60,7 +60,7 @@ const FMResponseModal = ({ notification, onClose, onReply }) => {
                 <p><strong>Ticket ID:</strong> {notification.TicketId}</p>
                 <p><strong>Ticket Number:</strong> {notification.TicketNumber}</p>
                 <p><strong>Location:</strong> {notification.Title || 'Not specified'}</p>
-                <p><strong>Reported To:</strong> {notification.SupName}</p>
+                <p><strong>Reported To:</strong> {notification.SupName || 'All'}</p>
                 <p><strong>Created On:</strong> {new Date(notification.CreatedOn).toLocaleString()}</p>
                 <p><strong>Status:</strong> {notification.Status}</p>
                 <p><strong>Description:</strong> {notification.Description}</p>
@@ -75,10 +75,10 @@ const FMResponseModal = ({ notification, onClose, onReply }) => {
                 )}
 
                 <ChatBox
-                  remark={notification.SupRemark}
-                  name={notification.SupName}
-                  remarkDateTime={notification.CreatedOn}
-                  status={notification.Status}
+                  remark={notification.SupRemark || 'No remarks'}
+                  name={notification.SupName || 'All'}
+                  remarkDateTime={notification.CreatedOn || 'Unknown'}
+                  status={notification.Status || 'Unknown'}
                   context="ticket" // Ticket context
                   onSend={onReply}
                 />
