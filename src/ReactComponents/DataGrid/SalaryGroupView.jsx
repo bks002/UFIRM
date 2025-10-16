@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import {
   getSalaryAllowancesByProperty,
   getSalaryAllowancesByFacilityMember,
-  deleteSalaryGroupFromFacilityMember,
   assignSalaryGroupToFacilityMember,
 } from "../../Services/PayrollService";
 
@@ -17,6 +16,7 @@ export default function SalaryGroupView({
   const [selectedGroupData, setSelectedGroupData] = useState(null);
   const [finalAddedGroups, setFinalAddedGroups] = useState([]);
   const [facilityMemberSalaryData, setFacilityMemberSalaryData] = useState([]);
+
   useEffect(() => {
     if (propertyId) {
       getSalaryAllowancesByProperty(propertyId)
@@ -83,20 +83,6 @@ export default function SalaryGroupView({
     }
   };
 
-  const handleDelete = async (id) => {
-    try {
-      await deleteSalaryGroupFromFacilityMember(facilityMemberId, id);
-      setFinalAddedGroups(
-        finalAddedGroups.filter((g) => g.SalaryGroup_ID !== id)
-      );
-      setFacilityMemberSalaryData((prev) =>
-        safeArray(prev).filter((g) => g.SalaryGroup_ID !== id)
-      );
-    } catch {
-      alert("Failed to delete salary group. Please try again.");
-    }
-  };
-
   function getTotals(items, salaryValue = 0) {
     const totalAllowance =
       salaryValue +
@@ -135,7 +121,6 @@ export default function SalaryGroupView({
     ? Number(selectedGroupData.FixedSalary) > 0
     : false;
 
-  // Cleaned render: no tax row at all!
   const renderAllowanceDeductionRows = (items, salaryGroup) => {
     const allowances = items.filter((a) => a.Type === "Allowance");
     const deductions = items.filter((d) => d.Type === "Deduction");
@@ -226,6 +211,7 @@ export default function SalaryGroupView({
             </select>
           </label>
         </div>
+
         {selectedGroupData && (
           <>
             <table style={styles.table} cellSpacing={0}>
@@ -306,6 +292,7 @@ export default function SalaryGroupView({
             </div>
           </>
         )}
+
         <button
           onClick={handleAdd}
           disabled={
@@ -322,16 +309,9 @@ export default function SalaryGroupView({
         >
           Add
         </button>
+
         {combinedSalaryGroups.length > 0 && (
           <section style={styles.addedSection}>
-            {/* Removed <h4 style={styles.addedTitle}>Added Salary Groups</h4> */}
-            <div
-              style={{
-                borderBottom: "2px solid #e2e8f0",
-                paddingBottom: 6,
-                marginBottom: 20,
-              }}
-            ></div>
             {combinedSalaryGroups.map((group) => {
               const isFixed = Number(group.FixedSalary) > 0;
               const groupTotals = getTotals(
@@ -347,20 +327,6 @@ export default function SalaryGroupView({
                   key={group.SalaryGroup_ID}
                   style={{ ...styles.finalGroupCard, position: "relative" }}
                 >
-                  <button
-                    onClick={() => handleDelete(group.SalaryGroup_ID)}
-                    style={styles.deleteBtn}
-                    aria-label={`Delete salary group ${group.SalaryGroup}`}
-                    title="Delete This Entry"
-                    onMouseOver={(e) =>
-                      (e.currentTarget.style.color = "#ef4444")
-                    }
-                    onMouseOut={(e) =>
-                      (e.currentTarget.style.color = "#64748b")
-                    }
-                  >
-                    🗑️
-                  </button>
                   <div style={styles.groupHeader}>
                     <span style={styles.groupName}>{group.SalaryGroup}</span>
                   </div>
@@ -575,7 +541,7 @@ const styles = {
     padding: "10px 12px",
     fontSize: 14,
     color: "#344054",
-    textAlign: "center", // Changed from left to center alignment
+    textAlign: "center",
     fontWeight: "500",
   },
   cellCenter: {
@@ -588,7 +554,7 @@ const styles = {
   button: {
     alignSelf: "flex-start",
     padding: "12px 32px",
-    backgroundColor: "#2563eb", // Blue 600
+    backgroundColor: "#2563eb",
     border: "none",
     borderRadius: 8,
     color: "white",
@@ -607,14 +573,6 @@ const styles = {
   addedSection: {
     marginTop: 32,
   },
-  addedTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#0f172a",
-    marginBottom: 20,
-    borderBottom: "2px solid #e2e8f0",
-    paddingBottom: 6,
-  },
   finalGroupCard: {
     backgroundColor: "#f9fafb",
     borderRadius: 12,
@@ -632,30 +590,5 @@ const styles = {
     fontWeight: "700",
     fontSize: 18,
     color: "#334155",
-  },
-  fixedSalary: {
-    fontWeight: "500",
-    fontSize: 15,
-    color: "#64748b",
-    marginLeft: 8,
-    fontStyle: "normal",
-  },
-  deleteBtn: {
-    position: "absolute",
-    top: 18,
-    right: 18,
-    background: "transparent",
-    border: "none",
-    fontSize: 23,
-    cursor: "pointer",
-    color: "#94a3b8",
-    padding: 0,
-    width: 32,
-    height: 32,
-    lineHeight: 1,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 10,
   },
 };

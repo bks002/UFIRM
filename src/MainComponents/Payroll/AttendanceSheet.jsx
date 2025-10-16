@@ -1,44 +1,163 @@
 import React, { useState, useEffect } from "react";
-import { getEmployeesByOffice } from "../../Services/PayrollService";
 import { useSelector } from "react-redux";
+import {
+  getAttendanceByProperty,
+  createAttendance,
+  updateAttendance
+} from "../../Services/PayrollService";
+import { getEmployeesByOffice } from "../../Services/PayrollService";
 
-export default function GenerateSalary() {
+// Helper to format monthyear as "YYYY-MM"
+function getMonthYearString(month, year) {
+  const mon = month.toString().padStart(2, "0"); // "10", "08", etc.
+  return `${year}-${mon}`;
+}
+
+export default function AttendanceSheet() {
   const officeId = useSelector((state) => state.Commonreducer.puidn);
   const [employees, setEmployees] = useState([]);
-  // Track which employees are selected with checkbox
+  const [attendanceData, setAttendanceData] = useState([]); // all attendance
+  const [filteredAttendance, setFilteredAttendance] = useState([]); // matches selected monthyear
   const [selectedEmpIds, setSelectedEmpIds] = useState(new Set());
-  // Track input values keyed by employee Id
+  const [editMode, setEditMode] = useState(new Set());
   const [dayInputs, setDayInputs] = useState({});
+  const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [year, setYear] = useState(new Date().getFullYear());
 
+  // Month/Year dropdown helpers
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+  const years = [];
+  for (let y = 2021; y <= currentYear; y++) years.push(y);
+  const maxMonth = year === currentYear ? currentMonth : 12;
+  const months = [];
+  for (let m = 1; m <= maxMonth; m++) months.push(m);
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  const propertyId = officeId;
+
+  // Load employees for this office
   useEffect(() => {
     if (officeId) {
-      getEmployeesByOffice(officeId).then((data) => {
-        setEmployees(data);
-      });
+      getEmployeesByOffice(officeId).then(data => setEmployees(data));
     }
   }, [officeId]);
 
-  const toggleCheckbox = (empId) => {
-    setSelectedEmpIds((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(empId)) {
-        newSet.delete(empId);
-      } else {
-        newSet.add(empId);
-      }
-      return newSet;
-    });
-  };
+  // Load ALL attendance by property, then filter for current monthyear
+  useEffect(() => {
+    if (propertyId) {
+      getAttendanceByProperty(propertyId).then(data => {
+        setAttendanceData(data || []);
+        const currMonthYear = getMonthYearString(month, year);
+        const filtered = (data || []).filter(item => item.monthyear === currMonthYear);
+        setFilteredAttendance(filtered);
 
-  const handleInputChange = (empId, field, value) => {
-    setDayInputs((prev) => ({
-      ...prev,
-      [empId]: {
-        ...prev[empId],
-        [field]: value,
-      },
-    }));
-  };
+        // Map existing attendance for current monthyear to input values
+        const inputs = {};
+        filtered.forEach(att => {
+          inputs[att.EmpID] = {
+            workingDays: att.WorkingDays,
+            leaveDays: att.LeaveDays,
+            weekDaysOff: att.WeekDaysOff,
+          };
+        });
+        setDayInputs(inputs);
+        setSelectedEmpIds(new Set());
+        setEditMode(new Set());
+      });
+    }
+  }, [propertyId, month, year]);
+
+  function toggleCheckbox(empId, empName) {
+    setSelectedEmpIds(prev => {
+      const next = new Set(prev);
+      if (next.has(empId)) {
+        // Save data on uncheck for selected monthyear
+        const inputs = dayInputs[empId] || { workingDays: 0, leaveDays: 0, weekDaysOff: 0 };
+        const model = {
+          EmpID: empId,
+          EmployeeName: empName,
+          WorkingDays: Number(inputs.workingDays),
+          LeaveDays: Number(inputs.leaveDays),
+          WeekDaysOff: Number(inputs.weekDaysOff),
+          PropertyID: propertyId,
+          CreatedOn: new Date().toISOString(),
+          IsActive: true,
+          monthyear: getMonthYearString(month, year)
+        };
+        const attendanceRecord = attendanceData.find(a => a.EmpID === empId && a.monthyear === getMonthYearString(month, year));
+        if (attendanceRecord) {
+          updateAttendance(empId, model).then(() => {});
+        } else {
+          createAttendance(model).then(() => {
+            getAttendanceByProperty(propertyId).then(newData => setAttendanceData(newData));
+          });
+        }
+        next.delete(empId);
+        setEditMode(prev => {
+          const copy = new Set(prev);
+          copy.delete(empId);
+          return copy;
+        });
+      } else {
+        next.add(empId);
+        setEditMode(prev => new Set(prev).add(empId));
+        if (!dayInputs[empId]) {
+          setDayInputs(old => ({
+            ...old,
+            [empId]: { workingDays: "", leaveDays: "", weekDaysOff: "" }
+          }));
+        }
+      }
+      return next;
+    });
+  }
+
+  function isNumericInput(val) {
+    return /^\d*$/.test(val);
+  }
+
+  function handleInputChange(empId, field, value, empName) {
+    if (!isNumericInput(value)) return;
+    setDayInputs(prev => {
+      const current = prev[empId] || { workingDays: "", leaveDays: "", weekDaysOff: "" };
+      return {
+        ...prev,
+        [empId]: { ...current, [field]: value }
+      };
+    });
+  }
+
+  function handleYearChange(e) {
+    const chosen = Number(e.target.value);
+    setYear(chosen);
+    if (chosen === currentYear && month > currentMonth) {
+      setMonth(currentMonth);
+    }
+  }
+
+  function exportToCSV() {
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const heading = `Attendance for: ${monthNames[month - 1]} ${year}\n\n`;
+  const header = "Employee Name,Working Days,Leave Days,Week Days Off\n";
+  const rows = employees.map((emp, idx) => {
+    const empId = emp.FacilityMember && emp.FacilityMember.FacilityMemberId ? emp.FacilityMember.FacilityMemberId : idx;
+    const name = emp.FacilityMember && emp.FacilityMember.Name ? emp.FacilityMember.Name : "Unknown";
+    const data = dayInputs[empId] || { workingDays: "", leaveDays: "", weekDaysOff: "" };
+    return `"${name}","${data.workingDays}","${data.leaveDays}","${data.weekDaysOff}"`;
+  });
+  const csv = heading + header + rows.join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = window.URL.createObjectURL(blob);
+
+  const filename = `attendance_${monthNames[month - 1].toLowerCase()}_${year}.csv`;
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  window.URL.revokeObjectURL(url);
+}
 
   return (
     <div className="content-wrapper" style={{ minHeight: "100vh", padding: 30 }}>
@@ -53,10 +172,44 @@ export default function GenerateSalary() {
           background: "#f7fafc",
         }}
       >
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 20, gap: 8 }}>
+          <select
+            value={month}
+            onChange={e => setMonth(Number(e.target.value))}
+            style={{ padding: 6, fontSize: 16 }}
+          >
+            {months.map(m => (
+              <option key={m} value={m}>{monthNames[m - 1]}</option>
+            ))}
+          </select>
+          <select
+            value={year}
+            onChange={handleYearChange}
+            style={{ padding: 6, fontSize: 16 }}
+          >
+            {years.map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+          <button
+            style={{
+              padding: "6px 14px",
+              fontSize: 16,
+              background: "#3182ce",
+              color: "#fff",
+              border: "none",
+              borderRadius: 6,
+              cursor: "pointer",
+              fontWeight: "bold",
+            }}
+            onClick={exportToCSV}
+          >
+            Export to CSV
+          </button>
+        </div>
         <h2 style={{ fontWeight: "bold", marginBottom: 20, fontSize: "2rem", color: "#2a4365" }}>
           Employee Attendance Summary
         </h2>
-
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ backgroundColor: "#f0f3fa" }}>
@@ -77,20 +230,10 @@ export default function GenerateSalary() {
               </tr>
             ) : (
               employees.map((emp, index) => {
-                const empId =
-                  (emp.EmployeeList && emp.EmployeeList.Id) ||
-                  (emp.FacilityMember && emp.FacilityMember.FacilityMemberId) ||
-                  index; // fallback id
-                const name =
-                  (emp.EmployeeList && emp.EmployeeList.EmployeeName) ||
-                  (emp.FacilityMember && emp.FacilityMember.Name) ||
-                  "Unknown";
+                const empId = emp.FacilityMember && emp.FacilityMember.FacilityMemberId ? emp.FacilityMember.FacilityMemberId : index;
+                const name = emp.FacilityMember && emp.FacilityMember.Name ? emp.FacilityMember.Name : "Unknown";
                 const isChecked = selectedEmpIds.has(empId);
-                const inputValues = dayInputs[empId] || {
-                  workingDays: "",
-                  leaveDays: "",
-                  weekDaysOff: "",
-                };
+                const inputValues = dayInputs[empId] || { workingDays: "", leaveDays: "", weekDaysOff: "" };
 
                 return (
                   <tr key={empId}>
@@ -100,37 +243,37 @@ export default function GenerateSalary() {
                       <input
                         type="checkbox"
                         checked={isChecked}
-                        onChange={() => toggleCheckbox(empId)}
+                        onChange={() => toggleCheckbox(empId, name)}
                       />
                     </td>
                     <td style={{ border: "1px solid #b0b8cc", padding: "8px", textAlign: "center" }}>
                       <input
-                        type="number"
+                        type="text"
                         value={inputValues.workingDays}
-                        onChange={(e) => handleInputChange(empId, "workingDays", e.target.value)}
+                        onChange={e => handleInputChange(empId, "workingDays", e.target.value, name)}
                         disabled={!isChecked}
                         style={{ width: "80px", textAlign: "center" }}
-                        min={0}
+                        maxLength={2}
                       />
                     </td>
                     <td style={{ border: "1px solid #b0b8cc", padding: "8px", textAlign: "center" }}>
                       <input
-                        type="number"
+                        type="text"
                         value={inputValues.leaveDays}
-                        onChange={(e) => handleInputChange(empId, "leaveDays", e.target.value)}
+                        onChange={e => handleInputChange(empId, "leaveDays", e.target.value, name)}
                         disabled={!isChecked}
                         style={{ width: "80px", textAlign: "center" }}
-                        min={0}
+                        maxLength={2}
                       />
                     </td>
                     <td style={{ border: "1px solid #b0b8cc", padding: "8px", textAlign: "center" }}>
                       <input
                         type="text"
                         value={inputValues.weekDaysOff}
-                        onChange={(e) => handleInputChange(empId, "weekDaysOff", e.target.value)}
+                        onChange={e => handleInputChange(empId, "weekDaysOff", e.target.value, name)}
                         disabled={!isChecked}
-                        placeholder="e.g. Sat, Sun"
-                        style={{ width: "100px", textAlign: "center" }}
+                        style={{ width: "80px", textAlign: "center" }}
+                        maxLength={2}
                       />
                     </td>
                   </tr>

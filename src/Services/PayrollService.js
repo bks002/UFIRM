@@ -414,3 +414,48 @@ export async function addEmployeeGeneratedSalary(data) {
   return await response.json();
 }
 
+
+// Attendance Summary API Calls
+const BASE_URL = 'https://api.urest.in:8096/api/attendance-summary';
+
+export const getAttendanceByProperty = async (propertyId) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/by-property/${propertyId}`, { withCredentials: false });
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch attendance by propertyId", error);
+    throw error;
+  }
+};
+
+export const createAttendance = async (model) => {
+  try {
+    const response = await axios.post(`${BASE_URL}`, model, { withCredentials: false });
+    return response.data;
+  } catch (error) {
+    console.error("Failed to create attendance", error);
+    throw error;
+  }
+};
+
+export const updateAttendance = async (empId, model) => {
+  try {
+    const response = await axios.put(`${BASE_URL}/${empId}`, model, { withCredentials: false });
+    return response.data;
+  } catch (error) {
+    console.error("Failed to update attendance", error);
+    throw error;
+  }
+};
+
+const APIBASE_URL = "https://api.urest.in:8096/api";
+
+export const getPropertyById = async (propertyId) => {
+  try {
+    const response = await axios.get(`${APIBASE_URL}/property/${propertyId}`, { withCredentials: false });
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch property info:", error);
+    throw error;
+  }
+};
