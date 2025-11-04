@@ -400,20 +400,42 @@ export async function getEmployeeGeneratedSalaryByOffice(officeId) {
   return await response.json();
 }
 
-// Add a new employee generated salary entry
-export async function addEmployeeGeneratedSalary(data) {
-  const response = await fetch(`https://api.urest.in:8096/api/employee/generatedSalary`, {
-    method: "POST",
+// Get employee generated salary
+export async function getEmployeeGeneratedSalaries(officeId) {
+  const response = await fetch(`https://api.urest.in:8096/api/employee/generatedSalary/${officeId}`, {
+    method: "GET",
     headers: {
-      "Content-Type": "application/json",
       "Accept": "application/json"
-    },
-    body: JSON.stringify(data)
+    }
   });
-  if (!response.ok) throw new Error("Failed to add generated salary");
+  if (!response.ok) throw new Error("Failed to fetch generated salaries");
   return await response.json();
 }
 
+// POST to create generated salary entry
+export async function createGeneratedSalary(employee) {
+  const response = await fetch('https://api.urest.in:8096/api/employee/generatedSalary', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(employee),
+  });
+
+  if (!response.ok) throw new Error('Failed to create generated salary');
+  return await response.json();
+}
+
+// DELETE to remove a generated salary entry by employee ID (FacilityMemberID)
+export async function deleteGeneratedSalary(employeeId) {
+  const response = await fetch(`https://api.urest.in:8096/api/employee/generatedSalary/${employeeId}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) throw new Error('Failed to delete generated salary');
+  return await response.json();
+}
 
 // Attendance Summary API Calls
 const BASE_URL = 'https://api.urest.in:8096/api/attendance-summary';
@@ -438,9 +460,13 @@ export const createAttendance = async (model) => {
   }
 };
 
-export const updateAttendance = async (empId, model) => {
+export const updateAttendance = async (empId, monthyear, model) => {
   try {
-    const response = await axios.put(`${BASE_URL}/${empId}`, model, { withCredentials: false });
+    const response = await axios.put(
+      `${BASE_URL}/${empId}/${monthyear}`,
+      model,
+      { withCredentials: false }
+    );
     return response.data;
   } catch (error) {
     console.error("Failed to update attendance", error);
@@ -459,3 +485,88 @@ export const getPropertyById = async (propertyId) => {
     throw error;
   }
 };
+
+
+// Get employees with ungenerated salary for a given office ID, month, and year
+const URL = "https://api.urest.in:8096/api";
+export const getUngeneratedSalaryByOffice = async (officeId, month, year) => {
+  const url = `${URL}/employee/ungeneratedSalary/${officeId}/${month}/${year}`;
+  try {
+    const response = await axios.get(url, {
+      withCredentials: false,
+      headers: { Accept: "application/json" },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in getUngeneratedSalaryByOffice:", error);
+    throw error;
+  }
+};
+
+
+// Get facility member salary details
+export const getFacilityMemberSalaryDetails = async (facilityMemberIds, month, year) => {
+  try {
+    const idsString = facilityMemberIds.join(', ');
+    const response = await axios.get(
+      `https://api.urest.in:8096/get-facilitymember-salary-details`,
+      {
+        params: {
+          FacilityMemberIds: idsString,
+          Month: month,
+          Year: year
+        },
+        withCredentials: false,
+        headers: {
+          Accept: "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching salary details:", error);
+    throw error;
+  }
+};
+
+
+// Regenerate employee salary entry (POST)
+export const regenerateEmployeeSalary = async (employee) => {
+  try {
+    const response = await axios.post(
+      `${URL}/employee/regeneratedSalary`,
+      employee,
+      {
+        withCredentials: false,
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error regenerating salary:", error);
+    throw error;
+  }
+};
+
+
+// Update generated salary document
+export async function updateGeneratedSalaryDoc({ Emp_ID, Month, Year, SalaryDoc }) {
+  const formData = new FormData();
+  formData.append("Emp_ID", Emp_ID);
+  formData.append("Month", Month);
+  formData.append("Year", Year);
+  formData.append("SalaryDoc", SalaryDoc); // This should be a File/blob
+
+  const response = await fetch("https://api.urest.in:8096/api/employee/updateGeneratedSalaryDoc", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(await response.text());
+  }
+  return response.json();
+}

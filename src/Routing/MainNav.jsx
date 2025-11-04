@@ -90,6 +90,7 @@ import GenerateSalary from "../MainComponents/Payroll/GenerateSalary.jsx";
 import ProfessionalTax from "../MainComponents/Payroll/ProfessionalTax.jsx";
 import LabourFund from "../MainComponents/Payroll/LabourFund.jsx";
 import AttendanceSheet from "../MainComponents/Payroll/AttendanceSheet.jsx";
+import Linking from "../MainComponents/Payroll/Linking.jsx";
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -643,6 +644,15 @@ class MainNav extends React.Component {
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Generate Salary</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/Linking"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Designation Linking</p>
                           </Link>
                         </li>
                         <li className="nav-item">
@@ -1411,6 +1421,7 @@ class MainNav extends React.Component {
             <Route path="/Account/App/UploaderPage">
               <UploaderPage />
             </Route>
+            <Route path="/Account/App/Linking" component={Linking} />
             <Route path="/Account/App/AttendanceSheet" component={AttendanceSheet} />
             <Route path="/Account/App/LabourFund" component={LabourFund} />
             <Route path="/Account/App/ProfessionalTax" component={ProfessionalTax} />

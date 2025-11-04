@@ -1,6 +1,10 @@
 module.exports = {
-    "extends": "standard",
+    "extends": ["standard", "plugin:import/errors", "plugin:import/warnings"],
     "plugins": [
-        "standard"
-    ]
+        "standard",
+        "import"
+    ],
+    "rules": {
+        "import/no-mutable-exports": "error"
+    }
 };

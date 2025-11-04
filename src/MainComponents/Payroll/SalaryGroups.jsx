@@ -58,15 +58,30 @@ export default function SalaryGroups() {
   );
 
   // Amount calculation utility
-  const calculateAmount = (item, fixedSalary, baseSalary) => {
+  const calculateAmount = (item, fixedSalary, baseSalary, knownValues = {}) => {
     if (!item.Formula) return 0;
-    if (item.UseFixedValue && item.Formula.FixedValue)
-      return item.Formula.FixedValue;
-    if (!item.Formula.Formula) return 0;
-    let formulaStr = item.Formula.Formula.trim()
+
+    const formulaObj = item.Formula;
+    const formulaStrRaw = formulaObj.Formula?.trim();
+    if (!formulaStrRaw) return 0;
+
+    // Replace known keywords
+    let formulaStr = formulaStrRaw
       .replace(/Basic/gi, baseSalary || 0)
-      .replace(/Fixed/gi, fixedSalary || 0)
-      .replace(/(\d*\.?\d+)%/g, (_, p1) => parseFloat(p1) / 100);
+      .replace(/Fixed/gi, fixedSalary || 0);
+
+    // Replace already known calculated items (HRA, PF, etc.)
+    Object.entries(knownValues).forEach(([key, val]) => {
+      const regex = new RegExp(`\\b${key}\\b`, "gi");
+      formulaStr = formulaStr.replace(regex, val || 0);
+    });
+
+    // Convert percentage to decimal
+    formulaStr = formulaStr.replace(
+      /(\d*\.?\d+)%/g,
+      (_, p1) => parseFloat(p1) / 100
+    );
+
     try {
       const result = new Function("return " + formulaStr)();
       return typeof result === "number" && !isNaN(result) ? result : 0;
@@ -75,15 +90,21 @@ export default function SalaryGroups() {
     }
   };
 
-  const recalculateAmounts = (items, fixedSalary, baseSalary) =>
-    items.map((item) =>
-      item.UseFixedValue && item.Formula && item.Formula.FixedValue
-        ? { ...item, CalculatedAmount: item.Formula.FixedValue }
-        : {
-            ...item,
-            CalculatedAmount: calculateAmount(item, fixedSalary, baseSalary),
-          }
-    );
+  const recalculateAmounts = (items, fixedSalary, baseSalary) => {
+    const knownValues = {}; // to store already calculated allowances
+
+    return items.map((item) => {
+      const amount =
+        item.UseFixedValue && item.Formula && item.Formula.FixedValue
+          ? item.Formula.FixedValue
+          : calculateAmount(item, fixedSalary, baseSalary, knownValues);
+
+      // save this value for next formulas (like DA needs HRA)
+      knownValues[item.Name] = amount;
+
+      return { ...item, CalculatedAmount: amount };
+    });
+  };
 
   // Data loading utilities
   useEffect(() => {
@@ -249,6 +270,38 @@ export default function SalaryGroups() {
           (f) => f.Name.toLowerCase() === inputName.toLowerCase()
         ) || null;
 
+    // ✅ Circular + dependency block START
+    if (matchedFormula?.Formula) {
+      const vars = extractVariables(matchedFormula.Formula);
+
+      // ✅ Check self reference first
+      if (vars.map((v) => v.toLowerCase()).includes(inputName.toLowerCase())) {
+        alert(
+          `Circular reference detected: Formula uses itself -> ${inputName}`
+        );
+        return;
+      }
+
+      const known = ["basic", "fixed"];
+      const existingNames = selectedAllowancesDeductions.map((x) =>
+        x.Name.toLowerCase()
+      );
+
+      const missing = vars.filter(
+        (v) =>
+          !known.includes(v.toLowerCase()) &&
+          !existingNames.includes(v.toLowerCase())
+      );
+
+      if (missing.length > 0) {
+        alert(
+          `You must add these before "${inputName}": ` + missing.join(", ")
+        );
+        return;
+      }
+    }
+    // ✅ Circular + dependency block END
+
     if (existingOption) {
       if (
         !selectedAllowancesDeductions.some(
@@ -390,6 +443,11 @@ export default function SalaryGroups() {
         alert("Failed to delete salary group.");
       }
     }
+  };
+
+  const extractVariables = (formula) => {
+    if (!formula) return [];
+    return formula.match(/[A-Za-z_]\w*/g) || [];
   };
 
   // Dialog footers
