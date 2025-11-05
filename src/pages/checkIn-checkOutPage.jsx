@@ -3,7 +3,7 @@ import PopUp from "../ReactComponents/CheckIn&OutModal/PopUp";
 import "bootstrap/dist/css/bootstrap.min.css";
 import ExportToCSV from "../ReactComponents/ExportToCSV/ExportToCSV"
 import { connect } from 'react-redux';
-import {PropagateLoader} from "react-spinners";
+import { PropagateLoader } from "react-spinners";
 import LoadingOverlay from "react-loading-overlay";
 
 
@@ -14,13 +14,11 @@ const CheckInCheckOut = (actions) => {
   const [currentAsset, setCurrentAsset] = useState(null);
   const [actionType, setActionType] = useState(""); // "checkin" or "checkout"
 
-
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const url =`https://api.urest.in:8096/api/Asset/GetAssetCheckOutData?PropId=${actions.propId}`;
-        // const url =`http://localhost:62929/api/Asset/GetAssetCheckOutData?PropId=${actions.propId}`;
+        const url = `https://api.urest.in:8096/api/Asset/GetAssetCheckOutData?PropId=${actions.propId}`;
         const response = await fetch(url, {
           method: "GET",
           headers: {
@@ -28,7 +26,7 @@ const CheckInCheckOut = (actions) => {
             'Content-Type': 'application/json',
           },
         });
-        if (!response.ok) { 
+        if (!response.ok) {
           throw new Error('Network response was not ok');
         }
         const data = await response.json();
@@ -39,8 +37,9 @@ const CheckInCheckOut = (actions) => {
         setLoading(false);
       }
     };
+
     fetchData();
-  }, [currentAsset, actionType,actions.propId ]);
+  }, [actions.propId]); // only depends on propId
 
   const handleCheckIn = (asset) => {
     setCurrentAsset(asset);
@@ -62,17 +61,15 @@ const CheckInCheckOut = (actions) => {
   };
 
   const handleSubmit = async (formData) => {
-    // console.log(currentAsset);
+    const url = actionType === "checkin"
+      ? "https://api.urest.in:8096/ManageCheckIn"
+      : "https://api.urest.in:8096/ManageCheckOut";
 
-    const url = actionType === "checkin" 
-      ? "https://api.urest.in:8096/ManageCheckIn" 
-      : "https://api.urest.in:8096/ManageCheckOut"
-    
     try {
-      const payload={AssetId: currentAsset.Id,AssetName: currentAsset.Name, ...formData};
-      console.log("xvb"+JSON.stringify(payload)+payload);
+      const payload = { AssetId: currentAsset.Id, AssetName: currentAsset.Name, ...formData };
+
       const response = await fetch(url, {
-        method: actionType === "checkin"?"PUT":"POST",
+        method: actionType === "checkin" ? "PUT" : "POST",
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -84,16 +81,12 @@ const CheckInCheckOut = (actions) => {
         throw new Error('Network response was not ok');
       }
 
-        // Update the asset data after successful check-in/check-out
-      // const updatedData = await fetch("http://localhost:62929/GetAssetCheckOutData", {
-      //   method: "GET",
-      //   headers: {
-      //     'Accept': 'application/json',
-      //     'Content-Type': 'application/json',
-      //   },
-      // });
-      // setAssetData(updatedData);
-    console.log(formData);
+      // ✅ refresh asset list only after successful action
+      const refreshUrl = `https://api.urest.in:8096/api/Asset/GetAssetCheckOutData?PropId=${actions.propId}`;
+      const updatedRes = await fetch(refreshUrl);
+      const updatedData = await updatedRes.json();
+      setAssetData(updatedData);
+
       handleCloseModal();
     } catch (error) {
       console.error(`Error during ${actionType}:`, error);
@@ -117,57 +110,57 @@ const CheckInCheckOut = (actions) => {
             <h2 className="mb-0">Asset List</h2>
             <ExportToCSV data={assetData} className="btn btn-success btn-sm rounded px-3" />
           </div>
-            <div className="table-responsive table-bordered table-hover table-sm">
-              <LoadingOverlay
-                  active={loading}
-                  spinner={<PropagateLoader color="#336B93" size={30}/>}
-              >
-                <table className="table table-striped">
-                  <thead>
+          <div className="table-responsive table-bordered table-hover table-sm">
+            <LoadingOverlay
+              active={loading}
+              spinner={<PropagateLoader color="#336B93" size={30} />}
+            >
+              <table className="table table-striped">
+                <thead>
                   <tr>
                     <th>Serial No.</th>
                     <th>Asset ID</th>
                     <th>Asset Name</th>
                     <th>Actions</th>
                   </tr>
-                  </thead>
-                  <tbody>
+                </thead>
+                <tbody>
                   {assetData.map((asset, index) => (
-                      <tr key={asset.Id}>
-                        <td>{index + 1}</td>
-                        <td>{asset.Id}</td>
-                        <td>{asset.Name}</td>
-                        <td className="align-middle">
-                          {asset.ReturnDate === null ?
+                    <tr key={asset.Id}>
+                      <td>{index + 1}</td>
+                      <td>{asset.Id}</td>
+                      <td>{asset.Name}</td>
+                      <td className="align-middle">
+                        {asset.ReturnDate === null ?
 
-                              <button
-                                  className="btn-lg btn-warning btn-sm m-1 px-4 "
-                                  onClick={() => handleCheckIn(asset)}
-                              >
-                                Check In
-                              </button> :
-                              <button
-                                  className="btn-lg btn-success btn-sm px-3 m-1"
-                                  onClick={() => handleCheckOut(asset)}
-                              >
-                                Check Out
-                              </button>
-                          }
-                        </td>
-                      </tr>
+                          <button
+                            className="btn-lg btn-warning btn-sm m-1 px-4 "
+                            onClick={() => handleCheckIn(asset)}
+                          >
+                            Check In
+                          </button> :
+                          <button
+                            className="btn-lg btn-success btn-sm px-3 m-1"
+                            onClick={() => handleCheckOut(asset)}
+                          >
+                            Check Out
+                          </button>
+                        }
+                      </td>
+                    </tr>
                   ))}
-                  </tbody>
-                </table>
-              </LoadingOverlay>
+                </tbody>
+              </table>
+            </LoadingOverlay>
 
-            </div>
+          </div>
         </div>
         {viewModal ? <PopUp
-            show={viewModal}
-            handleClose={handleCloseModal}
-            asset={currentAsset}
-            actionType={actionType}
-            handleSubmit={handleSubmit}
+          show={viewModal}
+          handleClose={handleCloseModal}
+          asset={currentAsset}
+          actionType={actionType}
+          handleSubmit={handleSubmit}
         /> : undefined}
       </section>
     </div>

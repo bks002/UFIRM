@@ -23,7 +23,6 @@ const $ = window.$;
 class TicketDetails extends Component {
     constructor(props) {
         super(props);
-        console.log(props)
         this.state = {
             currentTicketID: null,
             initialComplainLocation: null,
