@@ -86,6 +86,8 @@ import ExpenseMaster from "../MainComponents/Expense/ExpenseMaster.jsx";
 import ExpenseTypeMaster from "../MainComponents/Expense/ExpenseTypeMaster.jsx";
 import ExpenseReport from "../MainComponents/Expense/ExpenseReport.jsx";
 import Formula from "../MainComponents/FacilityMember/Formula.jsx";
+import ItemAssignedPage from "../MainComponents/Inventory/ItemAssigned.jsx";
+import ItemSpecificationPage from "../MainComponents/Inventory/ItemSpecification.jsx";
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -277,45 +279,45 @@ class MainNav extends React.Component {
                   </li>
                   {
                     this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager") || this.state.userRoles.includes("Property Admin")) ?
-                    <li className="nav-item has-treeview">
-                      <a href="#" className="nav-link">
-                        <i className="nav-icon fas fa-calendar"></i>
-                        <p>
-                          Planner<i className="right fas fa-angle-left"></i>
-                        </p>
-                      </a>
-                      <ul className="nav nav-treeview">
-                        {
-                          // this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Admin") ?
-                          <Fragment>
-                            <li className="nav-item">
-                              <Link
+                      <li className="nav-item has-treeview">
+                        <a href="#" className="nav-link">
+                          <i className="nav-icon fas fa-calendar"></i>
+                          <p>
+                            Planner<i className="right fas fa-angle-left"></i>
+                          </p>
+                        </a>
+                        <ul className="nav nav-treeview">
+                          {
+                            // this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Admin") ?
+                            <Fragment>
+                              <li className="nav-item">
+                                <Link
                                   to="/Account/App/CalendarCategory"
                                   className="nav-link"
-                              >
-                                <i className=" fas fa-caret-right nav-icon"></i>
-                                <p>Category </p>
-                              </Link>
-                            </li>
-                            <li className="nav-item">
-                              <Link
+                                >
+                                  <i className=" fas fa-caret-right nav-icon"></i>
+                                  <p>Category </p>
+                                </Link>
+                              </li>
+                              <li className="nav-item">
+                                <Link
                                   to="/Account/App/CalendarSubCategory"
                                   className="nav-link"
-                              >
-                                <i className=" fas fa-caret-right nav-icon"></i>
-                                <p>Sub Category </p>
-                              </Link>
-                            </li>
-                            <li className="nav-item">
-                              <Link
-                                to="/Account/App/FrequencyMaster"
-                                className="nav-link"
-                              >
-                                <i className=" fas fa-caret-right nav-icon"></i>
-                                <p>Frequency Master </p>
-                              </Link>
-                            </li>
-                            {/* <li className="nav-item">
+                                >
+                                  <i className=" fas fa-caret-right nav-icon"></i>
+                                  <p>Sub Category </p>
+                                </Link>
+                              </li>
+                              <li className="nav-item">
+                                <Link
+                                  to="/Account/App/FrequencyMaster"
+                                  className="nav-link"
+                                >
+                                  <i className=" fas fa-caret-right nav-icon"></i>
+                                  <p>Frequency Master </p>
+                                </Link>
+                              </li>
+                              {/* <li className="nav-item">
                               <Link
                                 to="/EventApproval"
                                 className="nav-link"
@@ -324,35 +326,35 @@ class MainNav extends React.Component {
                                 <p>Event Approval</p>
                               </Link>
                             </li> */}
-                          </Fragment>
-                          // : null
-                        }
+                            </Fragment>
+                            // : null
+                          }
 
-                        {/*<li className="nav-item">*/}
-                        {/*  <Link*/}
-                        {/*    to="/EventCalendar"*/}
-                        {/*    className="nav-link"*/}
-                        {/*  >*/}
-                        {/*    <i className=" fas fa-caret-right nav-icon"></i>*/}
-                        {/*    <p>Events</p>*/}
-                        {/*  </Link>*/}
-                        {/*</li>*/}
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/PlannerTask"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Tasks</p>
-                          </Link>
-                        </li>
-                        {/* <li className="nav-item">
+                          {/*<li className="nav-item">*/}
+                          {/*  <Link*/}
+                          {/*    to="/EventCalendar"*/}
+                          {/*    className="nav-link"*/}
+                          {/*  >*/}
+                          {/*    <i className=" fas fa-caret-right nav-icon"></i>*/}
+                          {/*    <p>Events</p>*/}
+                          {/*  </Link>*/}
+                          {/*</li>*/}
+                          <li className="nav-item">
+                            <Link
+                              to="/Account/App/PlannerTask"
+                              className="nav-link"
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Tasks</p>
+                            </Link>
+                          </li>
+                          {/* <li className="nav-item">
                                                         <Link to="/PlannerTaskAudit" className="nav-link">
                                                             <i className=" fas fa-caret-right nav-icon"></i>
                                                             <p>Tasks Audit</p>
                                                         </Link>
                                                     </li> */}
-                        {/* <li className="nav-item">
+                          {/* <li className="nav-item">
                           <Link
                             to="/TaskAnalysis"
                             className="nav-link"
@@ -361,25 +363,25 @@ class MainNav extends React.Component {
                             <p>Tasks Analysis</p>
                           </Link>
                         </li> */}
-                        <li className="nav-item">
-                          <Link
+                          <li className="nav-item">
+                            <Link
                               to="/Account/App/TaskEventsCalender"
                               className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Task Calendar</p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/PPMSpreadsheet"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>PPM Calendar</p>
-                          </Link>
-                        </li>
-                        {/* <li className="nav-item">
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Task Calendar</p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link
+                              to="/Account/App/PPMSpreadsheet"
+                              className="nav-link"
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>PPM Calendar</p>
+                            </Link>
+                          </li>
+                          {/* <li className="nav-item">
                           <Link
                             to="/ResidentEvents"
                             className="nav-link"
@@ -388,407 +390,417 @@ class MainNav extends React.Component {
                             <p>Resident Events</p>
                           </Link>
                         </li> */}
-                        {/*<li className="nav-item">*/}
-                        {/*  <Link*/}
-                        {/*    to="/TaskStatus"*/}
-                        {/*    className="nav-link"*/}
-                        {/*  >*/}
-                        {/*    <i className=" fas fa-caret-right nav-icon"></i>*/}
-                        {/*    <p>Task Status</p>*/}
-                        {/*  </Link>*/}
-                        {/*</li>*/}
-                        <li className="nav-item">
-                          <Link
+                          {/*<li className="nav-item">*/}
+                          {/*  <Link*/}
+                          {/*    to="/TaskStatus"*/}
+                          {/*    className="nav-link"*/}
+                          {/*  >*/}
+                          {/*    <i className=" fas fa-caret-right nav-icon"></i>*/}
+                          {/*    <p>Task Status</p>*/}
+                          {/*  </Link>*/}
+                          {/*</li>*/}
+                          <li className="nav-item">
+                            <Link
                               to="/Account/App/GuardList"
                               className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Spot Visits</p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Spot Visits</p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link
                               to="/Account/App/SpotVisitCalendar"
                               className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Spot Visit Calendar</p>
-                          </Link>
-                        </li>
-                        {/* <li className="nav-item">
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Spot Visit Calendar</p>
+                            </Link>
+                          </li>
+                          {/* <li className="nav-item">
                                                         <Link to="/AttendanceSummary" className="nav-link">
                                                             <i className=" fas fa-caret-right nav-icon"></i>
                                                             <p>Attendance Summary</p>
                                                         </Link>
                                                     </li> */}
-                      </ul>
-                    </li>
-                    : null
+                        </ul>
+                      </li>
+                      : null
                   }
-{ this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager") || this.state.userRoles.includes("Property Admin") || this.state.userRoles.includes("Inventory Manager")) ?
-                  <li className="nav-item has-treeview">
-                    <a href="#" className="nav-link">
-                      <i className="nav-icon fas fa-wrench"></i>
-                      <p>
-                        Asset Management
-                        <i className="right fas fa-angle-left"></i>
-                      </p>
-                    </a>
-                    <ul className="nav nav-treeview">
-                      <li className="nav-item">
-                        <Link
-                          to="/Account/App/AssetsMaster"
-                          className="nav-link"
-                        >
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Assets Master</p>
-                        </Link>
-                      </li>
-                      <li className="nav-item">
-                        <Link
-                          to="/Account/App/CheckIn&CheckOut"
-                          className="nav-link"
-                        >
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Check IN & OUT</p>
-                        </Link>
-                      </li>
-
-                      <li className="nav-item">
-                        <Link to="/Account/App/RentalAssets" className="nav-link">
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Rental Assets</p>
-                        </Link>
-                      </li>
-
-                      <li className="nav-item">
-                        <Link to="/Account/App/ServiceRecords" className="nav-link">
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Service Records</p>
-                        </Link>
-                      </li>
-
-                      <li className="nav-item">
-                        <Link
-                          to="/Account/App/AssetTracking"
-                          className="nav-link"
-                        >
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Asset Log</p>
-                        </Link>
-                      </li>
-                    </ul>
-                  </li>
-:null}
-{ this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager") || this.state.userRoles.includes("Property Admin") || this.state.userRoles.includes("Inventory Manager")) ?
-                  <li className="nav-item has-treeview">
-                    <a href="#" className="nav-link">
-                      <i className="nav-icon fas fa-boxes"></i>
-                      <p>
-                        Inventory Management
-                        <i className="right fas fa-angle-left"></i>
-                      </p>
-                    </a>
-                    <ul className="nav nav-treeview">
-                      <li className="nav-item">
-                        <Link
-                          to="/Account/App/Category"
-                          className="nav-link"
-                        >
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Category</p>
-                        </Link>
-                      </li>
-
-                      <li className="nav-item">
-                        <Link
-                          to="/Account/App/Item"
-                          className="nav-link"
-                        >
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Items</p>
-                        </Link>
-                      </li>
-
-                      <li className="nav-item">
-                        <Link to="/Account/App/Vendors" className="nav-link">
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Vendors</p>
-                        </Link>
-                      </li>
-                      <li className="nav-item">
-                        <Link to="/Account/App/RateCard" className="nav-link">
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Rate Card</p>
-                        </Link>
-                      </li>
-                      <li className="nav-item">
-                        <Link to="/Account/App/PurchaseOrders" className="nav-link">
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Purchase Orders</p>
-                        </Link>
-                      </li>
-                      <li className="nav-item">
-                        <Link to="/Account/App/Stock" className="nav-link">
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Stock</p>
-                        </Link>
-                      </li>
-                    </ul>
-                  </li>
-:null}
-                  {
-                     this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager") || this.state.userRoles.includes("Property Admin")) ?
+                  {this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager") || this.state.userRoles.includes("Property Admin") || this.state.userRoles.includes("Inventory Manager")) ?
                     <li className="nav-item has-treeview">
                       <a href="#" className="nav-link">
-                        <i className="nav-icon fas fa-hotel"></i>
+                        <i className="nav-icon fas fa-wrench"></i>
                         <p>
-                          Property Management
+                          Asset Management
                           <i className="right fas fa-angle-left"></i>
                         </p>
                       </a>
                       <ul className="nav nav-treeview">
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/ManageResidentOwners"
-                              className="nav-link"
+                            to="/Account/App/AssetsMaster"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Manage Resident/Owners</p>
+                            <p>Assets Master</p>
                           </Link>
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/RwaMember"
-                              className="nav-link"
+                            to="/Account/App/CheckIn&CheckOut"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Rwa Member</p>
+                            <p>Check IN & OUT</p>
                           </Link>
                         </li>
 
                         <li className="nav-item">
-                          <Link to="/Account/App/Notice" className="nav-link">
+                          <Link to="/Account/App/RentalAssets" className="nav-link">
                             <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Notice Bord</p>
+                            <p>Rental Assets</p>
+                          </Link>
+                        </li>
+
+                        <li className="nav-item">
+                          <Link to="/Account/App/ServiceRecords" className="nav-link">
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Service Records</p>
+                          </Link>
+                        </li>
+
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/AssetTracking"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Asset Log</p>
+                          </Link>
+                        </li>
+                      </ul>
+                    </li>
+                    : null}
+                  {this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager") || this.state.userRoles.includes("Property Admin") || this.state.userRoles.includes("Inventory Manager") || this.state.userRoles.includes("HR")) ?
+                    <li className="nav-item has-treeview">
+                      <a href="#" className="nav-link">
+                        <i className="nav-icon fas fa-boxes"></i>
+                        <p>
+                          Inventory Management
+                          <i className="right fas fa-angle-left"></i>
+                        </p>
+                      </a>
+                      <ul className="nav nav-treeview">
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/Category"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Category</p>
+                          </Link>
+                        </li>
+
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/Item"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Items</p>
+                          </Link>
+                        </li>
+
+                        <li className="nav-item">
+                          <Link to="/Account/App/Vendors" className="nav-link">
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Vendors</p>
                           </Link>
                         </li>
                         <li className="nav-item">
-                          <Link
-                              to="/Account/App/EmergencyContact"
-                              className="nav-link"
-                          >
+                          <Link to="/Account/App/RateCard" className="nav-link">
                             <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Emergency Contact </p>
+                            <p>Rate Card</p>
                           </Link>
                         </li>
-                        {/* <li className="nav-item">
+                        <li className="nav-item">
+                          <Link to="/Account/App/PurchaseOrders" className="nav-link">
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Purchase Orders</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link to="/Account/App/Stock" className="nav-link">
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Stock</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link to="/Account/App/ItemSpecification" className="nav-link">
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Item Specification</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link to="/Account/App/ItemAssigned" className="nav-link">
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Item Assigned</p>
+                          </Link>
+                        </li>
+                      </ul>
+                    </li>
+                    : null}
+                  {
+                    this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager") || this.state.userRoles.includes("Property Admin")) ?
+                      <li className="nav-item has-treeview">
+                        <a href="#" className="nav-link">
+                          <i className="nav-icon fas fa-hotel"></i>
+                          <p>
+                            Property Management
+                            <i className="right fas fa-angle-left"></i>
+                          </p>
+                        </a>
+                        <ul className="nav nav-treeview">
+                          <li className="nav-item">
+                            <Link
+                              to="/Account/App/ManageResidentOwners"
+                              className="nav-link"
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Manage Resident/Owners</p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link
+                              to="/Account/App/RwaMember"
+                              className="nav-link"
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Rwa Member</p>
+                            </Link>
+                          </li>
+
+                          <li className="nav-item">
+                            <Link to="/Account/App/Notice" className="nav-link">
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Notice Bord</p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link
+                              to="/Account/App/EmergencyContact"
+                              className="nav-link"
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Emergency Contact </p>
+                            </Link>
+                          </li>
+                          {/* <li className="nav-item">
                                                 <Link to="/PendingApproval" className="nav-link">
                                                     <i className=" fas fa-caret-right nav-icon"></i>
                                                     <p>Pending Approval</p>
                                                 </Link>
                                             </li> */}
-                        <li className="nav-item">
-                          <Link
-                              to="/Account/App/Employeeassignment"
-                              className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Employee Assignment</p>
-                          </Link>
-                        </li>
-                        <li className="nav-item ">
-                          <Link
-                              to="/Account/App/PropertyMember"
-                              className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Rent Agreement</p>
-                          </Link>
-                        </li>
-                      </ul>
-                    </li>
-                    : null
-                  }
-
-                  {
-                     this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager") || this.state.userRoles.includes("Facility Manager") || this.state.userRoles.includes("HR") || this.state.userRoles.includes("Property Admin")) ?
-
-                    <li className="nav-item has-treeview">
-                      <a href="#" className="nav-link">
-                        <i className="nav-icon fas fa-address-book"></i>
-                        <p>
-                          Facility Management
-                          <i className="right fas fa-angle-left"></i>
-                        </p>
-                      </a>
-                      <ul className="nav nav-treeview">
-                        <li className="nav-item">
-                          <Link
-                              to="/Account/App/FacilityMember"
-                              className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Facility Member </p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/Facility"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Facility Latlong </p>
-                          </Link>
-                        </li>
-
-                        {this.state.userRoles && this.state.userRoles.includes("Admin") ?
                           <li className="nav-item">
                             <Link
-                              to="/Account/App/CreateNewUser"
+                              to="/Account/App/Employeeassignment"
                               className="nav-link"
                             >
                               <i className=" fas fa-caret-right nav-icon"></i>
-                              <p>Create New User</p>
+                              <p>Employee Assignment</p>
                             </Link>
-                          </li> : null}
-                        <li className="nav-item">
-                          <Link to="/Account/App/Attendance" className="nav-link">
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p >Attendance</p>
-                          </Link>
-                        </li>
+                          </li>
+                          <li className="nav-item ">
+                            <Link
+                              to="/Account/App/PropertyMember"
+                              className="nav-link"
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Rent Agreement</p>
+                            </Link>
+                          </li>
+                        </ul>
+                      </li>
+                      : null}
 
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/leavemaster"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Leave Master </p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/EmployeeLeave"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Employee Leave </p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/leave"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Leaves </p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/ExpenseMaster"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Expense Master </p>
-                          </Link>
-                        </li>
-                         <li className="nav-item">
-                          <Link
-                            to="/Account/App/ExpenseTypeMaster"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Expense Type Master </p>
-                          </Link>
-                        </li>
-                         <li className="nav-item">
-                          <Link
-                            to="/Account/App/ExpenseReport"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Expense Report </p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/Visitor"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Visitor </p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/Formula"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Formula</p>
-                          </Link>
-                        </li>
-                        {/* <li className="nav-item">
+                  {this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager") || this.state.userRoles.includes("Facility Manager") || this.state.userRoles.includes("HR") || this.state.userRoles.includes("Property Admin")) ?
+                      <li className="nav-item has-treeview">
+                        <a href="#" className="nav-link">
+                          <i className="nav-icon fas fa-address-book"></i>
+                          <p>
+                            Facility Management
+                            <i className="right fas fa-angle-left"></i>
+                          </p>
+                        </a>
+                        <ul className="nav nav-treeview">
+                          <li className="nav-item">
+                            <Link
+                              to="/Account/App/FacilityMember"
+                              className="nav-link"
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Facility Member </p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link
+                              to="/Account/App/Facility"
+                              className="nav-link"
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Facility Latlong </p>
+                            </Link>
+                          </li>
+
+                          {this.state.userRoles && this.state.userRoles.includes("Admin") ?
+                            <li className="nav-item">
+                              <Link
+                                to="/Account/App/CreateNewUser"
+                                className="nav-link"
+                              >
+                                <i className=" fas fa-caret-right nav-icon"></i>
+                                <p>Create New User</p>
+                              </Link>
+                            </li> : null}
+
+                          <li className="nav-item">
+                            <Link to="/Account/App/Attendance" className="nav-link">
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p >Attendance</p>
+                            </Link>
+                          </li>
+
+                          <li className="nav-item">
+                            <Link
+                              to="/Account/App/leavemaster"
+                              className="nav-link"
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Leave Master </p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link
+                              to="/Account/App/EmployeeLeave"
+                              className="nav-link"
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Employee Leave </p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link
+                              to="/Account/App/leave"
+                              className="nav-link"
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Leaves </p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link
+                              to="/Account/App/ExpenseMaster"
+                              className="nav-link"
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Expense Master </p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link
+                              to="/Account/App/ExpenseTypeMaster"
+                              className="nav-link"
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Expense Type Master </p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link
+                              to="/Account/App/ExpenseReport"
+                              className="nav-link"
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Expense Report </p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link
+                              to="/Account/App/Visitor"
+                              className="nav-link"
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Visitor </p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link
+                              to="/Account/App/Formula"
+                              className="nav-link"
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Formula</p>
+                            </Link>
+                          </li>
+                          {/* <li className="nav-item">
                                         <Link to="/FacilityMember" className="nav-link">
                                             <i className=" fas fa-caret-right nav-icon"></i>
                                             <p>In Out Register</p>
                                         </Link>
                                     </li> */}
-                        {/* <li className="nav-item">
+                          {/* <li className="nav-item">
                                         <Link to="/FacilityMember" className="nav-link">
                                             <i className=" fas fa-caret-right nav-icon"></i>
                                             <p>Get Pass</p>
                                         </Link>
                                     </li> */}
-                      </ul>
-                    </li>
-                     : null
+                        </ul>
+                      </li>
+                      : null
                   }
 
                   {
                     this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager") || this.state.userRoles.includes("Property Admin")) ?
-                    <li className="nav-item has-treeview">
-                      <a href="#" className="nav-link">
-                        <i className="nav-icon fas fa-car"></i>
-                        <p>
-                          Parking Management
-                          <i className="right fas fa-angle-left"></i>
-                        </p>
-                      </a>
-                      <ul className="nav nav-treeview">
-                        <li className="nav-item">
-                          <Link
+                      <li className="nav-item has-treeview">
+                        <a href="#" className="nav-link">
+                          <i className="nav-icon fas fa-car"></i>
+                          <p>
+                            Parking Management
+                            <i className="right fas fa-angle-left"></i>
+                          </p>
+                        </a>
+                        <ul className="nav nav-treeview">
+                          <li className="nav-item">
+                            <Link
                               to="/Account/App/ParkingZone"
                               className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Parking Zone </p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Parking Zone </p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link
                               to="/Account/App/ParkingDetails"
                               className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Parking Details </p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Parking Details </p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link
                               to="/Account/App/ParkingAssignment"
                               className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Parking Assignment </p>
-                          </Link>
-                        </li>
-                      </ul>
-                    </li>
-                     : null
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Parking Assignment </p>
+                            </Link>
+                          </li>
+                        </ul>
+                      </li>
+                      : null
                   }
 
                   {/* <li className="nav-item has-treeview">
@@ -858,248 +870,248 @@ class MainNav extends React.Component {
                                     </li> */}
                   {
                     this.state.userRoles && this.state.userRoles.includes("Admin") ?
-                    <li className="nav-item has-treeview">
-                      <a href="#" className="nav-link">
-                        <i className="nav-icon fas fa-cog"></i>
-                        <p>
-                          Master Settings
-                          <i className="right fas fa-angle-left"></i>
-                        </p>
-                      </a>
-                      <ul className="nav nav-treeview">
-                        <li className="nav-item">
-                          <Link
+                      <li className="nav-item has-treeview">
+                        <a href="#" className="nav-link">
+                          <i className="nav-icon fas fa-cog"></i>
+                          <p>
+                            Master Settings
+                            <i className="right fas fa-angle-left"></i>
+                          </p>
+                        </a>
+                        <ul className="nav nav-treeview">
+                          <li className="nav-item">
+                            <Link
                               to="/Account/App/DocumentType"
                               className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Document Type</p>
-                          </Link>
-                        </li>
-                      </ul>
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Document Type</p>
+                            </Link>
+                          </li>
+                        </ul>
 
-                    </li>
-                   : null
+                      </li>
+                      : null
                   }
 
                   {
                     this.state.userRoles && this.state.userRoles.includes("Admin") ?
-                    <li className="nav-item has-treeview">
-                      <a href="#" className="nav-link">
-                        <i className="nav-icon fas fa-user-cog"></i>
-                        <p>
-                          User Management
-                          <i className="right fas fa-angle-left"></i>
-                        </p>
-                      </a>
-                      <ul className="nav nav-treeview">
-                        {this.state.userRoles && this.state.userRoles.includes("Admin") ?
+                      <li className="nav-item has-treeview">
+                        <a href="#" className="nav-link">
+                          <i className="nav-icon fas fa-user-cog"></i>
+                          <p>
+                            User Management
+                            <i className="right fas fa-angle-left"></i>
+                          </p>
+                        </a>
+                        <ul className="nav nav-treeview">
+                          {this.state.userRoles && this.state.userRoles.includes("Admin") ?
+                            <li className="nav-item">
+                              <Link to="/Account/App/AddNewUser" className="nav-link">
+                                <i className=" fas fa-caret-right nav-icon"></i>
+                                <p>Add New User </p>
+                              </Link>
+                            </li> : null}
                           <li className="nav-item">
-                            <Link to="/Account/App/AddNewUser" className="nav-link">
+                            <Link to="/Account/App/user" className="nav-link">
                               <i className=" fas fa-caret-right nav-icon"></i>
-                              <p>Add New User </p>
+                              <p>User </p>
                             </Link>
-                          </li> : null}
-                        <li className="nav-item">
-                          <Link to="/Account/App/user" className="nav-link">
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>User </p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
+                          </li>
+                          <li className="nav-item">
+                            <Link
                               to="/Account/App/department"
                               className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Department </p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link to="/Account/App/KYC" className="nav-link">
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>KYC</p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link to="/Account/App/Employee" className="nav-link">
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Employee Master</p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link to="/Account/App/Attendance" className="nav-link">
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p >Attendance</p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link to="/Account/App/Guard" className="nav-link">
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Guard Master</p>
-                          </Link>
-                        </li>
-                      </ul>
-                    </li>
-                    : null
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Department </p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link to="/Account/App/KYC" className="nav-link">
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>KYC</p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link to="/Account/App/Employee" className="nav-link">
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Employee Master</p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link to="/Account/App/Attendance" className="nav-link">
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p >Attendance</p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link to="/Account/App/Guard" className="nav-link">
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Guard Master</p>
+                            </Link>
+                          </li>
+                        </ul>
+                      </li>
+                      : null
                   }
 
                   {
                     this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager") || this.state.userRoles.includes("Property Admin")) ?
-                    <li className="nav-item has-treeview">
-                      <a href="#" className="nav-link">
-                        <i className="nav-icon fas fa-building"></i>
-                        <p>
-                          Property Setttings
-                          <i className="fas fa-angle-left right"></i>
-                        </p>
-                      </a>
-                      <ul
+                      <li className="nav-item has-treeview">
+                        <a href="#" className="nav-link">
+                          <i className="nav-icon fas fa-building"></i>
+                          <p>
+                            Property Setttings
+                            <i className="fas fa-angle-left right"></i>
+                          </p>
+                        </a>
+                        <ul
                           className="nav nav-treeview"
-                          style={{display: "none"}}
-                      >
-                        <li className="nav-item">
-                          <Link
+                          style={{ display: "none" }}
+                        >
+                          <li className="nav-item">
+                            <Link
                               to="/Account/App/PropertyMaster"
                               className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Property Master </p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Property Master </p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link
                               to="/Account/App/PropertyTower"
                               className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Property Towers </p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Property Towers </p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link
                               to="/Account/App/PropertyDetails"
                               className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Property Details </p>
-                          </Link>
-                        </li>
-                      </ul>
-                    </li>
-                     : null
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Property Details </p>
+                            </Link>
+                          </li>
+                        </ul>
+                      </li>
+                      : null
                   }
                   {
-                     this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager") || this.state.userRoles.includes("Property Admin")) ?
-                    <li className="nav-item has-treeview">
-                      <a href="#" className="nav-link">
-                        <i className="nav-icon fas fa-ticket-alt"></i>
-                        <p>
-                          Complaint Management
-                          <i className="fas fa-angle-left right"></i>
-                          {/* <span className="badge badge-info right">6</span> */}
-                        </p>
-                      </a>
+                    this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager") || this.state.userRoles.includes("Property Admin")) ?
+                      <li className="nav-item has-treeview">
+                        <a href="#" className="nav-link">
+                          <i className="nav-icon fas fa-ticket-alt"></i>
+                          <p>
+                            Complaint Management
+                            <i className="fas fa-angle-left right"></i>
+                            {/* <span className="badge badge-info right">6</span> */}
+                          </p>
+                        </a>
 
-                      <ul
+                        <ul
                           className="nav nav-treeview"
-                          style={{display: "none"}}
-                      >
-                        {/*<li className="nav-item">*/}
-                        {/*  <Link to="/Complain" className="nav-link">*/}
-                        {/*    <i className=" fas fa-caret-right nav-icon"></i>*/}
-                        {/*    <p>Open Tickets </p>*/}
-                        {/*  </Link>*/}
-                        {/*</li>*/}
+                          style={{ display: "none" }}
+                        >
+                          {/*<li className="nav-item">*/}
+                          {/*  <Link to="/Complain" className="nav-link">*/}
+                          {/*    <i className=" fas fa-caret-right nav-icon"></i>*/}
+                          {/*    <p>Open Tickets </p>*/}
+                          {/*  </Link>*/}
+                          {/*</li>*/}
 
-                        <li className="nav-item">
-                          <Link
+                          <li className="nav-item">
+                            <Link
                               to="/Account/App/TicketComplains"
                               className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Complaints</p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Complaints</p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link
                               to="/Account/App/TicketCategories"
                               className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Category</p>
-                          </Link>
-                        </li>
-                        {/*<li className="nav-item">*/}
-                        {/*  <Link*/}
-                        {/*      to="/EscalationGroup"*/}
-                        {/*      className="nav-link"*/}
-                        {/*  >*/}
-                        {/*    <i className=" fas fa-caret-right nav-icon"></i>*/}
-                        {/*    <p>Escalation Matrix</p>*/}
-                        {/*  </Link>*/}
-                        {/*</li>*/}
-                        {/*<li className="nav-item">*/}
-                        {/*  <Link*/}
-                        {/*      to="/EscalationMatrix"*/}
-                        {/*      className="nav-link"*/}
-                        {/*  >*/}
-                        {/*    <i className=" fas fa-caret-right nav-icon"></i>*/}
-                        {/*    <p>Complain Matrix</p>*/}
-                        {/*  </Link>*/}
-                        {/*</li>*/}
-                        {/*<li className="nav-item">*/}
-                        {/*  <Link to="/ticket" className="nav-link">*/}
-                        {/*    <i className=" fas fa-caret-right nav-icon"></i>*/}
-                        {/*    <p>Ticket</p>*/}
-                        {/*  </Link>*/}
-                        {/*</li>*/}
-                      </ul>
-                    </li>
-                     : null
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Category</p>
+                            </Link>
+                          </li>
+                          {/*<li className="nav-item">*/}
+                          {/*  <Link*/}
+                          {/*      to="/EscalationGroup"*/}
+                          {/*      className="nav-link"*/}
+                          {/*  >*/}
+                          {/*    <i className=" fas fa-caret-right nav-icon"></i>*/}
+                          {/*    <p>Escalation Matrix</p>*/}
+                          {/*  </Link>*/}
+                          {/*</li>*/}
+                          {/*<li className="nav-item">*/}
+                          {/*  <Link*/}
+                          {/*      to="/EscalationMatrix"*/}
+                          {/*      className="nav-link"*/}
+                          {/*  >*/}
+                          {/*    <i className=" fas fa-caret-right nav-icon"></i>*/}
+                          {/*    <p>Complain Matrix</p>*/}
+                          {/*  </Link>*/}
+                          {/*</li>*/}
+                          {/*<li className="nav-item">*/}
+                          {/*  <Link to="/ticket" className="nav-link">*/}
+                          {/*    <i className=" fas fa-caret-right nav-icon"></i>*/}
+                          {/*    <p>Ticket</p>*/}
+                          {/*  </Link>*/}
+                          {/*</li>*/}
+                        </ul>
+                      </li>
+                      : null
                   }
 
                   {
                     this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager") || this.state.userRoles.includes("Property Admin")) ?
-                    <li className="nav-item has-treeview">
-                      <a href="#" className="nav-link">
-                        <i className="nav-icon fas fa-dumbbell"></i>
-                        <p>
-                          Amenities Settings
-                          <i className="right fas fa-angle-left"></i>
-                        </p>
-                      </a>
-                      <ul className="nav nav-treeview">
-                        <li className="nav-item">
-                          <Link
+                      <li className="nav-item has-treeview">
+                        <a href="#" className="nav-link">
+                          <i className="nav-icon fas fa-dumbbell"></i>
+                          <p>
+                            Amenities Settings
+                            <i className="right fas fa-angle-left"></i>
+                          </p>
+                        </a>
+                        <ul className="nav nav-treeview">
+                          <li className="nav-item">
+                            <Link
                               to="/Account/App/AmenitiesMaster"
                               className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Amenities Master </p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Amenities Master </p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link
                               to="/Account/App/AmenitiesAssignment"
                               className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Amenities Assignment</p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Amenities Assignment</p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link
                               to="/Account/App/AmenitiesBooking"
                               className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Amenities Booking</p>
-                          </Link>
-                        </li>
-                      </ul>
-                    </li>
-                     : null
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Amenities Booking</p>
+                            </Link>
+                          </li>
+                        </ul>
+                      </li>
+                      : null
                   }
 
                   {
@@ -1128,32 +1140,32 @@ class MainNav extends React.Component {
 
             <Route exact path="/Account/App" component={Home} />
             <Route exact path="/Account/App/ticket">
-              <TicketingDashboard/>
+              <TicketingDashboard />
             </Route>
             <Route path="/Account/App/department">
-              <Department/>
+              <Department />
             </Route>
             <Route path="/Account/App/ChangePassword">
-              <ChangePassword/>
+              <ChangePassword />
             </Route>
             <Route path="/Account/App/team"></Route>
             <Route path="/Account/App/EmergencyContact">
-              <EmergencyContactPage/>
+              <EmergencyContactPage />
             </Route>
             <Route path="/Account/App/user">
-              <User/>
+              <User />
             </Route>
             <Route path="/Account/App/UserProfile">
-              <UserProfile/>
+              <UserProfile />
             </Route>
             <Route path="/Account/App/FacilityMember">
-              <FacilityMember/>
+              <FacilityMember />
             </Route>
             <Route path="/Account/App/CreateNewUser">
-              <CreateNewUser/>
+              <CreateNewUser />
             </Route>
             <Route path="/Account/App/AddNewUser">
-              <AddNewUser/>
+              <AddNewUser />
             </Route>
             <Route path="/Account/App/Facility">
               <FacilityLatlong />
@@ -1172,30 +1184,30 @@ class MainNav extends React.Component {
               <AddNewUser />
             </Route>
             <Route path="/Account/App/PropertyMember">
-              <PropertyMember/>
+              <PropertyMember />
             </Route>
             <Route path="/Account/App/PropertyOwner">
-              <PropertyOwnerPage/>
+              <PropertyOwnerPage />
             </Route>
             <Route path="/Account/App/Tenant">
-              <PropertyTenatsPage/>
+              <PropertyTenatsPage />
             </Route>
-           
+
             {/* <Route path="/Home">
                             <PropertyDashboard />
                         </Route> */}
 
             <Route path="/Account/App/Complain">
-              <ComplainManagement/>
+              <ComplainManagement />
             </Route>
             <Route path="/Account/App/PropertyMaster">
-              <PropertyMaster/>
+              <PropertyMaster />
             </Route>
             <Route path="/Account/App/PropertyDetails">
-              <PropertyDetailsPage/>
+              <PropertyDetailsPage />
             </Route>
             <Route path="/Account/App/ParkingDetails">
-              <ParkingDetailsPage/>
+              <ParkingDetailsPage />
             </Route>
             <Route path="/Account/App/ParkingZone">
               <ParkingZonePage />
@@ -1292,9 +1304,9 @@ class MainNav extends React.Component {
             </Route>
             <Route path="/Account/App/Visitor">
               <Visitor />
-             </Route>
+            </Route>
             <Route path="/Account/App/ServiceRecords">
-              <ServiceRecords/>
+              <ServiceRecords />
             </Route>
             <Route path="/Account/App/EscalationGroup">
               <EscalationGroupPage />
@@ -1361,13 +1373,15 @@ class MainNav extends React.Component {
             </Route>
             <Route path="/Account/App/Formula" component={Formula} />
             <Route path="/Account/App/SpotVisitCalendar" component={SpotVisitCalendar} />
-             <Route path="/Account/App/ExpenseReport" component={ExpenseReport} />
-             <Route path="/Account/App/ExpenseTypeMaster" component={ExpenseTypeMaster} />
+            <Route path="/Account/App/ExpenseReport" component={ExpenseReport} />
+            <Route path="/Account/App/ExpenseTypeMaster" component={ExpenseTypeMaster} />
             <Route path="/Account/App/ExpenseMaster" component={ExpenseMaster} />
             <Route path="/Account/App/leave" component={Leave} />
             <Route path="/Account/App/leavemaster" component={LeaveMaster} />
             <Route path="/Account/App/Facility" component={FacilityLatlongPage} />
             <Route path="/Account/App/EmployeeLeave" component={EmployeeLeave} />
+            <Route path="/Account/App/ItemSpecification"><ItemSpecificationPage /></Route>
+            <Route path="/Account/App/ItemAssigned"><ItemAssignedPage /></Route>
 
             {/* <Route path="/AttendanceSummary">
                             <AttendanceSummaryPage />
@@ -1375,11 +1389,11 @@ class MainNav extends React.Component {
           </Switch>
           <footer className="main-footer">
             <div className="float-right d-none d-sm-block">
-              <b>Version</b> 3.0.4-pre
+              <b>Version</b> 3.0.6-pre
             </div>
             <strong>
-              Copyright &copy; 2020-2021{" "}
-              <a href="http://www.ufirm.in">Ufirm.in</a>.
+              Copyright &copy; 2025-2026{" "}
+              <a href="https://www.ufirm.in">Ufirm.in</a>.
             </strong>{" "}
             All rights reserved.
           </footer>

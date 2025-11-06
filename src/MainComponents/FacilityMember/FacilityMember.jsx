@@ -15,7 +15,7 @@ import FacilityService, { getEmployeesByOffice } from "../../Services/FacilitySe
 import { useSelector } from "react-redux";
 import 'primereact/resources/primereact.min.css';
 import 'primereact/resources/themes/lara-light-indigo/theme.css';
-import { createEmployee, updateEmployee, deleteEmployee } from "../../Services/FacilityService";
+import { createEmployee, updateEmployee, deleteEmployee, getItemLinks } from "../../Services/FacilityService";
 import { Calendar } from "primereact/calendar";
 
 const StaffPage = () => {
@@ -69,6 +69,8 @@ const StaffPage = () => {
   const [uploadResume, setUploadResume] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editEmployeeId, setEditEmployeeId] = useState(null);
+  const [pfNumber, setPfNumber] = useState("");
+const [esiNumber, setEsiNumber] = useState("");
   const propertyId = useSelector((state) => state.Commonreducer.puidn);
 
   const genders = [
@@ -126,37 +128,49 @@ const StaffPage = () => {
 
   const openEditDialog = (row) => {
     setIsEditMode(true);
-    setEditEmployeeId(row.FacilityMember.FacilityMemberId); // ✅ use FacilityMemberId
+    setEditEmployeeId(
+      row && row.FacilityMember && row.FacilityMember.FacilityMemberId
+        ? row.FacilityMember.FacilityMemberId
+        : ""
+    );
 
-    // Prefill the form (same as before)
-    setEmployeeCode(row.Profile.EmployeeCode || "");
-    setEmployeeName(row.Profile.EmployeeName || "");
-    setDesignation(row.Profile.EmploymentType || "");
-    setEmail(row.Profile.Email || "");
-    setMobile(row.Profile.PhoneNumber || "");
-    setDepartment(row.Profile.Department || "");
-    setGender(row.Profile.Gender || "");
-    setDateOfBirth(row.Profile.DateOfBirth ? row.Profile.DateOfBirth.slice(0, 10) : "");
-    setPanCard(row.Profile.PanCard || "");
-    setAadharCard(row.Profile.AadharCard || "");
-    setAddressLine1(row.Profile.AddressLine1 || "");
-    setAddressLine2(row.Profile.AddressLine2 || "");
-    setCity(row.Profile.City || "");
-    setStateName(row.Profile.State || "");
-    setCompanyName(row.WorkHistory.CompanyName || "");
-    setRole(row.WorkHistory.Role || "");
-    setStartDate(row.WorkHistory.StartDate ? new Date(row.WorkHistory.StartDate) : "");
-    setEndDate(row.WorkHistory.EndDate ? new Date(row.WorkHistory.EndDate) : "");
-    setDateOfJoining(row.WorkHistory.DateOfJoining ? new Date(row.WorkHistory.DateOfJoining) : "");
-    setRelievingDate(row.WorkHistory.RelievingDate ? new Date(row.WorkHistory.RelievingDate) : "");
-    setTpv(row.WorkHistory.ThirdPartyVerification || false);
+    // Profile Info
+    const profile = row && row.Profile ? row.Profile : {};
+    setEmployeeCode(profile.EmployeeCode || "");
+    setEmployeeName(profile.EmployeeName || "");
+    setDesignation(profile.EmploymentType || "");
+    setEmail(profile.Email || "");
+    setMobile(profile.PhoneNumber || "");
+    setDepartment(profile.Department || "");
+    setGender(profile.Gender || "");
+    setDateOfBirth(profile.DateOfBirth ? profile.DateOfBirth.slice(0, 10) : "");
+    setPanCard(profile.PanCard || "");
+    setAadharCard(profile.AadharCard || "");
+    setAddressLine1(profile.AddressLine1 || "");
+    setAddressLine2(profile.AddressLine2 || "");
+    setCity(profile.City || "");
+    setStateName(profile.State || "");
+
+    // Work History
+    const work = row && row.WorkHistory ? row.WorkHistory : {};
+    setCompanyName(work.CompanyName || "");
+    setRole(work.Role || "");
+    setStartDate(work.StartDate ? new Date(work.StartDate) : "");
+    setEndDate(work.EndDate ? new Date(work.EndDate) : "");
+    setDateOfJoining(work.DateOfJoining ? new Date(work.DateOfJoining) : "");
+    setRelievingDate(work.RelievingDate ? new Date(work.RelievingDate) : "");
+    setTpv(work.ThirdPartyVerification || false);
     setUploadResume(null);
-    setBankAccountNumber(row.FinancialInfo.BankAccountNumber || "");
-    setBankIFSCCode(row.FinancialInfo.BankIFSCCode || "");
-    setBankName(row.FinancialInfo.BankName || "");
-    setUanNumber(row.FinancialInfo.UANNumber || "");
-    setPanNumber(row.FinancialInfo.PANNumber || "");
 
+    // Financial Info
+    const fin = row && row.FinancialInfo ? row.FinancialInfo : {};
+    setBankAccountNumber(fin.BankAccountNumber || "");
+    setBankIFSCCode(fin.BankIFSCCode || "");
+    setBankName(fin.BankName || "");
+    setUanNumber(fin.UANNumber || "");
+    setPanNumber(fin.PANNumber || "");
+setPfNumber(fin.PFNumber||"");
+setEsiNumber(fin.ESINumber||"");
     setDialogVisible(true);
   };
 
@@ -194,11 +208,8 @@ const StaffPage = () => {
           data = await res.text(); // fallback for plain text
         }
 
-        console.log("Response data:", data);
-
         if (!res.ok) throw new Error(`Upload failed with status ${res.status}`);
 
-        console.log("Response status:", res.status);
 
         // const text = await res.text(); // <-- use text instead of json
         // console.log("Response text:", text);
@@ -262,15 +273,17 @@ const StaffPage = () => {
         IsActive: true
       },
       FinancialInfo: {
-        BankAccountNumber: bankAccountNumber,
-        BankIFSCCode: bankIFSCCode,
-        BankName: bankName,
-        UANNumber: uanNumber,
-        PANNumber: panNumber,
-        CreatedOn: new Date().toISOString(),
-        UpdatedOn: new Date().toISOString(),
-        IsActive: true
-      },
+  BankAccountNumber: bankAccountNumber,
+  BankIFSCCode: bankIFSCCode,
+  BankName: bankName,
+  UANNumber: uanNumber,
+  PANNumber: panNumber,
+  PFNumber: pfNumber,
+  ESINumber: esiNumber,
+  CreatedOn: new Date().toISOString(),
+  UpdatedOn: new Date().toISOString(),
+  IsActive: true
+},
       FacilityMember: {
         PropertyId: propertyId || 0,
         Address: address,
@@ -476,6 +489,8 @@ const StaffPage = () => {
               <InputText placeholder="Bank Name" value={bankName} onChange={(e) => setBankName(e.target.value)} className="mb-2" />
               <InputText placeholder="UAN Number" value={uanNumber} onChange={(e) => setUanNumber(e.target.value)} className="mb-2" />
               <InputText placeholder="PAN Number" value={panNumber} onChange={(e) => setPanNumber(e.target.value)} className="mb-2" />
+              <InputText placeholder="PF Number" value={pfNumber} onChange={(e) => setPfNumber(e.target.value)} className="mb-2" />
+<InputText placeholder="ESI Number" value={esiNumber} onChange={(e) => setEsiNumber(e.target.value)} className="mb-2" />
             </div>
           </TabPanel>
 
@@ -586,6 +601,9 @@ const StaffPage = () => {
                 <InputText placeholder="Bank Name" value={viewData.FinancialInfo && viewData.FinancialInfo.BankName ? viewData.FinancialInfo.BankName : ""} readOnly className="mb-2" />
                 <InputText placeholder="UAN Number" value={viewData.FinancialInfo && viewData.FinancialInfo.UANNumber ? viewData.FinancialInfo.UANNumber : ""} readOnly className="mb-2" />
                 <InputText placeholder="PAN Number" value={viewData.FinancialInfo && viewData.FinancialInfo.PANNumber ? viewData.FinancialInfo.PANNumber : ""} readOnly className="mb-2" />
+                <InputText placeholder="PF Number" value={viewData.FinancialInfo && viewData.FinancialInfo.PFNumber ? viewData.FinancialInfo.PFNumber : ""} readOnly className="mb-2" />
+<InputText placeholder="ESI Number" value={viewData.FinancialInfo && viewData.FinancialInfo.ESINumber ? viewData.FinancialInfo.ESINumber : ""} readOnly className="mb-2" />
+
               </div>
             </TabPanel>
             <TabPanel header="Work History">
@@ -609,8 +627,7 @@ const StaffPage = () => {
           </TabView>
         )}
       </Dialog>
-
-    </div>
+    </div >
   );
 };
 
