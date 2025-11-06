@@ -8,7 +8,12 @@ import { InputText } from "primereact/inputtext";
 import { Toast } from "primereact/toast";
 import { Dialog } from "primereact/dialog";
 import { FilterMatchMode } from "primereact/api";
-import { getItemSpecification, createItemSpecification, getItemSpecificationName } from "../../Services/ItemassignService";// 🔹 You'll create this
+import { Dropdown } from "primereact/dropdown"; // ✅ Added for dropdown
+import {
+  getItemSpecification,
+  createItemSpecification,
+  getItemSpecificationName,
+} from "../../Services/ItemassignService";
 import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 
@@ -28,6 +33,10 @@ const ItemSpecificationPage = () => {
     Specification: "",
   });
 
+  // ✅ Dropdown states
+  const [itemOptions, setItemOptions] = useState([]);
+  const [loadingItems, setLoadingItems] = useState(false);
+
   // 🔹 Fetch all items on load
   useEffect(() => {
     fetchAllItems();
@@ -44,6 +53,31 @@ const ItemSpecificationPage = () => {
         summary: "Error",
         detail: "Failed to load items",
       });
+    }
+  };
+
+  // 🔹 Fetch item list for dropdown
+  const fetchItemDropdown = async () => {
+    setLoadingItems(true);
+    try {
+      const response = await fetch(
+        "https://api.urest.in:8096/api/inventory/items?propertyId=27"
+      );
+      const data = await response.json();
+      const formatted = data.map((item) => ({
+        label: item.Name,
+        value: item.Name,
+      }));
+      setItemOptions(formatted);
+    } catch (error) {
+      console.error("Dropdown Fetch Error:", error);
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Failed to load item list",
+      });
+    } finally {
+      setLoadingItems(false);
     }
   };
 
@@ -99,9 +133,15 @@ const ItemSpecificationPage = () => {
   };
 
   // 🔹 Open create dialog
-  const openCreateDialog = () => {
+  const openCreateDialog = async () => {
     setFormData({ Id: null, Name: "", Specification: "" });
+    await fetchItemDropdown(); // ✅ Load dropdown data before opening
     setDialogVisible(true);
+  };
+
+  // 🔹 Handle dropdown change
+  const handleItemChange = (value) => {
+    setFormData({ ...formData, Name: value });
   };
 
   // 🔹 Table header
@@ -165,20 +205,21 @@ const ItemSpecificationPage = () => {
         <div className="flex flex-col gap-4">
           <div className="modal-body">
             <div className="row">
+              {/* ✅ Dropdown for Item Name */}
               <div className="col-12">
                 <label htmlFor="name">Item Name</label>
-                <input
-                  id="Name"
-                  required
-                  placeholder="Enter Item Name"
-                  type="text"
-                  className="form-control"
+                <Dropdown
                   value={formData.Name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, Name: e.target.value })
+                  options={itemOptions}
+                  onChange={(e) => handleItemChange(e.value)}
+                  placeholder={
+                    loadingItems ? "Loading items..." : "Select Item"
                   }
+                  disabled={loadingItems}
+                  className="w-full"
                 />
               </div>
+
               <div className="col-12 mt-3">
                 <label htmlFor="specification">Specification</label>
                 <input
