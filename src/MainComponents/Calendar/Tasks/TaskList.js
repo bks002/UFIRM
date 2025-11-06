@@ -19,7 +19,9 @@ import { downloadExcel } from "react-export-table-to-excel";
 import { CSVLink } from 'react-csv'
 import LayoutDataProvider from '../../../Routing/LayoutDataProvider'
 
+
 const $ = window.$;
+
 
 class TaskList extends Component {
   constructor(props) {
@@ -46,26 +48,6 @@ class TaskList extends Component {
           Header: "Task Name",
           accessor: "Name",
         },
-        // {
-        //   Header: "Assigned To",
-        //   accessor: "AssignedTo",
-        // },
-        // {
-        //   Header: "Due Date",
-        //   accessor: "DateFrom",
-        // },
-        // {
-        //   Header: "End Date",
-        //   accessor: "DateTo",
-        // },
-        // {
-        //   Header: "Start Time",
-        //   accessor: "TimeFrom",
-        // },
-        // {
-        //   Header: "End Time",
-        //   accessor: "TimeTo",
-        // },
         {
           Header: "Occurence",
           accessor: "OccurenceView",
@@ -160,12 +142,6 @@ class TaskList extends Component {
           Header: "Task Priority",
           accessor: "TaskPriority"
         },
-        // {
-        //   Header: "Assigned To",
-        // },
-        // {
-        //   Header: "Assigned By",
-        // },
         {
           Header: "Action",
           Cell: (data) => {
@@ -190,7 +166,7 @@ class TaskList extends Component {
                 <button
                   className="btn btn-sm btn-success"
                   onClick={this.EditTask.bind(this, data.cell.row.original)}
-                  title="View"
+                  title="Edit"
                   style={{ marginRight: "5px" }}
                 >
                   <i className="fa fa-edit"></i>
@@ -198,7 +174,7 @@ class TaskList extends Component {
                 <button
                   className="btn btn-sm btn-danger"
                   onClick={this.DeleteTask.bind(this, data.cell.row.original)}
-                  title="View"
+                  title="Delete"
                 >
                   <i className="fa fa-trash"></i>
                 </button>
@@ -249,29 +225,30 @@ class TaskList extends Component {
     this.comdbprovider = new LayoutDataProvider();
   }
 
+
   handleDownloadExcel() {
     downloadExcel({
       fileName: `TaskList`,
       sheet: "react-export-table-to-excel",
       tablePayload: {
         header: this.state.header,
-        // accept two different data structures
         body: this.state.data
       }
     });
   }
+
 
   loadProperty() {
     this.comdbprovider.getUserAssignedproperty().then(
       resp => {
         if (resp && resp.ok && resp.status === 200) {
           return resp.json().then(rData => {
-
             this.setState({ propertyData: rData });
           });
         }
       });
   }
+
 
   getModel = (type, categoryId, subCategoryId, assignTo, occurance, startDate, endDate, taskStatus, propertyId, taskPriority) => {
     var model = [];
@@ -295,6 +272,7 @@ class TaskList extends Component {
     return model;
   };
 
+
   getDeleteTaskModel = (type, taskId) => {
     var model = [];
     switch (type) {
@@ -308,6 +286,7 @@ class TaskList extends Component {
     }
     return model;
   };
+
 
   getAssignModel = (type) => {
     var model = [];
@@ -323,6 +302,7 @@ class TaskList extends Component {
     return model;
   };
 
+
   getTaskPriorityModel = (type) => {
     var model = [];
     switch (type) {
@@ -335,6 +315,7 @@ class TaskList extends Component {
     }
     return model;
   };
+
 
   manageCategory = (model, type) => {
     this.ApiProvider.manageCategory(model, type).then((resp) => {
@@ -357,6 +338,7 @@ class TaskList extends Component {
       }
     });
   };
+
 
   manageTask = (model, type) => {
     if (this.state.filtered) {
@@ -417,8 +399,8 @@ class TaskList extends Component {
         }
       });
     }
-
   };
+
 
   modifyOccurence = (Occurrence) => {
     if (Occurrence === 'W') {
@@ -457,6 +439,7 @@ class TaskList extends Component {
     });
   };
 
+
   manageAssign = (model, type) => {
     this.ApiProvider.manageAssign(model, type).then((resp) => {
       if (resp.ok && resp.status === 200) {
@@ -478,6 +461,7 @@ class TaskList extends Component {
       }
     });
   };
+
 
   manageDashboardAssign = (model, type) => {
     this.ApiProvider.manageDashboardAssign(model, type).then((resp) => {
@@ -501,6 +485,7 @@ class TaskList extends Component {
     });
   };
 
+
   manageTaskPriority = (model, type) => {
     this.ApiProvider.manageTaskPriority(model, type).then((resp) => {
       if (resp.ok && resp.status === 200) {
@@ -523,11 +508,13 @@ class TaskList extends Component {
     });
   };
 
+
   getCategory() {
     var type = "R";
     var model = this.getModel(type);
     this.manageCategory(model, type);
   }
+
 
   getSubCategory() {
     var type = "R";
@@ -573,6 +560,7 @@ class TaskList extends Component {
     this.manageTaskPriority(model, type);
   }
 
+
   onAddQuestion = (data) => {
     var rowData = this.findItem(data);
     if (rowData) {
@@ -583,6 +571,7 @@ class TaskList extends Component {
     }
   };
 
+
   findItem(id) {
     return this.state.data.find((item) => {
       if (item.TaskId === id) {
@@ -590,6 +579,7 @@ class TaskList extends Component {
       }
     });
   }
+
 
   DateRangeConfig(startDate, endDate) {
     let _this = this;
@@ -607,6 +597,7 @@ class TaskList extends Component {
     });
   }
 
+
   componentDidMount() {
     const { PropertyVal } = this.props;
     const status = this.props.status === 'Completed' ? 'Complete' : this.props.status;
@@ -623,32 +614,24 @@ class TaskList extends Component {
       taskPriority: priority === null ? 0 : priority,
       selectedSubCategoryId: subCatId === null ? 0 : subCatId,
     },
-      // const startDate = moment().clone().startOf("month");
-      // const endDate = moment().clone().endOf("month");
-      // this.setState({
-      //   filterFromDate: startDate.format('YYYY-MM-DD'),
-      //   filterToDate: endDate.format('YYYY-MM-DD'),
-      //   filtered: true
-      // }, 
       () => {
         const dateTo = new Date(this.state.filterToDate)
         const dateFrom = new Date(this.state.filterFromDate)
         this.DateRangeConfig(dateFrom, dateTo);
-        // this.DateRangeConfig(startDate, endDate);
         this.getCategory();
         this.getTasks();
         this.getTasksPriority();
         this.getAssign()
         this.getDashboardAssignList()
-        // this.getAllProperties();
         this.loadProperty()
-        // this.TaskStatusConfig();
       });
   }
+
 
   AddNew = () => {
     this.setState({ PageMode: "Add", showAddModal: true });
   };
+
 
   Filter = () => {
     if (this.props.PropertyVal > 0 || this.state.assignTo > 0 || this.state.occurance !== "" || this.state.taskStatus !== "None") {
@@ -656,10 +639,12 @@ class TaskList extends Component {
         this.getTasks();
       });
 
+
     } else {
       appCommon.showtextalert("", "Please Select Any Filter Attribute", "warning");
     }
   };
+
 
   Reset = () => {
     this.setState({
@@ -675,8 +660,8 @@ class TaskList extends Component {
       taskPriority: 0,
       data: []
     });
-    //this.getTasks();
   };
+
 
   AddQuestion = (data) => {
     this.setState({
@@ -691,6 +676,7 @@ class TaskList extends Component {
   EditTask = (data) => {
     this.setState({ PageMode: "EditTask", showEditModal: true, rowData: data });
   };
+
 
   DeleteTask = (data) => {
     let myhtml = document.createElement("div");
@@ -719,6 +705,7 @@ class TaskList extends Component {
     });
   };
 
+
   closeModal = () => {
     this.setState(
       {
@@ -726,6 +713,7 @@ class TaskList extends Component {
         showAddModal: false,
         showQuesModal: false,
         showTaskModal: false,
+        showEditModal: false,
       },
       () => {
         const startDate = moment().clone().startOf("month");
@@ -733,16 +721,16 @@ class TaskList extends Component {
         this.DateRangeConfig(startDate, endDate);
         this.setState({ pendingTasks: 0, actionableTasks: 0, completedTasks: 0 })
 
+
         this.getCategory();
         this.getTasks();
-        // this.TaskStatusConfig();
       }
     );
   };
 
+
   selectedCategory = (value) => this.setState({ selectedCategoryId: value });
 
-  // closeModal = () => this.setState({ PageMode: 'Home', showAddModal: false });
 
   componentDidUpdate(prevProps, prevState) {
     if (prevState.selectedCategoryId !== this.state.selectedCategoryId) {
@@ -755,10 +743,12 @@ class TaskList extends Component {
       this.getTasks();
     }
 
+
     if (prevProps.PropertyVal !== this.props.PropertyVal) {
       this.getAssign();
       this.getDashboardAssignList()
     }
+
 
     if (prevProps.PropertyVal !== this.props.PropertyVal) {
       const { PropertyVal } = this.props;
@@ -768,23 +758,10 @@ class TaskList extends Component {
       }
     }
 
+
   }
   onCategorySelected = (val) => { };
 
-  // TaskStatusConfig() {
-  //   let _this = this;
-  //   $("#ticketMutliSelect").multiselect({
-  //     onSelectAll: function () {
-  //       // _this.filterOnChange();
-  //     },
-  //     onDeselectAll: function () {
-  //       // _this.filterOnChange();
-  //     },
-  //     onChange: function (option, checked, select) {
-  //       // _this.filterOnChange();
-  //     },
-  //   });
-  // }
 
   countTasksByStatus = (data) => {
     data.forEach((element) => {
@@ -799,6 +776,7 @@ class TaskList extends Component {
       }
     })
   };
+
 
   render() {
     return (
@@ -827,7 +805,6 @@ class TaskList extends Component {
                   </div>
                   <div className="card-header d-flex p-2">
                     <div className="d-flex w-100 flex-column">
-                      {/* First Row - Main Filters */}
                       <div className="d-flex align-items-center mb-2">
                         <div className="d-flex flex-grow-1">
                           <div className="nav-item mr-2">
@@ -933,7 +910,7 @@ class TaskList extends Component {
                                 })}
                             </select>
                           </div>
-                          <div className="nav-item mr-2 style={{maxWidth: '800px'}}">
+                          <div className="nav-item mr-2">
                             <select
                               className="form-control"
                               onChange={(e) =>
@@ -958,7 +935,6 @@ class TaskList extends Component {
                         </div>
                       </div>
 
-                      {/* Second Row - Assigned To, Date Range, and Buttons */}
                       <div className="d-flex align-items-center">
                         <div className="d-flex flex-grow-1">
                           <div className="nav-item mr-2">
@@ -1064,6 +1040,7 @@ class TaskList extends Component {
             closeModal={this.closeModal}
             rowData={this.state.rowData}
             categoryData={this.state.CategoryData}
+            propertyData={this.state.propertyData}
           />
         )}
       </div>
@@ -1081,5 +1058,6 @@ const mapDispatchToProps = (dispatch) => {
   const actions = bindActionCreators(departmentAction, dispatch);
   return { actions };
 };
+
 
 export default connect(mapStateToProps, mapDispatchToProps)(TaskList);

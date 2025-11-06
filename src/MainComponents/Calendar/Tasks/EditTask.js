@@ -1,206 +1,110 @@
 import React, { Component } from "react";
-import ReactDatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-import { setHours, setMinutes } from "date-fns";
-import Modal from "react-awesome-modal";
-import moment from "moment";
-import { th } from "date-fns/locale";
-import ApiProvider from "../DataProvider";
 import Button from "../../../ReactComponents/Button/Button";
+import ApiProvider from "../DataProvider";
 import * as appCommon from "../../../Common/AppCommon.js";
-import { CreateValidator, ValidateControls } from "../Validation";
-import { ToastContainer, toast } from "react-toastify";
+import moment from "moment";
+import LayoutDataProvider from '../../../Routing/LayoutDataProvider';
 
-export default class EditTask extends Component {
+const $ = window.$;
+
+class EditTask extends Component {
   constructor(props) {
     super(props);
-    console.log(props);
     this.state = {
-      taskName: props.rowData.Name,
-      location: props.rowData.Location,
-      categoryId: "",
-      subCategoryId: "",
-      assignTo: props.rowData.AssignedToId,
-      assign: [],
-      remindme: "",
-      repeat: "",
-      check: true,
-      startDate: new Date(),
-      endDate: new Date(),
-
-      // startDate: props.rowData.DateFrom,
-      // endDate: props.rowData.DateTo,
-
-      createdOn: moment().format(),
-      // startTime: moment().add(moment().minute() > 30 && 1, 'hours').minutes(moment().minute() <= 30 ? 30 : 0).toDate(),
-      // endTime: moment().add(moment().minute() > 30 && 1, 'hours').minutes(moment().minute() <= 30 ? 30 : 0).add(30, 'm').toDate(),
-      startTime: new Date(),
-      endTime: new Date(),
-      selectedCategory: props.rowData.TaskCategoryId,
-      selectedSubCategory: props.rowData.TaskSubCategoryId,
-      subCategory: [],
-      assets: [],
-      assetId: props.rowData.AssetId,
-      QRCode: props.rowData.QRcode,
-      taskData: [],
-      occurence:this.props.rowData.Occurence,
-      propertyData: [],
-      propertyId: props.rowData.PropertyId,
+      taskId: "",
+      name: "",
+      location: "",
+      categoryId: 0,
+      subCategoryId: 0,
+      startDate: "",
+      endDate: "",
+      allDay: false,
+      startTime: "",
+      endTime: "",
+      remindMe: "Never",
+      propertyId: 0,
+      propertyName: "",
+      assignTo: 0,
+      repeat: "D",
+      assets: "",
+      qrCode: "",
+      remarks: "",
+      taskPriority: 0,
+      taskStatus: "",
+      
+      categoryData: [],
+      subCategoryData: [],
+      assignToList: [],
+      taskPriorityList: [],
     };
-    this.onStartDateChange = this.onStartDateChange.bind(this);
-    this.onEndDateChange = this.onEndDateChange.bind(this);
     this.ApiProvider = new ApiProvider();
   }
 
-  onStartDateChange(date) {
-    this.setState({
-      startDate: date,
-    });
+  componentDidMount() {
+    const { rowData, categoryData, propertyData } = this.props;
+    
+    if (rowData) {
+      // Get property name from propertyData
+      let propName = "";
+      if (propertyData && rowData.PropertyId) {
+        const property = propertyData.find(p => p.Id === rowData.PropertyId);
+        if (property) {
+          propName = property.Name;
+        }
+      }
+
+      this.setState({
+        taskId: rowData.TaskId || "",
+        name: rowData.Name || "",
+        location: rowData.Location || "",
+        categoryId: rowData.TaskCategoryId || 0,
+        subCategoryId: rowData.TaskSubCategoryId || 0,
+        startDate: rowData.DateFrom || "",
+        endDate: rowData.DateTo || "",
+        startTime: rowData.TimeFrom || "",
+        endTime: rowData.TimeTo || "",
+        propertyId: rowData.PropertyId || 0,
+        propertyName: propName,
+        assignTo: rowData.AssignedToId || 0,
+        repeat: rowData.Occurence || "D",
+        assets: rowData.AssetId || "",
+        qrCode: rowData.QRcode || "",
+        remarks: rowData.Remarks || "",
+        taskPriority: rowData.TaskPriority || 0,
+        taskStatus: rowData.TaskStatus || "",
+        categoryData: categoryData || [],
+      }, () => {
+        this.loadSubCategory();
+        this.loadAssignToList();
+        this.loadTaskPriority();
+      });
+    }
   }
 
-  onEndDateChange(date) {
-    this.setState({
-      endDate: date,
-    });
-  }
-  getModel = (type) => {
-    var model = [];
-    switch (type) {
-      case "R":
-        model.push({
-          CmdType: type,
-        });
-        break;
-      default:
-    }
-    return model;
-  };
-
-  getAssignModel = (type) => {
-    var model = [];
-    switch (type) {
-      case "R":
-        model.push({
-          CmdType: type,
-          PropertyId: this.state.propertyId ? this.state.propertyId : 0,
-        });
-        break;
-      default:
-    }
-    return model;
-  };
-
-  getTaskModel = (type) => {
-    var model = [];
-    switch (type) {
-      case "R":
-        model.push({
-          CmdType: type,
-        });
-        break;
-      case "C":
-        model.push({
-          Id: parseInt(this.props.rowData.TaskId),
-          CategoryId: parseInt(this.state.selectedCategory),
-          SubCategoryId: parseInt(this.state.selectedSubCategory),
-          Name: this.state.taskName,
-          Description: "Desc",
-          DateFrom: this.state.startDate,
-          DateTo: this.state.endDate,
-          TimeFrom: this.state.startTime.toString().split(" GMT")[0],
-          TimeTo: this.state.endTime.toString().split(" GMT")[0],
-          Remarks: "remarks",
-          Occurence: this.state.occurence,
-          CreatedBy: 1,
-          CreatedOn: this.state.createdOn,
-          AssignTo: parseInt(this.state.assignTo),
-          RemindMe: this.state.remindme,
-          Location: this.state.location,
-          AssetsId: parseInt(this.state.assetId),
-          QRCode: this.state.QRCode,
-          Type: type,
-        });
-        break;
-      default:
-    }
-    return model;
-  };
-
-  manageSubCategory = (model, type, categoryId) => {
-    this.ApiProvider.manageSubCategory(model, type, categoryId).then((resp) => {
-      if (resp.ok && resp.status == 200) {
-        return resp.json().then((rData) => {
-          let subCatData = [];
-          rData.forEach((element) => {
-            subCatData.push({
-              SubCategoryId: element.SubCategoryId,
-              CategoryId: element.CategoryId,
-              SubCategoryName: element.SubCategoryName,
+  loadSubCategory = () => {
+    if (this.state.categoryId > 0) {
+      const model = [{ CmdType: "R" }];
+      this.ApiProvider.manageSubCategory(model, "R", this.state.categoryId).then((resp) => {
+        if (resp.ok && resp.status === 200) {
+          return resp.json().then((rData) => {
+            let subCatData = [];
+            rData.forEach((element) => {
+              subCatData.push({
+                SubCategoryId: element.SubCategoryId,
+                SubCategoryName: element.SubCategoryName,
+              });
             });
+            this.setState({ subCategoryData: subCatData });
           });
-          switch (type) {
-            case "R":
-              this.setState({ subCategory: subCatData });
-              break;
-            default:
-          }
-        });
-      }
-    });
+        }
+      });
+    }
   };
 
-  manageTask = (model, type) => {
-    this.ApiProvider.manageTask(model, type).then((resp) => {
-      if (resp.ok && resp.status == 200) {
-        return resp.json().then((rData) => {
-          switch (type) {
-            case "C":
-              if (rData === "Created !") {
-                appCommon.showtextalert(
-                  "Task Saved Successfully!",
-                  "",
-                  "success"
-                );
-                console.log("Task Saved Successfully!");
-                this.handleCancel();
-              }
-              break;
-            default:
-          }
-        });
-      }
-    });
-  };
-
-  manageAssets = (model, type) => {
-    this.ApiProvider.manageAssets(model, type).then((resp) => {
-      if (resp.ok && resp.status == 200) {
-        return resp.json().then((rData) => {
-          let assetsData = [];
-          assetsData = [...rData.PassedServiceDates, ...rData.UpcomingServiceDates].map((element) => ({
-            assetId: element.Id,
-            assetName: element.Name,
-          }));
-          // rData.forEach((element) => {
-          //   assetsData.push({
-          //     assetId: element.Id,
-          //     assetName: element.Name,
-          //   });
-          // });
-          switch (type) {
-            case "R":
-              this.setState({ assets: assetsData });
-              break;
-            default:
-          }
-        });
-      }
-    });
-  };
-
-  manageAssign = (model, type) => {
-    this.ApiProvider.manageAssign(model, type).then((resp) => {
-      if (resp.ok && resp.status == 200) {
+  loadAssignToList = () => {
+    const model = [{ CmdType: "R", PropertyId: this.state.propertyId }];
+    this.ApiProvider.manageAssign(model, "R").then((resp) => {
+      if (resp.ok && resp.status === 200) {
         return resp.json().then((rData) => {
           let assignData = [];
           rData.forEach((element) => {
@@ -209,465 +113,432 @@ export default class EditTask extends Component {
               assignName: element.Name,
             });
           });
-          switch (type) {
-            case "R":
-              this.setState({ assign: assignData });
-              break;
-            default:
-          }
+          this.setState({ assignToList: assignData });
         });
       }
     });
   };
 
-  manageProperties = (model, type) => {
-    this.ApiProvider.manageProperties(model, type).then((resp) => {
-      if (resp.ok && resp.status == 200) {
+  loadTaskPriority = () => {
+    const model = [{ CmdType: "R" }];
+    this.ApiProvider.manageTaskPriority(model, "R").then((resp) => {
+      if (resp.ok && resp.status === 200) {
         return resp.json().then((rData) => {
-          let propertyData = [];
+          let taskPriorityList = [];
           rData.forEach((element) => {
-            propertyData.push({
-              propertyId: element.PropertyId,
-              name: element.Name,
+            taskPriorityList.push({
+              Id: element.Id,
+              Name: element.Name,
             });
           });
-          switch (type) {
-            case "R":
-              this.setState({ propertyData: propertyData });
-              break;
-            default:
-          }
+          this.setState({ taskPriorityList: taskPriorityList });
         });
       }
     });
   };
 
-  getSubCategory() {
-    var type = "R";
-    var model = this.getModel(type);
-    var categoryId = this.state.selectedCategory
-      ? this.state.selectedCategory
-      : 0;
-    this.manageSubCategory(model, type, categoryId);
-  }
-
-  getAssets(propId) {
-    var type = "R";
-    var model = this.getModel(type);
-    model.propertyId=propId;
-    console.log(model)
-    this.manageAssets(model, type);
-  }
-
-  getAssign() {
-    var type = "R";
-    var model = this.getAssignModel(type);
-    this.manageAssign(model, type);
-  }
-
-  getAllProperties() {
-    var type = "R";
-    var model = this.getModel(type);
-    this.manageProperties(model, type);
-    // console.log(model);
-    // this.getAssets(model);
-  }
-
-  handleSave = (e) => {
-    e.currentTarget.disabled = true;
-    var type = "C";
-    var model = this.getTaskModel(type);
-    this.manageTask(model, type);
-  };
-  handleCancel = () => {
-    this.props.closeModal();
+  handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    this.setState({ 
+      [name]: type === 'checkbox' ? checked : value 
+    }, () => {
+      if (name === 'categoryId') {
+        this.setState({ subCategoryId: 0 });
+        this.loadSubCategory();
+      }
+    });
   };
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevState.selectedCategory !== this.state.selectedCategory) {
-      this.getSubCategory();
-    }
-    if (prevState.propertyId !== this.state.propertyId) {
-      this.getAssign();
-      this.getAssets(this.state.propertyId);
-    }
-  }
+  handleSubmit = () => {
+    const {
+      taskId, name, location, categoryId, subCategoryId,
+      startDate, endDate, startTime, endTime, propertyId,
+      assignTo, repeat, assets, qrCode, remarks, taskPriority, taskStatus, allDay
+    } = this.state;
 
-  componentDidMount() {
-    // this.getAssets();
-    this.getAssign();
-    this.getSubCategory()
-    this.getAllProperties();
-  }
+    // Validation
+    if (!name) {
+      appCommon.showtextalert("", "Please enter task name", "warning");
+      return;
+    }
+    if (!location) {
+      appCommon.showtextalert("", "Please enter location", "warning");
+      return;
+    }
+    if (categoryId === 0) {
+      appCommon.showtextalert("", "Please select category", "warning");
+      return;
+    }
+    if (subCategoryId === 0) {
+      appCommon.showtextalert("", "Please select sub category", "warning");
+      return;
+    }
+    if (!startDate) {
+      appCommon.showtextalert("", "Please select start date", "warning");
+      return;
+    }
+    if (!endDate) {
+      appCommon.showtextalert("", "Please select end date", "warning");
+      return;
+    }
+
+    // Prepare update model
+    const model = [{
+      CmdType: "U",
+      TaskId: taskId,
+      Name: name,
+      Location: location,
+      TaskCategoryId: categoryId,
+      TaskSubCategoryId: subCategoryId,
+      DateFrom: startDate,
+      DateTo: endDate,
+      TimeFrom: startTime,
+      TimeTo: endTime,
+      PropertyId: propertyId,
+      AssignedTo: assignTo,
+      Occurrence: repeat,
+      AssetId: assets,
+      QRCode: qrCode,
+      Remarks: remarks,
+      TaskPriority: taskPriority,
+      TaskStatus: taskStatus,
+      AllDay: allDay ? 1 : 0,
+    }];
+
+    // Call API to update task
+    this.ApiProvider.manageTask(model, "U").then((resp) => {
+      if (resp.ok && resp.status === 200) {
+        return resp.json().then((rData) => {
+          appCommon.showtextalert("Task Updated Successfully!", "", "success");
+          this.props.closeModal();
+        });
+      } else {
+        appCommon.showtextalert("Something went wrong!", "", "error");
+      }
+    }).catch((error) => {
+      appCommon.showtextalert("Error updating task!", "", "error");
+    });
+  };
 
   render() {
-    // console.log(this.props)
+    const { showEditModal, closeModal } = this.props;
+    const {
+      taskId, name, location, categoryId, subCategoryId,
+      startDate, endDate, allDay, startTime, endTime, remindMe,
+      propertyName, assignTo, repeat, assets, qrCode,
+      categoryData, subCategoryData, assignToList,
+      taskPriorityList, taskPriority, remarks, taskStatus
+    } = this.state;
+
+    if (!showEditModal) return null;
+
     return (
-      <div>
-        <Modal
-          visible={this.props.showEditModal}
-          effect="fadeInRight"
-          onClickAway={this.props.closeModal}
-          width="830"
-        >
-          <div className="row">
-            <div className="col-12">
-              <div className="card card-primary">
-                <div className="card-header">
-                  <h3 className="card-title">Edit Task</h3>
-                  <div className="card-tools">
-                    <button
-                      className="btn btn-tool"
-                      onClick={this.props.closeModal}
-                    >
-                      <i className="fas fa-times"></i>
-                    </button>
+      <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <div className="modal-dialog modal-xl" role="document">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title">Edit Task</h5>
+              <button type="button" className="close" onClick={closeModal}>
+                <span>&times;</span>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="row">
+                {/* Task Id */}
+                <div className="col-md-12 mb-3">
+                  <label className="font-weight-bold">Task Id</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={taskId}
+                    disabled
+                    style={{ backgroundColor: '#e9ecef' }}
+                  />
+                </div>
+
+                {/* Name */}
+                <div className="col-md-6 mb-3">
+                  <label className="font-weight-bold">Name <span className="text-danger">*</span></label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="name"
+                    value={name}
+                    onChange={this.handleInputChange}
+                    placeholder="PPM Schedule For Reception"
+                  />
+                </div>
+
+                {/* Location */}
+                <div className="col-md-6 mb-3">
+                  <label className="font-weight-bold">Location <span className="text-danger">*</span></label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="location"
+                    value={location}
+                    onChange={this.handleInputChange}
+                    placeholder="Reception"
+                  />
+                </div>
+
+                {/* Category */}
+                <div className="col-md-6 mb-3">
+                  <label className="font-weight-bold">Category <span className="text-danger">*</span></label>
+                  <select
+                    className="form-control"
+                    name="categoryId"
+                    value={categoryId}
+                    onChange={this.handleInputChange}
+                  >
+                    <option value={0}>Select Category</option>
+                    {categoryData && categoryData.map((cat, key) => (
+                      <option key={key} value={cat.Id}>
+                        {cat.Name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Sub Category */}
+                <div className="col-md-6 mb-3">
+                  <label className="font-weight-bold">Sub Category <span className="text-danger">*</span></label>
+                  <select
+                    className="form-control"
+                    name="subCategoryId"
+                    value={subCategoryId}
+                    onChange={this.handleInputChange}
+                  >
+                    <option value={0}>Select Sub Category</option>
+                    {subCategoryData && subCategoryData.map((subCat, key) => (
+                      <option key={key} value={subCat.SubCategoryId}>
+                        {subCat.SubCategoryName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Start Date */}
+                <div className="col-md-6 mb-3">
+                  <label className="font-weight-bold">Start Date <span className="text-danger">*</span></label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    name="startDate"
+                    value={startDate}
+                    onChange={this.handleInputChange}
+                  />
+                </div>
+
+                {/* End Date */}
+                <div className="col-md-6 mb-3">
+                  <label className="font-weight-bold">End Date <span className="text-danger">*</span></label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    name="endDate"
+                    value={endDate}
+                    onChange={this.handleInputChange}
+                  />
+                </div>
+
+                {/* All Day */}
+                <div className="col-md-12 mb-3">
+                  <div className="custom-control custom-switch">
+                    <input
+                      type="checkbox"
+                      className="custom-control-input"
+                      id="allDay"
+                      name="allDay"
+                      checked={allDay}
+                      onChange={this.handleInputChange}
+                    />
+                    <label className="custom-control-label font-weight-bold" htmlFor="allDay">
+                      All Day
+                    </label>
                   </div>
                 </div>
-                <div
-                  className="card-body"
-                  style={{ height: "600px", overflowY: "scroll" }}
-                >
-                  <div className="row">
-                    <div className="col-6">
-                      <label>Task Id</label>
-                      <input
-                        id="txtName"
-                        placeholder="Enter Task"
-                        type="text"
-                        value={this.props.rowData.TaskId}
-                        className="form-control"
-                        disabled
-                      />
-                    </div>
-                  </div>
-                  <div className="row mt-2">
-                    <div className="col-6">
-                      <label>Name</label>
-                      <input
-                        id="txtName"
-                        placeholder="Enter Task"
-                        type="text"
-                        className="form-control"
-                        value={this.state.taskName}
-                        onChange={(e) => {
-                          this.setState({ taskName: e.target.value });
-                        }}
-                      />
-                    </div>
-                    <div className="col-6">
-                      <label>Location</label>
-                      <input
-                        id="txtLocation"
-                        placeholder="Enter Location"
-                        type="text"
-                        value={this.state.location}
-                        className="form-control"
-                        onChange={(e) => {
-                          this.setState({ location: e.target.value });
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="row mt-2">
-                    <div className="col-6">
-                      <label>Category</label>
-                      <select
-                        id="dllCategory"
-                        className="form-control"
-                        value={this.state.selectedCategory}
-                        onChange={(e) =>
-                          this.setState({
-                            selectedCategory: e.target.value,
-                          })
-                        }
-                      >
-                        <option value={0}>Select Category</option>
-                        {this.props.categoryData
-                          ? this.props.categoryData.map((e, key) => {
-                              return (
-                                <option key={key} value={e.Id}>
-                                  {e.Name}
-                                </option>
-                              );
-                            })
-                          : null}
-                      </select>
-                    </div>
-                    <div className="col-6">
-                      <label>Sub Category</label>
-                      <select
-                        id="dllCategory"
-                        value={this.state.selectedSubCategory}
-                        className="form-control"
-                        onChange={(e) =>
-                          this.setState({
-                            selectedSubCategory: e.target.value,
-                          })
-                        }
-                      >
-                        <option value={0}>Select Sub Category</option>
-                        {this.state.subCategory &&
-                          this.state.subCategory.map((e, key) => {
-                            return (
-                              <option key={key} value={e.SubCategoryId}>
-                                {e.SubCategoryName}
-                              </option>
-                            );
-                          })}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="row mt-2">
-                    <div className="col-6">
-                      <label>Start Date</label>
-                      <ReactDatePicker
-                        className="form-control"
-                        value={this.state.startDate}
-                        selected={this.state.startDate}
-                        onChange={this.onStartDateChange}
-                        dateFormat="dd/MM/yyyy"
-                        peekNextmonth
-                        showMonthDropdown
-                        showYearDropdown
-                        dropdownMode="select"
-                        id="textStartDate"
-                      />
-                    </div>
-                    <div className="col-6">
-                      <label>End Date</label>
-                      <ReactDatePicker
-                        className="form-control"
-                        selected={this.state.endDate}
-                        value={this.state.endDate}
-                        onChange={this.onEndDateChange}
-                        dateFormat="dd/MM/yyyy"
-                        peekNextmonth
-                        showMonthDropdown
-                        showYearDropdown
-                        dropdownMode="select"
-                        id="textEndDate"
-                      />
-                    </div>
-                    <div className="col-3 mt-2">
-                      <label>All Day</label>
-                      <br />
-                      <label className="switch">
-                        <input
-                          type="checkbox"
-                          // checked={this.state.check}
-                          onChange={(e) => {
-                            this.setState({ check: e.target.checked });
-                          }}
-                        />
-                        <div className="slider round">
-                          <span className="on">Yes</span>
-                          <span className="off">No</span>
-                        </div>
-                      </label>
-                    </div>
-                    <div className="col-3 mt-2">
-                      <label>Start Time</label>
-                      <ReactDatePicker
-                        className="form-control"
-                        selected={this.state.startTime}
-                        value={this.state.startTime}
-                        onChange={(date) =>
-                          this.setState({
-                            startTime: date,
-                            endTime: moment(date).add(30, "m").toDate(),
-                          })
-                        }
-                        showTimeSelect
-                        showTimeSelectOnly
-                        timeIntervals={30}
-                        timeCaption="Time"
-                        dateFormat="h:mm a"
-                        // disabled={this.state.check}
-                      />
-                    </div>
-                    <div className="col-3 mt-2">
-                      <label>End Time</label>
-                      <ReactDatePicker
-                        className="form-control"
-                        value={this.state.endTime}
-                        selected={this.state.endTime}
-                        onChange={(date) => this.setState({ endTime: date })}
-                        showTimeSelect
-                        showTimeSelectOnly
-                        timeIntervals={30}
-                        timeCaption="Time"
-                        dateFormat="h:mm a"
-                        // disabled={this.state.check}
-                        minTime={moment(this.state.startTime)
-                          .add(30, "m")
-                          .toDate()}
-                        maxTime={setHours(
-                          setMinutes(this.state.startTime, 45),
-                          23
-                        )}
-                      />
-                    </div>
-                    <div className="col-3 mt-2">
-                      <label>Remind me</label>
-                      <select
-                        id="ddleventremindme"
-                        className="form-control"
-                        value={this.state.remindme}
-                        onChange={(e) => {
-                          this.setState({ remindme: e.target.value });
-                        }}
-                      >
-                        <option value="0">Never</option>
-                        <option value="5">5 minutes before</option>
-                        <option value="15">15 minutes before</option>
-                        <option value="30"> 30 minutes before</option>
-                        <option value="60">1 hour before</option>
-                        <option value="720">12 hours before</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="row mt-2">
-                    <div className="col-5">
-                      <label>Property</label>
-                      <select
-                        iid="ddlAssignee"
-                        className="form-control"
-                        value={this.state.propertyId}
-                        onChange={(e) =>
-                          this.setState({
-                            propertyId: e.target.value,
-                          })
-                        }
-                      >
-                        <option value={0}>Select Property</option>
-                        {this.state.propertyData &&
-                          this.state.propertyData.map((e, key) => {
-                            return (
-                              <option key={key} value={e.propertyId}>
-                                {e.name}
-                              </option>
-                            );
-                          })}
-                      </select>
-                    </div>
-                    <div className="col-4">
-                      <label>Assign To</label>
-                      <select
-                        iid="ddlAssignee"
-                        className="form-control"
-                        value={this.state.assignTo}
-                        onChange={(e) =>
-                          this.setState({
-                            assignTo: e.target.value,
-                          })
-                        }
-                      >
-                        <option value={0}>Select Assignee</option>
-                        {this.state.assign &&
-                          this.state.assign.map((e, key) => {
-                            return (
-                              <option key={key} value={e.assignId}>
-                                {e.assignName}
-                              </option>
-                            );
-                          })}
-                      </select>
-                    </div>
-                    <div className="col-3">
-                      <label>Repeat</label>
-                      <select
-                        id="ddleventrepeat"
-                        className="form-control"
-                        value={this.state.occurence}
-                        onChange={(e) => {
-                          this.setState({
-                            occurence:e.target.value
-                          });
-                        }}
-                      >
-                        <option value="N">Do not repeat</option>
-                        <option value="D">Daily</option>
-                        <option value="W">Weekly</option>
-                        <option value="M">Monthly</option>
-                        <option value="Y">Yearly</option>
-                        {/* <option>Custom</option> */}
-                      </select>
-                    </div>
-                  </div>
 
-                  <div className="row mt-2">
-                    <div className="col-6">
-                      <label>Assets</label>
-                      <select
-                        iid="ddlAssignee"
-                        className="form-control"
-                        value={this.state.assetId}
-                        onChange={(e) => {
-                          this.setState({ assetId: e.target.value });
-                        }}
-                      >
-                        <option value={0}>Select Assets</option>
-                        {this.state.assets &&
-                          this.state.assets.map((e, key) => {
-                            return (
-                              <option key={key} value={e.assetId}>
-                                {e.assetName}
-                              </option>
-                            );
-                          })}
-                      </select>
-                    </div>
-                    <div className="col-6">
-                      <label>QR Code</label>
-                      <input
-                        id="txtLocation"
-                        placeholder="QR Code"
-                        type="text"
-                        className="form-control"
-                        value={this.state.QRCode}
-                        onChange={(e) => {
-                          this.setState({ QRCode: e.target.value });
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="modal-footer">
-                      <button className="btn btn-primary" onClick={(e)=>this.handleSave(e)}>
-                        Save
-                      </button>
-                    <Button
-                      Id="btnCancel"
-                      Text="Cancel"
-                      Action={this.handleCancel}
-                      ClassName="btn btn-secondary"
-                    />
-                  </div>
+                {/* Start Time */}
+                <div className="col-md-4 mb-3">
+                  <label className="font-weight-bold">Start Time</label>
+                  <input
+                    type="time"
+                    className="form-control"
+                    name="startTime"
+                    value={startTime}
+                    onChange={this.handleInputChange}
+                    disabled={allDay}
+                  />
+                </div>
+
+                {/* End Time */}
+                <div className="col-md-4 mb-3">
+                  <label className="font-weight-bold">End Time</label>
+                  <input
+                    type="time"
+                    className="form-control"
+                    name="endTime"
+                    value={endTime}
+                    onChange={this.handleInputChange}
+                    disabled={allDay}
+                  />
+                </div>
+
+                {/* Remind me */}
+                <div className="col-md-4 mb-3">
+                  <label className="font-weight-bold">Remind me</label>
+                  <select
+                    className="form-control"
+                    name="remindMe"
+                    value={remindMe}
+                    onChange={this.handleInputChange}
+                  >
+                    <option value="Never">Never</option>
+                    <option value="15min">15 minutes before</option>
+                    <option value="30min">30 minutes before</option>
+                    <option value="1hour">1 hour before</option>
+                    <option value="1day">1 day before</option>
+                  </select>
+                </div>
+
+                {/* Property - DISABLED INPUT WITH VALUE */}
+                <div className="col-md-4 mb-3">
+                  <label className="font-weight-bold">Property</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={propertyName || "Business Park"}
+                    disabled
+                    style={{ backgroundColor: '#e9ecef' }}
+                  />
+                </div>
+
+                {/* Assign To */}
+                <div className="col-md-4 mb-3">
+                  <label className="font-weight-bold">Assign To</label>
+                  <select
+                    className="form-control"
+                    name="assignTo"
+                    value={assignTo}
+                    onChange={this.handleInputChange}
+                  >
+                    <option value={0}>Select User</option>
+                    {assignToList && assignToList.map((user, key) => (
+                      <option key={key} value={user.assignId}>
+                        {user.assignName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Repeat */}
+                <div className="col-md-4 mb-3">
+                  <label className="font-weight-bold">Repeat</label>
+                  <select
+                    className="form-control"
+                    name="repeat"
+                    value={repeat}
+                    onChange={this.handleInputChange}
+                  >
+                    <option value="D">Daily</option>
+                    <option value="W">Weekly</option>
+                    <option value="M">Monthly</option>
+                    <option value="Y">Yearly</option>
+                  </select>
+                </div>
+
+                {/* Assets */}
+                <div className="col-md-6 mb-3">
+                  <label className="font-weight-bold">Assets</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="assets"
+                    value={assets}
+                    onChange={this.handleInputChange}
+                    placeholder="Select Assets"
+                  />
+                </div>
+
+                {/* QR Code */}
+                <div className="col-md-6 mb-3">
+                  <label className="font-weight-bold">QR Code</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="qrCode"
+                    value={qrCode}
+                    onChange={this.handleInputChange}
+                    placeholder="Reception"
+                  />
+                </div>
+
+                {/* Task Priority */}
+                <div className="col-md-6 mb-3">
+                  <label className="font-weight-bold">Task Priority</label>
+                  <select
+                    className="form-control"
+                    name="taskPriority"
+                    value={taskPriority}
+                    onChange={this.handleInputChange}
+                  >
+                    <option value={0}>Select Priority</option>
+                    {taskPriorityList && taskPriorityList.map((priority, key) => (
+                      <option key={key} value={priority.Id}>
+                        {priority.Name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Task Status */}
+                <div className="col-md-6 mb-3">
+                  <label className="font-weight-bold">Task Status</label>
+                  <select
+                    className="form-control"
+                    name="taskStatus"
+                    value={taskStatus}
+                    onChange={this.handleInputChange}
+                  >
+                    <option value="">Select Status</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Actionable">Actionable</option>
+                  </select>
+                </div>
+
+                {/* Remarks */}
+                <div className="col-md-12 mb-3">
+                  <label className="font-weight-bold">Remarks</label>
+                  <textarea
+                    className="form-control"
+                    name="remarks"
+                    value={remarks}
+                    onChange={this.handleInputChange}
+                    rows="3"
+                    placeholder="Enter remarks here..."
+                  />
                 </div>
               </div>
             </div>
+            <div className="modal-footer">
+              <Button
+                Action={this.handleSubmit}
+                ClassName="btn btn-primary"
+                Text="Save"
+              />
+              <Button
+                Action={closeModal}
+                ClassName="btn btn-secondary"
+                Text="Cancel"
+              />
+            </div>
           </div>
-        </Modal>
-        <ToastContainer
-          position="top-right"
-          autoClose={5000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-        />
-        <ToastContainer />
-        {this.state.PageMode === "EditQuestion" && (
-          <EditTask
-           showEditModal={this.state.showEditModal}
-            closeModal={this.closeModal}
-            rowData={this.state.rowData}
-          />
-        )}
+        </div>
       </div>
     );
   }
 }
+
+export default EditTask;

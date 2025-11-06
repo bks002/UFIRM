@@ -10,7 +10,7 @@ import { Dialog } from "primereact/dialog";
 import { Dropdown } from "primereact/dropdown";
 import { Checkbox } from "primereact/checkbox";
 import { TabView, TabPanel } from "primereact/tabview";
-import "primeicons/primeicons.css";
+
 import FacilityService, { getEmployeesByOffice } from "../../Services/FacilityService";
 import { useSelector } from "react-redux";
 import 'primereact/resources/primereact.min.css';
