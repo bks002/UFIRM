@@ -113,7 +113,7 @@ const LeaveTypeMaster = () => {
       <h5 className="m-0">Leave Master</h5>
       <div className="d-flex gap-2 align-items-center">
         <span className="p-input-icon-left">
-          <i className="pi pi-search" />
+          
           <InputText
             value={globalFilterValue}
             onChange={onGlobalFilterChange}
