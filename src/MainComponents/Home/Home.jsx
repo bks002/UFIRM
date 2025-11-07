@@ -260,6 +260,8 @@ const history = useHistory();
             getDates(initialDate, finalDate);
         }
     }, [PropertyId]);
+    
+
 
 
 
