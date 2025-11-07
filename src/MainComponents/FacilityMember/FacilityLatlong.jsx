@@ -187,7 +187,7 @@ const FacilityLatlong = () => {
           <h5 className="m-0">Facility Latlong</h5>
           <div className="d-flex gap-2 align-items-center">
             <span className="p-input-icon-left">
-              <i className="pi pi-search" />
+             
               <InputText
                 value={globalFilterValue}
                 onChange={onGlobalFilterChange}

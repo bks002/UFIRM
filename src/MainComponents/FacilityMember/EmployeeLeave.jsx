@@ -151,8 +151,7 @@ const EmployeeLeave = () => {
 
     const record = {
       EmployeeId: Number(selectedEmployee),   // ensure number
-      LeaveTypeId: Number(selectedLeaveType), // ensure number
-      LeaveCount: Number(leaveCount),
+      LeaveTypeId: Number(selectedLeaveType),
       Balance: Number(leaveBalance),
       FinancialYear: financialYear,  // try "2025-2026" instead of just "2025"
       PropertyId: Number(propertyId), // convert to number
@@ -210,7 +209,7 @@ const EmployeeLeave = () => {
       <h5 className="m-0">Employee Leave</h5>
       <div className="d-flex gap-2 align-items-center">
         <span className="p-input-icon-left">
-          <i className="pi pi-search" />
+         
           <InputText
             value={globalFilterValue}
             onChange={onGlobalFilterChange}
@@ -275,7 +274,6 @@ const EmployeeLeave = () => {
                 <Column header="#" body={indexTemplate} style={{ width: "5rem" }} />
                 <Column field="employeeId" header="Employee Name" body={employeeBodyTemplate} />
                 <Column field="leaveTypeId" header="Leave Type" body={leaveTypeBodyTemplate} />
-                <Column field="leaveCount" header="Leave Count" />
                 <Column field="balance" header="Leave Balance" />
                 <Column field="financialYear" header="Financial Year" />
                 <Column header="Action" body={actionBodyTemplate} style={{ width: "9rem" }} />
@@ -328,11 +326,6 @@ const EmployeeLeave = () => {
               placeholder="Select Leave Type"
               className="w-full"
             />
-          </div>
-
-          <div className="field mb-3">
-            <label>Leave Count</label>
-            <InputText value={leaveCount} onChange={(e) => setLeaveCount(e.target.value)} />
           </div>
 
           <div className="field mb-3">

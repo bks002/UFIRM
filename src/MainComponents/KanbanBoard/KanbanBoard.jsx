@@ -80,12 +80,12 @@ class KanbanBoard extends Component {
         let laneDetails = this.state.data.lanes.filter((x) => x.id === laneId);
         console.log(laneDetails);
         let cardsDetails = laneDetails[0].cards.filter((x) => x.id === cardId)
-         console.log(cardsDetails[0]);
+        console.log(cardsDetails[0]);
         this.ApiProviderr.GetticketAttachments(parseInt(cardId)).then(
             resp => {
                 if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
-                        console.log(rData+"GetticketAttachments");
+                        console.log(rData + "GetticketAttachments");
                         this.setState({ TicketAttachmens: rData }, () => {
                             this.ApiProviderr.GetEditTicketDropdownData(cardsDetails[0].ticketOrigin, parseInt(cardId)).then(
                                 resp => {
@@ -105,7 +105,7 @@ class KanbanBoard extends Component {
                                                     Cardusername: rData.username,
                                                     CardReoprterImg: rData.profileImageUrl,
                                                     CardAttachment: this.state.TicketAttachmens,
-                                                    CardPriority:cardsDetails[0].priority,
+                                                    CardPriority: cardsDetails[0].priority,
                                                 }
                                             }, () => {
                                                 //category
@@ -115,15 +115,27 @@ class KanbanBoard extends Component {
                                                 //staff 
                                                 if (this.state.personalPropertyTickets !== "Personal") {
                                                     const CurrentStafffilter = this.state.TeamMemberData.filter(
-                                                        item => item.Name === cardsDetails[0].teamMember);
-                                                    let CurrentStaff = {
-                                                        Id: CurrentStafffilter[0].Id,
-                                                        Name: CurrentStafffilter[0].Name,
-                                                        value: CurrentStafffilter[0].Id,
-                                                        label: CurrentStafffilter[0].Name, color: '#0052CC'
-                                                    };
-                                                    TicketDetailModelInstance.setStaff(CurrentStaff);
+                                                        item => item.Name === cardsDetails[0].teamMember
+                                                    );
 
+                                                    // if found → set the staff; else → show all / reset
+                                                    if (CurrentStafffilter && CurrentStafffilter.length > 0) {
+                                                        const CurrentStaff = {
+                                                            Id: CurrentStafffilter[0].Id,
+                                                            Name: CurrentStafffilter[0].Name,
+                                                            value: CurrentStafffilter[0].Id,
+                                                            label: CurrentStafffilter[0].Name,
+                                                            color: '#0052CC'
+                                                        };
+                                                        TicketDetailModelInstance.setStaff(CurrentStaff);
+                                                    } else {
+                                                        console.warn("Team member not found, showing all team members.");
+                                                        // Option 1: reset selection (no preselected staff)
+                                                        TicketDetailModelInstance.setStaff(null);
+
+                                                        // Option 2 (optional): set all team members if UI supports multi-select
+                                                        // TicketDetailModelInstance.setStaff(this.state.TeamMemberData);
+                                                    }
                                                     // complain location
                                                     const existComplainLocation = this.state.complainLocationList.filter(
                                                         item => item.label === cardsDetails[0].flatDetailNumber);
@@ -273,7 +285,7 @@ class KanbanBoard extends Component {
     manageTickets = (model, type) => {
         this.ApiProviderr.manageTickets(model, type).then(
             resp => {
-                console.log(model,type)
+                console.log(model, type)
                 if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
                         console.log(rData)
@@ -412,7 +424,6 @@ class KanbanBoard extends Component {
             resp => {
                 if (resp.ok && resp.status === 200) {
                     return resp.json().then(rData => {
-                        console.log(rData)
                         let CategoryWiseTeamMemberData = [];
                         rData.forEach(element => {
                             CategoryWiseTeamMemberData.push({ Id: element.id, Name: element.text });
@@ -742,7 +753,7 @@ class KanbanBoard extends Component {
                         this.loadTemmemberCategoryWiseData("TAM", "null", this.props.PropertyId);
                     }
                 })
-        } 
+        }
     }
 
     addNew() {
