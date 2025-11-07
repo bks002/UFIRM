@@ -10,55 +10,69 @@ import { Dialog } from "primereact/dialog";
 import { Dropdown } from "primereact/dropdown";
 import { Checkbox } from "primereact/checkbox";
 import { TabView, TabPanel } from "primereact/tabview";
-import "primeicons/primeicons.css";
-import FacilityService, { getEmployeesByOffice } from "../../Services/FacilityService";
-import { useSelector } from "react-redux";
-import 'primereact/resources/primereact.min.css';
-import 'primereact/resources/themes/lara-light-indigo/theme.css';
-import { createEmployee, updateEmployee, deleteEmployee, getItemLinks } from "../../Services/FacilityService";
 import { Calendar } from "primereact/calendar";
+import "primeicons/primeicons.css";
+import "primereact/resources/primereact.min.css";
+import "primereact/resources/themes/lara-light-indigo/theme.css";
+import { useSelector } from "react-redux";
+
+import FacilityService, {
+  getEmployeesByOffice,
+  createEmployee,
+  updateEmployee,
+  deleteEmployee,
+} from "../../Services/FacilityService";
+
+// ✅ Import existing components from old project
+import SalaryGroupView from "../../ReactComponents/DataGrid/SalaryGroupView.jsx";
+import LoanAdvanceDialog from "../../ReactComponents/DataGrid/LoanAdvances.jsx";
 
 const StaffPage = () => {
   const toast = useRef(null);
-  const [employee, setEmployee] = useState(null);
+  const propertyId = useSelector((state) => state.Commonreducer.puidn);
+
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [globalFilterValue, setGlobalFilterValue] = useState("");
   const [selectedRow, setSelectedRow] = useState(null);
+  const [dialogVisible, setDialogVisible] = useState(false);
   const [viewDialogVisible, setViewDialogVisible] = useState(false);
   const [viewData, setViewData] = useState(null);
-
-
-  // Dialog
-  const [dialogVisible, setDialogVisible] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editEmployeeId, setEditEmployeeId] = useState(null);
+const [name, setName] = useState("");
+  // ✅ Salary & Loan dialog states
+  const [showSalaryGroupView, setShowSalaryGroupView] = useState(false);
+  const [selectedFacilityMemberId, setSelectedFacilityMemberId] = useState(null);
+  const [selectedFacilityMemberName, setSelectedFacilityMemberName] = useState("");
+  const [showLoanAdvanceDialog, setShowLoanAdvanceDialog] = useState(false);
+  const [selectedLoanAdvanceId, setSelectedLoanAdvanceId] = useState(null);
 
   // Form fields
-  const [officeName, setOfficeName] = useState("");
+  const [address, setAddress] = useState(""); 
+  const [family, setFamily] = useState("");
   const [employeeCode, setEmployeeCode] = useState("");
   const [employeeName, setEmployeeName] = useState("");
-  const [addressLine1, setAddressLine1] = useState("");
-  const [addressLine2, setAddressLine2] = useState("");
-  const [name, setName] = useState("");
-  const [gender, setGender] = useState("");
-  const [mobile, setMobile] = useState("");
   const [designation, setDesignation] = useState("");
   const [otherDesignation, setOtherDesignation] = useState("");
-  const [address, setAddress] = useState("");
-  const [family, setFamily] = useState("");
-  const [profileImage, setProfileImage] = useState(null);
-  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [gender, setGender] = useState("");
+  const [mobile, setMobile] = useState("");
   const [email, setEmail] = useState("");
   const [department, setDepartment] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [addressLine1, setAddressLine1] = useState("");
+  const [addressLine2, setAddressLine2] = useState("");
   const [city, setCity] = useState("");
   const [stateName, setStateName] = useState("");
-  const [panCard, setPanCard] = useState("");
   const [aadharCard, setAadharCard] = useState("");
+  const [panCard, setPanCard] = useState("");
   const [bankAccountNumber, setBankAccountNumber] = useState("");
   const [bankIFSCCode, setBankIFSCCode] = useState("");
   const [bankName, setBankName] = useState("");
   const [uanNumber, setUanNumber] = useState("");
   const [panNumber, setPanNumber] = useState("");
+  const [pfNumber, setPfNumber] = useState("");
+  const [esiNumber, setEsiNumber] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [role, setRole] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -67,11 +81,7 @@ const StaffPage = () => {
   const [relievingDate, setRelievingDate] = useState("");
   const [tpv, setTpv] = useState(false);
   const [uploadResume, setUploadResume] = useState(null);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [editEmployeeId, setEditEmployeeId] = useState(null);
-  const [pfNumber, setPfNumber] = useState("");
-const [esiNumber, setEsiNumber] = useState("");
-  const propertyId = useSelector((state) => state.Commonreducer.puidn);
+  const [profileImage, setProfileImage] = useState(null);
 
   const genders = [
     { label: "Male", value: "Male" },
@@ -84,28 +94,46 @@ const [esiNumber, setEsiNumber] = useState("");
     { label: "OTHER", value: "OTHER" },
   ];
 
-  // Fetch staff data on component mount
+  // Load staff
   useEffect(() => {
     const fetchEmployee = async () => {
       try {
         const data = await getEmployeesByOffice(propertyId);
-        setStaff(Array.isArray(data) ? data : [data]); // 👈 ensure array
+        setStaff(Array.isArray(data) ? data : [data]);
       } catch (err) {
-        console.error("Failed to load employee", err);
-        setError("Failed to load employee");
+        toast.current.show({ severity: "error", summary: "Error", detail: "Failed to load staff" });
       } finally {
         setLoading(false);
       }
     };
 
-    if (propertyId) {
-      fetchEmployee();
-    } else {
-      setLoading(false);
-    }
+    if (propertyId) fetchEmployee();
   }, [propertyId]);
 
+  // ---- Salary & Loan actions ----
+  const openSalaryGroupView = (row) => {
+    const memberId = row.FacilityMember.FacilityMemberId;
+    const memberName = row.FacilityMember.Name || "";
+    setSelectedFacilityMemberId(memberId);
+    setSelectedFacilityMemberName(memberName);
+    setShowSalaryGroupView(true);
+  };
 
+  const closeSalaryGroupView = () => {
+    setShowSalaryGroupView(false);
+    setSelectedFacilityMemberId(null);
+  };
+
+  const openLoanAdvanceDialog = (row) => {
+    const memberId = row.FacilityMember.FacilityMemberId;
+    setSelectedLoanAdvanceId(memberId);
+    setShowLoanAdvanceDialog(true);
+  };
+
+  const closeLoanAdvanceDialog = () => {
+    setShowLoanAdvanceDialog(false);
+    setSelectedLoanAdvanceId(null);
+  };
   const viewStaff = (row) => {
     setViewData(row); // store selected row data
     setViewDialogVisible(true);
@@ -362,49 +390,19 @@ setEsiNumber(fin.ESINumber||"");
       <div className="d-flex align-items-center gap-2">
         {selectedRow && (
           <>
-            <Button
-              icon="pi pi-pencil"
-              className="p-button-rounded p-button-text p-button-info"
-              onClick={() => openEditDialog(selectedRow)}
-            />
-            <Button
-              icon="pi pi-trash"
-              className="p-button-rounded p-button-text p-button-danger"
-              onClick={deleteStaff}
-            />
-            <Button
-              icon="pi pi-eye"
-              className="p-button-rounded p-button-text p-button-help"
-              onClick={() => viewStaff(selectedRow)}
-            />
-            <Button
-              icon="pi pi-key"
-              className="p-button-rounded p-button-text p-button-secondary"
-              onClick={async () => {
-                if (!selectedRow) return;
-                try {
-                  const response = await FacilityService.resetPassword(selectedRow.FacilityMember.MobileNumber);
-                  toast.current.show({
-                    severity: response.Success ? "success" : "error",
-                    summary: "Reset Password",
-                    detail: response.Message || (response.Success ? "Password reset successfully" : "Failed"),
-                  });
-                } catch (error) {
-                  toast.current.show({ severity: "error", summary: "Reset Password", detail: "Server Error" });
-                }
-              }}
-            />
+            <Button icon="pi pi-pencil" className="p-button-text p-button-info" onClick={() => openDialog(selectedRow)} />
+            <Button icon="pi pi-trash" className="p-button-text p-button-danger" onClick={() => deleteEmployee(selectedRow.FacilityMember.FacilityMemberId)} />
+            <Button icon="pi pi-eye" className="p-button-text p-button-help" onClick={() => viewStaff(selectedRow)} />
+            <Button icon="pi pi-wallet" className="p-button-text p-button-warning" tooltip="View Salary" onClick={() => openSalaryGroupView(selectedRow)} />
+            <Button icon="pi pi-credit-card" className="p-button-text p-button-secondary" tooltip="View Loan Advances" onClick={() => openLoanAdvanceDialog(selectedRow)} />
           </>
         )}
 
-        <div className="p-input-left">
-
-          <InputText
-            value={globalFilterValue}
-            onChange={(e) => setGlobalFilterValue(e.target.value)}
-            placeholder="Search..."
-          />
-        </div>
+        <InputText
+          value={globalFilterValue}
+          onChange={(e) => setGlobalFilterValue(e.target.value)}
+          placeholder="Search..."
+        />
 
         <Button label="Add Staff" icon="pi pi-plus" onClick={openDialog} className="p-button-success" />
       </div>
@@ -440,6 +438,23 @@ setEsiNumber(fin.ESINumber||"");
               </DataTable>
 
             </div>
+            {showSalaryGroupView && (
+        <SalaryGroupView
+          propertyId={propertyId}
+          facilityMemberId={selectedFacilityMemberId}
+          employeeName={selectedFacilityMemberName}
+          onClose={closeSalaryGroupView}
+        />
+      )}
+
+      {/* ✅ Loan Advance Dialog */}
+      {showLoanAdvanceDialog && (
+        <LoanAdvanceDialog
+          show={showLoanAdvanceDialog}
+          onClose={closeLoanAdvanceDialog}
+          facilityMemberId={selectedLoanAdvanceId}
+        />
+      )}
           </div>
         </div>
       </section>

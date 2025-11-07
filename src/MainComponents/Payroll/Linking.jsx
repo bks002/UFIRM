@@ -31,7 +31,7 @@ export default function DesignationLinking() {
         const employees = (data || [])
           .map((item) => ({
             ...item.EmployeeList,
-            FacilityMemberId: item.FacilityMember?.FacilityMemberId,
+            FacilityMemberId: item.FacilityMember.FacilityMemberId,
           }))
           .filter(Boolean);
 

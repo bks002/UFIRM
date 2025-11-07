@@ -118,7 +118,7 @@ export default function GenerateSalary() {
   const currentMonth = new Date().getMonth() + 1;
 
   // Get officeId from Redux store
-  const officeId = useSelector((state) => state.Commonreducer?.puidn);
+  const officeId = useSelector((state) => state.Commonreducer.puidn);
 
   // State variables
   const [selectedOption, setSelectedOption] = useState("All");
@@ -222,7 +222,7 @@ export default function GenerateSalary() {
     // Filter by search text
     if (searchText.trim()) {
       filtered = filtered.filter((emp) =>
-        emp.EmployeeName?.toLowerCase().includes(searchText.toLowerCase())
+        emp.EmployeeName.toLowerCase().includes(searchText.toLowerCase())
       );
     }
 
@@ -258,7 +258,7 @@ export default function GenerateSalary() {
   const fetchSalaryDetails = async (specificIds = null) => {
     setLoadingSalaryData(true);
     try {
-      const facilityMemberIds = specificIds?.length
+      const facilityMemberIds = specificIds.length
         ? specificIds
         : generatedEmployees.map((emp) => emp.EmployeeId);
       const monthName = selectedMonth ? monthNames[selectedMonth - 1] : null;
@@ -279,7 +279,7 @@ export default function GenerateSalary() {
       setSalaryData(data || []);
 
       // ✅ ADD THIS HERE
-      if (data?.length === 0) setShowGrid(false);
+      if (data.length === 0) setShowGrid(false);
     } catch (error) {
       console.error("Failed to fetch salary details:", error);
       setSalaryData([]);
@@ -781,7 +781,7 @@ export default function GenerateSalary() {
   };
 
   const filteredGeneratedEmployees = generatedEmployees.filter((emp) =>
-    emp.EmployeeName?.toLowerCase().includes(searchGeneratedText.toLowerCase())
+    emp.EmployeeName.toLowerCase().includes(searchGeneratedText.toLowerCase())
   );
 
   const handleRegenerateSalary = async () => {
