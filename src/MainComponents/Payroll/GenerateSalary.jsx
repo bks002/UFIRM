@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -27,17 +27,18 @@ const monthNames = [
 ];
 
 const allowanceKeys = [
-  "basic_salary",
-  "Fixed Salary",
+  "BaseSalary",
+  "SplAll",
   "HRA",
-  "LTA",
+  "Gratuity",
+  "OTDaysAmount",
+  "OTHoursAmount",
+  "AdjAmt/Incentive",
+  "PFArrear",
+  "OthArrear",
+  "Bonus",
   "DA",
   "Conv",
-  "Wash",
-  "OthAll",
-  "SplAll",
-  "EduAll",
-  "PerfAll",
   // "Contractor Allowance",
   // "Housing Allowance",
   // "Transport Allowance",
@@ -49,12 +50,17 @@ const allowanceKeys = [
 
 const deductionKeys = [
   "PF",
-  "ESI",
   "PftAmount",
   "LwfEmployeeAmount",
-  "DocDed",
-  "OthDed",
-  "Acmd.Ded",
+  "Fine",
+  "AdvanceAmount",
+  "OthDeduction",
+  "DocDeduction",
+  "FoodDeduction",
+  "MaintDeduction",
+  "ESI",
+  "AccommodationDeduction",
+  "IncomeTax",
   // "Pension Deduction",
   // "Health Insurance Deduction",
   // "Union Fees Deduction",
@@ -64,6 +70,36 @@ const deductionKeys = [
   // "Income Tax",
   //"LoanAdvanceAmount",
 ];
+
+const displayNameMap = {
+  // Allowances
+  BaseSalary: "Basic",
+  SplAll: "SplAll",
+  HRA: "HRA",
+  Gratuity: "Gratuity",
+  OTDaysAmount: "OTDaysAmount",
+  OTHoursAmount: "OTHoursAmount",
+  "AdjAmt/Incentive": "AdjAmt/Incentive",
+  PFArrear: "PFArrear",
+  OthArrear: "OthArrear",
+  Bonus: "Bonus",
+  DA: "DA",
+  Conv: "Conv",
+
+  // Deductions
+  PF: "PF",
+  PftAmount: "PFT",
+  LwfEmployeeAmount: "LWF",
+  Fine: "Fine",
+  AdvanceAmount: "Adv.",
+  DocDeduction: "DocDed",
+  OthDeduction: "OthDed",
+  FoodDeduction: "Food",
+  MaintDeduction: "Maint",
+  ESI: "ESI",
+  AccommodationDeduction: "Acmd",
+  IncomeTax: "IncomeTax",
+};
 
 const boxStyle = {
   textAlign: "center",
@@ -109,6 +145,7 @@ export default function GenerateSalary() {
   const itemsPerPage = 10;
 
   const [salaryData, setSalaryData] = useState([]);
+  const [showGrid, setShowGrid] = useState(false);
   const [loadingSalaryData, setLoadingSalaryData] = useState(false);
 
   // Fetch employees on component mount
@@ -146,13 +183,7 @@ export default function GenerateSalary() {
   }, [officeId, selectedMonth, selectedYear]);
 
   // Fetch salary details when generated employees change
-  useEffect(() => {
-    if (generatedEmployees.length > 0) {
-      fetchSalaryDetails();
-    } else {
-      setSalaryData([]);
-    }
-  }, [generatedEmployees]);
+  // Prevent automatic fetch on first page load
 
   const fetchEmployees = async () => {
     setLoading(true);
@@ -224,10 +255,12 @@ export default function GenerateSalary() {
     }
   };
 
-  const fetchSalaryDetails = async () => {
+  const fetchSalaryDetails = async (specificIds = null) => {
     setLoadingSalaryData(true);
     try {
-      const facilityMemberIds = generatedEmployees.map((emp) => emp.EmployeeId);
+      const facilityMemberIds = specificIds?.length
+        ? specificIds
+        : generatedEmployees.map((emp) => emp.EmployeeId);
       const monthName = selectedMonth ? monthNames[selectedMonth - 1] : null;
 
       if (!monthName) {
@@ -244,6 +277,9 @@ export default function GenerateSalary() {
       );
 
       setSalaryData(data || []);
+
+      // ✅ ADD THIS HERE
+      if (data?.length === 0) setShowGrid(false);
     } catch (error) {
       console.error("Failed to fetch salary details:", error);
       setSalaryData([]);
@@ -321,23 +357,18 @@ export default function GenerateSalary() {
       ).getDate();
     }
 
-    // 2. Calculate prorated basic and fixed salary
+    // 2. Calculate prorated basic
     const proratedBasic = calculateProratedSalary(
-      row.basic_salary || 0,
-      row,
-      totalDaysInMonth
-    );
-    const proratedFixed = calculateProratedSalary(
-      row["Fixed Salary"] || 0,
+      row.BaseSalary || 0,
       row,
       totalDaysInMonth
     );
 
     // 3. Add other allowances
-    let totalAllowance = proratedBasic + proratedFixed;
+    let totalAllowance = proratedBasic;
     // Add all non-basic/fixed allowanceKeys
     for (const key of allowanceKeys) {
-      if (key !== "basic_salary" && key !== "Fixed Salary") {
+      if (key !== "BaseSalary") {
         totalAllowance += row[key] || 0;
       }
     }
@@ -487,7 +518,7 @@ export default function GenerateSalary() {
         <tr>
           <td>Basic</td>
           <td class="v-bold">${calculateProratedSalary(
-            row.basic_salary || 0,
+            row.BaseSalary || 0,
             row,
             totalDaysInMonth
           )}</td>
@@ -497,12 +528,8 @@ export default function GenerateSalary() {
           <td>${row.WorkingDays || ""}</td>
         </tr>
         <tr class="no-horiz-border">
-          <td>Fixed</td>
-          <td class="v-bold">${calculateProratedSalary(
-            row.Fixed || 0,
-            row,
-            totalDaysInMonth
-          )}</td>
+          <td>SplAll</td>
+          <td class="v-bold">${row.SplAll || 0}</td>
           <td >PFT</td>
           <td class="v-light">${row.PftAmount || 0}</td>
           <td >Leave Days</td>
@@ -558,33 +585,69 @@ export default function GenerateSalary() {
           <td>ESI</td>
           <td>${row.ESI || 0}</td>
         </tr>
+        <tr class="no-horiz-border">
+          <td>DA</td>
+          <td class="v-bold">${row.DA || 0}</td>
+          <td>Acmd.Ded</td>
+          <td>${row.AccommodationDeduction || 0}</td>
+        </tr>
+        <tr class="no-horiz-border">
+          <td>Conv</td>
+          <td class="v-bold">${row.Conv || 0}</td>
+          <td>IncomeTax</td>
+          <td>${row.IncomeTax || 0}</td>
+        </tr>
         <tr class="bold-top double-bottom">
           <td><b>Total Allowance</b></td>
           <td class="v-bold"><b>${
             calculateProratedSalary(
-              row.basic_salary || 0,
+              row.BaseSalary || 0,
               row,
               totalDaysInMonth
-            ) + (row.HRA || 0)
+            ) +
+            (row.HRA || 0) +
+            (row.SplAll || 0) +
+            (row.Conv || 0) +
+            (row.DA || 0) +
+            (row.Gratuity || 0) +
+            (row.Bonus || 0) +
+            (row.OTDaysAmount || 0) +
+            (row.OTHoursAmount || 0) +
+            (row.AdjAmt || row.Incentive || 0) +
+            (row.PFArrear || 0) +
+            (row.OthArrear || 0)
           }</b></td>
           <td ><b>Total Deduction</b></td>
           <td><b>${
-            (row.PF || 0) + (row.LwfEmployeeAmount || 0) + (row.PftAmount || 0)
+            (row.PF || 0) +
+            (row.LwfEmployeeAmount || 0) +
+            (row.PftAmount || 0) +
+            (row.Fine || 0) +
+            (row.AdvanceAmount || 0) +
+            (row.OthDeduction || 0) +
+            (row.DocDeduction || 0) +
+            (row.FoodDeduction || 0) +
+            (row.MaintDeduction || 0) +
+            (row.ESI || 0) +
+            (row.AccommodationDeduction || 0) +
+            (row.IncomeTax || 0)
           }</b></td>
           <td><b></b></td>
           <td><b></b></td>
         </tr>
       </table>
       <div class="net-salary">Net Salary: ₹ ${
-        calculateProratedSalary(row.basic_salary || 0, row, totalDaysInMonth) +
-        calculateProratedSalary(row.fixed || 0, row, totalDaysInMonth) +
+        calculateProratedSalary(row.BaseSalary || 0, row, totalDaysInMonth) +
+        (row.SplAll || 0) +
         (row.HRA || 0) +
         (row.OTDaysAmount || 0) +
         (row.OTHoursAmount || 0) +
         (row.AdjAmt || row.Incentive || 0) +
         (row.PFArrear || 0) +
         (row.OthArrear || 0) +
-        (row.Bonus || 0) -
+        (row.Bonus || 0) +
+        (row.DA || 0) +
+        (row.Conv || 0) -
         ((row.PF || 0) +
           (row.LwfEmployeeAmount || 0) +
           (row.PftAmount || 0) +
@@ -594,7 +657,9 @@ export default function GenerateSalary() {
           (row.DocDeduction || 0) +
           (row.FoodDeduction || 0) +
           (row.MaintDeduction || 0) +
-          (row.ESI || 0))
+          (row.ESI || 0) +
+          (row.AccommodationDeduction || 0) +
+          (row.IncomeTax || 0))
       }</div>
     </body>
   </html>
@@ -692,7 +757,12 @@ export default function GenerateSalary() {
 
       // Refresh both employee lists
       fetchEmployees();
-      fetchGeneratedEmployees();
+      await fetchGeneratedEmployees();
+
+      // ✅ now fetch salary details only for newly generated IDs
+      const generatedIds = selectedEmployees.map((emp) => emp.EmployeeId);
+      await fetchSalaryDetails(generatedIds);
+      setShowGrid(true);
     } catch (error) {
       console.error("Failed to generate salary:", error);
       alert("Failed to generate salary. Please try again.");
@@ -715,20 +785,48 @@ export default function GenerateSalary() {
   );
 
   const handleRegenerateSalary = async () => {
-    for (const emp of selectedRegenEmployees) {
-      // ✅ This is what your render logic uses!
-      const payload = {
-        EmployeeId: emp.EmployeeId,
-        EmployeeName: emp.EmployeeName,
-        OfficeId: officeId,
-        CreatedOn: new Date().toISOString(),
-        Month: monthNames[selectedMonth - 1],
-        Year: selectedYear,
-        is_active: true,
-      };
-      await regenerateEmployeeSalary(payload);
+    if (selectedRegenEmployees.length === 0) {
+      alert("No employees selected to regenerate.");
+      return;
     }
-    // Refresh employee lists as needed (call fetchGeneratedEmployees, etc.)
+
+    try {
+      // Month + Year
+      const monthValue = monthNames[selectedMonth - 1];
+      const yearValue = selectedYear;
+
+      // hit regenerate API for each selected employee
+      for (const emp of selectedRegenEmployees) {
+        const payload = {
+          EmployeeId: emp.EmployeeId,
+          EmployeeName: emp.EmployeeName,
+          OfficeId: officeId,
+          CreatedOn: new Date().toISOString(),
+          Month: monthValue,
+          Year: yearValue,
+          is_active: true,
+        };
+
+        await regenerateEmployeeSalary(payload);
+      }
+
+      // ✅ collect IDs for filtered grid
+      const ids = selectedRegenEmployees.map((e) => e.EmployeeId);
+
+      await fetchGeneratedEmployees();
+
+      // ✅ fetch only the regenerated employees
+      await fetchSalaryDetails(ids);
+
+      setShowGrid(true);
+
+      // ✅ Clear after regeneration
+      setSelectedRegenEmployees([]);
+      alert("Regeneration done!");
+    } catch (err) {
+      console.error("Failed to regenerate salary:", err);
+      alert("Failed to regenerate salary.");
+    }
   };
 
   return (
@@ -1215,12 +1313,12 @@ export default function GenerateSalary() {
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
                     }}
                   >
-                    <div style={{ fontWeight: 500, fontSize: "0.9rem" }}>
-                      {emp.EmployeeName}
-                    </div>
-                    <button
+                    {/* Clicking name = regenerate + remove */}
+                    <div
                       onClick={() =>
                         setSelectedRegenEmployees(
                           selectedRegenEmployees.filter(
@@ -1229,6 +1327,26 @@ export default function GenerateSalary() {
                         )
                       }
                       style={{
+                        fontWeight: 500,
+                        fontSize: "0.9rem",
+                        flex: 1,
+                      }}
+                      title="Click to mark regenerated (remove from list)"
+                    >
+                      {emp.EmployeeName}
+                    </div>
+
+                    {/* Clicking × = just remove manually */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation(); // prevent parent click
+                        setSelectedRegenEmployees(
+                          selectedRegenEmployees.filter(
+                            (e) => e.EmployeeId !== emp.EmployeeId
+                          )
+                        );
+                      }}
+                      style={{
                         background: "transparent",
                         border: "none",
                         color: "#ef4444",
@@ -1236,7 +1354,7 @@ export default function GenerateSalary() {
                         fontSize: "1.2rem",
                         padding: 0,
                       }}
-                      title="Remove"
+                      title="Remove manually"
                     >
                       ×
                     </button>
@@ -1267,329 +1385,338 @@ export default function GenerateSalary() {
         </div>
 
         {/* Salary Data Grid Table */}
-        <div style={{ marginTop: 50, position: "relative" }}>
-          <div
-            style={{
-              position: "absolute",
-              top: -24,
-              right: 0,
-              zIndex: 2,
-            }}
-          >
-            <button
-              onClick={handleCreatePDF}
-              disabled={selectedSalaryRows.length === 0}
+        {showGrid && (
+          <div style={{ marginTop: 50, position: "relative" }}>
+            <div
               style={{
-                background:
-                  selectedSalaryRows.length === 0 ? "#d1eaff" : "#2563eb",
-                color: "#fff",
-                border: "none",
-                borderRadius: 6,
-                padding: "10px 28px",
-                fontWeight: 600,
-                letterSpacing: 1,
-                cursor:
-                  selectedSalaryRows.length === 0 ? "not-allowed" : "pointer",
-                fontSize: "1rem",
-                marginBottom: "8px",
+                position: "absolute",
+                top: -24,
+                right: 0,
+                zIndex: 2,
               }}
             >
-              Create PDF
-            </button>
-          </div>
+              <button
+                onClick={handleCreatePDF}
+                disabled={selectedSalaryRows.length === 0}
+                style={{
+                  background:
+                    selectedSalaryRows.length === 0 ? "#d1eaff" : "#2563eb",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 6,
+                  padding: "10px 28px",
+                  fontWeight: 600,
+                  letterSpacing: 1,
+                  cursor:
+                    selectedSalaryRows.length === 0 ? "not-allowed" : "pointer",
+                  fontSize: "1rem",
+                  marginBottom: "8px",
+                }}
+              >
+                Create PDF
+              </button>
+            </div>
 
-          <div style={{ overflowX: "auto", paddingTop: 45 }}>
-            {/* Table header here */}
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                background: "#fff",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                borderRadius: 8,
-                overflow: "hidden",
-              }}
-            >
-              <thead>
-                <tr style={{ background: "#f0f3fa" }}>
-                  <th
-                    rowSpan="2"
-                    style={{
-                      width: 30,
-                      padding: "0 10px",
-                      border: "1px solid #b0b8cc",
-                      textAlign: "center",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={
-                        currentItems.length > 0 &&
-                        currentItems.every((row) =>
-                          selectedSalaryRows.includes(row.FacilityMemberId)
-                        )
-                      }
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedSalaryRows(
-                            currentItems.map((row) => row.FacilityMemberId)
-                          );
-                        } else {
-                          setSelectedSalaryRows([]);
-                        }
-                      }}
-                    />
-                  </th>
-                  <th
-                    rowSpan="2"
-                    style={{
-                      padding: "12px 8px",
-                      border: "1px solid #b0b8cc",
-                      fontWeight: 600,
-                    }}
-                  >
-                    S.No.
-                  </th>
-                  <th
-                    rowSpan="2"
-                    style={{
-                      padding: "12px 8px",
-                      border: "1px solid #b0b8cc",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Name
-                  </th>
-                  <th
-                    colSpan={3}
-                    style={{
-                      background: "#e6eefd",
-                      padding: "12px 8px",
-                      border: "1px solid #b0b8cc",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Attendance
-                  </th>
-                  <th
-                    colSpan={allowanceKeys.length}
-                    style={{
-                      padding: "12px 8px",
-                      border: "1px solid #b0b8cc",
-                      fontWeight: 600,
-                      background: "#e6f2ff",
-                    }}
-                  >
-                    Allowance
-                  </th>
-                  <th
-                    colSpan={deductionKeys.length}
-                    style={{
-                      padding: "12px 8px",
-                      border: "1px solid #b0b8cc",
-                      fontWeight: 600,
-                      background: "#ffe6e6",
-                    }}
-                  >
-                    Deduction
-                  </th>
-                  <th
-                    rowSpan="2"
-                    style={{
-                      padding: "12px 8px",
-                      border: "1px solid #b0b8cc",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Net Salary
-                  </th>
-                  <th
-                    rowSpan="2"
-                    style={{
-                      padding: "12px 8px",
-                      border: "1px solid #b0b8cc",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Actions
-                  </th>
-                </tr>
-                <tr style={{ background: "#f0f3fa" }}>
-                  <th style={{ borderRight: "1.5px solid #b0b8cc" }}>
-                    Working Days
-                  </th>
-                  <th style={{ borderRight: "1.5px solid #b0b8cc" }}>
-                    Week Days
-                  </th>
-                  <th>Leave Days</th>
-                  {allowanceKeys.map((key) => (
+            <div style={{ overflowX: "auto", paddingTop: 45 }}>
+              {/* Table header here */}
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  background: "#fff",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                  borderRadius: 8,
+                  overflow: "hidden",
+                }}
+              >
+                <thead>
+                  <tr style={{ background: "#f0f3fa" }}>
                     <th
-                      key={key}
+                      rowSpan="2"
+                      style={{
+                        width: 30,
+                        padding: "0 10px",
+                        border: "1px solid #b0b8cc",
+                        textAlign: "center",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={
+                          currentItems.length > 0 &&
+                          currentItems.every((row) =>
+                            selectedSalaryRows.includes(row.FacilityMemberId)
+                          )
+                        }
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedSalaryRows(
+                              currentItems.map((row) => row.FacilityMemberId)
+                            );
+                          } else {
+                            setSelectedSalaryRows([]);
+                          }
+                        }}
+                      />
+                    </th>
+                    <th
+                      rowSpan="2"
                       style={{
                         padding: "12px 8px",
                         border: "1px solid #b0b8cc",
-                        fontWeight: 500,
+                        fontWeight: 600,
+                      }}
+                    >
+                      S.No.
+                    </th>
+                    <th
+                      rowSpan="2"
+                      style={{
+                        padding: "12px 8px",
+                        border: "1px solid #b0b8cc",
+                        fontWeight: 600,
+                      }}
+                    >
+                      Name
+                    </th>
+                    <th
+                      colSpan={3}
+                      style={{
+                        background: "#e6eefd",
+                        padding: "12px 8px",
+                        border: "1px solid #b0b8cc",
+                        fontWeight: 600,
+                      }}
+                    >
+                      Attendance
+                    </th>
+                    <th
+                      colSpan={allowanceKeys.length}
+                      style={{
+                        padding: "12px 8px",
+                        border: "1px solid #b0b8cc",
+                        fontWeight: 600,
                         background: "#e6f2ff",
                       }}
                     >
-                      {/* Friendly formatting for keys */}
-                      {key === "basic_salary"
-                        ? "Basic"
-                        : key === "Fixed Salary"
-                        ? "Fixed"
-                        : key}
+                      Allowance
                     </th>
-                  ))}
-                  {deductionKeys.map((key) => (
                     <th
-                      key={key}
+                      colSpan={deductionKeys.length}
                       style={{
                         padding: "12px 8px",
                         border: "1px solid #b0b8cc",
-                        fontWeight: 500,
+                        fontWeight: 600,
                         background: "#ffe6e6",
                       }}
                     >
-                      {key}
+                      Deduction
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {loadingSalaryData ? (
-                  <tr>
-                    <td
-                      colSpan={
-                        6 + allowanceKeys.length + deductionKeys.length + 2
-                      }
+                    <th
+                      rowSpan="2"
                       style={{
-                        padding: "40px",
-                        textAlign: "center",
-                        color: "#718096",
+                        padding: "12px 8px",
+                        border: "1px solid #b0b8cc",
+                        fontWeight: 600,
                       }}
                     >
-                      Loading salary details...
-                    </td>
-                  </tr>
-                ) : currentItems.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={
-                        6 + allowanceKeys.length + deductionKeys.length + 2
-                      }
+                      Net Salary
+                    </th>
+                    <th
+                      rowSpan="2"
                       style={{
-                        padding: "40px",
-                        textAlign: "center",
-                        color: "#718096",
+                        padding: "12px 8px",
+                        border: "1px solid #b0b8cc",
+                        fontWeight: 600,
                       }}
                     >
-                      No salary data available. Please generate salary first.
-                    </td>
+                      Actions
+                    </th>
                   </tr>
-                ) : (
-                  currentItems.map((row, index) => (
-                    <tr
-                      key={row.FacilityMemberId}
-                      style={{ borderBottom: "1px solid #e2e8f0" }}
-                    >
-                      <td
+                  <tr style={{ background: "#f0f3fa" }}>
+                    <th style={{ borderRight: "1.5px solid #b0b8cc" }}>
+                      Working Days
+                    </th>
+                    <th style={{ borderRight: "1.5px solid #b0b8cc" }}>
+                      Week Days
+                    </th>
+                    <th>Leave Days</th>
+                    {allowanceKeys.map((key) => (
+                      <th
+                        key={key}
                         style={{
-                          textAlign: "center",
+                          padding: "12px 8px",
                           border: "1px solid #b0b8cc",
+                          fontWeight: 500,
+                          background: "#e6f2ff",
                         }}
                       >
-                        <input
-                          type="checkbox"
-                          checked={selectedSalaryRows.includes(
-                            row.FacilityMemberId
-                          )}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedSalaryRows([
-                                ...selectedSalaryRows,
-                                row.FacilityMemberId,
-                              ]);
-                            } else {
-                              setSelectedSalaryRows(
-                                selectedSalaryRows.filter(
-                                  (id) => id !== row.FacilityMemberId
-                                )
-                              );
-                            }
+                        {displayNameMap[key] || key}
+                      </th>
+                    ))}
+                    {deductionKeys.map((key) => (
+                      <th
+                        key={key}
+                        style={{
+                          padding: "12px 8px",
+                          border: "1px solid #b0b8cc",
+                          fontWeight: 500,
+                          background: "#ffe6e6",
+                        }}
+                      >
+                        {displayNameMap[key] || key}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {loadingSalaryData ? (
+                    <tr>
+                      <td
+                        colSpan={
+                          6 + allowanceKeys.length + deductionKeys.length + 2
+                        }
+                        style={{
+                          padding: "40px",
+                          textAlign: "center",
+                          color: "#718096",
+                        }}
+                      >
+                        Loading salary details...
+                      </td>
+                    </tr>
+                  ) : currentItems.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={
+                          6 + allowanceKeys.length + deductionKeys.length + 2
+                        }
+                        style={{
+                          padding: "40px",
+                          textAlign: "center",
+                          color: "#718096",
+                        }}
+                      >
+                        No salary data available. Please generate salary first.
+                      </td>
+                    </tr>
+                  ) : (
+                    currentItems.map((row, index) => (
+                      <tr
+                        key={row.FacilityMemberId}
+                        style={{ borderBottom: "1px solid #e2e8f0" }}
+                      >
+                        <td
+                          style={{
+                            textAlign: "center",
+                            border: "1px solid #b0b8cc",
                           }}
-                        />
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px 8px",
-                          border: "1px solid #b0b8cc",
-                          textAlign: "center",
-                        }}
-                      >
-                        {indexOfFirstItem + index + 1}
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px 8px",
-                          border: "1px solid #b0b8cc",
-                        }}
-                      >
-                        {row.FacilityMemberName}
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px 8px",
-                          border: "1px solid #b0b8cc",
-                          textAlign: "center",
-                          borderRight: "1.5px solid #b0b8cc",
-                        }}
-                      >
-                        {row.WorkingDays || 0}
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px 8px",
-                          border: "1px solid #b0b8cc",
-                          textAlign: "center",
-                          borderRight: "1.5px solid #b0b8cc",
-                        }}
-                      >
-                        {row.WeekDaysOff || 0}
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px 8px",
-                          border: "1px solid #b0b8cc",
-                          textAlign: "center",
-                        }}
-                      >
-                        {row.LeaveDays || 0}
-                      </td>
-                      {allowanceKeys.map((key) => {
-                        let value = row[key] || 0;
-                        // Calculate days in month for this row
-                        const month = row.Month;
-                        const year = row.Year || new Date().getFullYear();
-                        let totalDaysInMonth = 31;
-                        if (month) {
-                          const num = new Date(`${month} 1, ${year}`);
-                          totalDaysInMonth = new Date(
-                            num.getFullYear(),
-                            num.getMonth() + 1,
-                            0
-                          ).getDate();
-                        }
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedSalaryRows.includes(
+                              row.FacilityMemberId
+                            )}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedSalaryRows([
+                                  ...selectedSalaryRows,
+                                  row.FacilityMemberId,
+                                ]);
+                              } else {
+                                setSelectedSalaryRows(
+                                  selectedSalaryRows.filter(
+                                    (id) => id !== row.FacilityMemberId
+                                  )
+                                );
+                              }
+                            }}
+                          />
+                        </td>
+                        <td
+                          style={{
+                            padding: "12px 8px",
+                            border: "1px solid #b0b8cc",
+                            textAlign: "center",
+                          }}
+                        >
+                          {indexOfFirstItem + index + 1}
+                        </td>
+                        <td
+                          style={{
+                            padding: "12px 8px",
+                            border: "1px solid #b0b8cc",
+                          }}
+                        >
+                          {row.FacilityMemberName}
+                        </td>
+                        <td
+                          style={{
+                            padding: "12px 8px",
+                            border: "1px solid #b0b8cc",
+                            textAlign: "center",
+                            borderRight: "1.5px solid #b0b8cc",
+                          }}
+                        >
+                          {row.WorkingDays || 0}
+                        </td>
+                        <td
+                          style={{
+                            padding: "12px 8px",
+                            border: "1px solid #b0b8cc",
+                            textAlign: "center",
+                            borderRight: "1.5px solid #b0b8cc",
+                          }}
+                        >
+                          {row.WeekDaysOff || 0}
+                        </td>
+                        <td
+                          style={{
+                            padding: "12px 8px",
+                            border: "1px solid #b0b8cc",
+                            textAlign: "center",
+                          }}
+                        >
+                          {row.LeaveDays || 0}
+                        </td>
+                        {allowanceKeys.map((key) => {
+                          let value = row[key] || 0;
+                          // Calculate days in month for this row
+                          const month = row.Month;
+                          const year = row.Year || new Date().getFullYear();
+                          let totalDaysInMonth = 31;
+                          if (month) {
+                            const num = new Date(`${month} 1, ${year}`);
+                            totalDaysInMonth = new Date(
+                              num.getFullYear(),
+                              num.getMonth() + 1,
+                              0
+                            ).getDate();
+                          }
 
-                        // Perform proration for Basic and Fixed Salary columns only
-                        if (key === "basic_salary" || key === "Fixed Salary") {
-                          value = calculateProratedSalary(
-                            value,
-                            row,
-                            totalDaysInMonth
+                          // Perform proration for Basic column only
+                          if (key === "BaseSalary") {
+                            value = calculateProratedSalary(
+                              value,
+                              row,
+                              totalDaysInMonth
+                            );
+                          }
+
+                          return (
+                            <td
+                              key={key}
+                              style={{
+                                padding: "12px 8px",
+                                border: "1px solid #b0b8cc",
+                                textAlign: "right",
+                              }}
+                            >
+                              ₹{value.toLocaleString()}
+                            </td>
                           );
-                        }
-
-                        return (
+                        })}
+                        {deductionKeys.map((key) => (
                           <td
                             key={key}
                             style={{
@@ -1598,143 +1725,133 @@ export default function GenerateSalary() {
                               textAlign: "right",
                             }}
                           >
-                            ₹{value.toLocaleString()}
+                            ₹{(row[key] || 0).toLocaleString()}
                           </td>
-                        );
-                      })}
-                      {deductionKeys.map((key) => (
+                        ))}
                         <td
-                          key={key}
                           style={{
                             padding: "12px 8px",
                             border: "1px solid #b0b8cc",
                             textAlign: "right",
+                            fontWeight: 600,
                           }}
                         >
-                          ₹{(row[key] || 0).toLocaleString()}
+                          ₹{calculateProratedNetSalary(row).toLocaleString()}
                         </td>
-                      ))}
-                      <td
-                        style={{
-                          padding: "12px 8px",
-                          border: "1px solid #b0b8cc",
-                          textAlign: "right",
-                          fontWeight: 600,
-                        }}
-                      >
-                        ₹{calculateProratedNetSalary(row).toLocaleString()}
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px 8px",
-                          border: "1px solid #b0b8cc",
-                          textAlign: "center",
-                        }}
-                      >
-                        <button
-                          className="btn btn-sm btn-info"
-                          title="View"
-                          onClick={() => handleViewPayslip(row)}
+                        <td
                           style={{
-                            backgroundColor: "#0dcaf0",
-                            border: "none",
-                            width: "32px",
-                            height: "32px",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            borderRadius: "4px",
-                            marginBottom: "6px", // adds a tiny gap between the two vertically
+                            padding: "12px 8px",
+                            border: "1px solid #b0b8cc",
+                            textAlign: "center",
                           }}
                         >
-                          <i className="fa fa-eye" aria-hidden="true"></i>
-                        </button>
-                        <br />
-                        <button
-                          className="btn btn-sm btn-danger"
-                          title="Delete"
-                          onClick={() => handleDelete(row.FacilityMemberId)}
-                          style={{
-                            border: "none",
-                            width: "32px",
-                            height: "32px",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            borderRadius: "4px",
-                          }}
-                        >
-                          <i className="fa fa-trash" aria-hidden="true"></i>
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                          <button
+                            className="btn btn-sm btn-info"
+                            title="View"
+                            onClick={() => handleViewPayslip(row)}
+                            style={{
+                              backgroundColor: "#0dcaf0",
+                              border: "none",
+                              width: "32px",
+                              height: "32px",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              borderRadius: "4px",
+                              marginBottom: "6px", // adds a tiny gap between the two vertically
+                            }}
+                          >
+                            <i className="fa fa-eye" aria-hidden="true"></i>
+                          </button>
+                          <br />
+                          <button
+                            className="btn btn-sm btn-danger"
+                            title="Delete"
+                            onClick={() => handleDelete(row.FacilityMemberId)}
+                            style={{
+                              border: "none",
+                              width: "32px",
+                              height: "32px",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              borderRadius: "4px",
+                            }}
+                          >
+                            <i className="fa fa-trash" aria-hidden="true"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-          {/* Pagination */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              marginTop: 20,
-              gap: 10,
-            }}
-          >
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
+            {/* Pagination */}
+            <div
               style={{
-                padding: "8px 16px",
-                background: currentPage === 1 ? "#e2e8f0" : "#3b82f6",
-                color: currentPage === 1 ? "#94a3b8" : "#fff",
-                border: "none",
-                borderRadius: 4,
-                cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                marginTop: 20,
+                gap: 10,
               }}
             >
-              Previous
-            </button>
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                style={{
+                  padding: "8px 16px",
+                  background: currentPage === 1 ? "#e2e8f0" : "#3b82f6",
+                  color: currentPage === 1 ? "#94a3b8" : "#fff",
+                  border: "none",
+                  borderRadius: 4,
+                  cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                }}
+              >
+                Previous
+              </button>
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-              (pageNum) => (
-                <button
-                  key={pageNum}
-                  onClick={() => handlePageChange(pageNum)}
-                  style={{
-                    padding: "8px 12px",
-                    background: currentPage === pageNum ? "#3b82f6" : "#fff",
-                    color: currentPage === pageNum ? "#fff" : "#334155",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 4,
-                    cursor: "pointer",
-                    fontWeight: currentPage === pageNum ? 600 : 400,
-                  }}
-                >
-                  {pageNum}
-                </button>
-              )
-            )}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (pageNum) => (
+                  <button
+                    key={pageNum}
+                    onClick={() => handlePageChange(pageNum)}
+                    style={{
+                      padding: "8px 12px",
+                      background: currentPage === pageNum ? "#3b82f6" : "#fff",
+                      color: currentPage === pageNum ? "#fff" : "#334155",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 4,
+                      cursor: "pointer",
+                      fontWeight: currentPage === pageNum ? 600 : 400,
+                    }}
+                  >
+                    {pageNum}
+                  </button>
+                )
+              )}
 
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              style={{
-                padding: "8px 16px",
-                background: currentPage === totalPages ? "#e2e8f0" : "#3b82f6",
-                color: currentPage === totalPages ? "#94a3b8" : "#fff",
-                border: "none",
-                borderRadius: 4,
-                cursor: currentPage === totalPages ? "not-allowed" : "pointer",
-              }}
-            >
-              Next
-            </button>
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                style={{
+                  padding: "8px 16px",
+                  background:
+                    currentPage === totalPages ? "#e2e8f0" : "#3b82f6",
+                  color: currentPage === totalPages ? "#94a3b8" : "#fff",
+                  border: "none",
+                  borderRadius: 4,
+                  cursor:
+                    currentPage === totalPages ? "not-allowed" : "pointer",
+                }}
+              >
+                Next
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
       {viewPayslipOpen && (
         <div

@@ -21,6 +21,7 @@ export default function AllowanceDeduction() {
     Type: "Allowance",
     Name: "",
     FormulaId: null,
+    FixedValue: "",
   });
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -59,24 +60,37 @@ export default function AllowanceDeduction() {
     if (!id) return "";
     const formula = formulas.find((f) => f.Id === id);
     if (!formula) return "";
-    const expr = formula.Formula || "";
-    const fixedVal = formula.FixedValue != null ? formula.FixedValue : "";
-    return fixedVal ? `${expr}(${fixedVal})` : expr;
+    return formula.Formula || "";
+  };
+
+  // Get fixed value by formulaId
+  const getFixedValueById = (id) => {
+    if (!id) return "";
+    const formula = formulas.find((f) => f.Id === id);
+    if (!formula) return "";
+    return formula.FixedValue != null ? formula.FixedValue : "";
   };
 
   // Open create dialog
   const openCreateDialog = () => {
-    setFormData({ Type: "Allowance", Name: "", FormulaId: null });
+    setFormData({
+      Type: "Allowance",
+      Name: "",
+      FormulaId: null,
+      FixedValue: "",
+    });
     setEditId(null);
     setDialogVisible(true);
   };
 
   // Open edit dialog
   const openEditDialog = (item) => {
+    const selectedFormula = formulas.find((f) => f.Id === item.FormulaId);
     setFormData({
       Type: item.Type,
       Name: item.Name,
       FormulaId: item.FormulaId || null,
+      FixedValue: selectedFormula?.FixedValue || "",
     });
     setEditId(item.ID);
     setDialogVisible(true);
@@ -101,6 +115,17 @@ export default function AllowanceDeduction() {
         ...prev,
         [name]: value ? Number(value) : null,
       }));
+      // Auto update fixed value from formula if exists
+      const selectedFormula = formulas.find((f) => f.Id === Number(value));
+      if (selectedFormula) {
+        setFormData((prev) => ({
+          ...prev,
+          FixedValue:
+            selectedFormula.FixedValue != null
+              ? selectedFormula.FixedValue
+              : "",
+        }));
+      }
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -228,13 +253,16 @@ export default function AllowanceDeduction() {
           {loading ? (
             <div style={{ textAlign: "center", padding: 20 }}>Loading...</div>
           ) : (
-            <table className="table mb-0" style={{ minWidth: 650 }}>
+            <table className="table mb-0" style={{ minWidth: 700 }}>
               <thead>
                 <tr>
                   <th style={{ fontWeight: 600, fontSize: "1.1rem" }}>Type</th>
                   <th style={{ fontWeight: 600, fontSize: "1.1rem" }}>Name</th>
                   <th style={{ fontWeight: 600, fontSize: "1.1rem" }}>
                     Formula
+                  </th>
+                  <th style={{ fontWeight: 600, fontSize: "1.1rem" }}>
+                    Fixed Value
                   </th>
                   <th style={{ fontWeight: 600, fontSize: "1.1rem" }}>
                     Action
@@ -245,7 +273,7 @@ export default function AllowanceDeduction() {
                 {filteredData.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={4}
+                      colSpan={5}
                       className="text-center text-muted py-4"
                       style={{ fontSize: "1.05rem" }}
                     >
@@ -259,6 +287,9 @@ export default function AllowanceDeduction() {
                       <td style={{ verticalAlign: "middle" }}>{item.Name}</td>
                       <td style={{ verticalAlign: "middle" }}>
                         {getFormulaDisplayById(item.FormulaId)}
+                      </td>
+                      <td style={{ verticalAlign: "middle" }}>
+                        {getFixedValueById(item.FormulaId)}
                       </td>
                       <td>
                         <button
@@ -288,7 +319,7 @@ export default function AllowanceDeduction() {
       <Dialog
         header={editId !== null ? "Edit Entry" : "Create New Entry"}
         visible={dialogVisible}
-        style={{ width: "400px" }}
+        style={{ width: "420px" }}
         modal
         onHide={() => setDialogVisible(false)}
         footer={dialogFooter}
@@ -344,16 +375,28 @@ export default function AllowanceDeduction() {
               onChange={handleFormChange}
             >
               <option value="">-- Select Formula --</option>
-              {formulas.map((f) => {
-                const fixedPart =
-                  f.FixedValue != null ? `-${f.FixedValue}` : "";
-                return (
-                  <option key={f.Id} value={f.Id}>
-                    {`${f.Name}-${f.Formula || ""}${fixedPart}`}
-                  </option>
-                );
-              })}
+              {formulas.map((f) => (
+                <option key={f.Id} value={f.Id}>
+                  {`${f.Name} -> ${f.Formula || ""}`}
+                </option>
+              ))}
             </select>
+          </div>
+
+          <div className="mb-3">
+            <label htmlFor="fixedValue" className="form-label">
+              Fixed Value
+            </label>
+            <input
+              type="text"
+              id="fixedValue"
+              name="FixedValue"
+              className="form-control"
+              value={formData.FixedValue}
+              placeholder="Auto-filled from selected formula"
+              readOnly
+              style={{ backgroundColor: "#f0f0f0", cursor: "not-allowed" }}
+            />
           </div>
         </form>
       </Dialog>

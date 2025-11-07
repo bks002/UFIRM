@@ -4,6 +4,7 @@ import {
   getAttendanceByProperty,
   createAttendance,
   updateAttendance,
+  deleteMultipleAttendance,
 } from "../../Services/PayrollService";
 import { getEmployeesByOffice } from "../../Services/PayrollService";
 
@@ -23,6 +24,17 @@ export default function AttendanceSheet() {
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
   const [saving, setSaving] = useState(false);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const recordsPerPage = 20;
+
+  const totalPages = Math.ceil(employees.length / recordsPerPage);
+
+  // Slice employees for the current page
+  const paginatedEmployees = employees.slice(
+    (currentPage - 1) * recordsPerPage,
+    currentPage * recordsPerPage
+  );
 
   // Month/Year dropdown helpers
   const currentYear = new Date().getFullYear();
@@ -205,6 +217,41 @@ export default function AttendanceSheet() {
     }
   }
 
+  async function handleBulkDelete() {
+    if (!window.confirm("Delete attendance for selected employees?")) return;
+
+    try {
+      const empIds = Array.from(selectedEmpIds);
+      const currMonthYear = getMonthYearString(month, year);
+
+      // ✅ Use new API
+      await deleteMultipleAttendance(empIds, currMonthYear);
+
+      // ✅ Update UI locally after delete
+      const updated = attendanceData.filter(
+        (a) => !(selectedEmpIds.has(a.EmpID) && a.monthyear === currMonthYear)
+      );
+
+      setAttendanceData(updated);
+      setFilteredAttendance(
+        updated.filter((item) => item.monthyear === currMonthYear)
+      );
+
+      setDayInputs((prev) => {
+        const clone = { ...prev };
+        empIds.forEach((id) => delete clone[id]);
+        return clone;
+      });
+
+      setSelectedEmpIds(new Set());
+
+      alert("Attendance deleted for selected employees!");
+    } catch (error) {
+      console.error(error);
+      alert("Failed to delete attendance.");
+    }
+  }
+
   function exportToCSV() {
     const monthNames = [
       "January",
@@ -222,7 +269,7 @@ export default function AttendanceSheet() {
     ];
     const heading = `Attendance for: ${monthNames[month - 1]} ${year}\n\n`;
     const header = "Employee Name,Working Days,Leave Days,Week Days Off\n";
-    const rows = employees.map((emp, idx) => {
+    const rows = paginatedEmployees.map((emp, idx) => {
       const empId =
         emp.FacilityMember && emp.FacilityMember.FacilityMemberId
           ? emp.FacilityMember.FacilityMemberId
@@ -329,11 +376,12 @@ export default function AttendanceSheet() {
           </div>
         </div>
 
-        {/* Save Button - Above Table, Right Corner */}
+        {/* Save Button - Above Table, Right Corner  and Delete Button */}
         <div
           style={{
             display: "flex",
             justifyContent: "flex-end",
+            gap: "12px",
             marginBottom: 15,
           }}
         >
@@ -349,14 +397,26 @@ export default function AttendanceSheet() {
               borderRadius: 6,
               cursor: selectedEmpIds.size === 0 ? "not-allowed" : "pointer",
               fontWeight: "bold",
-              opacity: saving ? 0.7 : 1,
             }}
           >
-            {saving
-              ? "Saving..."
-              : `Save Attendance ${
-                  selectedEmpIds.size > 0 ? `(${selectedEmpIds.size})` : ""
-                }`}
+            {saving ? "Saving..." : `Save Attendance (${selectedEmpIds.size})`}
+          </button>
+
+          <button
+            onClick={handleBulkDelete}
+            disabled={selectedEmpIds.size === 0}
+            style={{
+              padding: "8px 20px",
+              fontSize: 16,
+              background: selectedEmpIds.size === 0 ? "#cbd5e0" : "#e53e3e",
+              color: "#fff",
+              border: "none",
+              borderRadius: 6,
+              cursor: selectedEmpIds.size === 0 ? "not-allowed" : "pointer",
+              fontWeight: "bold",
+            }}
+          >
+            {`Delete Attendance (${selectedEmpIds.size})`}
           </button>
         </div>
 
@@ -430,7 +490,7 @@ export default function AttendanceSheet() {
                 </td>
               </tr>
             ) : (
-              employees.map((emp, index) => {
+              paginatedEmployees.map((emp, index) => {
                 const empId =
                   emp.FacilityMember && emp.FacilityMember.FacilityMemberId
                     ? emp.FacilityMember.FacilityMemberId
@@ -541,6 +601,34 @@ export default function AttendanceSheet() {
             )}
           </tbody>
         </table>
+        <div
+          style={{
+            marginTop: 20,
+            display: "flex",
+            justifyContent: "center",
+            gap: 10,
+          }}
+        >
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(currentPage - 1)}
+            style={{ padding: "6px 12px" }}
+          >
+            Prev
+          </button>
+
+          <span style={{ fontSize: 16, fontWeight: "bold" }}>
+            Page {currentPage} / {totalPages}
+          </span>
+
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(currentPage + 1)}
+            style={{ padding: "6px 12px" }}
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );

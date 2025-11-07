@@ -474,6 +474,21 @@ export const updateAttendance = async (empId, monthyear, model) => {
   }
 };
 
+// Delete multiple attendance records
+export const deleteMultipleAttendance = async (empIds, monthyear) => {
+  const response = await axios.delete(`${BASE_URL}/delete-multiple`, {
+    params: {
+      empIds: empIds.join(","),   // "277,278,300"
+      monthyear: monthyear        // "2025-11"
+    },
+    headers: { "Content-Type": "application/json" },
+    withCredentials: false,
+  });
+
+  return response.data;
+};
+
+
 const APIBASE_URL = "https://api.urest.in:8096/api";
 
 export const getPropertyById = async (propertyId) => {
