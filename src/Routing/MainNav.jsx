@@ -82,10 +82,17 @@ import LeaveMaster from "../MainComponents/Attendance/LeaveMaster.jsx";
 import EmployeeLeave from "../MainComponents/FacilityMember/EmployeeLeave.jsx";
 
 import SpotVisitCalendar from "../MainComponents/Calendar/SpotVisitCalendar.jsx";
+import AllowanceDeduction from "../MainComponents/Payroll/AllowanceDeduction.jsx";
+import SalaryGroups from "../MainComponents/Payroll/SalaryGroups.jsx";
 import ExpenseMaster from "../MainComponents/Expense/ExpenseMaster.jsx";
 import ExpenseTypeMaster from "../MainComponents/Expense/ExpenseTypeMaster.jsx";
 import ExpenseReport from "../MainComponents/Expense/ExpenseReport.jsx";
 import Formula from "../MainComponents/FacilityMember/Formula.jsx";
+import GenerateSalary from "../MainComponents/Payroll/GenerateSalary.jsx";  
+import ProfessionalTax from "../MainComponents/Payroll/ProfessionalTax.jsx";
+import LabourFund from "../MainComponents/Payroll/LabourFund.jsx";
+import AttendanceSheet from "../MainComponents/Payroll/AttendanceSheet.jsx";
+import Linking from "../MainComponents/Payroll/Linking.jsx";
 import ItemAssignedPage from "../MainComponents/Inventory/ItemAssigned.jsx";
 import ItemSpecificationPage from "../MainComponents/Inventory/ItemSpecification.jsx";
 
@@ -501,7 +508,8 @@ class MainNav extends React.Component {
                             <p>Category</p>
                           </Link>
                         </li>
-
+                         
+                        
                         <li className="nav-item">
                           <Link
                             to="/Account/App/Item"
@@ -547,7 +555,19 @@ class MainNav extends React.Component {
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Item Assigned</p>
                           </Link>
-                        </li>
+                        </li>                                           
+                        {/* <li className="nav-item">
+                                        <Link to="/FacilityMember" className="nav-link">
+                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                            <p>In Out Register</p>
+                                        </Link>
+                                    </li> */}
+                        {/* <li className="nav-item">
+                                        <Link to="/FacilityMember" className="nav-link">
+                                            <i className=" fas fa-caret-right nav-icon"></i>
+                                            <p>Get Pass</p>
+                                        </Link>
+                                    </li> */}
                       </ul>
                     </li>
                     : null}
@@ -644,6 +664,78 @@ class MainNav extends React.Component {
                             </Link>
                           </li>
                           <li className="nav-item">
+                          <Link
+                            to="/Account/App/GenerateSalary"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Generate Salary</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/Linking"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Designation Linking</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/ProfessionalTax"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Professional Tax</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/LabourFund"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Labour Welfare Fund</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/AttendanceSheet"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p> Attendance Sheet </p>
+                          </Link>
+                        </li> 
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/SalaryGroups"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p> Salary Groups </p>
+                          </Link>
+                        </li> 
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/AllowanceDeduction"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Allowance Deduction </p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/Formula"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Formula</p>
+                          </Link>
+                        </li>   
+                          <li className="nav-item">
                             <Link
                               to="/Account/App/Facility"
                               className="nav-link"
@@ -734,15 +826,7 @@ class MainNav extends React.Component {
                               <p>Visitor </p>
                             </Link>
                           </li>
-                          <li className="nav-item">
-                            <Link
-                              to="/Account/App/Formula"
-                              className="nav-link"
-                            >
-                              <i className=" fas fa-caret-right nav-icon"></i>
-                              <p>Formula</p>
-                            </Link>
-                          </li>
+                          
                           {/* <li className="nav-item">
                                         <Link to="/FacilityMember" className="nav-link">
                                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -1371,6 +1455,13 @@ class MainNav extends React.Component {
             <Route path="/Account/App/UploaderPage">
               <UploaderPage />
             </Route>
+            <Route path="/Account/App/Linking" component={Linking} />
+            <Route path="/Account/App/AttendanceSheet" component={AttendanceSheet} />
+            <Route path="/Account/App/LabourFund" component={LabourFund} />
+            <Route path="/Account/App/ProfessionalTax" component={ProfessionalTax} />
+            <Route path="/Account/App/GenerateSalary" component={GenerateSalary} />
+            <Route path="/Account/App/SalaryGroups" component={SalaryGroups} />
+            <Route path="/Account/App/AllowanceDeduction" component={AllowanceDeduction} />
             <Route path="/Account/App/Formula" component={Formula} />
             <Route path="/Account/App/SpotVisitCalendar" component={SpotVisitCalendar} />
             <Route path="/Account/App/ExpenseReport" component={ExpenseReport} />
