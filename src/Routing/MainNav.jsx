@@ -509,150 +509,8 @@ class MainNav extends React.Component {
                             <p>Category</p>
                           </Link>
                         </li>
-                         <li className="nav-item">
-                          <Link
-                            to="/Account/App/GenerateSalary"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Generate Salary</p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/Linking"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Designation Linking</p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/ProfessionalTax"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Professional Tax</p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/LabourFund"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Labour Welfare Fund</p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/AttendanceSheet"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p> Attendance Sheet </p>
-                          </Link>
-                        </li> 
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/SalaryGroups"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p> Salary Groups </p>
-                          </Link>
-                        </li> 
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/AllowanceDeduction"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Allowance Deduction </p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/Formula"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Formula</p>
-                          </Link>
-                        </li>   
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/GenerateSalary"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Generate Salary</p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/Linking"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Designation Linking</p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/ProfessionalTax"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Professional Tax</p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/LabourFund"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Labour Welfare Fund</p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/AttendanceSheet"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p> Attendance Sheet </p>
-                          </Link>
-                        </li> 
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/SalaryGroups"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p> Salary Groups </p>
-                          </Link>
-                        </li> 
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/AllowanceDeduction"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Allowance Deduction </p>
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/Formula"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Formula</p>
-                          </Link>
-                        </li>   
+                         
+                        
                         <li className="nav-item">
                           <Link
                             to="/Account/App/Item"
@@ -807,6 +665,78 @@ class MainNav extends React.Component {
                             </Link>
                           </li>
                           <li className="nav-item">
+                          <Link
+                            to="/Account/App/GenerateSalary"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Generate Salary</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/Linking"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Designation Linking</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/ProfessionalTax"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Professional Tax</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/LabourFund"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Labour Welfare Fund</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/AttendanceSheet"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p> Attendance Sheet </p>
+                          </Link>
+                        </li> 
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/SalaryGroups"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p> Salary Groups </p>
+                          </Link>
+                        </li> 
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/AllowanceDeduction"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Allowance Deduction </p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/Formula"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Formula</p>
+                          </Link>
+                        </li>   
+                          <li className="nav-item">
                             <Link
                               to="/Account/App/Facility"
                               className="nav-link"
@@ -897,15 +827,7 @@ class MainNav extends React.Component {
                               <p>Visitor </p>
                             </Link>
                           </li>
-                          <li className="nav-item">
-                            <Link
-                              to="/Account/App/Formula"
-                              className="nav-link"
-                            >
-                              <i className=" fas fa-caret-right nav-icon"></i>
-                              <p>Formula</p>
-                            </Link>
-                          </li>
+                          
                           {/* <li className="nav-item">
                                         <Link to="/FacilityMember" className="nav-link">
                                             <i className=" fas fa-caret-right nav-icon"></i>

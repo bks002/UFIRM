@@ -8,6 +8,7 @@ import { InputText } from "primereact/inputtext";
 import { Toast } from "primereact/toast";
 import { Dialog } from "primereact/dialog";
 import { RadioButton } from "primereact/radiobutton";
+import { Dropdown } from "primereact/dropdown"; // ✅ Added
 import { FilterMatchMode } from "primereact/api";
 import { useSelector } from "react-redux";
 
@@ -16,8 +17,9 @@ import {
   createItemAssigned,
   updateItemAssigned,
   deleteItemAssigned,
-  getItemSpecificationName,
+  getItemSpecificationName
 } from "../../Services/ItemassignService";
+import { getAllItems } from "../../Services/InventoryService"; // ✅ You'll add this to your Service file
 
 import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
@@ -31,10 +33,13 @@ export default function ItemAssignedPage() {
 
   const [dialogVisible, setDialogVisible] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
-  const [viewDialogVisible, setViewDialogVisible] = useState(false); // 👈 NEW
+  const [viewDialogVisible, setViewDialogVisible] = useState(false);
   const [specifications, setSpecifications] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [itemOptions, setItemOptions] = useState([]); // ✅ Item dropdown options
+
   const [formData, setFormData] = useState({
+    item_Id: null,
     item_Name: "",
     gender: "",
     quantity: 1,
@@ -47,8 +52,10 @@ export default function ItemAssignedPage() {
 
   useEffect(() => {
     fetchGrouped();
+    fetchItemOptions(); // ✅ Fetch dropdown data
   }, []);
 
+  // Fetch Assigned Items
   const fetchGrouped = async () => {
     try {
       const res = await getItemAssigned(propertyId);
@@ -62,11 +69,35 @@ export default function ItemAssignedPage() {
     }
   };
 
-  const handleItemNameChange = async (value) => {
-    setFormData({ ...formData, item_Name: value });
-    if (value.trim() !== "") {
+  // ✅ Fetch dropdown items
+  const fetchItemOptions = async () => {
+    try {
+      const res = await getAllItems(propertyId); // e.g. [{ Id: 1, Name: "Bed" }, ...]
+      const formatted = res.map((i) => ({
+        label: i.Name,
+        value: { id: i.Id, name: i.Name },
+      }));
+      setItemOptions(formatted);
+    } catch (err) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Failed to load item list",
+      });
+    }
+  };
+
+  // When user selects item from dropdown
+  const handleItemSelect = async (value) => {
+    setFormData({
+      ...formData,
+      item_Id: value.id,
+      item_Name: value.name,
+    });
+
+    if (value.name.trim() !== "") {
       try {
-        const res = await getItemSpecificationName(value);
+        const res = await getItemSpecificationName(value.name);
         setSpecifications(
           res.map((s) => ({
             Id: s.Id,
@@ -90,91 +121,92 @@ export default function ItemAssignedPage() {
     );
   };
 
+  // ✅ Save logic includes item_Id and item_Name
   const handleSave = async () => {
-  try {
-    const payload = [
-  {
-    Id: selectedItem ? selectedItem.Id : 0,
-    Item_Name: formData.item_Name,
-    Gender: formData.gender,
-    Quantity: formData.quantity,
-    PropertyId: Number(propertyId),
-    IsRequisition: formData.isRequisition,
-    IsHandover: formData.isHandover,
-    Is_Active: true, // ✅ added
-    Details: specifications.map((s) => ({
-      Id: s.Id || 0,
-      Specification_Name: s.Specification,
-      Specification_Value: s.Specification_Value || "",
-      Is_Active: true, // ✅ all details default active
-    })),
-  },
-];
+    try {
+      const payload = [
+        {
+          Id: selectedItem ? selectedItem.Id : 0,
+          Item_Id: formData.item_Id,
+          Item_Name: formData.item_Name,
+          Gender: formData.gender,
+          Quantity: formData.quantity,
+          PropertyId: Number(propertyId),
+          IsRequisition: formData.isRequisition,
+          IsHandover: formData.isHandover,
+          Is_Active: true,
+          Details: specifications.map((s) => ({
+            Id: s.Id || 0,
+            Specification_Name: s.Specification,
+            Specification_Value: s.Specification_Value || "",
+            Is_Active: true,
+          })),
+        },
+      ];
 
-const payloadu = {
-  Id: selectedItem ? selectedItem.Id : 0,
-  Item_Name: formData.item_Name,
-  Gender: formData.gender,
-  Quantity: formData.quantity,
-  PropertyId: Number(propertyId),
-  IsRequisition: formData.isRequisition,
-  IsHandover: formData.isHandover,
-  Is_Active: true, // ✅ added
-  Details: specifications.map((s) => ({
-    Id: s.Id || 0,
-    Specification_Name: s.Specification,
-    Specification_Value: s.Specification_Value || "",
-    Is_Active: true,
-  })),
-};
+      const payloadu = {
+        Id: selectedItem ? selectedItem.Id : 0,
+        Item_Id: formData.item_Id,
+        Item_Name: formData.item_Name,
+        Gender: formData.gender,
+        Quantity: formData.quantity,
+        PropertyId: Number(propertyId),
+        IsRequisition: formData.isRequisition,
+        IsHandover: formData.isHandover,
+        Is_Active: true,
+        Details: specifications.map((s) => ({
+          Id: s.Id || 0,
+          Specification_Name: s.Specification,
+          Specification_Value: s.Specification_Value || "",
+          Is_Active: true,
+        })),
+      };
 
+      if (selectedItem) {
+        await updateItemAssigned(selectedItem.Id, payloadu);
+        toast.current.show({ severity: "success", summary: "Record Updated" });
+      } else {
+        await createItemAssigned(payload);
+        toast.current.show({ severity: "success", summary: "Record Added" });
+      }
 
-    if (selectedItem) {
-      await updateItemAssigned(selectedItem.Id, payloadu);
-      toast.current.show({ severity: "success", summary: "Record Updated" });
-    } else {
-      await createItemAssigned(payload);
-      toast.current.show({ severity: "success", summary: "Record Added" });
+      setDialogVisible(false);
+      fetchGrouped();
+    } catch (err) {
+      console.error(err);
+      toast.current.show({
+        severity: "error",
+        summary: "Save Failed",
+        detail: err.message,
+      });
     }
+  };
 
-    setDialogVisible(false);
-    fetchGrouped();
-  } catch (err) {
-    console.error(err);
-    toast.current.show({
-      severity: "error",
-      summary: "Save Failed",
-      detail: err.message,
-    });
-  }
-};
-
+  // ✅ When editing
   const openEditDialog = (rowData) => {
-  setSelectedItem(rowData);
-
-  setFormData({
-    item_Name: rowData.Item_Name || "",
-    gender: rowData.Gender || "",
-    quantity: rowData.Quantity || 1,
-    isRequisition: rowData.IsRequisition || false,
-    isHandover: rowData.IsHandover || false,
-  });
-
-  // ✅ Also map specifications for editing
-  setSpecifications(
-    (rowData.Details || []).map((d) => ({
-      Id: d.Id,
-      Specification: d.Specification_Name,
-      Specification_Value: d.Specification_Value,
-    }))
-  );
-
-  setDialogVisible(true);
-};
+    setSelectedItem(rowData);
+    setFormData({
+      item_Id: rowData.Item_Id || null,
+      item_Name: rowData.Item_Name || "",
+      gender: rowData.Gender || "",
+      quantity: rowData.Quantity || 1,
+      isRequisition: rowData.IsRequisition || false,
+      isHandover: rowData.IsHandover || false,
+    });
+    setSpecifications(
+      (rowData.Details || []).map((d) => ({
+        Id: d.Id,
+        Specification: d.Specification_Name,
+        Specification_Value: d.Specification_Value,
+      }))
+    );
+    setDialogVisible(true);
+  };
 
   const openAddDialog = () => {
     setSelectedItem(null);
     setFormData({
+      item_Id: null,
       item_Name: "",
       gender: "",
       quantity: 1,
@@ -201,27 +233,6 @@ const payloadu = {
     }
   };
 
-  const openViewDialog = (rowData) => {
-    setSelectedItem(rowData);
-    setViewDialogVisible(true);
-  };
-
-  const onGlobalFilterChange = (e) => {
-    const value = e.target.value;
-    setGlobalFilterValue(value);
-    setFilters({
-      ...filters,
-      global: { value, matchMode: FilterMatchMode.CONTAINS },
-    });
-    if (value.trim() === "") fetchGrouped();
-    else
-      setGrouped(
-        grouped.filter((item) =>
-          item.Item_Name.toLowerCase().includes(value.toLowerCase())
-        )
-      );
-  };
-
   const header = (
     <div className="d-flex justify-content-between align-items-center p-2">
       <h3 className="m-0">Item Assigned</h3>
@@ -229,7 +240,7 @@ const payloadu = {
         <span className="p-input-icon-left">
           <InputText
             value={globalFilterValue}
-            onChange={onGlobalFilterChange}
+            onChange={(e) => setGlobalFilterValue(e.target.value)}
             placeholder="Search by item name..."
           />
         </span>
@@ -261,18 +272,12 @@ const payloadu = {
                 dataKey="Item_Name"
               >
                 <Column field="Item_Name" header="Item Name" sortable />
-                <Column field="Gender" header="Gender"  />
+                <Column field="Gender" header="Gender" />
                 <Column field="Quantity" header="Quantity" sortable />
                 <Column
                   header="Actions"
                   body={(rowData) => (
                     <>
-                      <Button
-                        icon="pi pi-eye"
-                        className="p-button-rounded p-button-info p-button-sm mr-2"
-                        onClick={() => openViewDialog(rowData)}
-                        tooltip="View Details"
-                      />
                       <Button
                         icon="pi pi-pencil"
                         className="p-button-rounded p-button-warning p-button-sm mr-2"
@@ -292,206 +297,160 @@ const payloadu = {
         </div>
       </section>
 
-      {/* ✅ View Dialog */}
+      {/* Add/Edit Dialog */}
       <Dialog
-        header="Item Details"
-        visible={viewDialogVisible}
-        style={{ width: "50vw" }}
-        onHide={() => setViewDialogVisible(false)}
+        header={selectedItem ? "Edit Item Assignment" : "Add New Item Assignment"}
+        visible={dialogVisible}
+        style={{ width: "60vw" }}
+        onHide={() => setDialogVisible(false)}
         footer={
           <div>
             <Button
-              label="Close"
+              label="Cancel"
               icon="pi pi-times"
-              onClick={() => setViewDialogVisible(false)}
+              onClick={() => setDialogVisible(false)}
               className="p-button-text"
             />
+            <Button label="Save" icon="pi pi-check" onClick={handleSave} />
           </div>
         }
       >
-        {selectedItem && (
-          <div className="p-fluid">
-            <h4 className="mb-3">{selectedItem.Item_Name}</h4>
-            <div className="grid">
-              <div className="col-6">
-                <p><strong>Gender:</strong> {selectedItem.Gender}</p>
+        <div className="p-fluid">
+          {/* ✅ Dropdown for item */}
+          <div className="field">
+            <label>Item</label>
+            <Dropdown
+              value={
+                formData.item_Id
+                  ? { id: formData.item_Id, name: formData.item_Name }
+                  : null
+              }
+              options={itemOptions}
+              onChange={(e) => handleItemSelect(e.value)}
+              placeholder="Select an item"
+              showClear
+              filter
+              className="w-full"
+            />
+          </div>
+
+          <div className="field">
+            <label>Gender</label>
+            <select
+              className="p-inputtext p-component"
+              value={formData.gender}
+              onChange={(e) =>
+                setFormData({ ...formData, gender: e.target.value })
+              }
+            >
+              <option value="">Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+
+          <div className="field">
+            <label>Quantity</label>
+            <InputText
+              type="number"
+              min="1"
+              value={formData.quantity}
+              onChange={(e) =>
+                setFormData({ ...formData, quantity: Number(e.target.value) })
+              }
+            />
+          </div>
+
+          <div className="field">
+            <label className="block mb-2">Type</label>
+            <div className="flex align-items-center gap-5">
+              <div className="flex align-items-center">
+                <RadioButton
+                  inputId="requisition"
+                  name="type"
+                  value="Requisition"
+                  checked={formData.isRequisition}
+                  onChange={() =>
+                    setFormData({
+                      ...formData,
+                      isRequisition: true,
+                      isHandover: false,
+                    })
+                  }
+                />
+                <label htmlFor="requisition" className="ml-2">
+                  Requisition
+                </label>
               </div>
-              <div className="col-6">
-                <p><strong>Quantity:</strong> {selectedItem.Quantity}</p>
-              </div>
-              <div className="col-6">
-                <p>
-                  <strong>Requisition:</strong>{" "}
-                  {selectedItem.IsRequisition ? "Yes" : "No"}
-                </p>
-              </div>
-              <div className="col-6">
-                <p>
-                  <strong>Handover:</strong>{" "}
-                  {selectedItem.IsHandover ? "Yes" : "No"}
-                </p>
+
+              <div className="flex align-items-center">
+                <RadioButton
+                  inputId="handover"
+                  name="type"
+                  value="Handover"
+                  checked={formData.isHandover}
+                  onChange={() =>
+                    setFormData({
+                      ...formData,
+                      isHandover: true,
+                      isRequisition: false,
+                    })
+                  }
+                />
+                <label htmlFor="handover" className="ml-2">
+                  Handover
+                </label>
               </div>
             </div>
-
-            <h5 className="mt-4 mb-2">Specifications</h5>
-            <DataTable
-              value={selectedItem.Details || []}
-              emptyMessage="No specifications found"
-              responsiveLayout="scroll"
-            >
-              <Column field="Specification_Name" header="Specification" />
-              <Column field="Specification_Value" header="Value" />
-            </DataTable>
           </div>
-        )}
+
+          {specifications.length > 0 && (
+            <div className="mt-4">
+              <h4 className="mb-2">Specifications</h4>
+              <DataTable value={specifications} responsiveLayout="scroll">
+                <Column field="Specification" header="Specification" />
+                <Column
+                  header="Value"
+                  body={(rowData, { rowIndex }) => (
+                    <InputText
+                      value={rowData.Specification_Value || ""}
+                      onChange={(e) =>
+                        handleSpecValueChange(rowIndex, e.target.value)
+                      }
+                    />
+                  )}
+                />
+              </DataTable>
+            </div>
+          )}
+        </div>
       </Dialog>
 
-
-            {/* Add/Edit Dialog */}
-            <Dialog
-                header={selectedItem ? "Edit Item Assignment" : "Add New Item Assignment"}
-                visible={dialogVisible}
-                style={{ width: "60vw" }}
-                onHide={() => setDialogVisible(false)}
-                footer={
-                    <div>
-                        <Button
-                            label="Cancel"
-                            icon="pi pi-times"
-                            onClick={() => setDialogVisible(false)}
-                            className="p-button-text"
-                        />
-                        <Button label="Save" icon="pi pi-check" onClick={handleSave} />
-                    </div>
-                }
-            >
-                <div className="p-fluid">
-                    <div className="field">
-                        <label>Item Name</label>
-                        <InputText
-                            value={formData.item_Name}
-                            onChange={(e) => handleItemNameChange(e.target.value)}
-                            placeholder="Type item name..."
-                        />
-                    </div>
-
-                    <div className="field">
-                        <label>Gender</label>
-                        <select
-                            className="p-inputtext p-component"
-                            value={formData.gender}
-                            onChange={(e) =>
-                                setFormData({ ...formData, gender: e.target.value })
-                            }
-                        >
-                            <option value="">Select Gender</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                        </select>
-                    </div>
-
-                    <div className="field">
-                        <label>Quantity</label>
-                        <InputText
-                            type="number"
-                            min="1"
-                            value={formData.quantity}
-                            onChange={(e) =>
-                                setFormData({ ...formData, quantity: Number(e.target.value) })
-                            }
-                        />
-                    </div>
-
-                    <div className="field">
-                        <label className="block mb-2">Type</label>
-                        <div className="flex align-items-center gap-5">
-                            <div className="flex align-items-center">
-                                <RadioButton
-                                    inputId="requisition"
-                                    name="type"
-                                    value="Requisition"
-                                    checked={formData.isRequisition}
-                                    onChange={() =>
-                                        setFormData({
-                                            ...formData,
-                                            isRequisition: true,
-                                            isHandover: false,
-                                        })
-                                    }
-                                />
-                                <label htmlFor="requisition" className="ml-2">
-                                    Requisition
-                                </label>
-                            </div>
-
-                            <div className="flex align-items-center">
-                                <RadioButton
-                                    inputId="handover"
-                                    name="type"
-                                    value="Handover"
-                                    checked={formData.isHandover}
-                                    onChange={() =>
-                                        setFormData({
-                                            ...formData,
-                                            isHandover: true,
-                                            isRequisition: false,
-                                        })
-                                    }
-                                />
-                                <label htmlFor="handover" className="ml-2">
-                                    Handover
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    {specifications.length > 0 && (
-                        <div className="mt-4">
-                            <h4 className="mb-2">Specifications</h4>
-                            <DataTable value={specifications} responsiveLayout="scroll">
-                                <Column field="Specification" header="Specification" />
-                                <Column
-                                    header="Value"
-                                    body={(rowData, { rowIndex }) => (
-                                        <InputText
-                                            value={rowData.Specification_Value || ""}
-                                            onChange={(e) =>
-                                                handleSpecValueChange(rowIndex, e.target.value)
-                                            }
-                                        />
-                                    )}
-                                />
-                            </DataTable>
-                        </div>
-                    )}
-                </div>
-            </Dialog>
-
-            {/* Delete Confirmation */}
-            <Dialog
-                header="Confirm Delete"
-                visible={deleteDialogVisible}
-                style={{ width: "25vw" }}
-                footer={
-                    <div>
-                        <Button
-                            label="Cancel"
-                            icon="pi pi-times"
-                            onClick={() => setDeleteDialogVisible(false)}
-                            className="p-button-text"
-                        />
-                        <Button
-                            label="Delete"
-                            icon="pi pi-check"
-                            onClick={handleDelete}
-                            className="p-button-danger"
-                        />
-                    </div>
-                }
-                onHide={() => setDeleteDialogVisible(false)}
-            >
-                <p>Are you sure you want to delete this record?</p>
-            </Dialog>
-        </div>
-    );
+      {/* Delete Dialog */}
+      <Dialog
+        header="Confirm Delete"
+        visible={deleteDialogVisible}
+        style={{ width: "25vw" }}
+        footer={
+          <div>
+            <Button
+              label="Cancel"
+              icon="pi pi-times"
+              onClick={() => setDeleteDialogVisible(false)}
+              className="p-button-text"
+            />
+            <Button
+              label="Delete"
+              icon="pi pi-check"
+              onClick={handleDelete}
+              className="p-button-danger"
+            />
+          </div>
+        }
+        onHide={() => setDeleteDialogVisible(false)}
+      >
+        <p>Are you sure you want to delete this record?</p>
+      </Dialog>
+    </div>
+  );
 }

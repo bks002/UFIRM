@@ -7,30 +7,40 @@ import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { Toast } from "primereact/toast";
 import { Dialog } from "primereact/dialog";
+import { Dropdown } from "primereact/dropdown"; // 🔹 Added
 import { FilterMatchMode } from "primereact/api";
-import { getItemSpecification, createItemSpecification, getItemSpecificationName } from "../../Services/ItemassignService";// 🔹 You'll create this
+import {
+  getItemSpecification,
+  createItemSpecification,
+  getItemSpecificationName
+} from "../../Services/ItemassignService";
+import { getAllItems } from "../../Services/InventoryService";
 import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 
 const ItemSpecificationPage = () => {
   const [items, setItems] = useState([]);
+  const [itemOptions, setItemOptions] = useState([]); // 🔹 Dropdown options
   const [globalFilterValue, setGlobalFilterValue] = useState("");
   const [filters, setFilters] = useState({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
   });
   const toast = useRef(null);
+const propertyId = useSelector((state) => state.Commonreducer.puidn);
 
   // Dialog states
   const [dialogVisible, setDialogVisible] = useState(false);
   const [formData, setFormData] = useState({
-    id: null,
-    Name: "",
+    Id: null,
+    ItemId: null, // 🔹 Added
+    Name: "", // 🔹 This will auto-fill from dropdown
     Specification: "",
   });
 
-  // 🔹 Fetch all items on load
+  // 🔹 Fetch data on load
   useEffect(() => {
     fetchAllItems();
+    fetchItemOptions();
   }, []);
 
   const fetchAllItems = async () => {
@@ -43,6 +53,26 @@ const ItemSpecificationPage = () => {
         severity: "error",
         summary: "Error",
         detail: "Failed to load items",
+      });
+    }
+  };
+
+  // 🔹 Fetch item list for dropdown
+  const fetchItemOptions = async () => {
+    try {
+      const res = await getAllItems(propertyId);
+      // Expecting res = [{ Id: 1, Name: "Item A" }, ...]
+      const formatted = res.map((item) => ({
+        label: item.Name,
+        value: { id: item.Id, name: item.Name },
+      }));
+      setItemOptions(formatted);
+    } catch (err) {
+      console.error("Error fetching item options:", err);
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Failed to load item list",
       });
     }
   };
@@ -66,10 +96,15 @@ const ItemSpecificationPage = () => {
     }
   };
 
-  // 🔹 Create
+  // 🔹 Create new item spec
   const handleSave = async () => {
     try {
-      await createItemSpecification(formData);
+      const payload = {
+        ItemId: formData.ItemId,
+        Name: formData.Name,
+        Specification: formData.Specification,
+      };
+      await createItemSpecification(payload);
       toast.current.show({
         severity: "success",
         summary: "Success",
@@ -100,7 +135,7 @@ const ItemSpecificationPage = () => {
 
   // 🔹 Open create dialog
   const openCreateDialog = () => {
-    setFormData({ Id: null, Name: "", Specification: "" });
+    setFormData({ Id: null, ItemId: null, Name: "", Specification: "" });
     setDialogVisible(true);
   };
 
@@ -156,7 +191,7 @@ const ItemSpecificationPage = () => {
 
       {/* Dialog for create */}
       <Dialog
-        header="Create Item"
+        header="Create Item Specification"
         visible={dialogVisible}
         style={{ width: "400px" }}
         modal
@@ -165,20 +200,30 @@ const ItemSpecificationPage = () => {
         <div className="flex flex-col gap-4">
           <div className="modal-body">
             <div className="row">
+              {/* 🔹 Dropdown instead of text input */}
               <div className="col-12">
-                <label htmlFor="name">Item Name</label>
-                <input
-                  id="Name"
-                  required
-                  placeholder="Enter Item Name"
-                  type="text"
-                  className="form-control"
-                  value={formData.Name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, Name: e.target.value })
+                <label htmlFor="item">Select Item</label>
+                <Dropdown
+                  id="item"
+                  value={
+                    formData.ItemId
+                      ? { id: formData.ItemId, name: formData.Name }
+                      : null
                   }
+                  options={itemOptions}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      ItemId: e.value.id,
+                      Name: e.value.name,
+                    })
+                  }
+                  placeholder="Select an Item"
+                  className="w-full"
+                  showClear
                 />
               </div>
+
               <div className="col-12 mt-3">
                 <label htmlFor="specification">Specification</label>
                 <input
