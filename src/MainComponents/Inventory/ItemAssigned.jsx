@@ -8,7 +8,7 @@ import { InputText } from "primereact/inputtext";
 import { Toast } from "primereact/toast";
 import { Dialog } from "primereact/dialog";
 import { RadioButton } from "primereact/radiobutton";
-import { Dropdown } from "primereact/dropdown"; // ✅ Added
+import { Dropdown } from "primereact/dropdown";
 import { FilterMatchMode } from "primereact/api";
 import { useSelector } from "react-redux";
 
@@ -17,9 +17,9 @@ import {
   createItemAssigned,
   updateItemAssigned,
   deleteItemAssigned,
-  getItemSpecificationName
+  getItemSpecificationName,
 } from "../../Services/ItemassignService";
-import { getAllItems } from "../../Services/InventoryService"; // ✅ You'll add this to your Service file
+import { getAllItems } from "../../Services/InventoryService";
 
 import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
@@ -33,13 +33,12 @@ export default function ItemAssignedPage() {
 
   const [dialogVisible, setDialogVisible] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
-  const [viewDialogVisible, setViewDialogVisible] = useState(false);
   const [specifications, setSpecifications] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [itemOptions, setItemOptions] = useState([]); // ✅ Item dropdown options
+  const [itemOptions, setItemOptions] = useState([]);
 
   const [formData, setFormData] = useState({
-    item_Id: null,
+    itemId: null,
     item_Name: "",
     gender: "",
     quantity: 1,
@@ -52,10 +51,10 @@ export default function ItemAssignedPage() {
 
   useEffect(() => {
     fetchGrouped();
-    fetchItemOptions(); // ✅ Fetch dropdown data
+    fetchItemOptions();
   }, []);
 
-  // Fetch Assigned Items
+  // ✅ Fetch Assigned Items
   const fetchGrouped = async () => {
     try {
       const res = await getItemAssigned(propertyId);
@@ -72,7 +71,7 @@ export default function ItemAssignedPage() {
   // ✅ Fetch dropdown items
   const fetchItemOptions = async () => {
     try {
-      const res = await getAllItems(propertyId); // e.g. [{ Id: 1, Name: "Bed" }, ...]
+      const res = await getAllItems(propertyId);
       const formatted = res.map((i) => ({
         label: i.Name,
         value: { id: i.Id, name: i.Name },
@@ -87,11 +86,11 @@ export default function ItemAssignedPage() {
     }
   };
 
-  // When user selects item from dropdown
+  // ✅ When user selects item from dropdown
   const handleItemSelect = async (value) => {
     setFormData({
       ...formData,
-      item_Id: value.id,
+      itemId: value.id,
       item_Name: value.name,
     });
 
@@ -121,13 +120,13 @@ export default function ItemAssignedPage() {
     );
   };
 
-  // ✅ Save logic includes item_Id and item_Name
+  // ✅ Save logic includes ItemId
   const handleSave = async () => {
     try {
       const payload = [
         {
           Id: selectedItem ? selectedItem.Id : 0,
-          Item_Id: formData.item_Id,
+          ItemId: formData.itemId,
           Item_Name: formData.item_Name,
           Gender: formData.gender,
           Quantity: formData.quantity,
@@ -146,7 +145,7 @@ export default function ItemAssignedPage() {
 
       const payloadu = {
         Id: selectedItem ? selectedItem.Id : 0,
-        Item_Id: formData.item_Id,
+        ItemId: formData.itemId,
         Item_Name: formData.item_Name,
         Gender: formData.gender,
         Quantity: formData.quantity,
@@ -182,11 +181,11 @@ export default function ItemAssignedPage() {
     }
   };
 
-  // ✅ When editing
+  // ✅ Edit Dialog
   const openEditDialog = (rowData) => {
     setSelectedItem(rowData);
     setFormData({
-      item_Id: rowData.Item_Id || null,
+      itemId: rowData.ItemId || null,
       item_Name: rowData.Item_Name || "",
       gender: rowData.Gender || "",
       quantity: rowData.Quantity || 1,
@@ -206,7 +205,7 @@ export default function ItemAssignedPage() {
   const openAddDialog = () => {
     setSelectedItem(null);
     setFormData({
-      item_Id: null,
+      itemId: null,
       item_Name: "",
       gender: "",
       quantity: 1,
@@ -321,8 +320,8 @@ export default function ItemAssignedPage() {
             <label>Item</label>
             <Dropdown
               value={
-                formData.item_Id
-                  ? { id: formData.item_Id, name: formData.item_Name }
+                formData.itemId
+                  ? { id: formData.itemId, name: formData.item_Name }
                   : null
               }
               options={itemOptions}

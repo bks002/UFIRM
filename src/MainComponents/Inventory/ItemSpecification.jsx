@@ -1,48 +1,51 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { useSelector } from "react-redux"; // ✅ Added (was missing)
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { Toast } from "primereact/toast";
 import { Dialog } from "primereact/dialog";
-import { Dropdown } from "primereact/dropdown"; // 🔹 Added
+import { Dropdown } from "primereact/dropdown";
 import { FilterMatchMode } from "primereact/api";
+
 import {
   getItemSpecification,
   createItemSpecification,
-  getItemSpecificationName
+  getItemSpecificationName,
 } from "../../Services/ItemassignService";
 import { getAllItems } from "../../Services/InventoryService";
+
 import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 
 const ItemSpecificationPage = () => {
   const [items, setItems] = useState([]);
-  const [itemOptions, setItemOptions] = useState([]); // 🔹 Dropdown options
+  const [itemOptions, setItemOptions] = useState([]);
   const [globalFilterValue, setGlobalFilterValue] = useState("");
   const [filters, setFilters] = useState({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
   });
   const toast = useRef(null);
-const propertyId = useSelector((state) => state.Commonreducer.puidn);
+  const propertyId = useSelector((state) => state.Commonreducer.puidn);
 
-  // Dialog states
   const [dialogVisible, setDialogVisible] = useState(false);
   const [formData, setFormData] = useState({
     Id: null,
-    ItemId: null, // 🔹 Added
-    Name: "", // 🔹 This will auto-fill from dropdown
+    ItemId: null,
+    Name: "",
     Specification: "",
   });
 
-  // 🔹 Fetch data on load
+  // 🔹 Fetch all data on mount
   useEffect(() => {
     fetchAllItems();
     fetchItemOptions();
   }, []);
 
+  // 🔹 Fetch item specifications
   const fetchAllItems = async () => {
     try {
       const res = await getItemSpecification();
@@ -57,11 +60,10 @@ const propertyId = useSelector((state) => state.Commonreducer.puidn);
     }
   };
 
-  // 🔹 Fetch item list for dropdown
+  // 🔹 Fetch items for dropdown
   const fetchItemOptions = async () => {
     try {
       const res = await getAllItems(propertyId);
-      // Expecting res = [{ Id: 1, Name: "Item A" }, ...]
       const formatted = res.map((item) => ({
         label: item.Name,
         value: { id: item.Id, name: item.Name },
@@ -77,7 +79,7 @@ const propertyId = useSelector((state) => state.Commonreducer.puidn);
     }
   };
 
-  // 🔹 Search by item name
+  // 🔹 Fetch item specs by name
   const fetchByName = async (name) => {
     if (!name) {
       fetchAllItems();
@@ -96,14 +98,24 @@ const propertyId = useSelector((state) => state.Commonreducer.puidn);
     }
   };
 
-  // 🔹 Create new item spec
+  // 🔹 Save new item specification
   const handleSave = async () => {
+    if (!formData.ItemId || !formData.Specification.trim()) {
+      toast.current.show({
+        severity: "warn",
+        summary: "Missing Data",
+        detail: "Please select an item and enter a specification.",
+      });
+      return;
+    }
+
     try {
       const payload = {
         ItemId: formData.ItemId,
         Name: formData.Name,
         Specification: formData.Specification,
       };
+
       await createItemSpecification(payload);
       toast.current.show({
         severity: "success",
@@ -122,7 +134,7 @@ const propertyId = useSelector((state) => state.Commonreducer.puidn);
     }
   };
 
-  // 🔹 Search filter change
+  // 🔹 Global search filter
   const onGlobalFilterChange = (e) => {
     const value = e.target.value;
     setGlobalFilterValue(value);
@@ -133,13 +145,13 @@ const propertyId = useSelector((state) => state.Commonreducer.puidn);
     fetchByName(value);
   };
 
-  // 🔹 Open create dialog
+  // 🔹 Open dialog for create
   const openCreateDialog = () => {
     setFormData({ Id: null, ItemId: null, Name: "", Specification: "" });
     setDialogVisible(true);
   };
 
-  // 🔹 Table header
+  // 🔹 Header section
   const header = (
     <div className="d-flex justify-content-between align-items-center p-2">
       <h3 className="m-0">Item Master</h3>
@@ -162,7 +174,6 @@ const propertyId = useSelector((state) => state.Commonreducer.puidn);
     </div>
   );
 
-  // 🔹 Table
   return (
     <div className="content-wrapper">
       <section className="content">
@@ -189,7 +200,7 @@ const propertyId = useSelector((state) => state.Commonreducer.puidn);
         </div>
       </section>
 
-      {/* Dialog for create */}
+      {/* Dialog for creating specification */}
       <Dialog
         header="Create Item Specification"
         visible={dialogVisible}
@@ -200,7 +211,7 @@ const propertyId = useSelector((state) => state.Commonreducer.puidn);
         <div className="flex flex-col gap-4">
           <div className="modal-body">
             <div className="row">
-              {/* 🔹 Dropdown instead of text input */}
+              {/* 🔹 Dropdown for selecting item */}
               <div className="col-12">
                 <label htmlFor="item">Select Item</label>
                 <Dropdown
@@ -221,13 +232,15 @@ const propertyId = useSelector((state) => state.Commonreducer.puidn);
                   placeholder="Select an Item"
                   className="w-full"
                   showClear
+                  filter
                 />
               </div>
 
+              {/* 🔹 Specification field */}
               <div className="col-12 mt-3">
                 <label htmlFor="specification">Specification</label>
                 <input
-                  id="Specification"
+                  id="specification"
                   placeholder="Enter Specification"
                   type="text"
                   className="form-control"
