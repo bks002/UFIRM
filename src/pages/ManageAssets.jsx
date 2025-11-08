@@ -468,14 +468,7 @@ const ServiceRecords = (actions) => {
                                         <label htmlFor="receipt" className="form-label">
                                             Upload Service Receipt
                                         </label>
-                                        <input
-                                            type="file"
-                                            className="form-control"
-                                            id="receipt"
-                                            name="receipt"
-                                            accept="application/pdf, image/*"
-                                            onChange={handleFileChange}
-                                        />
+                                        z
                                         {formData.receipt && (
                                             <button
                                                 type="button"
