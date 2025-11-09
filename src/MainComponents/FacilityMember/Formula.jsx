@@ -233,7 +233,7 @@ const FormulaMaster = () => {
   const actionBodyTemplate = (rowData) => (
     <div className="flex gap-2">
       <Button
-        icon="fa fa-pencil-alt"
+        icon="fa fa-pencil"
         className="p-button-warning p-button-sm rounded"
         style={{
           backgroundColor: "#00CFFF",
