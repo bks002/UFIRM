@@ -26,30 +26,39 @@
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
 
     <style>
-        .tableFilterContainer{padding : 8px 22px 0px 12px}
-        .tableFilterContainer li{
+        .tableFilterContainer {
+            padding: 8px 22px 0px 12px
+        }
+
+        .tableFilterContainer li {
             padding-left: 8px;
             padding-bottom: 8px;
         }
-        .tableFilterContainer .dropdown-menu{
+
+        .tableFilterContainer .dropdown-menu {
             min-width: 90px;
         }
-        #ticketDateCalenderFilter{
+
+        #ticketDateCalenderFilter {
             width: 90px;
             width: 100px;
         }
-        .tblActionBtnContainer{
+
+        .tblActionBtnContainer {
             width: 118px;
             text-align: center;
         }
-        .tblActionBtnContainer .btn{
+
+        .tblActionBtnContainer .btn {
             width: 32px;
             height: 22px;
             padding: 0px;
         }
+
         .has-search .form-control {
-            padding-left:31px;
+            padding-left: 31px;
         }
+
         .has-search .form-control-feedback {
             position: absolute;
             z-index: 2;
@@ -61,40 +70,49 @@
             pointer-events: none;
             color: #aaa;
         }
-        textarea{
+
+        textarea {
             resize: none;
         }
+
         .modal .modal-header {
             padding: 5px 15px;
             background-color: #336B93;
             border-color: #336B93;
             color: #fff;
         }
+
         .modal .modal-title {
             font-size: 20px;
         }
+
         .modal .modal-header .close {
             padding: 8px 15px;
             color: #fff;
             font-weight: 100;
             margin: -5px -15px -5px auto;
         }
-        .modal .form-group label{
+
+        .modal .form-group label {
             margin-bottom: 0;
             font-size: 15px;
         }
+
         .modal .form-group {
             margin-bottom: 10px;
         }
+
         .table.custTable thead tr {
             background-color: #80858e;
             color: #fff;
         }
+
         .table.custTable thead th {
-            border-color: rgba(255,255,255,0.3);
+            border-color: rgba(255, 255, 255, 0.3);
             border-bottom: 2px solid #80858e;
             font-weight: 500;
         }
+
         .dummyBox {
             padding: 0.25rem 0.5rem;
             font-size: 0.875rem;
@@ -102,18 +120,25 @@
             border-radius: 0.2rem;
             background-color: #f8f9fa;
             background-clip: padding-box;
-            border: 1px solid rgba(0,0,0,0.1);
+            border: 1px solid rgba(0, 0, 0, 0.1);
             min-height: 31px;
         }
-        .ticketComment{
+
+        .ticketComment {
             font-size: 15px;
         }
-        .btn-primary:not(:disabled):not(.disabled):active, .btn-primary:not(:disabled):not(.disabled).active, .show>.btn-primary.dropdown-toggle {
+
+        .btn-primary:not(:disabled):not(.disabled):active,
+        .btn-primary:not(:disabled):not(.disabled).active,
+        .show>.btn-primary.dropdown-toggle {
             color: #ffffff;
             background-color: #194a6d;
             border-color: #336B93;
         }
-        .table.custTable td .badge{padding: 4px 10px;}
+
+        .table.custTable td .badge {
+            padding: 4px 10px;
+        }
     </style>
 </head>
 
@@ -137,11 +162,12 @@
             <!-- SEARCH FORM -->
             <form class="form-inline ml-3">
                 <div class="input-group input-group-sm">
-                    <input class="form-control form-control-navbar" type="search" placeholder="Search" aria-label="Search"></input>
+                    <input class="form-control form-control-navbar" type="search" placeholder="Search"
+                        aria-label="Search"></input>
                     <div class="input-group-append">
-                        <button class="btn btn-navbar" type="submit">
-            <i class="fas fa-search"></i>
-          </button>
+                        <button class="btn btn-navbar" type="submit" aria-label="Search" title="Search">
+                            <i class="fas fa-search"></i>
+                        </button>
                     </div>
                 </div>
             </form>
@@ -158,7 +184,8 @@
                         <a href="#" class="dropdown-item">
                             <!-- Message Start -->
                             <div class="media">
-                                <img src="../../dist/img/user1-128x128.jpg" alt="User Avatar" class="img-size-50 mr-3 img-circle">
+                                <img src="../../dist/img/user1-128x128.jpg" alt="User Avatar"
+                                    class="img-size-50 mr-3 img-circle">
                                 <div class="media-body">
                                     <h3 class="dropdown-item-title">
                                         Brad Diesel
@@ -174,7 +201,8 @@
                         <a href="#" class="dropdown-item">
                             <!-- Message Start -->
                             <div class="media">
-                                <img src="../../dist/img/user8-128x128.jpg" alt="User Avatar" class="img-size-50 img-circle mr-3">
+                                <img src="../../dist/img/user8-128x128.jpg" alt="User Avatar"
+                                    class="img-size-50 img-circle mr-3">
                                 <div class="media-body">
                                     <h3 class="dropdown-item-title">
                                         John Pierce
@@ -190,11 +218,13 @@
                         <a href="#" class="dropdown-item">
                             <!-- Message Start -->
                             <div class="media">
-                                <img src="../../dist/img/user3-128x128.jpg" alt="User Avatar" class="img-size-50 img-circle mr-3">
+                                <img src="../../dist/img/user3-128x128.jpg" alt="User Avatar"
+                                    class="img-size-50 img-circle mr-3">
                                 <div class="media-body">
                                     <h3 class="dropdown-item-title">
                                         Nora Silvester
-                                        <span class="float-right text-sm text-warning"><i class="fas fa-star"></i></span>
+                                        <span class="float-right text-sm text-warning"><i
+                                                class="fas fa-star"></i></span>
                                     </h3>
                                     <p class="text-sm">The subject goes here</p>
                                     <p class="text-sm text-muted"><i class="far fa-clock mr-1"></i> 4 Hours Ago</p>
@@ -245,7 +275,7 @@
                     </a>
                     <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
                         <a href="#" class="dropdown-item">
-                           My Profile
+                            My Profile
                         </a>
                         <div class="dropdown-divider"></div>
                         <a href="#" class="dropdown-item">
@@ -253,7 +283,7 @@
                         </a>
                         <div class="dropdown-divider"></div>
                         <a href="#" class="dropdown-item">
-                          Option 2
+                            Option 2
                         </a>
                     </div>
                 </li>
@@ -267,8 +297,8 @@
             <a href="../../index3.html" class="brand-link">
                 <img src="../../dist/img/Ufirm-fabicon.png" alt="UFIRM Logo" class="brand-image"></img>
                 <span class="brand-text">
-                <img src="../../dist/img/LogoShort.png" alt="UFIRM Logo" ></img>
-              </span>
+                    <img src="../../dist/img/LogoShort.png" alt="UFIRM Logo"></img>
+                </span>
             </a>
 
             <!-- Sidebar -->
@@ -277,7 +307,7 @@
 
                 <!-- Sidebar Menu -->
                 <nav class="mt-2">
-                    <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                    <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" data-accordion="false">
                         <!-- Add icons to the links using the .nav-icon class
                with font-awesome or any other icon font library -->
                         <li class="nav-item has-treeview">
@@ -841,7 +871,9 @@
                                     <h3 class="card-title p-2 mt-1 pl-4 d-none d-sm-block">Filter:</h3>
                                     <ul class="nav ml-auto tableFilterContainer">
                                         <li class="nav-item dropdown">
-                                            <button class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown">
+                                            <button class="btn btn-primary btn-sm dropdown-toggle"
+                                                data-toggle="dropdown" aria-label="Export Options"
+                                                title="Export Options">
                                                 Export <span class="caret"></span>
                                             </button>
                                             <div class="dropdown-menu">
@@ -850,8 +882,9 @@
                                             </div>
                                         </li>
                                         <li class="nav-item">
-                                            <div class="input-group input-group-sm">                                            
-                                                <input type="text" class="form-control float-right singleCalendar"></input>
+                                            <div class="input-group input-group-sm">
+                                                <input type="text" class="form-control float-right singleCalendar"
+                                                    aria-label="Filter by date" placeholder="Select date"></input>
                                                 <div class="input-group-append">
                                                     <span class="input-group-text">
                                                         <i class="far fa-calendar-alt"></i>
@@ -860,36 +893,40 @@
                                             </div>
                                         </li>
                                         <li class="nav-item">
-                                            <select class="form-control-sm btn-primary pr-0">
+                                            <select class="form-control-sm btn-primary pr-0"
+                                                aria-label="Filter by status">
                                                 <option>Status</option>
                                                 <option>Open</option>
                                                 <option>Closed</option>
                                                 <option>Inprogress</option>
                                             </select>
-                                        </li>                                                                           
+                                        </li>
                                         <li class="nav-item">
                                             <div class="input-group input-group-sm">
                                                 <div class="input-group-prepend">
-                                                    <select class="form-control-sm pr-0 input-group-text">
+                                                    <select class="form-control-sm pr-0 input-group-text"
+                                                        aria-label="Search by field">
                                                         <option>Search By</option>
                                                         <option>Ticket No.</option>
                                                         <option>Assigned</option>
                                                     </select>
                                                 </div>
-                                                <input type="text" class="form-control" aria-label="Small" aria-describedby="inputGroup-sizing-sm" placeholder="#Search text"></input>
+                                                <input type="text" class="form-control" aria-label="Small"
+                                                    aria-describedby="inputGroup-sizing-sm"
+                                                    placeholder="#Search text"></input>
                                             </div>
-                                        </li>                                        
+                                        </li>
                                         <li class="nav-item">
-                                            <button class="btn btn-primary btn-sm" 
-                                            data-toggle="modal" 
-                                            data-target="#ticketCrudModal">
+                                            <button class="btn btn-primary btn-sm" data-toggle="modal"
+                                                data-target="#ticketCrudModal">
                                                 <i class="fa fa-plus"></i> New Ticket
                                             </button>
-                                        </li>                                   
+                                        </li>
                                     </ul>
                                 </div>
                                 <div class="card-body pt-2">
-                                    <table id="ticketTable" class="table table-bordered table-striped table-hover table-sm custTable">
+                                    <table id="ticketTable"
+                                        class="table table-bordered table-striped table-hover table-sm custTable">
                                         <thead>
                                             <tr>
                                                 <th>Ticket&nbsp;Id</th>
@@ -908,9 +945,14 @@
                                                 <td>01/05/2020</td>
                                                 <td class="text-center"><span class="bg-info badge">Open</span></td>
                                                 <td class="tblActionBtnContainer">
-                                                    <button class="btn btn-sm btn-warning" title="View"  data-toggle="modal" data-target="#ticketViewModal"><i class="fa fa-eye"></i></button>
-                                                    <button  class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pencil"></i></button>
-                                                    <button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>
+                                                    <button class="btn btn-sm btn-warning" title="View"
+                                                        data-toggle="modal" data-target="#ticketViewModal"><i
+                                                            class="fa fa-eye"></i></button>
+                                                    <button class="btn btn-sm btn-info" title="Edit" data-toggle="modal"
+                                                        data-target="#ticketCrudModal"><i
+                                                            class="fa fa-pencil"></i></button>
+                                                    <button class="btn btn-sm btn-danger" title="Delete"><i
+                                                            class="fa fa-trash"></i></button>
                                                 </td>
                                             </tr>
                                             <tr>
@@ -920,9 +962,14 @@
                                                 <td>15/12/2020</td>
                                                 <td class="text-center"><span class="bg-info badge">Open</span></td>
                                                 <td class="tblActionBtnContainer">
-                                                    <button class="btn btn-sm btn-warning" title="View"  data-toggle="modal" data-target="#ticketViewModal"><i class="fa fa-eye"></i></button>
-                                                    <button  class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pencil"></i></button>
-                                                    <button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>
+                                                    <button class="btn btn-sm btn-warning" title="View"
+                                                        data-toggle="modal" data-target="#ticketViewModal"><i
+                                                            class="fa fa-eye"></i></button>
+                                                    <button class="btn btn-sm btn-info" title="Edit" data-toggle="modal"
+                                                        data-target="#ticketCrudModal"><i
+                                                            class="fa fa-pencil"></i></button>
+                                                    <button class="btn btn-sm btn-danger" title="Delete"><i
+                                                            class="fa fa-trash"></i></button>
                                                 </td>
                                             </tr>
                                             <tr>
@@ -930,11 +977,17 @@
                                                 <td>Ravindra V</td>
                                                 <td>22/08/2019</td>
                                                 <td>09/09/2019</td>
-                                                <td class="text-center"><span class="bg-primary badge">Inprogress</span></td>
+                                                <td class="text-center"><span class="bg-primary badge">Inprogress</span>
+                                                </td>
                                                 <td class="tblActionBtnContainer">
-                                                    <button class="btn btn-sm btn-warning" title="View"  data-toggle="modal" data-target="#ticketViewModal"><i class="fa fa-eye"></i></button>
-                                                    <button  class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pencil"></i></button>
-                                                    <button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>
+                                                    <button class="btn btn-sm btn-warning" title="View"
+                                                        data-toggle="modal" data-target="#ticketViewModal"><i
+                                                            class="fa fa-eye"></i></button>
+                                                    <button class="btn btn-sm btn-info" title="Edit" data-toggle="modal"
+                                                        data-target="#ticketCrudModal"><i
+                                                            class="fa fa-pencil"></i></button>
+                                                    <button class="btn btn-sm btn-danger" title="Delete"><i
+                                                            class="fa fa-trash"></i></button>
                                                 </td>
                                             </tr>
                                             <tr>
@@ -944,9 +997,14 @@
                                                 <td>27/05/2020</td>
                                                 <td class="text-center"><span class="bg-info badge">Open</span></td>
                                                 <td class="tblActionBtnContainer">
-                                                    <button class="btn btn-sm btn-warning" title="View"  data-toggle="modal" data-target="#ticketViewModal"><i class="fa fa-eye"></i></button>
-                                                    <button  class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pencil"></i></button>
-                                                    <button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>
+                                                    <button class="btn btn-sm btn-warning" title="View"
+                                                        data-toggle="modal" data-target="#ticketViewModal"><i
+                                                            class="fa fa-eye"></i></button>
+                                                    <button class="btn btn-sm btn-info" title="Edit" data-toggle="modal"
+                                                        data-target="#ticketCrudModal"><i
+                                                            class="fa fa-pencil"></i></button>
+                                                    <button class="btn btn-sm btn-danger" title="Delete"><i
+                                                            class="fa fa-trash"></i></button>
                                                 </td>
                                             </tr>
                                             <tr>
@@ -956,9 +1014,14 @@
                                                 <td>19/02/2020</td>
                                                 <td class="text-center"><span class="bg-success badge">Close</span></td>
                                                 <td class="tblActionBtnContainer">
-                                                    <button class="btn btn-sm btn-warning" title="View"  data-toggle="modal" data-target="#ticketViewModal"><i class="fa fa-eye"></i></button>
-                                                    <button  class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pencil"></i></button>
-                                                    <button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>
+                                                    <button class="btn btn-sm btn-warning" title="View"
+                                                        data-toggle="modal" data-target="#ticketViewModal"><i
+                                                            class="fa fa-eye"></i></button>
+                                                    <button class="btn btn-sm btn-info" title="Edit" data-toggle="modal"
+                                                        data-target="#ticketCrudModal"><i
+                                                            class="fa fa-pencil"></i></button>
+                                                    <button class="btn btn-sm btn-danger" title="Delete"><i
+                                                            class="fa fa-trash"></i></button>
                                                 </td>
                                             </tr>
                                             <tr>
@@ -968,9 +1031,14 @@
                                                 <td>01/05/2020</td>
                                                 <td class="text-center"><span class="bg-info badge">Open</span></td>
                                                 <td class="tblActionBtnContainer">
-                                                    <button class="btn btn-sm btn-warning" title="View"  data-toggle="modal" data-target="#ticketViewModal"><i class="fa fa-eye"></i></button>
-                                                    <button  class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pencil"></i></button>
-                                                    <button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>
+                                                    <button class="btn btn-sm btn-warning" title="View"
+                                                        data-toggle="modal" data-target="#ticketViewModal"><i
+                                                            class="fa fa-eye"></i></button>
+                                                    <button class="btn btn-sm btn-info" title="Edit" data-toggle="modal"
+                                                        data-target="#ticketCrudModal"><i
+                                                            class="fa fa-pencil"></i></button>
+                                                    <button class="btn btn-sm btn-danger" title="Delete"><i
+                                                            class="fa fa-trash"></i></button>
                                                 </td>
                                             </tr>
                                             <tr>
@@ -978,11 +1046,17 @@
                                                 <td>Sarang C</td>
                                                 <td>21/03/2020</td>
                                                 <td>30/04/2020</td>
-                                                <td class="text-center"><span class="bg-primary badge">Inprogress</span></td>
+                                                <td class="text-center"><span class="bg-primary badge">Inprogress</span>
+                                                </td>
                                                 <td class="tblActionBtnContainer">
-                                                    <button class="btn btn-sm btn-warning" title="View"  data-toggle="modal" data-target="#ticketViewModal"><i class="fa fa-eye"></i></button>
-                                                    <button  class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pencil"></i></button>
-                                                    <button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>
+                                                    <button class="btn btn-sm btn-warning" title="View"
+                                                        data-toggle="modal" data-target="#ticketViewModal"><i
+                                                            class="fa fa-eye"></i></button>
+                                                    <button class="btn btn-sm btn-info" title="Edit" data-toggle="modal"
+                                                        data-target="#ticketCrudModal"><i
+                                                            class="fa fa-pencil"></i></button>
+                                                    <button class="btn btn-sm btn-danger" title="Delete"><i
+                                                            class="fa fa-trash"></i></button>
                                                 </td>
                                             </tr>
                                             <tr>
@@ -992,9 +1066,14 @@
                                                 <td>01/06/2020</td>
                                                 <td class="text-center"><span class="bg-success badge">Close</span></td>
                                                 <td class="tblActionBtnContainer">
-                                                    <button class="btn btn-sm btn-warning" title="View"  data-toggle="modal" data-target="#ticketViewModal"><i class="fa fa-eye"></i></button>
-                                                    <button  class="btn btn-sm btn-info" title="Edit" data-toggle="modal" data-target="#ticketCrudModal" ><i class="fa fa-pencil"></i></button>
-                                                    <button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>
+                                                    <button class="btn btn-sm btn-warning" title="View"
+                                                        data-toggle="modal" data-target="#ticketViewModal"><i
+                                                            class="fa fa-eye"></i></button>
+                                                    <button class="btn btn-sm btn-info" title="Edit" data-toggle="modal"
+                                                        data-target="#ticketCrudModal"><i
+                                                            class="fa fa-pencil"></i></button>
+                                                    <button class="btn btn-sm btn-danger" title="Delete"><i
+                                                            class="fa fa-trash"></i></button>
                                                 </td>
                                             </tr>
                                         </tbody>
@@ -1018,7 +1097,7 @@
             </div>
             <strong>Copyright &copy; 2020-2021 <a href="http://www.ufirm.in">Ufirm.in</a>.</strong> All rights reserved.
         </footer>
-        
+
 
         <!-- Control Sidebar -->
         <aside class="control-sidebar control-sidebar-dark">
@@ -1031,7 +1110,8 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h4 class="modal-title">New/Edit Ticket</h4>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                aria-hidden="true">&times;</span></button>
                     </div>
                     <div class="modal-body">
                         <div class="row">
@@ -1050,17 +1130,20 @@
                             <div class="col-sm-6">
                                 <div class="form-group">
                                     <label for="ticketTitle">Title</label>
-                                    <input name="Ticket Title" type="email" class="form-control form-control-sm" id="ticketTitle" placeholder="Title"></input>
+                                    <input name="Ticket Title" type="email" class="form-control form-control-sm"
+                                        id="ticketTitle" placeholder="Title"></input>
                                 </div>
-                            </div>                            
+                            </div>
                         </div>
                         <div class="row">
                             <div class="col-sm-12">
                                 <div class="form-group">
                                     <label for="ticketDescription">Description</label>
-                                    <textarea name="Ticket Description" id="ticketDescription" rows="2" class="form-control form-control-sm"  placeholder="Enter decsription here..."></textarea>
+                                    <textarea name="Ticket Description" id="ticketDescription" rows="2"
+                                        class="form-control form-control-sm"
+                                        placeholder="Enter decsription here..."></textarea>
                                 </div>
-                            </div>                           
+                            </div>
                         </div>
                         <div class="row">
                             <div class="col-sm-6">
@@ -1084,7 +1167,7 @@
                                         <option>PRC201222</option>
                                     </select>
                                 </div>
-                            </div>                            
+                            </div>
                         </div>
                         <div class="row">
                             <div class="col-sm-6">
@@ -1102,18 +1185,19 @@
                                     <label for="ticketPriorityCode">Assigned To</label>
                                     <div class="has-search">
                                         <span class="fa fa-search form-control-feedback"></span>
-                                        <input type="text" 
-                                        class="form-control form-control-sm" id="ticketAssignedType"></input>
+                                        <input type="text" class="form-control form-control-sm"
+                                            id="ticketAssignedType"></input>
                                     </div>
                                 </div>
-                            </div>                            
+                            </div>
                         </div>
                         <div class="row">
                             <div class="col-sm-6">
                                 <div class="form-group">
                                     <label for="ticketExpectedClose">Expected Close</label>
-                                    <div class="input-group input-group-sm">                                            
-                                        <input type="text" class="form-control  float-right singleCalendar" id="ticketExpectedClose"></input>
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" class="form-control  float-right singleCalendar"
+                                            id="ticketExpectedClose"></input>
                                         <div class="input-group-append">
                                             <span class="input-group-text">
                                                 <i class="far fa-calendar-alt"></i>
@@ -1125,15 +1209,17 @@
                             <div class="col-sm-6">
                                 <div class="form-group">
                                     <label for="ticketEstimates">Estimates</label>
-                                    <input type="text" class="form-control form-control-sm" id="ticketEstimates" placeholder="3w ld 2h 2m"></input>
+                                    <input type="text" class="form-control form-control-sm" id="ticketEstimates"
+                                        placeholder="3w ld 2h 2m"></input>
                                 </div>
-                            </div>                            
+                            </div>
                         </div>
                         <div class="row">
                             <div class="col-sm-12">
                                 <div class="form-group">
                                     <label for="ticketTicketAttachments">Ticket Attachments</label>
-                                    <input type="file" name="file" class="form-control form-control-sm" multiple ></input>
+                                    <input type="file" name="file" class="form-control form-control-sm" title="ticket attachment"
+                                        multiple></input>
                                 </div>
                             </div>
                             <div class="col-sm-12">
@@ -1142,49 +1228,55 @@
                                     <div class="card-footer card-comments ticketComment">
                                         <div class="card-comment">
                                             <!-- User image -->
-                                            <img class="img-circle img-sm" src="../../dist/img/user3-128x128.jpg" alt="User Image"></img>
-    
+                                            <img class="img-circle img-sm" src="../../dist/img/user3-128x128.jpg"
+                                                alt="User Image"></img>
+
                                             <div class="comment-text">
                                                 <span class="username">
-                          Maria Gonzales
-                          <span class="text-muted float-right">8:03 PM Today</span>
+                                                    Maria Gonzales
+                                                    <span class="text-muted float-right">8:03 PM Today</span>
                                                 </span>
                                                 <!-- /.username -->
-                                                It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout.
+                                                It is a long established fact that a reader will be distracted by the
+                                                readable content of a page when looking at its layout.
                                             </div>
                                             <!-- /.comment-text -->
                                         </div>
                                         <!-- /.card-comment -->
                                         <div class="card-comment">
                                             <!-- User image -->
-                                            <img class="img-circle img-sm" src="../../dist/img/user4-128x128.jpg" alt="User Image"></img>
-    
+                                            <img class="img-circle img-sm" src="../../dist/img/user4-128x128.jpg"
+                                                alt="User Image"></img>
+
                                             <div class="comment-text">
                                                 <span class="username">
-                          Luna Stark
-                          <span class="text-muted float-right">8:03 PM Today</span>
+                                                    Luna Stark
+                                                    <span class="text-muted float-right">8:03 PM Today</span>
                                                 </span>
                                                 <!-- /.username -->
-                                                It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout.
+                                                It is a long established fact that a reader will be distracted by the
+                                                readable content of a page when looking at its layout.
                                             </div>
                                             <!-- /.comment-text -->
                                         </div>
                                         <!-- /.card-comment -->
                                     </div>
-                                     <!-- /.card-footer -->
-                                <div class="card-footer">
-                                    <img class="img-fluid img-circle img-sm" src="../../dist/img/user4-128x128.jpg" alt="User Image"></img>
-                                    <!-- .img-push is used to add margin to elements next to floating images -->
-                                    <div class="img-push">
-                                        <textarea type="text" rows="3" class="form-control form-control-sm" placeholder="Press enter to post comment"></textarea>
+                                    <!-- /.card-footer -->
+                                    <div class="card-footer">
+                                        <img class="img-fluid img-circle img-sm" src="../../dist/img/user4-128x128.jpg"
+                                            alt="User Image"></img>
+                                        <!-- .img-push is used to add margin to elements next to floating images -->
+                                        <div class="img-push">
+                                            <textarea type="text" rows="3" class="form-control form-control-sm"
+                                                placeholder="Press enter to post comment"></textarea>
+                                        </div>
                                     </div>
                                 </div>
-                                </div>
-                            </div>                              
+                            </div>
                         </div>
                     </div>
 
-                    
+
                     <div class="modal-footer justify-content-between">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                         <button type="button" class="btn btn-primary">Save changes</button>
@@ -1201,7 +1293,8 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h4 class="modal-title">MP-21540</h4>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                aria-hidden="true">&times;</span></button>
                     </div>
                     <div class="modal-body">
                         <div class="row">
@@ -1216,15 +1309,17 @@
                                     <label for="ticketTitle">Title</label>
                                     <div class="dummyBox">Creating UI for Ticket page</div>
                                 </div>
-                            </div>                            
+                            </div>
                         </div>
                         <div class="row">
                             <div class="col-sm-12">
                                 <div class="form-group">
                                     <label for="ticketDescription">Description</label>
-                                    <div class="dummyBox">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s</div>
+                                    <div class="dummyBox">Lorem Ipsum is simply dummy text of the printing and
+                                        typesetting industry. Lorem Ipsum has been the industry's standard dummy text
+                                        ever since the 1500s</div>
                                 </div>
-                            </div>                           
+                            </div>
                         </div>
                         <div class="row">
                             <div class="col-sm-6">
@@ -1238,7 +1333,7 @@
                                     <label for="ticketPriorityCode">Property Code</label>
                                     <div class="dummyBox">PRC201225</div>
                                 </div>
-                            </div>                            
+                            </div>
                         </div>
                         <div class="row">
                             <div class="col-sm-6">
@@ -1252,7 +1347,7 @@
                                     <label for="ticketPriorityCode">Assigned To</label>
                                     <div class="dummyBox">Sanjay V</div>
                                 </div>
-                            </div>                            
+                            </div>
                         </div>
                         <div class="row">
                             <div class="col-sm-6">
@@ -1266,7 +1361,7 @@
                                     <label for="ticketEstimates">Reopen On</label>
                                     <div class="dummyBox">4/22/2012</div>
                                 </div>
-                            </div>                            
+                            </div>
                         </div>
                         <div class="row">
                             <div class="col-sm-6">
@@ -1280,7 +1375,7 @@
                                     <label for="ticketEstimates">Estimates</label>
                                     <div class="dummyBox">3w</div>
                                 </div>
-                            </div>                            
+                            </div>
                         </div>
                         <div class="row">
                             <div class="col-sm-6">
@@ -1294,7 +1389,7 @@
                                     <label for="ticketEstimates">Actual Close Date</label>
                                     <div class="dummyBox">4/22/2012</div>
                                 </div>
-                            </div>                            
+                            </div>
                         </div>
                         <div class="row">
                             <div class="col-sm-12">
@@ -1303,10 +1398,12 @@
                                     <div class="dummyBox">
                                         <ul class="list-unstyled mb-0">
                                             <li>
-                                                <a href="javascript:void(0)" target="_blank">Report of product analysis.pdf</a>
+                                                <a href="javascript:void(0)" target="_blank">Report of product
+                                                    analysis.pdf</a>
                                             </li>
                                             <li>
-                                                <a href="javascript:void(0)" target="_blank">Report of product analysis.pdf</a>
+                                                <a href="javascript:void(0)" target="_blank">Report of product
+                                                    analysis.pdf</a>
                                             </li>
                                         </ul>
                                     </div>
@@ -1318,45 +1415,51 @@
                                     <div class="card-footer card-comments ticketComment">
                                         <div class="card-comment">
                                             <!-- User image -->
-                                            <img class="img-circle img-sm" src="../../dist/img/user3-128x128.jpg" alt="User Image"></img>
-    
+                                            <img class="img-circle img-sm" src="../../dist/img/user3-128x128.jpg"
+                                                alt="User Image"></img>
+
                                             <div class="comment-text">
                                                 <span class="username">
-                          Maria Gonzales
-                          <span class="text-muted float-right">8:03 PM Today</span>
+                                                    Maria Gonzales
+                                                    <span class="text-muted float-right">8:03 PM Today</span>
                                                 </span>
                                                 <!-- /.username -->
-                                                It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout.
+                                                It is a long established fact that a reader will be distracted by the
+                                                readable content of a page when looking at its layout.
                                             </div>
                                             <!-- /.comment-text -->
                                         </div>
                                         <!-- /.card-comment -->
                                         <div class="card-comment">
                                             <!-- User image -->
-                                            <img class="img-circle img-sm" src="../../dist/img/user4-128x128.jpg" alt="User Image"></img>
-    
+                                            <img class="img-circle img-sm" src="../../dist/img/user4-128x128.jpg"
+                                                alt="User Image"></img>
+
                                             <div class="comment-text">
                                                 <span class="username">
-                          Luna Stark
-                          <span class="text-muted float-right">8:03 PM Today</span>
+                                                    Luna Stark
+                                                    <span class="text-muted float-right">8:03 PM Today</span>
                                                 </span>
                                                 <!-- /.username -->
-                                                It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout.
+                                                It is a long established fact that a reader will be distracted by the
+                                                readable content of a page when looking at its layout.
                                             </div>
                                             <!-- /.comment-text -->
                                         </div>
                                         <!-- /.card-comment -->
                                     </div>
-                                     <!-- /.card-footer -->
+                                    <!-- /.card-footer -->
                                     <div class="card-footer">
-                                        <img class="img-fluid img-circle img-sm" src="../../dist/img/user4-128x128.jpg" alt="User Image"></img>
+                                        <img class="img-fluid img-circle img-sm" src="../../dist/img/user4-128x128.jpg"
+                                            alt="User Image"></img>
                                         <!-- .img-push is used to add margin to elements next to floating images -->
                                         <div class="img-push">
-                                            <textarea type="text" rows="3" class="form-control form-control-sm" placeholder="Press enter to post comment"></textarea>
+                                            <textarea type="text" rows="3" class="form-control form-control-sm"
+                                                placeholder="Press enter to post comment"></textarea>
                                         </div>
                                     </div>
                                 </div>
-                            </div>                            
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer justify-content-between">
@@ -1375,13 +1478,13 @@
     <script src="../../plugins/jquery/jquery.min.js"></script>
     <!-- Bootstrap 4 -->
     <script src="../../plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-    
+
     <script src="../../plugins/moment/moment.min.js"></script>
     <!-- DataTables -->
     <script src="../../plugins/datatables/jquery.dataTables.min.js"></script>
     <script src="../../plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
     <script src="../../plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
-    <script src="../../plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>    
+    <script src="../../plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
     <!-- date-range-picker -->
     <script src="../../plugins/daterangepicker/daterangepicker.js"></script>
     <!-- AdminLTE App -->
@@ -1390,9 +1493,10 @@
     <script src="../../dist/js/demo.js"></script>
     <!-- page script -->
     <script>
-        $(function() {
+        $(function () {
             $('.singleCalendar').daterangepicker({
-    singleDatePicker: true})
+                singleDatePicker: true
+            })
             $("#ticketTable").DataTable({
                 "paging": true,
                 "lengthChange": false,
