@@ -8,6 +8,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
 
 const StockMaster = () => {
+    const propertyId = useSelector((state) => state.Commonreducer.puidn);
     const emptyallGridData = {
         PropertyId: propertyId,
         ItemName: "N/A",
@@ -24,7 +25,6 @@ const StockMaster = () => {
         PropertyId: propertyId,
     };
     const [filteredGridData, setFilteredGridData] = useState([emptyallGridData]);
-    const propertyId = useSelector((state) => state.Commonreducer.puidn);
     const toast = useRef(null);
     const [categories, setCategories] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState(null);

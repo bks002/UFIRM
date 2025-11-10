@@ -242,14 +242,14 @@ export default class DataGrid extends React.Component {
               switch (btnType) {
                 case "Edit&Delete":
                   btnhtml +=
-                    '<button class="btn btn-sm btn-info edit-btn" title="Edit"><i class="fa fa-pen-alt"></i></button>';
+                    '<button class="btn btn-sm btn-info edit-btn" title="Edit"><i class="fa fa-pencil"></i></button>';
                   btnhtml +=
                     '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
                   break;
 
                 case "Edit&View&Delete":
                   btnhtml +=
-                    '<button class="btn btn-sm btn-info edit-btn" title="Edit"><i class="fa fa-pen-alt"></i></button>';
+                    '<button class="btn btn-sm btn-info edit-btn" title="Edit"><i class="fa fa-pencil"></i></button>';
                   btnhtml +=
                     '<button class="btn btn-sm btn-warning" title="View"><i class="fa fa-eye"></i></button>';
                   btnhtml +=
@@ -258,7 +258,7 @@ export default class DataGrid extends React.Component {
 
                 case "Edit&Approve&Reject":
                   btnhtml +=
-                    '<button class="btn btn-sm btn-info edit-btn" title="Edit"><i class="fa fa-pen-alt"></i></button>';
+                    '<button class="btn btn-sm btn-info edit-btn" title="Edit"><i class="fa fa-pencil"></i></button>';
                   btnhtml +=
                     '<button class="btn btn-sm btn-warning" title="Approve"><i class="fa fa-check"></i></button>';
                   btnhtml +=
@@ -274,7 +274,7 @@ export default class DataGrid extends React.Component {
 
                 case "Edit&Delete&Block&ChangePassword&ViewSalary&LoanAdvances": // CUSTOM multiaction
                   btnhtml +=
-                    '<button class="btn btn-sm btn-info edit-btn" title="Edit"><i class="fa fa-pen-alt"></i></button>';
+                    '<button class="btn btn-sm btn-info edit-btn" title="Edit"><i class="fa fa-pencil"></i></button>';
                   btnhtml +=
                     '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
                   if (Gridarray[IsBlockedFacilty] === "Blocked") {
@@ -294,7 +294,7 @@ export default class DataGrid extends React.Component {
 
                 case "Edit&Delete&Block&ChangePassword":
                   btnhtml +=
-                    '<button class="btn btn-sm btn-info edit-btn" title="Edit"><i class="fa fa-pen-alt"></i></button>';
+                    '<button class="btn btn-sm btn-info edit-btn" title="Edit"><i class="fa fa-pencil"></i></button>';
                   btnhtml +=
                     '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
                   if (Gridarray[IsBlockedFacilty] === "Blocked") {
@@ -320,12 +320,12 @@ export default class DataGrid extends React.Component {
 
                 case "Edit":
                   btnhtml +=
-                    '<button class="btn btn-sm btn-info edit-btn" title="Edit" data-toggle="modal" data-target="#ticketCrudModal"><i class="fa fa-pen-alt"></i></button>';
+                    '<button class="btn btn-sm btn-info edit-btn" title="Edit" data-toggle="modal" data-target="#ticketCrudModal"><i class="fa fa-pencil"></i></button>';
                   break;
 
                 case "Edit&Approve":
                   btnhtml +=
-                    '<button class="btn btn-sm btn-info edit-btn" title="Edit/Approve" data-toggle="modal" data-target="#ticketCrudModal"><i class="fa fa-pen-alt"></i></button>';
+                    '<button class="btn btn-sm btn-info edit-btn" title="Edit/Approve" data-toggle="modal" data-target="#ticketCrudModal"><i class="fa fa-pencil"></i></button>';
                   break;
 
                 case "Delete":
@@ -357,7 +357,7 @@ export default class DataGrid extends React.Component {
 
                 case "Edit&View":
                   btnhtml +=
-                    '<button class="btn btn-sm btn-info edit-btn" title="Edit" data-toggle="modal" data-target="#ticketCrudModal"><i class="fa fa-pen-alt"></i></button>';
+                    '<button class="btn btn-sm btn-info edit-btn" title="Edit" data-toggle="modal" data-target="#ticketCrudModal"><i class="fa fa-pencil"></i></button>';
                   btnhtml +=
                     '<button class="btn btn-sm btn-warning" title="View" data-toggle="modal" data-target="#ticketViewModal"><i class="fa fa-eye"></i></button>';
                   break;
@@ -366,7 +366,7 @@ export default class DataGrid extends React.Component {
                   btnhtml +=
                     '<button class="btn btn-sm btn-warning" title="View"><i class="fa fa-eye"></i></button>';
                   btnhtml +=
-                    '<button class="btn btn-sm btn-info edit-btn" title="Edit"><i class="fa fa-pen-alt"></i></button>';
+                    '<button class="btn btn-sm btn-info edit-btn" title="Edit"><i class="fa fa-pencil"></i></button>';
                   btnhtml +=
                     '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
                   break;
@@ -378,7 +378,7 @@ export default class DataGrid extends React.Component {
 
                 case "Edit&Manage":
                   btnhtml +=
-                    '<button class="btn btn-sm btn-info edit-btn" title="Edit" data-toggle="modal" data-target="#ticketCrudModal"><i class="fa fa-pen-alt"></i></button>';
+                    '<button class="btn btn-sm btn-info edit-btn" title="Edit" data-toggle="modal" data-target="#ticketCrudModal"><i class="fa fa-pencil"></i></button>';
                   btnhtml +=
                     '<button class="btn btn-sm btn-info" title="Manage" data-toggle="modal" data-target="#ticketCrudModal" style="margin-left:10px"><i class="fa fa-tasks"></i></button>';
                   break;

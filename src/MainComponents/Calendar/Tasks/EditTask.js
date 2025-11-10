@@ -3,6 +3,7 @@ import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { setHours, setMinutes } from "date-fns";
 import Modal from "react-awesome-modal";
+import { connect } from "react-redux";
 import moment from "moment";
 import { th } from "date-fns/locale";
 import ApiProvider from "../DataProvider";
@@ -539,6 +540,7 @@ export default class EditTask extends Component {
                             propertyId: e.target.value,
                           })
                         }
+                        disabled
                       >
                         <option value={0}>Select Property</option>
                         {this.state.propertyData &&
