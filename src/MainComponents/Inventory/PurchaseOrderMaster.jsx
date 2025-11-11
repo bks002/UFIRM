@@ -13,6 +13,7 @@ import PreviewPurchaseOrder from './PreviewPurchaseOrder';
 
 const PurchaseOrderMaster = () => {
     const [loading, setLoading] = useState(false);
+    const propertyId = useSelector((state) => state.Commonreducer.puidn);
     const [globalFilterValue, setGlobalFilterValue] = useState('');
     const [selectedRow, setSelectedRow] = useState([]);
     const emptyallGridData = {
@@ -40,7 +41,6 @@ const PurchaseOrderMaster = () => {
     };
     const [filteredGridData, setFilteredGridData] = useState([emptyallGridData]);
     const [displayDialog, setDisplayDialog] = useState(false);
-    const propertyId = useSelector((state) => state.Commonreducer.puidn);
     const [preview, setpreview] = useState(false);
     const toast = useRef(null);
 

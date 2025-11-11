@@ -82,7 +82,7 @@ export default function SalaryGroupView({
     }
     try {
       await assignSalaryGroupToFacilityMember({
-        FacilityMemberId: facilityMemberId,
+        FacilityMemberIds: facilityMemberId,
         SalaryGroup_ID: selectedGroupData.SalaryGroup_ID,
       });
       setFinalAddedGroups([{ ...selectedGroupData }]);

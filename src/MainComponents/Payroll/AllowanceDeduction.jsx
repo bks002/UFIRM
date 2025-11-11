@@ -90,7 +90,7 @@ export default function AllowanceDeduction() {
       Type: item.Type,
       Name: item.Name,
       FormulaId: item.FormulaId || null,
-      FixedValue: selectedFormula?.FixedValue || "",
+      FixedValue: selectedFormula.FixedValue || "",
     });
     setEditId(item.ID);
     setDialogVisible(true);

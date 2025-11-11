@@ -132,7 +132,7 @@ const ExpenseTypePage = () => {
         }}
       />
       <Button
-        icon="fa fa-pencil-alt"
+        icon="fa fa-pencil"
         className="p-button-warning p-button-sm rounded"
          style={{ backgroundColor: "#00CFFF", border: "none", color: "#000", marginRight: "4px" }}
         onClick={() => {
