@@ -112,7 +112,7 @@ const [name, setName] = useState("");
 
   // ---- Salary & Loan actions ----
   const openSalaryGroupView = (row) => {
-    const memberId = row.FacilityMember.FacilityMemberId;
+    const memberId = String(row.FacilityMember.FacilityMemberId);
     const memberName = row.FacilityMember.Name || "";
     setSelectedFacilityMemberId(memberId);
     setSelectedFacilityMemberName(memberName);
@@ -428,6 +428,16 @@ setEsiNumber(fin.ESINumber||"");
                 emptyMessage="No staff found."
                 selection={selectedRow}
                 onSelectionChange={(e) => setSelectedRow(e.value)}
+                globalFilter={globalFilterValue}
+  globalFilterFields={[
+    "FacilityMember.Name",
+    "FacilityMember.Gender",
+    "FacilityMember.MobileNumber",
+    "Profile.EmployeeName"
+  ]}
+  filters={{
+    global: { value: globalFilterValue, matchMode: "contains" }
+  }}
               >
                 <Column selectionMode="single" headerStyle={{ width: '3em' }} />
                 <Column header="Name" body={(row) => row.FacilityMember.Name} />
@@ -441,7 +451,7 @@ setEsiNumber(fin.ESINumber||"");
             {showSalaryGroupView && (
         <SalaryGroupView
           propertyId={propertyId}
-          facilityMemberId={selectedFacilityMemberId}
+          facilityMemberId={String(selectedFacilityMemberId)}
           employeeName={selectedFacilityMemberName}
           onClose={closeSalaryGroupView}
         />
