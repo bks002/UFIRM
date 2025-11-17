@@ -95,6 +95,7 @@ import AttendanceSheet from "../MainComponents/Payroll/AttendanceSheet.jsx";
 import Linking from "../MainComponents/Payroll/Linking.jsx";
 import ItemAssignedPage from "../MainComponents/Inventory/ItemAssigned.jsx";
 import ItemSpecificationPage from "../MainComponents/Inventory/ItemSpecification.jsx";
+import OTHours from "../MainComponents/Payroll/OTHours.jsx";
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -680,6 +681,15 @@ class MainNav extends React.Component {
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Designation Linking</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/OTHours"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>OTHoursAmount</p>
                           </Link>
                         </li>
                         <li className="nav-item">
@@ -1456,6 +1466,7 @@ class MainNav extends React.Component {
             <Route path="/Account/App/UploaderPage">
               <UploaderPage />
             </Route>
+            <Route path="/Account/App/OTHours" component={OTHours} />
             <Route path="/Account/App/Linking" component={Linking} />
             <Route path="/Account/App/AttendanceSheet" component={AttendanceSheet} />
             <Route path="/Account/App/LabourFund" component={LabourFund} />
