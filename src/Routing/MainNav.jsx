@@ -95,6 +95,7 @@ import AttendanceSheet from "../MainComponents/Payroll/AttendanceSheet.jsx";
 import Linking from "../MainComponents/Payroll/Linking.jsx";
 import ItemAssignedPage from "../MainComponents/Inventory/ItemAssigned.jsx";
 import ItemSpecificationPage from "../MainComponents/Inventory/ItemSpecification.jsx";
+import OTHours from "../MainComponents/Payroll/OTHours.jsx";
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -138,8 +139,9 @@ class MainNav extends React.Component {
 
   componentDidMount() {
 
-  //var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
-    var token = window.sessionStorage.getItem("userinfo_key")
+    var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
+
+    //var token = window.sessionStorage.getItem("userinfo_key")
 
     if (token === null) {
       const timerId = setTimeout(() => {
@@ -679,6 +681,15 @@ class MainNav extends React.Component {
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Designation Linking</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/OTHours"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>OTHoursAmount</p>
                           </Link>
                         </li>
                         <li className="nav-item">
@@ -1455,6 +1466,7 @@ class MainNav extends React.Component {
             <Route path="/Account/App/UploaderPage">
               <UploaderPage />
             </Route>
+            <Route path="/Account/App/OTHours" component={OTHours} />
             <Route path="/Account/App/Linking" component={Linking} />
             <Route path="/Account/App/AttendanceSheet" component={AttendanceSheet} />
             <Route path="/Account/App/LabourFund" component={LabourFund} />

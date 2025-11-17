@@ -755,13 +755,21 @@ export default function SalaryGroups() {
                 </div>
               </div>
               <datalist id="alDtOptionsList">
-                {filteredAlDtOptions.map((opt) => (
-                  <option
-                    key={opt.ID}
-                    value={opt.Name}
-                    label={`${opt.Type} | ${opt.Name}`}
-                  />
-                ))}
+                {filteredAlDtOptions.map((opt) => {
+                  const relatedFormula = formulas.find(
+                    (f) => f.Name?.toLowerCase() === opt.Name?.toLowerCase()
+                  );
+                  const displayFormula = relatedFormula?.Formula
+                    ? ` (${relatedFormula.Formula})`
+                    : "";
+                  return (
+                    <option
+                      key={opt.ID}
+                      value={opt.Name}
+                      label={`Formula = ${displayFormula}`}
+                    />
+                  );
+                })}
               </datalist>
             </div>
           )}
@@ -804,7 +812,20 @@ export default function SalaryGroups() {
                     return (
                       <tr key={idx}>
                         <td style={{ textAlign: "center" }}>
-                          {allow ? allow.Name : ""}
+                          {allow ? (
+                            <>
+                              <div>{allow.Name}</div>
+                              {allow.Formula?.Formula && (
+                                <div
+                                  style={{ fontSize: "12px", color: "#6c757d" }}
+                                >
+                                  ({allow.Formula.Formula})
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            ""
+                          )}
                         </td>
                         <td style={{ textAlign: "center" }}>
                           {allow ? allow.CalculatedAmount : ""}
@@ -824,7 +845,20 @@ export default function SalaryGroups() {
                           </td>
                         )}
                         <td style={{ textAlign: "center" }}>
-                          {deduct ? deduct.Name : ""}
+                          {deduct ? (
+                            <>
+                              <div>{deduct.Name}</div>
+                              {deduct.Formula?.Formula && (
+                                <div
+                                  style={{ fontSize: "12px", color: "#6c757d" }}
+                                >
+                                  ({deduct.Formula.Formula})
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            ""
+                          )}
                         </td>
                         <td style={{ textAlign: "center" }}>
                           {deduct ? deduct.CalculatedAmount : ""}
