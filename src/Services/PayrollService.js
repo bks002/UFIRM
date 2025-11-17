@@ -585,3 +585,53 @@ export async function updateGeneratedSalaryDoc({ Emp_ID, Month, Year, SalaryDoc 
   }
   return response.json();
 }
+
+
+// OT Hours API Calls
+
+export async function getOTHoursByProperty(propertyId) {
+  try {
+    const response = await fetch(
+      `https://api.urest.in:8096/api/othours/get-by-property/${propertyId}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) throw new Error("Failed to fetch OT Hours");
+
+    return await response.json();
+  } catch (error) {
+    console.error("OT Hours fetch error:", error);
+    return [];
+  }
+}
+
+
+// ADD OT Hours
+export async function addOTHours(model) {
+  try {
+    const response = await fetch(
+      "https://api.urest.in:8096/api/othours/add",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(model),
+      }
+    );
+
+    if (!response.ok) throw new Error("Failed to add OT Hours");
+
+    return await response.json();
+  } catch (error) {
+    console.error("Add OT Hours Error:", error);
+    return null;
+  }
+}
+
