@@ -398,11 +398,14 @@ setEsiNumber(fin.ESINumber||"");
           </>
         )}
 
-        <InputText
-          value={globalFilterValue}
-          onChange={(e) => setGlobalFilterValue(e.target.value)}
-          placeholder="Search..."
-        />
+        <div className="p-input-left">
+
+          <InputText
+            value={globalFilterValue}
+            onChange={(e) => setGlobalFilterValue(e.target.value)}
+            placeholder="Search..."
+          />
+        </div>
 
         <Button label="Add Staff" icon="pi pi-plus" onClick={openDialog} className="p-button-success" />
       </div>
