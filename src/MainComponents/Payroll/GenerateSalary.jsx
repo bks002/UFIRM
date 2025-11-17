@@ -27,7 +27,7 @@ const monthNames = [
 ];
 
 const allowanceKeys = [
-  "BaseSalary",
+  "ProRatedSalary",
   "SplAll",
   "HRA",
   "Gratuity",
@@ -73,7 +73,7 @@ const deductionKeys = [
 
 const displayNameMap = {
   // Allowances
-  BaseSalary: "Basic",
+  ProRatedSalary: "Basic",
   SplAll: "SplAll",
   HRA: "HRA",
   Gratuity: "Gratuity",
@@ -212,8 +212,8 @@ export default function GenerateSalary() {
   const filterEmployees = () => {
     let filtered = [...allEmployees];
 
-    // Filter by designation if Department is selected
-    if (selectedOption === "Department" && selectedDesignation) {
+    // Filter by designation if Designation is selected
+    if (selectedOption === "Designation" && selectedDesignation) {
       filtered = filtered.filter(
         (emp) => emp.Designation === selectedDesignation
       );
@@ -344,57 +344,24 @@ export default function GenerateSalary() {
   };
 
   function calculateProratedNetSalary(row) {
-    // 1. Calculate total days in month
-    const month = row.Month;
-    const year = row.Year || new Date().getFullYear();
-    let totalDaysInMonth = 31;
-    if (month) {
-      const num = new Date(`${month} 1, ${year}`);
-      totalDaysInMonth = new Date(
-        num.getFullYear(),
-        num.getMonth() + 1,
-        0
-      ).getDate();
-    }
+    // Basic
+    const basic = row.ProRatedSalary || 0;
 
-    // 2. Calculate prorated basic
-    const proratedBasic = calculateProratedSalary(
-      row.BaseSalary || 0,
-      row,
-      totalDaysInMonth
-    );
-
-    // 3. Add other allowances
-    let totalAllowance = proratedBasic;
-    // Add all non-basic/fixed allowanceKeys
+    // Allowances
+    let totalAllowance = basic;
     for (const key of allowanceKeys) {
-      if (key !== "BaseSalary") {
+      if (key !== "ProRatedSalary") {
         totalAllowance += row[key] || 0;
       }
     }
 
-    // 4. Deduction total (sum all deductionKeys, as in your logic)
+    // Deductions
     let totalDeduction = 0;
     for (const key of deductionKeys) {
       totalDeduction += row[key] || 0;
     }
 
     return totalAllowance - totalDeduction;
-  }
-
-  function calculateProratedSalary(base, row, totalDaysInMonth) {
-    // If attendance is present for the month, use formula
-    if (
-      typeof row.WorkingDays === "number" &&
-      typeof row.WeekDaysOff === "number" &&
-      row.WorkingDays >= 0 &&
-      row.WeekDaysOff >= 0
-    ) {
-      const paidDays = row.WorkingDays + row.WeekDaysOff;
-      return Math.round((base * paidDays) / totalDaysInMonth);
-    }
-    // No attendance: return as is
-    return base;
   }
 
   function generatePayslipHTML(row) {
@@ -505,6 +472,10 @@ export default function GenerateSalary() {
     <td><b>Mobile No.:</b></td>
     <td>${row.MobileNumber || ""}</td>
   </tr>
+  <tr>
+    <td><b>Joining Date:</b></td>
+    <td>${row.DateOfJoining.split("T")[0] || ""}</td>
+  </tr>
 </table>
       <table class="pay-slip-table">
         <tr>
@@ -517,11 +488,7 @@ export default function GenerateSalary() {
         </tr>
         <tr>
           <td>Basic</td>
-          <td class="v-bold">${calculateProratedSalary(
-            row.BaseSalary || 0,
-            row,
-            totalDaysInMonth
-          )}</td>
+          <td class="v-bold">${row.ProRatedSalary || 0}</td>
           <td >PF</td>
           <td class="v-light">${row.PF || 0}</td>
           <td >Working Days</td>
@@ -547,13 +514,17 @@ export default function GenerateSalary() {
           <td>Gratuity</td>
           <td class="v-bold">${row.Gratuity || 0}</td>
           <td>Fine</td>
-          <td>${row.Fine || 0}</td>
+          <td class="v-light">${row.Fine || 0}</td>
+          <td>OTDays</td>
+          <td>${row.OTDays || 0}</td>
         </tr>
         <tr class="no-horiz-border">
           <td>OTDaysAmount</td>
           <td class="v-bold">${row.OTDaysAmount || 0}</td>
           <td>Adv.</td>
-          <td>${row.AdvanceAmount || 0}</td>
+          <td class="v-light">${row.AdvanceAmount || 0}</td>
+          <td>OTHours</td>
+          <td>${row.OTHours || 0}</td>
         </tr>
         <tr class="no-horiz-border">
           <td>OTHoursAmount</td>
@@ -600,11 +571,7 @@ export default function GenerateSalary() {
         <tr class="bold-top double-bottom">
           <td><b>Total Allowance</b></td>
           <td class="v-bold"><b>${
-            calculateProratedSalary(
-              row.BaseSalary || 0,
-              row,
-              totalDaysInMonth
-            ) +
+            (row.ProRatedSalary || 0) +
             (row.HRA || 0) +
             (row.SplAll || 0) +
             (row.Conv || 0) +
@@ -637,7 +604,7 @@ export default function GenerateSalary() {
         </tr>
       </table>
       <div class="net-salary">Net Salary: ₹ ${
-        calculateProratedSalary(row.BaseSalary || 0, row, totalDaysInMonth) +
+        (row.ProRatedSalary || 0) +
         (row.SplAll || 0) +
         (row.HRA || 0) +
         (row.OTDaysAmount || 0) +
@@ -784,6 +751,21 @@ export default function GenerateSalary() {
     emp.EmployeeName.toLowerCase().includes(searchGeneratedText.toLowerCase())
   );
 
+  const handleViewSelected = async () => {
+    if (selectedRegenEmployees.length === 0) {
+      alert("No employees selected to view salary.");
+      return;
+    }
+
+    // get all ids
+    const ids = selectedRegenEmployees.map((e) => e.EmployeeId);
+
+    // fetch only these
+    await fetchSalaryDetails(ids);
+
+    setShowGrid(true);
+  };
+
   const handleRegenerateSalary = async () => {
     if (selectedRegenEmployees.length === 0) {
       alert("No employees selected to regenerate.");
@@ -897,23 +879,23 @@ export default function GenerateSalary() {
             <input
               type="radio"
               name="salaryOption"
-              value="Department"
-              checked={selectedOption === "Department"}
+              value="Designation"
+              checked={selectedOption === "Designation"}
               onChange={() => {
-                setSelectedOption("Department");
+                setSelectedOption("Designation");
               }}
               style={{ accentColor: "#2563eb" }}
             />
-            Department
+            Designation
           </label>
           <select
             value={selectedDesignation}
             onChange={(e) => setSelectedDesignation(e.target.value)}
-            disabled={selectedOption !== "Department"}
+            disabled={selectedOption !== "Designation"}
             className="form-select"
             style={{ width: 220, fontWeight: 500 }}
           >
-            <option value="">-- Select Department --</option>
+            <option value="">-- Select Designation --</option>
             {designations.map((desig, i) => (
               <option key={i} value={desig}>
                 {desig}
@@ -1278,13 +1260,36 @@ export default function GenerateSalary() {
               style={{
                 height: 36,
                 background: "#f0f3fa",
-                textAlign: "center",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "0 10px",
                 fontWeight: 600,
-                padding: 8,
                 borderBottom: "1px solid #b0b8cc",
               }}
             >
-              Selected Employees
+              <span>Selected Employees</span>
+
+              {/* Eye icon inside header */}
+              <button
+                onClick={handleViewSelected}
+                disabled={selectedRegenEmployees.length === 0}
+                title="View selected salary info"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  cursor:
+                    selectedRegenEmployees.length === 0
+                      ? "not-allowed"
+                      : "pointer",
+                  opacity: selectedRegenEmployees.length === 0 ? 0.4 : 1,
+                  fontSize: "1.1rem",
+                  color: "#2563eb",
+                  padding: 4,
+                }}
+              >
+                <i className="fa fa-eye" />
+              </button>
             </div>
             <div
               style={{
@@ -1480,7 +1485,17 @@ export default function GenerateSalary() {
                       Name
                     </th>
                     <th
-                      colSpan={3}
+                      rowSpan="2"
+                      style={{
+                        padding: "12px 8px",
+                        border: "1px solid #b0b8cc",
+                        fontWeight: 600,
+                      }}
+                    >
+                      Joining Date
+                    </th>
+                    <th
+                      colSpan={5}
                       style={{
                         background: "#e6eefd",
                         padding: "12px 8px",
@@ -1540,7 +1555,13 @@ export default function GenerateSalary() {
                     <th style={{ borderRight: "1.5px solid #b0b8cc" }}>
                       Week Days
                     </th>
-                    <th>Leave Days</th>
+                    <th style={{ borderRight: "1.5px solid #b0b8cc" }}>
+                      Leave Days
+                    </th>
+                    <th style={{ borderRight: "1.5px solid #b0b8cc" }}>
+                      OT Days
+                    </th>
+                    <th>OT Hours</th>
                     {allowanceKeys.map((key) => (
                       <th
                         key={key}
@@ -1654,6 +1675,16 @@ export default function GenerateSalary() {
                           style={{
                             padding: "12px 8px",
                             border: "1px solid #b0b8cc",
+                          }}
+                        >
+                          {row.DateOfJoining
+                            ? row.DateOfJoining.split("T")[0]
+                            : "-"}
+                        </td>
+                        <td
+                          style={{
+                            padding: "12px 8px",
+                            border: "1px solid #b0b8cc",
                             textAlign: "center",
                             borderRight: "1.5px solid #b0b8cc",
                           }}
@@ -1679,30 +1710,28 @@ export default function GenerateSalary() {
                         >
                           {row.LeaveDays || 0}
                         </td>
+                        <td
+                          style={{
+                            padding: "12px 8px",
+                            border: "1px solid #b0b8cc",
+                            textAlign: "center",
+                          }}
+                        >
+                          {row.OTDays || 0}
+                        </td>
+
+                        <td
+                          style={{
+                            padding: "12px 8px",
+                            border: "1px solid #b0b8cc",
+                            textAlign: "center",
+                          }}
+                        >
+                          {row.OTHours || 0}
+                        </td>
+
                         {allowanceKeys.map((key) => {
                           let value = row[key] || 0;
-                          // Calculate days in month for this row
-                          const month = row.Month;
-                          const year = row.Year || new Date().getFullYear();
-                          let totalDaysInMonth = 31;
-                          if (month) {
-                            const num = new Date(`${month} 1, ${year}`);
-                            totalDaysInMonth = new Date(
-                              num.getFullYear(),
-                              num.getMonth() + 1,
-                              0
-                            ).getDate();
-                          }
-
-                          // Perform proration for Basic column only
-                          if (key === "BaseSalary") {
-                            value = calculateProratedSalary(
-                              value,
-                              row,
-                              totalDaysInMonth
-                            );
-                          }
-
                           return (
                             <td
                               key={key}

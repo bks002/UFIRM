@@ -578,11 +578,14 @@ const StaffPage = () => {
           </>
         )}
 
-        <InputText
-          value={globalFilterValue}
-          onChange={(e) => setGlobalFilterValue(e.target.value)}
-          placeholder="Search..."
-        />
+        <div className="p-input-left">
+
+          <InputText
+            value={globalFilterValue}
+            onChange={(e) => setGlobalFilterValue(e.target.value)}
+            placeholder="Search..."
+          />
+        </div>
 
         <Button
           label="Add Staff"
