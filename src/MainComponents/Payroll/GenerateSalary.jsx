@@ -27,7 +27,7 @@ const monthNames = [
 ];
 
 const allowanceKeys = [
-  "BaseSalary",
+  "ProRatedSalary",
   "SplAll",
   "HRA",
   "Gratuity",
@@ -73,7 +73,7 @@ const deductionKeys = [
 
 const displayNameMap = {
   // Allowances
-  BaseSalary: "Basic",
+  ProRatedSalary: "Basic",
   SplAll: "SplAll",
   HRA: "HRA",
   Gratuity: "Gratuity",
@@ -344,57 +344,24 @@ export default function GenerateSalary() {
   };
 
   function calculateProratedNetSalary(row) {
-    // 1. Calculate total days in month
-    const month = row.Month;
-    const year = row.Year || new Date().getFullYear();
-    let totalDaysInMonth = 31;
-    if (month) {
-      const num = new Date(`${month} 1, ${year}`);
-      totalDaysInMonth = new Date(
-        num.getFullYear(),
-        num.getMonth() + 1,
-        0
-      ).getDate();
-    }
+    // Basic
+    const basic = row.ProRatedSalary || 0;
 
-    // 2. Calculate prorated basic
-    const proratedBasic = calculateProratedSalary(
-      row.BaseSalary || 0,
-      row,
-      totalDaysInMonth
-    );
-
-    // 3. Add other allowances
-    let totalAllowance = proratedBasic;
-    // Add all non-basic/fixed allowanceKeys
+    // Allowances
+    let totalAllowance = basic;
     for (const key of allowanceKeys) {
-      if (key !== "BaseSalary") {
+      if (key !== "ProRatedSalary") {
         totalAllowance += row[key] || 0;
       }
     }
 
-    // 4. Deduction total (sum all deductionKeys, as in your logic)
+    // Deductions
     let totalDeduction = 0;
     for (const key of deductionKeys) {
       totalDeduction += row[key] || 0;
     }
 
     return totalAllowance - totalDeduction;
-  }
-
-  function calculateProratedSalary(base, row, totalDaysInMonth) {
-    // If attendance is present for the month, use formula
-    if (
-      typeof row.WorkingDays === "number" &&
-      typeof row.WeekDaysOff === "number" &&
-      row.WorkingDays >= 0 &&
-      row.WeekDaysOff >= 0
-    ) {
-      const paidDays = row.WorkingDays + row.WeekDaysOff;
-      return Math.round((base * paidDays) / totalDaysInMonth);
-    }
-    // No attendance: return as is
-    return base;
   }
 
   function generatePayslipHTML(row) {
@@ -521,11 +488,7 @@ export default function GenerateSalary() {
         </tr>
         <tr>
           <td>Basic</td>
-          <td class="v-bold">${calculateProratedSalary(
-            row.BaseSalary || 0,
-            row,
-            totalDaysInMonth
-          )}</td>
+          <td class="v-bold">${row.ProRatedSalary || 0}</td>
           <td >PF</td>
           <td class="v-light">${row.PF || 0}</td>
           <td >Working Days</td>
@@ -608,11 +571,7 @@ export default function GenerateSalary() {
         <tr class="bold-top double-bottom">
           <td><b>Total Allowance</b></td>
           <td class="v-bold"><b>${
-            calculateProratedSalary(
-              row.BaseSalary || 0,
-              row,
-              totalDaysInMonth
-            ) +
+            (row.ProRatedSalary || 0) +
             (row.HRA || 0) +
             (row.SplAll || 0) +
             (row.Conv || 0) +
@@ -645,7 +604,7 @@ export default function GenerateSalary() {
         </tr>
       </table>
       <div class="net-salary">Net Salary: ₹ ${
-        calculateProratedSalary(row.BaseSalary || 0, row, totalDaysInMonth) +
+        (row.ProRatedSalary || 0) +
         (row.SplAll || 0) +
         (row.HRA || 0) +
         (row.OTDaysAmount || 0) +
@@ -1770,30 +1729,9 @@ export default function GenerateSalary() {
                         >
                           {row.OTHours || 0}
                         </td>
+
                         {allowanceKeys.map((key) => {
                           let value = row[key] || 0;
-                          // Calculate days in month for this row
-                          const month = row.Month;
-                          const year = row.Year || new Date().getFullYear();
-                          let totalDaysInMonth = 31;
-                          if (month) {
-                            const num = new Date(`${month} 1, ${year}`);
-                            totalDaysInMonth = new Date(
-                              num.getFullYear(),
-                              num.getMonth() + 1,
-                              0
-                            ).getDate();
-                          }
-
-                          // Perform proration for Basic column only
-                          if (key === "BaseSalary") {
-                            value = calculateProratedSalary(
-                              value,
-                              row,
-                              totalDaysInMonth
-                            );
-                          }
-
                           return (
                             <td
                               key={key}
