@@ -65,7 +65,7 @@ export default function SalaryGroups() {
     const formulaStrRaw = formulaObj.Formula?.trim();
     if (!formulaStrRaw) return 0;
 
-    // Replace known keywords
+    // Replace known keywords (Basic, Fixed)
     let formulaStr = formulaStrRaw
       .replace(/Basic/gi, baseSalary || 0)
       .replace(/Fixed/gi, fixedSalary || 0);
@@ -76,11 +76,34 @@ export default function SalaryGroups() {
       formulaStr = formulaStr.replace(regex, val || 0);
     });
 
-    // Convert percentage to decimal
+    // Convert "12%" → 0.12
     formulaStr = formulaStr.replace(
       /(\d*\.?\d+)%/g,
       (_, p1) => parseFloat(p1) / 100
     );
+
+    // Convert "* 12" → "* 0.12" (percentage style multiplier)
+    formulaStr = formulaStr.replace(
+      /\*\s*(\d+(\.\d+)?)(?!\s*%)/g,
+      (match, numStr) => {
+        const num = parseFloat(numStr);
+        if (num > 1 && num <= 100) {
+          return `*${num / 100}`;
+        }
+        return match;
+      }
+    );
+
+    // Convert "*0.75" → "*0.0075" ONLY for actual percentages like ESI
+    formulaStr = formulaStr.replace(/\*\s*(0\.\d+)/g, (match, numStr) => {
+      const num = parseFloat(numStr);
+
+      // Do NOT touch values like 0.5 (HRA), 0.2 (Conveyance)
+      if (num <= 0.5) return match;
+
+      // Convert ONLY if > 0.5 (typical 0.75% → 0.0075)
+      return `*${num / 100}`;
+    });
 
     try {
       const result = new Function("return " + formulaStr)();
@@ -828,7 +851,9 @@ export default function SalaryGroups() {
                           )}
                         </td>
                         <td style={{ textAlign: "center" }}>
-                          {allow ? allow.CalculatedAmount : ""}
+                          {allow
+                            ? Number(allow.CalculatedAmount).toFixed(2)
+                            : ""}
                         </td>
                         {!isViewMode && (
                           <td style={{ textAlign: "center" }}>
@@ -861,7 +886,9 @@ export default function SalaryGroups() {
                           )}
                         </td>
                         <td style={{ textAlign: "center" }}>
-                          {deduct ? deduct.CalculatedAmount : ""}
+                          {deduct
+                            ? Number(deduct.CalculatedAmount).toFixed(2)
+                            : ""}
                         </td>
                         {!isViewMode && (
                           <td style={{ textAlign: "center" }}>
