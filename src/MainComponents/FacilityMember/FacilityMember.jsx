@@ -30,7 +30,7 @@ import LoanAdvanceDialog from "../../ReactComponents/DataGrid/LoanAdvances.jsx";
 const StaffPage = () => {
   const toast = useRef(null);
   const propertyId = useSelector((state) => state.Commonreducer.puidn);
-
+  const [customDesignation, setCustomDesignation] = useState("");
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [globalFilterValue, setGlobalFilterValue] = useState("");
@@ -419,8 +419,8 @@ const StaffPage = () => {
         IsActive: true,
         Email: email || "",
         PhoneNumber: mobile,
-        Designation: department,
-        Department: department,
+        Designation: department === "OTHER" ? customDesignation : department,
+Department: department === "OTHER" ? customDesignation : department,
         Gender: gender,
         DateOfBirth: dobValue,
         PanCard: panCard || "",
@@ -475,7 +475,7 @@ const StaffPage = () => {
         FatherName: family || "",
         IsDeleted: false,
         Approved: true,
-        Designation: department || "",
+        Designation: department === "OTHER" ? customDesignation : department
       },
     };
 
@@ -737,6 +737,15 @@ const StaffPage = () => {
                 onChange={(e) => setDepartment(e.value)}
                 className="mb-3"
               />
+
+              {department === "OTHER" && (
+                <InputText
+                  placeholder="Enter Custom Department / Designation"
+                  value={customDesignation}
+                  onChange={(e) => setCustomDesignation(e.target.value)}
+                  className="mb-3"
+                />
+              )}
 
               <label>Gender *</label>
               <Dropdown
@@ -1113,57 +1122,57 @@ const StaffPage = () => {
             </TabPanel>
 
             <TabPanel header="Bank Details">
-  <div className="p-fluid">
-    <label>Bank Account Number</label>
-    <InputText
-      value={viewData?.FinancialInfo?.BankAccountNumber || ""}
-      readOnly
-      className="mb-3"
-    />
+              <div className="p-fluid">
+                <label>Bank Account Number</label>
+                <InputText
+                  value={viewData?.FinancialInfo?.BankAccountNumber || ""}
+                  readOnly
+                  className="mb-3"
+                />
 
-    <label>Bank IFSC Code</label>
-    <InputText
-      value={viewData?.FinancialInfo?.BankIFSCCode || ""}
-      readOnly
-      className="mb-3"
-    />
+                <label>Bank IFSC Code</label>
+                <InputText
+                  value={viewData?.FinancialInfo?.BankIFSCCode || ""}
+                  readOnly
+                  className="mb-3"
+                />
 
-    <label>Bank Name</label>
-    <InputText
-      value={viewData?.FinancialInfo?.BankName || ""}
-      readOnly
-      className="mb-3"
-    />
+                <label>Bank Name</label>
+                <InputText
+                  value={viewData?.FinancialInfo?.BankName || ""}
+                  readOnly
+                  className="mb-3"
+                />
 
-    <label>UAN Number</label>
-    <InputText
-      value={viewData?.FinancialInfo?.UANNumber || ""}
-      readOnly
-      className="mb-3"
-    />
+                <label>UAN Number</label>
+                <InputText
+                  value={viewData?.FinancialInfo?.UANNumber || ""}
+                  readOnly
+                  className="mb-3"
+                />
 
-    <label>PAN Number</label>
-    <InputText
-      value={viewData?.FinancialInfo?.PANNumber || ""}
-      readOnly
-      className="mb-3"
-    />
+                <label>PAN Number</label>
+                <InputText
+                  value={viewData?.FinancialInfo?.PANNumber || ""}
+                  readOnly
+                  className="mb-3"
+                />
 
-    <label>PF Number</label>
-    <InputText
-      value={viewData?.FinancialInfo?.PFNumber || ""}
-      readOnly
-      className="mb-3"
-    />
+                <label>PF Number</label>
+                <InputText
+                  value={viewData?.FinancialInfo?.PFNumber || ""}
+                  readOnly
+                  className="mb-3"
+                />
 
-    <label>ESI Number</label>
-    <InputText
-      value={viewData?.FinancialInfo?.ESINumber || ""}
-      readOnly
-      className="mb-3"
-    />
-  </div>
-</TabPanel>
+                <label>ESI Number</label>
+                <InputText
+                  value={viewData?.FinancialInfo?.ESINumber || ""}
+                  readOnly
+                  className="mb-3"
+                />
+              </div>
+            </TabPanel>
 
 
             <TabPanel header="Work History">
