@@ -213,19 +213,21 @@ const history = useHistory();
         setSubCategoryTaskData(data);
     };
 
-    const getDates = useCallback(async (initialDate, finalDate) => {
-        setInitialDate(initialDate);
-        setFinalDate(finalDate);
-        const model = getModel();
-        loadSubCatData(model[0].PropertyId, initialDate, finalDate);
-        taskStatusCount(model, initialDate, finalDate);
-        taskPriorityCount(model, initialDate, finalDate);
-        getAssetCount(model, initialDate, finalDate);
-        getAttendanceData(propertyId, initialDate, finalDate);
-        getExpenseData(model, initialDate, finalDate);
+    const getDates = async (initialDate, finalDate) => {
+    setInitialDate(initialDate);
+    setFinalDate(finalDate);
 
+    const model = getModel();
 
-    }, [getModel, taskStatusCount, taskPriorityCount, getAssetCount, getAttendanceData, loadSubCatData, subCategoryCards]);
+    await Promise.all([
+        loadSubCatData(model[0].PropertyId, initialDate, finalDate),
+        taskStatusCount(model, initialDate, finalDate),
+        taskPriorityCount(model, initialDate, finalDate),
+        getAssetCount(model, initialDate, finalDate),
+        getAttendanceData(model, initialDate, finalDate),
+        getExpenseData(model, initialDate, finalDate)
+    ]);
+};
 
     const manageDashboardCnt = useCallback(async (model) => {
         const resp = await apiProvider.manageDashboardCnt(model, 'R');
@@ -253,17 +255,7 @@ const history = useHistory();
     useEffect(() => {
         const model = getModel();
         manageDashboardCnt(model);
-    }, [getModel, manageDashboardCnt]);
-
-    useEffect(() => {
-        if (initialDate && finalDate) {
-            getDates(initialDate, finalDate);
-        }
-    }, [PropertyId]);
-    
-
-
-
+    }, []);
 
     return (
         <div className="content-wrapper mt-2">

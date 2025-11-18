@@ -1113,57 +1113,57 @@ const StaffPage = () => {
             </TabPanel>
 
             <TabPanel header="Bank Details">
-  <div className="p-fluid">
-    <label>Bank Account Number</label>
-    <InputText
-      value={viewData?.FinancialInfo?.BankAccountNumber || ""}
-      readOnly
-      className="mb-3"
-    />
+              <div className="p-fluid">
+                <label>Bank Account Number</label>
+                <InputText
+                  value={viewData?.FinancialInfo?.BankAccountNumber || ""}
+                  readOnly
+                  className="mb-3"
+                />
 
-    <label>Bank IFSC Code</label>
-    <InputText
-      value={viewData?.FinancialInfo?.BankIFSCCode || ""}
-      readOnly
-      className="mb-3"
-    />
+                <label>Bank IFSC Code</label>
+                <InputText
+                  value={viewData?.FinancialInfo?.BankIFSCCode || ""}
+                  readOnly
+                  className="mb-3"
+                />
 
-    <label>Bank Name</label>
-    <InputText
-      value={viewData?.FinancialInfo?.BankName || ""}
-      readOnly
-      className="mb-3"
-    />
+                <label>Bank Name</label>
+                <InputText
+                  value={viewData?.FinancialInfo?.BankName || ""}
+                  readOnly
+                  className="mb-3"
+                />
 
-    <label>UAN Number</label>
-    <InputText
-      value={viewData?.FinancialInfo?.UANNumber || ""}
-      readOnly
-      className="mb-3"
-    />
+                <label>UAN Number</label>
+                <InputText
+                  value={viewData?.FinancialInfo?.UANNumber || ""}
+                  readOnly
+                  className="mb-3"
+                />
 
-    <label>PAN Number</label>
-    <InputText
-      value={viewData?.FinancialInfo?.PANNumber || ""}
-      readOnly
-      className="mb-3"
-    />
+                <label>PAN Number</label>
+                <InputText
+                  value={viewData?.FinancialInfo?.PANNumber || ""}
+                  readOnly
+                  className="mb-3"
+                />
 
-    <label>PF Number</label>
-    <InputText
-      value={viewData?.FinancialInfo?.PFNumber || ""}
-      readOnly
-      className="mb-3"
-    />
+                <label>PF Number</label>
+                <InputText
+                  value={viewData?.FinancialInfo?.PFNumber || ""}
+                  readOnly
+                  className="mb-3"
+                />
 
-    <label>ESI Number</label>
-    <InputText
-      value={viewData?.FinancialInfo?.ESINumber || ""}
-      readOnly
-      className="mb-3"
-    />
-  </div>
-</TabPanel>
+                <label>ESI Number</label>
+                <InputText
+                  value={viewData?.FinancialInfo?.ESINumber || ""}
+                  readOnly
+                  className="mb-3"
+                />
+              </div>
+            </TabPanel>
 
 
             <TabPanel header="Work History">
