@@ -75,6 +75,21 @@ setTimeout(() => {
     }
   };
 
+  const formatDateTime = (dt) => {
+  if (!dt) return "";
+
+  const date = new Date(dt);
+
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true
+  });
+};
+
   const handleMarkComplete = () => {
     setCurrentStatus('Completed');
     onSend(inputValue, 'Completed');
@@ -113,6 +128,13 @@ setTimeout(() => {
       )}
 
       <div className="alert alert-secondary mb-3">
+        {remark && (
+          <div className="mb-3 p-2 border rounded bg-light">
+            <div><strong>Remark:</strong> {remark}</div>
+            <div><strong>By:</strong> {name}</div>
+            <div><strong>Date:</strong> {formatDateTime(remarkDateTime)}</div>
+          </div>
+        )}
         {context === 'asset' ? (
           <div className="mt-3">
             <Form.Group className="mb-2">
