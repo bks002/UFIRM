@@ -154,7 +154,7 @@ export default function SalaryGroups() {
             a.Type === b.Type ? 0 : a.Type === "Allowance" ? -1 : 1
           )
         );
-        setFormulas((await FormulaService.getAllFormulas()) || []);
+        setFormulas((await FormulaService.getAllFormulas(propertyId)) || []);
       } catch {
         alert("Failed to load salary groups.");
       } finally {

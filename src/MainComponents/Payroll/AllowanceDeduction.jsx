@@ -42,13 +42,14 @@ export default function AllowanceDeduction() {
 
   // Load formulas
   const loadFormulas = async () => {
-    try {
-      const formulaData = await FormulaService.getAllFormulas();
-      setFormulas(formulaData || []);
-    } catch (error) {
-      console.error("Failed to load formulas:", error);
-    }
-  };
+  if (!propertyId) return;
+  try {
+    const formulaData = await FormulaService.getAllFormulas(propertyId);
+    setFormulas(formulaData || []);
+  } catch (error) {
+    console.error("Failed to load formulas:", error);
+  }
+};
 
   useEffect(() => {
     loadData();
