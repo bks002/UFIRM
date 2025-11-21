@@ -249,6 +249,12 @@ export default function ItemAssignedPage() {
           className="p-button-success"
           onClick={openAddDialog}
         />
+         <Button
+          label="Export"
+          icon="pi pi-refresh"
+          className="p-button-info"
+          onClick={openAddDialog}
+        />
       </div>
     </div>
   );
