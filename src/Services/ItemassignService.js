@@ -22,7 +22,7 @@ const handleApiError = (error) => {
 
 export const getItemSpecification = async () => {
     try {
-        const response = await api.get(`/itemmaster/getItem` );
+        const response = await api.get(`/itemmaster/getItem`);
         return response.data;
     } catch (error) {
         handleApiError(error);
@@ -31,7 +31,17 @@ export const getItemSpecification = async () => {
 
 export const getItemSpecificationName = async (name) => {
     try {
-        const response = await api.get(`/itemmaster/getItemByName/${name}` );
+        const response = await api.get(`/itemmaster/getItemByName/${name}`);
+        return response.data;
+    } catch (error) {
+        handleApiError(error);
+    }
+};
+
+// ✅ Fetch specifications by itemId
+export const getItemSpecificationsByItemId = async (itemId) => {
+    try {
+        const response = await api.get(`/itemmaster/getSpecificationsByItemId/${itemId}`);
         return response.data;
     } catch (error) {
         handleApiError(error);
@@ -49,21 +59,12 @@ export const createItemSpecification = async (ItemSpecification) => {
 
 export const getItemAssigned = async (propertyId) => {
     try {
-        const response = await api.get(`/itemspecifications/getAll/propertyId/${propertyId}` );
+        const response = await api.get(`/itemspecifications/getAll/propertyId/${propertyId}`);
         return response.data;
     } catch (error) {
         handleApiError(error);
     }
 };
-
-// export const getItemAssignedGrouped = async (propertyId) => {
-//     try {
-//         const response = await api.get(`/itemspecifications/getGroupedByItem/propertyId/${propertyId}` );
-//         return response.data;
-//     } catch (error) {
-//         handleApiError(error);
-//     }
-// };
 
 export const createItemAssigned = async (ItemAssigned) => {
     try {
@@ -74,22 +75,20 @@ export const createItemAssigned = async (ItemAssigned) => {
     }
 };
 
-export const updateItemAssigned= async(id, ItemAssigned)=>{
-    try{
-        const response = await api.put(`/itemspecifications/update/${id}`,ItemAssigned);
+export const updateItemAssigned = async (id, ItemAssigned) => {
+    try {
+        const response = await api.put(`/itemspecifications/update/${id}`, ItemAssigned);
         return response.data;
-    }
-    catch(error){
+    } catch (error) {
         handleApiError(error);
     }
-}
+};
 
-export const deleteItemAssigned= async(id)=>{
-    try{
+export const deleteItemAssigned = async (id) => {
+    try {
         const response = await api.delete(`/itemspecifications/delete/${id}`);
         return response.data;
-    }
-    catch(error){
+    } catch (error) {
         handleApiError(error);
     }
-}
+};
