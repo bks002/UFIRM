@@ -8,8 +8,10 @@ import { Dialog } from "primereact/dialog";
 import { Calendar } from "primereact/calendar";
 import { FilterMatchMode } from "primereact/api";
 import FormulaMasterService from "../../Services/FormulaService";
+import { useSelector } from "react-redux";
 
 const FormulaMaster = () => {
+  const propertyId = useSelector((state) => state.Commonreducer.puidn);
   const [gridData, setGridData] = useState([]);
   const [globalFilterValue, setGlobalFilterValue] = useState("");
   const [filters, setFilters] = useState({
@@ -36,7 +38,8 @@ const FormulaMaster = () => {
   // Fetch all formulas
   const fetchData = async () => {
     try {
-      const data = await FormulaMasterService.getAllFormulas();
+      if (!propertyId) return;
+      const data = await FormulaMasterService.getAllFormulas(propertyId);
       setGridData(data);
     } catch (err) {
       console.error(err);
@@ -49,8 +52,8 @@ const FormulaMaster = () => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (propertyId) fetchData();
+  }, [propertyId]);
 
   // Save (Create / Update)
   const handleSave = async () => {
@@ -58,17 +61,22 @@ const FormulaMaster = () => {
       const payload = {
         ...formData,
         FormulaParts: JSON.stringify(formulaParts),
+        PropertyID: propertyId,
       };
 
       if (editMode) {
-        await FormulaMasterService.updateFormula(formData.Id, payload);
+        await FormulaMasterService.updateFormula(
+          formData.Id,
+          payload,
+          propertyId
+        );
         toast.current.show({
           severity: "success",
           summary: "Updated",
           detail: "Formula updated successfully",
         });
       } else {
-        await FormulaMasterService.createFormula(payload);
+        await FormulaMasterService.createFormula(payload, propertyId);
         toast.current.show({
           severity: "success",
           summary: "Created",
@@ -91,7 +99,7 @@ const FormulaMaster = () => {
   // Delete
   const handleDelete = async (rowData) => {
     try {
-      await FormulaMasterService.deleteFormula(rowData.Id);
+      await FormulaMasterService.deleteFormula(rowData.Id, propertyId);
       toast.current.show({
         severity: "warn",
         summary: "Deleted",
