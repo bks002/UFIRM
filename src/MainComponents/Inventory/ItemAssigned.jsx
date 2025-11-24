@@ -16,7 +16,7 @@ import {
   createItemAssigned,
   updateItemAssigned,
   deleteItemAssigned,
-  getItemSpecificationName,
+  getItemSpecificationsByItemId,
 } from "../../Services/ItemassignService";
 import { getAllItems } from "../../Services/InventoryService";
 
@@ -43,7 +43,16 @@ export default function ItemAssignedPage() {
   });
 
   const toast = useRef(null);
-  const propertyId = useSelector((state) => state.Commonreducer.puidn);
+
+  // ✅ Redux propertyId with comprehensive fallbacks (same as StockItems.jsx)
+  const propertyId = useSelector(
+    (state) =>
+      state?.Commonreducer?.puidn ||
+      state?.department?.CompanyId ||
+      state?.departmentModel?.CompanyId ||
+      state?.Commonreducer?.CompanyId ||
+      null
+  );
 
   // ---------- date helpers ----------
   const safeDate = (value) => {
@@ -103,28 +112,48 @@ export default function ItemAssignedPage() {
     return <span className="badge badge-secondary">-</span>;
   };
 
-  // ---------- data fetch ----------
+  // ✅ Clear table when propertyId changes (prevent stale data)
   useEffect(() => {
-    fetchGrouped();
-    fetchItemOptions();
-  }, []);
+    setGrouped([]);
+  }, [propertyId]);
 
+  // ✅ Fetch data on mount AND when propertyId changes
+  useEffect(() => {
+    if (propertyId && propertyId !== "Select" && propertyId !== null) {
+      fetchGrouped();
+      fetchItemOptions();
+    }
+  }, [propertyId]);
+
+  // ---------- data fetch ----------
   const fetchGrouped = async () => {
+    if (!propertyId || propertyId === "Select" || propertyId === null) {
+      toast.current?.show({
+        severity: "error",
+        summary: "Property Missing",
+        detail: "Please select a property first.",
+      });
+      return;
+    }
+
     try {
       const res = await getItemAssigned(propertyId);
       setGrouped(res || []);
     } catch (err) {
-      if (toast.current) {
-        toast.current.show({
-          severity: "error",
-          summary: "Error",
-          detail: "Failed to load data",
-        });
-      }
+      console.error("[FETCH_GROUPED_ERROR]", err);
+      toast.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Failed to load data",
+      });
     }
   };
 
   const fetchItemOptions = async () => {
+    if (!propertyId || propertyId === "Select" || propertyId === null) {
+      return;
+    }
+
     try {
       const res = await getAllItems(propertyId);
       const formatted = (res || []).map((i) => ({
@@ -133,41 +162,59 @@ export default function ItemAssignedPage() {
       }));
       setItemOptions(formatted);
     } catch (err) {
-      if (toast.current) {
-        toast.current.show({
-          severity: "error",
-          summary: "Error",
-          detail: "Failed to load item list",
-        });
-      }
+      console.error("[FETCH_ITEMS_ERROR]", err);
+      toast.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Failed to load item list",
+      });
     }
   };
 
   // ---------- form handlers ----------
-  const handleItemSelect = async (value) => {
-    setFormData((prev) => ({
-      ...prev,
-      itemId: value?.id ?? null,
-      item_Name: value?.name ?? "",
-    }));
+const handleItemSelect = async (value) => {
+  setFormData((prev) => ({
+    ...prev,
+    itemId: value?.id ?? null,
+    item_Name: value?.name ?? "",
+  }));
 
-    if (value && value.name && value.name.trim() !== "") {
-      try {
-        const res = await getItemSpecificationName(value.name);
-        setSpecifications(
-          (res || []).map((s) => ({
-            Id: s.Id,
-            Specification: s.Specification,
-            Specification_Value: "",
-          }))
-        );
-      } catch {
-        setSpecifications([]);
-      }
-    } else {
+  if (!value || !value.id) {
+    setSpecifications([]);
+    return;
+  }
+
+  // ✅ Fetch specifications by itemId - no filtering, use API response as-is
+  try {
+    const res = await getItemSpecificationsByItemId(value.id);
+    if (!res || res.length === 0) {
+      toast.current?.show({
+        severity: "info",
+        summary: "No Specifications",
+        detail: "No specifications available for this item.",
+      });
       setSpecifications([]);
+      return;
     }
-  };
+
+    // ✅ Map API response directly to editable format (no filtering)
+    setSpecifications(
+      res.map((s) => ({
+        Id: s.Id || 0,
+        Specification: s.Specification,
+        Specification_Value: "", // ✅ User fills this in
+      }))
+    );
+  } catch (err) {
+    console.error("[FETCH_SPECS_ERROR]", err);
+    toast.current?.show({
+      severity: "error",
+      summary: "Error",
+      detail: "Failed to load specifications",
+    });
+    setSpecifications([]);
+  }
+};
 
   const handleSpecValueChange = (index, value) => {
     setSpecifications((prev) =>
@@ -177,7 +224,62 @@ export default function ItemAssignedPage() {
     );
   };
 
+  // ✅ Validation before save
+  const validateForm = () => {
+    if (!formData.itemId) {
+      toast.current?.show({
+        severity: "warn",
+        summary: "Missing Item",
+        detail: "Please select an item.",
+      });
+      return false;
+    }
+
+    if (!formData.gender || formData.gender === "") {
+      toast.current?.show({
+        severity: "warn",
+        summary: "Missing Gender",
+        detail: "Please select a gender.",
+      });
+      return false;
+    }
+
+    if (!formData.quantity || formData.quantity < 1) {
+      toast.current?.show({
+        severity: "warn",
+        summary: "Invalid Quantity",
+        detail: "Quantity must be at least 1.",
+      });
+      return false;
+    }
+
+    if (!formData.isRequisition && !formData.isHandover) {
+      toast.current?.show({
+        severity: "warn",
+        summary: "Missing Type",
+        detail: "Please select either Requisition or Handover.",
+      });
+      return false;
+    }
+
+    // ✅ Validate all specifications are filled
+    for (let spec of specifications) {
+      if (!spec.Specification_Value || spec.Specification_Value.trim() === "") {
+        toast.current?.show({
+          severity: "warn",
+          summary: "Incomplete Specifications",
+          detail: `Please fill in the value for "${spec.Specification}".`,
+        });
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const handleSave = async () => {
+    if (!validateForm()) return;
+
     try {
       const basePayload = {
         Id: selectedItem ? selectedItem.Id : 0,
@@ -198,32 +300,33 @@ export default function ItemAssignedPage() {
       };
 
       if (selectedItem) {
+        // ✅ Update existing item
         await updateItemAssigned(selectedItem.Id, basePayload);
-        toast.current &&
-          toast.current.show({
-            severity: "success",
-            summary: "Record Updated",
-          });
+        toast.current?.show({
+          severity: "success",
+          summary: "Updated",
+          detail: "Item assignment updated successfully.",
+        });
       } else {
+        // ✅ Create new item (API expects array)
         const payload = [basePayload];
         await createItemAssigned(payload);
-        toast.current &&
-          toast.current.show({
-            severity: "success",
-            summary: "Record Added",
-          });
+        toast.current?.show({
+          severity: "success",
+          summary: "Created",
+          detail: "Item assignment created successfully.",
+        });
       }
 
       setDialogVisible(false);
-      fetchGrouped();
+      fetchGrouped(); // ✅ Refresh table
     } catch (err) {
-      console.error(err);
-      toast.current &&
-        toast.current.show({
-          severity: "error",
-          summary: "Save Failed",
-          detail: err.message,
-        });
+      console.error("[SAVE_ERROR]", err);
+      toast.current?.show({
+        severity: "error",
+        summary: "Save Failed",
+        detail: err.message || "An error occurred while saving.",
+      });
     }
   };
 
@@ -237,6 +340,8 @@ export default function ItemAssignedPage() {
       isRequisition: rowData.IsRequisition || false,
       isHandover: rowData.IsHandover || false,
     });
+
+    // ✅ Pre-fill specifications from existing data
     setSpecifications(
       (rowData.Details || []).map((d) => ({
         Id: d.Id,
@@ -244,6 +349,7 @@ export default function ItemAssignedPage() {
         Specification_Value: d.Specification_Value,
       }))
     );
+
     setDialogVisible(true);
   };
 
@@ -268,20 +374,22 @@ export default function ItemAssignedPage() {
 
   const handleDelete = async () => {
     try {
+      // ✅ Soft delete (set Is_Active: false)
       await deleteItemAssigned(selectedItem.Id);
-      toast.current &&
-        toast.current.show({
-          severity: "success",
-          summary: "Record Deleted",
-        });
+      toast.current?.show({
+        severity: "success",
+        summary: "Deleted",
+        detail: "Item assignment deleted successfully.",
+      });
       setDeleteDialogVisible(false);
-      fetchGrouped();
-    } catch {
-      toast.current &&
-        toast.current.show({
-          severity: "error",
-          summary: "Delete Failed",
-        });
+      fetchGrouped(); // ✅ Refresh table
+    } catch (err) {
+      console.error("[DELETE_ERROR]", err);
+      toast.current?.show({
+        severity: "error",
+        summary: "Delete Failed",
+        detail: err.message || "An error occurred while deleting.",
+      });
     }
   };
 
@@ -302,9 +410,7 @@ export default function ItemAssignedPage() {
     const specsText = Array.isArray(row.Details)
       ? row.Details.map(
           (d) =>
-            `${d.Specification_Name ?? ""}: ${
-              d.Specification_Value ?? ""
-            }`
+            `${d.Specification_Name ?? ""}: ${d.Specification_Value ?? ""}`
         )
           .join(" ")
           .toLowerCase()
@@ -318,64 +424,68 @@ export default function ItemAssignedPage() {
       specsText.includes(term)
     );
   });
-<style>
-  {`
-    table.table th, table.table td {
-      padding: 6px 10px !important;
-      white-space: nowrap;
-    }
-  `}
-</style>
 
   return (
-  <div
-    className="container-fluid py-3"
-    style={{ maxWidth: "95%", marginLeft: "auto", marginRight: "auto", paddingLeft: window.innerWidth > 992 ? "90px" : "0px",
-    transition: "padding 0.2s ease" }}
-  >
+    <div
+      className="container-fluid py-3"
+      style={{
+        maxWidth: "95%",
+        marginLeft: "auto",
+        marginRight: "auto",
+        paddingLeft: window.innerWidth > 992 ? "90px" : "0px",
+        transition: "padding 0.2s ease",
+      }}
+    >
       <Toast ref={toast} />
 
       <div className="card shadow-sm mt-3">
-        <div className="card-body d-flex flex-wrap align-items-center" style={{ paddingBottom: "10px" }}>
-
+        <div
+          className="card-body d-flex flex-wrap align-items-center"
+          style={{ paddingBottom: "10px" }}
+        >
           <h5 className="mb-0">Item Assigned</h5>
 
-          <div className="ml-auto d-flex align-items-center">
-            <div
-              className="input-group input-group-sm mr-3"
-              style={{ maxWidth: 260 }}
-            >
-              <div className="input-group-prepend">
-                <span className="input-group-text">
-                  <i className="fa fa-search" />
-                </span>
-              </div>
-              <InputText
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by name, type, specs..."
-                className="form-control"
-              />
-            </div>
+          <div className="ml-auto d-flex align-items-center" style={{ gap: "12px" }}>
+  {/* ✅ Search bar - matches Add Item button size */}
+      {/* <span className="search-icon-wrapper">
+      <i className="fa fa-search" style={{ color: "#6b7280" }} />
+    </span> */}
+  <InputText
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+    placeholder="Search..."
+    style={{
+      height: "38px",
+      width: "200px",
+      borderRadius: "8px",
+      border: "1px solid #d1d5db",
+      paddingLeft: "12px",
+    }}
+  />
 
-              <Button
-                label="Add Item"
-                icon="pi pi-plus"
-                className="p-button-success"
-                style={{ padding: "4px 10px", fontSize: "13px", width: "24", height: "24"}}
-                onClick={openAddDialog}
-              />
-
-          </div>
+  {/* ✅ Add button - rounded */}
+  <Button
+    label="Add Item"
+    icon="pi pi-plus"
+    className="p-button-success"
+    style={{
+      padding: "8px 16px",
+      fontSize: "13px",
+      height: "38px",
+      borderRadius: "8px",
+      whiteSpace: "nowrap",
+    }}
+    onClick={openAddDialog}
+  />
+</div>
         </div>
 
         <div className="card-body p-3">
           <div className="table-responsive">
-<table
-  className="table table-bordered table-striped table-hover mb-0 table-sm"
-  style={{ fontSize: "14px" }}
->
-
+            <table
+              className="table table-bordered table-striped table-hover mb-0 table-sm"
+              style={{ fontSize: "14px" }}
+            >
               <thead className="thead-light">
                 <tr>
                   <th style={{ width: "80px" }}>S. No</th>
@@ -438,21 +548,29 @@ export default function ItemAssignedPage() {
                     <td>{formatDate(row.Updated_On)}</td>
                     <td>{formatTime12(row.Updated_On)}</td>
                     <td className="text-center">
-                     <Button
-                      icon="pi pi-pencil"
-                      className="p-button-rounded p-button-warning p-button-sm mr-2"
-                      style={{ width: "24px", height: "24px", padding: "0", fontSize: "0.65rem" }}
-                      onClick={() => openEditDialog(row)}
-                    />
+                      <Button
+                        icon="pi pi-pencil"
+                        className="p-button-rounded p-button-warning p-button-sm mr-2"
+                        style={{
+                          width: "24px",
+                          height: "24px",
+                          padding: "0",
+                          fontSize: "0.65rem",
+                        }}
+                        onClick={() => openEditDialog(row)}
+                      />
 
-                    <Button
-                      icon="pi pi-trash"
-                      className="p-button-rounded p-button-danger p-button-sm"
-                      style={{ width: "24px", height: "24px", padding: "0", fontSize: "0.65rem" }}
-                      onClick={() => openDeleteDialog(row)}
-                    />
-
-
+                      <Button
+                        icon="pi pi-trash"
+                        className="p-button-rounded p-button-danger p-button-sm"
+                        style={{
+                          width: "24px",
+                          height: "24px",
+                          padding: "0",
+                          fontSize: "0.65rem",
+                        }}
+                        onClick={() => openDeleteDialog(row)}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -465,9 +583,7 @@ export default function ItemAssignedPage() {
       {/* Add/Edit Dialog */}
       <Dialog
         header={
-          selectedItem
-            ? "Edit Item Assignment"
-            : "Add New Item Assignment"
+          selectedItem ? "Edit Item Assignment" : "Add New Item Assignment"
         }
         visible={dialogVisible}
         style={{ width: "60vw" }}
@@ -487,7 +603,7 @@ export default function ItemAssignedPage() {
         <div className="p-fluid">
           {/* Dropdown for item */}
           <div className="field">
-            <label>Item</label>
+            <label>Item *</label>
             <Dropdown
               value={
                 formData.itemId
@@ -500,11 +616,11 @@ export default function ItemAssignedPage() {
               showClear
               filter
               className="w-full"
+              disabled={!!selectedItem} // ✅ Disable on edit
             />
           </div>
-
           <div className="field">
-            <label>Gender</label>
+            <label>Gender *</label>
             <select
               className="p-inputtext p-component"
               value={formData.gender}
@@ -519,7 +635,7 @@ export default function ItemAssignedPage() {
           </div>
 
           <div className="field">
-            <label>Quantity</label>
+            <label>Quantity *</label>
             <InputText
               type="number"
               min="1"
@@ -534,7 +650,7 @@ export default function ItemAssignedPage() {
           </div>
 
           <div className="field">
-            <label className="block mb-2">Type</label>
+            <label className="block mb-2">Type *</label>
             <div className="flex align-items-center gap-5">
               <div className="flex align-items-center">
                 <RadioButton
@@ -578,7 +694,7 @@ export default function ItemAssignedPage() {
 
           {specifications.length > 0 && (
             <div className="mt-4">
-              <h4 className="mb-2">Specifications</h4>
+              <h4 className="mb-2">Specifications *</h4>
               <DataTable value={specifications} responsiveLayout="scroll">
                 <Column field="Specification" header="Specification" />
                 <Column
@@ -589,6 +705,7 @@ export default function ItemAssignedPage() {
                       onChange={(e) =>
                         handleSpecValueChange(rowIndex, e.target.value)
                       }
+                      placeholder="Enter value"
                     />
                   )}
                 />
