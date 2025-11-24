@@ -67,42 +67,14 @@ export default function SalaryGroups() {
 
     // Replace known keywords (Basic, Fixed)
     let formulaStr = formulaStrRaw
-      .replace(/Basic/gi, baseSalary || 0)
-      .replace(/Fixed/gi, fixedSalary || 0);
+      .replace(/\bBasic\b/gi, baseSalary || 0)
+      .replace(/\bFixed\b/gi, fixedSalary || 0);
 
-    // Replace already known calculated items (HRA, PF, etc.)
+    // Replace already known calculated items
     Object.entries(knownValues).forEach(([key, val]) => {
-      const regex = new RegExp(`\\b${key}\\b`, "gi");
+      const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(escapedKey, "gi");
       formulaStr = formulaStr.replace(regex, val || 0);
-    });
-
-    // Convert "12%" → 0.12
-    formulaStr = formulaStr.replace(
-      /(\d*\.?\d+)%/g,
-      (_, p1) => parseFloat(p1) / 100
-    );
-
-    // Convert "* 12" → "* 0.12" (percentage style multiplier)
-    formulaStr = formulaStr.replace(
-      /\*\s*(\d+(\.\d+)?)(?!\s*%)/g,
-      (match, numStr) => {
-        const num = parseFloat(numStr);
-        if (num > 1 && num <= 100) {
-          return `*${num / 100}`;
-        }
-        return match;
-      }
-    );
-
-    // Convert "*0.75" → "*0.0075" ONLY for actual percentages like ESI
-    formulaStr = formulaStr.replace(/\*\s*(0\.\d+)/g, (match, numStr) => {
-      const num = parseFloat(numStr);
-
-      // Do NOT touch values like 0.5 (HRA), 0.2 (Conveyance)
-      if (num <= 0.5) return match;
-
-      // Convert ONLY if > 0.5 (typical 0.75% → 0.0075)
-      return `*${num / 100}`;
     });
 
     try {
@@ -470,7 +442,26 @@ export default function SalaryGroups() {
 
   const extractVariables = (formula) => {
     if (!formula) return [];
-    return formula.match(/[A-Za-z_]\w*/g) || [];
+
+    // 1. Extract raw tokens
+    const tokens = formula.match(/[A-Za-z_][A-Za-z0-9_() ]*/g) || [];
+
+    // 2. Known base variables
+    const baseVars = ["basic", "fixed"];
+
+    // 3. Valid deduction/allowance names (case insensitive)
+    const validNames = alDtOptions.map((opt) => opt.Name.toLowerCase());
+
+    // 4. Filter meaningful vars
+    const cleaned = tokens.filter((t) => {
+      const lower = t.toLowerCase();
+
+      return (
+        baseVars.includes(lower) || validNames.includes(lower) // matches exact stored names
+      );
+    });
+
+    return cleaned;
   };
 
   // Dialog footers

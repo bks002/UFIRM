@@ -85,6 +85,11 @@ export default function SalaryGroupView({
         FacilityMemberIds: facilityMemberId,
         SalaryGroup_ID: selectedGroupData.SalaryGroup_ID,
       });
+      alert(
+        facilityMemberSalaryData.length > 0
+          ? "Salary Group modified successfully!"
+          : "Salary Group assigned successfully!"
+      );
       setFinalAddedGroups([{ ...selectedGroupData }]);
     } catch {
       alert("Failed to add salary group. Please try again.");

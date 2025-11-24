@@ -114,47 +114,42 @@ export default function AttendanceSheet() {
     });
   }
 
-  function isNumericInput(val) {
-    return /^\d*$/.test(val);
-  }
-
   function handleInputChange(empId, field, value) {
-    // OT hours allow decimal
-    if (field === "otHours") {
-      if (!/^\d*\.?\d*$/.test(value)) return; // allow decimals
-    } else {
-      if (!isNumericInput(value)) return; // original numeric rule
-    }
+  // allow decimal for all 3 main fields + otHours
+  if (!/^\d*\.?\d*$/.test(value)) return;
 
-    const totalDays = totalDaysInMonth;
+  const totalDays = totalDaysInMonth;
+  const num = parseFloat(value);
 
-    // Prevent fields except OT hours from exceeding day count
-    if (field !== "otHours" && Number(value) > totalDays) return;
-
-    setDayInputs((prev) => {
-      const current = prev[empId] || {
-        workingDays: "",
-        leaveDays: "",
-        weekDaysOff: "",
-        otDays: "",
-        otHours: "",
-      };
-
-      const updated = { ...current, [field]: value };
-
-      // SUM VALIDATION (only for main 3 columns)
-      const w = Number(updated.workingDays) || 0;
-      const l = Number(updated.leaveDays) || 0;
-      const wk = Number(updated.weekDaysOff) || 0;
-
-      if (w + l + wk > totalDays) return prev;
-
-      return {
-        ...prev,
-        [empId]: updated,
-      };
-    });
+  // Prevent exceeding total days (only for the 3 main fields)
+  if (["workingDays", "leaveDays", "weekDaysOff"].includes(field)) {
+    if (num > totalDays) return;
   }
+
+  setDayInputs((prev) => {
+    const current = prev[empId] || {
+      workingDays: "",
+      leaveDays: "",
+      weekDaysOff: "",
+      otDays: "",
+      otHours: "",
+    };
+
+    const updated = { ...current, [field]: value };
+
+    // prevent total > days in month for 3 main fields
+    const w = parseFloat(updated.workingDays) || 0;
+    const l = parseFloat(updated.leaveDays) || 0;
+    const wk = parseFloat(updated.weekDaysOff) || 0;
+
+    if (w + l + wk > totalDays) return prev;
+
+    return {
+      ...prev,
+      [empId]: updated,
+    };
+  });
+}
 
   function getDaysInMonth(month, year) {
     return new Date(year, month, 0).getDate(); // 30 or 31
@@ -621,7 +616,7 @@ export default function AttendanceSheet() {
                         }
                         disabled={!isChecked}
                         style={{ width: "80px", textAlign: "center" }}
-                        maxLength={2}
+                        maxLength={5}
                       />
                     </td>
                     <td
@@ -639,7 +634,7 @@ export default function AttendanceSheet() {
                         }
                         disabled={!isChecked}
                         style={{ width: "80px", textAlign: "center" }}
-                        maxLength={2}
+                        maxLength={5}
                       />
                     </td>
                     <td
@@ -661,7 +656,7 @@ export default function AttendanceSheet() {
                         }
                         disabled={!isChecked}
                         style={{ width: "80px", textAlign: "center" }}
-                        maxLength={2}
+                        maxLength={5}
                       />
                     </td>
                     <td
@@ -679,7 +674,7 @@ export default function AttendanceSheet() {
                         }
                         disabled={!isChecked}
                         style={{ width: "80px", textAlign: "center" }}
-                        maxLength={2}
+                        maxLength={5}
                       />
                     </td>
 
