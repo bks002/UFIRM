@@ -27,8 +27,8 @@ const monthNames = [
 ];
 
 const allowanceKeys = [
-  "ProRatedSalary",
-  "SplAll",
+  "Basic",
+  "LEAVEWAGES",
   "HRA",
   "Gratuity",
   "OTDaysAmount",
@@ -38,7 +38,7 @@ const allowanceKeys = [
   "OthArrear",
   "Bonus",
   "DA",
-  "Conv",
+  "CONVEYACNE",
   // "Contractor Allowance",
   // "Housing Allowance",
   // "Transport Allowance",
@@ -73,8 +73,8 @@ const deductionKeys = [
 
 const displayNameMap = {
   // Allowances
-  ProRatedSalary: "Basic",
-  SplAll: "SplAll",
+  Basic: "Basic",
+  LEAVEWAGES: "Leave Wages",
   HRA: "HRA",
   Gratuity: "Gratuity",
   OTDaysAmount: "OTDaysAmount",
@@ -84,7 +84,7 @@ const displayNameMap = {
   OthArrear: "OthArrear",
   Bonus: "Bonus",
   DA: "DA",
-  Conv: "Conv",
+  CONVEYACNE: "Conv",
 
   // Deductions
   PF: "PF",
@@ -344,25 +344,25 @@ export default function GenerateSalary() {
   };
 
   function calculateProratedNetSalary(row) {
-    // Basic
-    const basic = row.ProRatedSalary || 0;
+  // Basic (from API)
+  const basic = row.Basic || 0;
 
-    // Allowances
-    let totalAllowance = basic;
-    for (const key of allowanceKeys) {
-      if (key !== "ProRatedSalary") {
-        totalAllowance += row[key] || 0;
-      }
+  // Allowances
+  let totalAllowance = basic;
+  for (const key of allowanceKeys) {
+    if (key !== "Basic") {
+      totalAllowance += row[key] || 0;
     }
-
-    // Deductions
-    let totalDeduction = 0;
-    for (const key of deductionKeys) {
-      totalDeduction += row[key] || 0;
-    }
-
-    return totalAllowance - totalDeduction;
   }
+
+  // Deductions
+  let totalDeduction = 0;
+  for (const key of deductionKeys) {
+    totalDeduction += row[key] || 0;
+  }
+
+  return totalAllowance - totalDeduction;
+}
 
   function generatePayslipHTML(row) {
     // Determine total days in month
@@ -488,15 +488,15 @@ export default function GenerateSalary() {
         </tr>
         <tr>
           <td>Basic</td>
-          <td class="v-bold">${row.ProRatedSalary || 0}</td>
+          <td class="v-bold">${row.Basic || row.ProRatedSalary || 0}</td>
           <td >PF</td>
           <td class="v-light">${row.PF || 0}</td>
           <td >Working Days</td>
           <td>${row.WorkingDays || ""}</td>
         </tr>
         <tr class="no-horiz-border">
-          <td>SplAll</td>
-          <td class="v-bold">${row.SplAll || 0}</td>
+          <td>Leave Wages</td>
+          <td class="v-bold">${row.LEAVEWAGES || 0}</td>
           <td >PFT</td>
           <td class="v-light">${row.PftAmount || 0}</td>
           <td >Leave Days</td>
@@ -564,17 +564,17 @@ export default function GenerateSalary() {
         </tr>
         <tr class="no-horiz-border">
           <td>Conv</td>
-          <td class="v-bold">${row.Conv || 0}</td>
+          <td class="v-bold">${row.CONVEYACNE || 0}</td>
           <td>IncomeTax</td>
           <td>${row.IncomeTax || 0}</td>
         </tr>
         <tr class="bold-top double-bottom">
           <td><b>Total Allowance</b></td>
           <td class="v-bold"><b>${
-            (row.ProRatedSalary || 0) +
+            (row.Basic || row.ProRatedSalary || 0) +
             (row.HRA || 0) +
-            (row.SplAll || 0) +
-            (row.Conv || 0) +
+            (row.LEAVEWAGES || 0) +
+            (row.CONVEYACNE || 0) +
             (row.DA || 0) +
             (row.Gratuity || 0) +
             (row.Bonus || 0) +
@@ -604,8 +604,8 @@ export default function GenerateSalary() {
         </tr>
       </table>
       <div class="net-salary">Net Salary: ₹ ${
-        (row.ProRatedSalary || 0) +
-        (row.SplAll || 0) +
+        (row.Basic || row.ProRatedSalary || 0) +
+        (row.LEAVEWAGES || 0) +
         (row.HRA || 0) +
         (row.OTDaysAmount || 0) +
         (row.OTHoursAmount || 0) +
@@ -614,7 +614,7 @@ export default function GenerateSalary() {
         (row.OthArrear || 0) +
         (row.Bonus || 0) +
         (row.DA || 0) +
-        (row.Conv || 0) -
+        (row.CONVEYACNE || 0) -
         ((row.PF || 0) +
           (row.LwfEmployeeAmount || 0) +
           (row.PftAmount || 0) +

@@ -42,8 +42,9 @@ export default function AllowanceDeduction() {
 
   // Load formulas
   const loadFormulas = async () => {
+    if (!propertyId) return;
     try {
-      const formulaData = await FormulaService.getAllFormulas();
+      const formulaData = await FormulaService.getAllFormulas(propertyId);
       setFormulas(formulaData || []);
     } catch (error) {
       console.error("Failed to load formulas:", error);
@@ -132,8 +133,8 @@ export default function AllowanceDeduction() {
   };
 
   const handleSave = async () => {
-    if (!formData.Name.trim()) {
-      alert("Name is required");
+    if (!formData.Name.trim() || !formData.FormulaId) {
+      alert("Please enter a name and select a formula before saving.");
       return;
     }
 
@@ -177,6 +178,9 @@ export default function AllowanceDeduction() {
     );
   });
 
+  const isFormValid =
+    formData.Name.trim() !== "" && formData.FormulaId !== null;
+
   const dialogFooter = (
     <>
       <button
@@ -185,7 +189,15 @@ export default function AllowanceDeduction() {
       >
         Cancel
       </button>
-      <button className="btn btn-primary" onClick={handleSave}>
+      <button
+        className="btn btn-primary"
+        onClick={handleSave}
+        disabled={!isFormValid}
+        style={{
+          opacity: isFormValid ? 1 : 0.6,
+          cursor: isFormValid ? "pointer" : "not-allowed",
+        }}
+      >
         Save
       </button>
     </>

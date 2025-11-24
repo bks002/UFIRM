@@ -635,3 +635,46 @@ export async function addOTHours(model) {
   }
 }
 
+// UPDATE OT Hours
+export async function updateOTHours(propertyId, dataArray) {
+  try {
+    const response = await fetch(
+      `https://api.urest.in:8096/api/othours/edit-property/${propertyId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(dataArray),
+      }
+    );
+
+    if (!response.ok) throw new Error("Failed to update OT Hours");
+
+    return await response.json();
+  } catch (error) {
+    console.error("Update OT Hours Error:", error);
+    return null;
+  }
+}
+
+// DELETE OT Hours
+export async function deleteOTHours(id) {
+  try {
+    const response = await fetch(
+      `https://api.urest.in:8096/api/othours/delete/${id}`,
+      {
+        method: "DELETE",
+        headers: { Accept: "application/json" },
+      }
+    );
+
+    if (!response.ok) throw new Error("Failed to delete OT Hours");
+
+    return await response.json();
+  } catch (error) {
+    console.error("Delete OT Hours Error:", error);
+    return null;
+  }
+}
