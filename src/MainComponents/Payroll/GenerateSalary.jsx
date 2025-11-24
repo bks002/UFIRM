@@ -38,7 +38,7 @@ const allowanceKeys = [
   "OthArrear",
   "Bonus",
   "DA",
-  "Conv",
+  "CONVEYACNE",
   // "Contractor Allowance",
   // "Housing Allowance",
   // "Transport Allowance",
@@ -84,7 +84,7 @@ const displayNameMap = {
   OthArrear: "OthArrear",
   Bonus: "Bonus",
   DA: "DA",
-  Conv: "Conv",
+  CONVEYACNE: "Conv",
 
   // Deductions
   PF: "PF",
@@ -564,7 +564,7 @@ export default function GenerateSalary() {
         </tr>
         <tr class="no-horiz-border">
           <td>Conv</td>
-          <td class="v-bold">${row.Conv || 0}</td>
+          <td class="v-bold">${row.CONVEYACNE || 0}</td>
           <td>IncomeTax</td>
           <td>${row.IncomeTax || 0}</td>
         </tr>
@@ -574,7 +574,7 @@ export default function GenerateSalary() {
             (row.Basic || row.ProRatedSalary || 0) +
             (row.HRA || 0) +
             (row.LEAVEWAGES || 0) +
-            (row.Conv || 0) +
+            (row.CONVEYACNE || 0) +
             (row.DA || 0) +
             (row.Gratuity || 0) +
             (row.Bonus || 0) +
@@ -614,7 +614,7 @@ export default function GenerateSalary() {
         (row.OthArrear || 0) +
         (row.Bonus || 0) +
         (row.DA || 0) +
-        (row.Conv || 0) -
+        (row.CONVEYACNE || 0) -
         ((row.PF || 0) +
           (row.LwfEmployeeAmount || 0) +
           (row.PftAmount || 0) +
