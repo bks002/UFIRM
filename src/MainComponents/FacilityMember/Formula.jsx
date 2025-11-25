@@ -420,8 +420,9 @@ const FormulaMaster = () => {
                 type="text"
                 className="form-control"
                 value={formData.Formula}
-                disabled={editMode}
-                readOnly={editMode}
+                onChange={(e) =>
+                  setFormData({ ...formData, Formula: e.target.value })
+                }
               />
             </div>
 

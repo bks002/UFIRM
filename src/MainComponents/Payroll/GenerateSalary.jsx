@@ -35,7 +35,7 @@ const allowanceKeys = [
   "OTHoursAmount",
   "AdjAmt/Incentive",
   "PFArrear",
-  "OthArrear",
+  "OTHALL",
   "Bonus",
   "DA",
   "CONVEYACNE",
@@ -55,7 +55,7 @@ const deductionKeys = [
   "Fine",
   "AdvanceAmount",
   "OthDeduction",
-  "DocDeduction",
+  "UNIFORMDED",
   "FoodDeduction",
   "MaintDeduction",
   "ESI",
@@ -81,7 +81,7 @@ const displayNameMap = {
   OTHoursAmount: "OTHoursAmount",
   "AdjAmt/Incentive": "AdjAmt/Incentive",
   PFArrear: "PFArrear",
-  OthArrear: "OthArrear",
+  OTHALL: "OthAll",
   Bonus: "Bonus",
   DA: "DA",
   CONVEYACNE: "Conv",
@@ -92,7 +92,7 @@ const displayNameMap = {
   LwfEmployeeAmount: "LWF",
   Fine: "Fine",
   AdvanceAmount: "Adv.",
-  DocDeduction: "DocDed",
+  UNIFORMDED: "UniDed",
   OthDeduction: "OthDed",
   FoodDeduction: "Food",
   MaintDeduction: "Maint",
@@ -535,8 +535,8 @@ export default function GenerateSalary() {
         <tr class="no-horiz-border">
           <td>AdjAmt/Incentive</td>
           <td class="v-bold">${row.AdjAmt || row.Incentive || 0}</td>
-          <td>DocDed</td>
-          <td>${row.DocDeduction || 0}</td>
+          <td>UniDed</td>
+          <td>${row.UNIFORMDED || 0}</td>
         </tr>
         <tr class="no-horiz-border">
           <td>PFArrear</td>
@@ -545,8 +545,8 @@ export default function GenerateSalary() {
           <td>${row.FoodDeduction || 0}</td>
         </tr>
         <tr class="no-horiz-border">
-          <td>OthArrear</td>
-          <td class="v-bold">${row.OthArrear || 0}</td>
+          <td>OthAll</td>
+          <td class="v-bold">${row.OTHALL || 0}</td>
           <td>Maint.</td>
           <td>${row.MaintDeduction || 0}</td>
         </tr>
@@ -582,7 +582,7 @@ export default function GenerateSalary() {
             (row.OTHoursAmount || 0) +
             (row.AdjAmt || row.Incentive || 0) +
             (row.PFArrear || 0) +
-            (row.OthArrear || 0)
+            (row.OTHALL || 0)
           }</b></td>
           <td ><b>Total Deduction</b></td>
           <td><b>${
@@ -592,7 +592,7 @@ export default function GenerateSalary() {
             (row.Fine || 0) +
             (row.AdvanceAmount || 0) +
             (row.OthDeduction || 0) +
-            (row.DocDeduction || 0) +
+            (row.UNIFORMDED || 0) +
             (row.FoodDeduction || 0) +
             (row.MaintDeduction || 0) +
             (row.ESI || 0) +
@@ -611,7 +611,7 @@ export default function GenerateSalary() {
         (row.OTHoursAmount || 0) +
         (row.AdjAmt || row.Incentive || 0) +
         (row.PFArrear || 0) +
-        (row.OthArrear || 0) +
+        (row.OTHALL || 0) +
         (row.Bonus || 0) +
         (row.DA || 0) +
         (row.CONVEYACNE || 0) -
@@ -621,7 +621,7 @@ export default function GenerateSalary() {
           (row.Fine || 0) +
           (row.AdvanceAmount || 0) +
           (row.OthDeduction || 0) +
-          (row.DocDeduction || 0) +
+          (row.UNIFORMDED || 0) +
           (row.FoodDeduction || 0) +
           (row.MaintDeduction || 0) +
           (row.ESI || 0) +
