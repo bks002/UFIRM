@@ -443,25 +443,25 @@ export default function SalaryGroups() {
   const extractVariables = (formula) => {
     if (!formula) return [];
 
-    // 1. Extract raw tokens
-    const tokens = formula.match(/[A-Za-z_][A-Za-z0-9_() ]*/g) || [];
+    // 1. Extract tokens properly (no junk tokens)
+    const tokens =
+      formula.match(/[A-Za-z][A-Za-z0-9_]*(?:\([A-Za-z0-9 _]*\))?/g) || [];
 
-    // 2. Known base variables
+    // 2. Normalize extracted tokens
+    const cleanedTokens = tokens.map((t) => t.trim().toLowerCase());
+
+    // 3. Base Vars
     const baseVars = ["basic", "fixed"];
 
-    // 3. Valid deduction/allowance names (case insensitive)
-    const validNames = alDtOptions.map((opt) => opt.Name.toLowerCase());
+    // 4. Normalize valid names
+    const cleanedValidNames = alDtOptions.map((opt) =>
+      opt.Name.trim().toLowerCase()
+    );
 
-    // 4. Filter meaningful vars
-    const cleaned = tokens.filter((t) => {
-      const lower = t.toLowerCase();
-
-      return (
-        baseVars.includes(lower) || validNames.includes(lower) // matches exact stored names
-      );
-    });
-
-    return cleaned;
+    // 5. Return only real matched items
+    return cleanedTokens.filter(
+      (t) => baseVars.includes(t) || cleanedValidNames.includes(t)
+    );
   };
 
   // Dialog footers
