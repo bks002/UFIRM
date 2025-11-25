@@ -74,6 +74,7 @@ import FrequencyMasterPage from "../pages/FrequencyMasterPage";
 import ItemMasterPage from "../MainComponents/Inventory/itemPage";
 import PurchaseOrderPage from "../MainComponents/Inventory/PurchaseOrderMaster";
 import StockPage from "../MainComponents/Inventory/StockMaster";
+import StockItemsPage from "../pages/StockItemsPage";
 import AttendanceMaster from "../MainComponents/Attendance/attendance.jsx";
 import Leave from "../MainComponents/Attendance/Leaves.jsx";
 import Visitor from "../MainComponents/Visitor/Visitor.jsx";
@@ -139,9 +140,9 @@ class MainNav extends React.Component {
 
   componentDidMount() {
 
-    var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
+    //var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
 
-    //var token = window.sessionStorage.getItem("userinfo_key")
+    var token = window.sessionStorage.getItem("userinfo_key")
 
     if (token === null) {
       const timerId = setTimeout(() => {
@@ -546,6 +547,13 @@ class MainNav extends React.Component {
                             <p>Stock</p>
                           </Link>
                         </li>
+                        <li className="nav-item">
+                          <Link to="/Account/App/StockItems" className="nav-link">
+                            <i className="fas fa-caret-right nav-icon"></i>
+                            <p>Stock Items</p>
+                          </Link>
+                        </li>
+
                         <li className="nav-item">
                           <Link to="/Account/App/ItemSpecification" className="nav-link">
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -1485,21 +1493,33 @@ class MainNav extends React.Component {
             <Route path="/Account/App/EmployeeLeave" component={EmployeeLeave} />
             <Route path="/Account/App/ItemSpecification"><ItemSpecificationPage /></Route>
             <Route path="/Account/App/ItemAssigned"><ItemAssignedPage /></Route>
+            <Route path="/Account/App/StockItems"><StockItemsPage /></Route>
 
+            
             {/* <Route path="/AttendanceSummary">
                             <AttendanceSummaryPage />
                         </Route> */}
           </Switch>
-          <footer className="main-footer">
-            <div className="float-right d-none d-sm-block">
-              <b>Version</b> 3.0.6-pre
-            </div>
-            <strong>
-              Copyright &copy; 2025-2026{" "}
-              <a href="https://www.ufirm.in">Ufirm.in</a>.
-            </strong>{" "}
-            All rights reserved.
-          </footer>
+<footer className="main-footer" style={{
+  padding: "6px 15px",
+  fontSize: "13px",
+  lineHeight: "18px",
+  background: "#ffffffff",
+  borderTop: "1px solid #dcdde1",
+  height: "0px",
+  overflow: "hidden",
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center"
+}}>
+  <div>
+    <strong>
+      © 2025-2026 <a href="https://www.ufirm.in">Ufirm.in</a>
+    </strong>
+  </div>
+  <div><b>Version</b> 3.0.6-pre</div>
+</footer>
+
           <aside className="control-sidebar control-sidebar-dark"></aside>
         </div>
       </Router>
