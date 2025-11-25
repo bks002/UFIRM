@@ -6,6 +6,7 @@
     "@emotion/react": "^11.10.0",
     "@lourenci/react-kanban": "^2.1.0",
     "@syncfusion/ej2-react-spreadsheet": "^28.1.41",
+    "ajv": "^6.12.6",
     "axios": "^0.27.2",
     "bootstrap": "^5.2.0",
     "chart.js": "^3.0.0",
@@ -22,7 +23,9 @@
     "html2canvas": "^1.4.1",
     "i": "^0.3.7",
     "immutable": "^4.0.0-rc.12",
+    "jsonfile": "^6.1.0",
     "jspdf": "^3.0.3",
+    "jspdf-autotable": "^5.0.2",
     "messageformat": "^2.3.0",
     "moment": "^2.29.4",
     "multer": "^1.4.5-lts.2",
@@ -63,8 +66,8 @@
     "xlsx": "^0.18.5"
   },
   "scripts": {
-    "start": "react-scripts --openssl-legacy-provider start",
-    "build": "react-scripts --openssl-legacy-provider build",
+    "start": "react-scripts start",
+    "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
   },
