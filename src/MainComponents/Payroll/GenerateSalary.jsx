@@ -182,6 +182,12 @@ export default function GenerateSalary() {
     }
   }, [officeId, selectedMonth, selectedYear]);
 
+  useEffect(() => {
+  // Whenever property changes → clear regen box + hide grid
+  setSelectedRegenEmployees([]);
+  setShowGrid(false);
+}, [officeId]);
+
   // Fetch salary details when generated employees change
   // Prevent automatic fetch on first page load
 
