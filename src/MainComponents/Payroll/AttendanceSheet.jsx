@@ -14,6 +14,11 @@ function getMonthYearString(month, year) {
   return `${year}-${mon}`;
 }
 
+// Helper BEFORE component
+function getDaysInMonth(month, year) {
+  return new Date(year, month, 0).getDate();
+}
+
 export default function AttendanceSheet() {
   const officeId = useSelector((state) => state.Commonreducer.puidn);
   const [employees, setEmployees] = useState([]);
@@ -88,6 +93,7 @@ export default function AttendanceSheet() {
             weekDaysOff: att.WeekDaysOff,
             otDays: att.OtDays || "",
             otHours: att.OtHours || "",
+            totalDays: att.TotalWorkingDays ?? getDaysInMonth(month, year),
           };
         });
         setDayInputs(inputs);
@@ -106,7 +112,14 @@ export default function AttendanceSheet() {
         if (!dayInputs[empId]) {
           setDayInputs((old) => ({
             ...old,
-            [empId]: { workingDays: "", leaveDays: "", weekDaysOff: "" },
+            [empId]: {
+              workingDays: "",
+              leaveDays: "",
+              weekDaysOff: "",
+              otDays: "",
+              otHours: "",
+              totalDays: getDaysInMonth(month, year),
+            },
           }));
         }
       }
@@ -115,44 +128,42 @@ export default function AttendanceSheet() {
   }
 
   function handleInputChange(empId, field, value) {
-  // allow decimal for all 3 main fields + otHours
-  if (!/^\d*\.?\d*$/.test(value)) return;
+    if (!/^\d*\.?\d*$/.test(value)) return; // allow decimals
 
-  const totalDays = totalDaysInMonth;
-  const num = parseFloat(value);
+    setDayInputs((prev) => {
+      const current = prev[empId] || {
+        workingDays: "",
+        leaveDays: "",
+        weekDaysOff: "",
+        otDays: "",
+        otHours: "",
+        totalDays: getDaysInMonth(month, year),
+      };
 
-  // Prevent exceeding total days (only for the 3 main fields)
-  if (["workingDays", "leaveDays", "weekDaysOff"].includes(field)) {
-    if (num > totalDays) return;
-  }
+      let updated = { ...current, [field]: value };
 
-  setDayInputs((prev) => {
-    const current = prev[empId] || {
-      workingDays: "",
-      leaveDays: "",
-      weekDaysOff: "",
-      otDays: "",
-      otHours: "",
-    };
+      const totalDays =
+        field === "totalDays"
+          ? parseFloat(value) || 0
+          : parseFloat(current.totalDays) || getDaysInMonth(month, year);
 
-    const updated = { ...current, [field]: value };
+      // VALIDATION FOR working / leave / week days
+      if (["workingDays", "leaveDays", "weekDaysOff"].includes(field)) {
+        if (parseFloat(value) > totalDays) return prev;
+      }
 
-    // prevent total > days in month for 3 main fields
-    const w = parseFloat(updated.workingDays) || 0;
-    const l = parseFloat(updated.leaveDays) || 0;
-    const wk = parseFloat(updated.weekDaysOff) || 0;
+      // VALIDATION OF TOTAL SUM
+      const w = parseFloat(updated.workingDays) || 0;
+      const l = parseFloat(updated.leaveDays) || 0;
+      const wk = parseFloat(updated.weekDaysOff) || 0;
 
-    if (w + l + wk > totalDays) return prev;
+      if (w + l + wk > totalDays) return prev;
 
-    return {
-      ...prev,
-      [empId]: updated,
-    };
-  });
-}
-
-  function getDaysInMonth(month, year) {
-    return new Date(year, month, 0).getDate(); // 30 or 31
+      return {
+        ...prev,
+        [empId]: updated,
+      };
+    });
   }
 
   async function handleSaveAttendance() {
@@ -196,6 +207,8 @@ export default function AttendanceSheet() {
           WeekDaysOff: Number(inputs.weekDaysOff) || 0,
           OtDays: Number(inputs.otDays) || 0,
           OtHours: Number(inputs.otHours) || 0,
+          TotalWorkingDays:
+            Number(inputs.totalDays) || getDaysInMonth(month, year),
           PropertyID: propertyId,
           CreatedOn: new Date().toISOString(),
           IsActive: true,
@@ -278,8 +291,6 @@ export default function AttendanceSheet() {
       alert("Failed to delete attendance.");
     }
   }
-
-  const totalDaysInMonth = getDaysInMonth(month, year);
 
   function exportToCSV() {
     const monthNames = [
@@ -415,20 +426,6 @@ export default function AttendanceSheet() {
             marginBottom: 15,
           }}
         >
-          {/* LEFT SIDE BOX */}
-          <div
-            style={{
-              padding: "8px 16px",
-              background: "#edf2f7",
-              borderRadius: "6px",
-              fontWeight: "bold",
-              color: "#2d3748",
-              fontSize: 16,
-            }}
-          >
-            Total Days in {monthNames[month - 1]} = {totalDaysInMonth}
-          </div>
-
           {/* RIGHT SIDE BUTTONS */}
           <button
             onClick={handleSaveAttendance}
@@ -539,6 +536,15 @@ export default function AttendanceSheet() {
                 }}
               >
                 OT Hours
+              </th>
+              <th
+                style={{
+                  border: "1px solid #b0b8cc",
+                  padding: "8px",
+                  textAlign: "center",
+                }}
+              >
+                Total Days
               </th>
             </tr>
           </thead>
@@ -693,6 +699,24 @@ export default function AttendanceSheet() {
                         }
                         disabled={!isChecked}
                         style={{ width: "80px", textAlign: "center" }}
+                      />
+                    </td>
+                    <td
+                      style={{
+                        border: "1px solid #b0b8cc",
+                        padding: "8px",
+                        textAlign: "center",
+                      }}
+                    >
+                      <input
+                        type="text"
+                        value={inputValues.totalDays || ""}
+                        onChange={(e) =>
+                          handleInputChange(empId, "totalDays", e.target.value)
+                        }
+                        disabled={!isChecked}
+                        style={{ width: "80px", textAlign: "center" }}
+                        maxLength={5}
                       />
                     </td>
                   </tr>
