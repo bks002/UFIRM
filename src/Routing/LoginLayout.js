@@ -4,7 +4,7 @@ import { Route } from 'react-router-dom';
 const LoginLayout = ({ children }) => (                         
     <div>  
       <p>This is the First Layout</p>  
-      {children}                                       
+      {children}                                           
     </div>  
   );  
   

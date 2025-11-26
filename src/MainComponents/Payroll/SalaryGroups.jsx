@@ -44,15 +44,12 @@ export default function SalaryGroups() {
   const [isViewMode, setIsViewMode] = useState(false);
 
   // Derived state for functional logic
-  const fixedSalaryNum = Number(formData.FixedSalary);
   const baseSalaryNum = Number(formData.BaseSalary);
-  const isFixedActive = fixedSalaryNum > 0;
   const isBaseActive = baseSalaryNum > 0;
-  const canSelectType =
-    !isFixedActive && (isBaseActive || formData.BaseSalary === "");
+  const canSelectType = true; // always allow selecting Allowance/Deduction
   const canShowTable =
     canSelectType && (selectedAllowancesDeductions.length > 0 || !isViewMode);
-  const canCreate = isFixedActive || isBaseActive;
+  const canCreate = isBaseActive;
   const filteredAlDtOptions = alDtOptions.filter(
     (opt) => opt.Type === selectedType
   );
@@ -311,7 +308,7 @@ export default function SalaryGroups() {
         setSelectedAllowancesDeductions(
           recalculateAmounts(
             [...selectedAllowancesDeductions, newItem],
-            +formData.FixedSalary,
+            0,
             +formData.BaseSalary
           )
         );
@@ -335,7 +332,7 @@ export default function SalaryGroups() {
       setSelectedAllowancesDeductions(
         recalculateAmounts(
           [...selectedAllowancesDeductions, customItem],
-          +formData.FixedSalary,
+          0,
           +formData.BaseSalary
         )
       );
@@ -349,45 +346,43 @@ export default function SalaryGroups() {
     );
 
   const handleSave = async () => {
-    const fixedSalaryNum = Number(formData.FixedSalary);
     const baseSalaryNum = Number(formData.BaseSalary);
-
-    if (
-      (formData.FixedSalary === "" ||
-        isNaN(fixedSalaryNum) ||
-        fixedSalaryNum < 0) &&
-      (formData.BaseSalary === "" || isNaN(baseSalaryNum) || baseSalaryNum < 0)
-    ) {
-      return alert(
-        "Please enter either Fixed Salary or Base Salary (one must be greater than 0)."
-      );
-    }
 
     if (!formData.SalaryGroup.trim())
       return alert("Salary Group Name is required");
 
-    // Only allow when at least one salary field filled
-    if (fixedSalaryNum <= 0 && baseSalaryNum <= 0) {
-      return alert("You must fill at least one salary: Fixed or Base Salary.");
+    // must have base salary
+    if (
+      formData.BaseSalary === "" ||
+      isNaN(baseSalaryNum) ||
+      baseSalaryNum < 0
+    ) {
+      return alert("Please enter Base Salary.");
     }
 
-    // If user has given Base Salary, then at least one Allowance or Deduction must be present
+    // If NO allowances/deductions → treat base salary as fixed salary
+    let finalFixed = 0;
+    let finalBase = baseSalaryNum;
+
     if (
-      baseSalaryNum > 0 &&
-      (!selectedAllowancesDeductions ||
-        selectedAllowancesDeductions.length === 0)
+      !selectedAllowancesDeductions ||
+      selectedAllowancesDeductions.length === 0
     ) {
-      return alert(
-        "When Base Salary is entered, please add at least one Allowance or Deduction."
-      );
+      // no AD → base becomes fixed
+      finalFixed = baseSalaryNum;
+      finalBase = 0;
+    } else {
+      // at least one AD → use as normal base salary
+      finalFixed = 0;
+      finalBase = baseSalaryNum;
     }
 
     const nowIso = new Date().toISOString();
     const model = {
       ...formData,
       SalaryGroup_ID: editId || 0,
-      FixedSalary: fixedSalaryNum,
-      BaseSalary: baseSalaryNum,
+      FixedSalary: finalFixed,
+      BaseSalary: finalBase,
       Property_ID: Number(propertyId),
       CreatedOn: formData.CreatedOn || nowIso,
       CreatedBy: formData.CreatedBy || 1,
@@ -663,22 +658,6 @@ export default function SalaryGroups() {
           </div>
 
           <div className="mb-3">
-            <label className="form-label">Fixed Salary</label>
-            <input
-              type="number"
-              name="FixedSalary"
-              className="form-control"
-              value={formData.FixedSalary}
-              onChange={handleFormChange}
-              placeholder="Enter fixed salary"
-              min="0"
-              step="0.01"
-              required={!isBaseActive}
-              disabled={isBaseActive || isViewMode}
-            />
-          </div>
-
-          <div className="mb-3">
             <label className="form-label">Base Salary</label>
             <input
               type="number"
@@ -689,8 +668,8 @@ export default function SalaryGroups() {
               placeholder="Enter base salary"
               min="0"
               step="0.01"
-              required={!isFixedActive}
-              disabled={isFixedActive || isViewMode}
+              required={true}
+              disabled={isViewMode}
             />
           </div>
 
