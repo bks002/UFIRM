@@ -245,6 +245,8 @@ export default class DataGrid extends React.Component {
                     '<button class="btn btn-sm btn-info edit-btn" title="Edit"><i class="fa fa-pencil"></i></button>';
                   btnhtml +=
                     '<button class="btn btn-sm btn-danger" title="Delete"><i class="fa fa-trash"></i></button>';
+                  btnhtml += 
+                  '<button class="btn btn-sm btn-primary" tittle="view"><i class="fa fa-eye"></i></button>';
                   break;
 
                 case "Edit&View&Delete":

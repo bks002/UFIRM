@@ -96,7 +96,8 @@ import Linking from "../MainComponents/Payroll/Linking.jsx";
 import ItemAssignedPage from "../MainComponents/Inventory/ItemAssigned.jsx";
 import ItemSpecificationPage from "../MainComponents/Inventory/ItemSpecification.jsx";
 import OTHours from "../MainComponents/Payroll/OTHours.jsx";
-
+import PropertyType from "../MainComponents/PropertyTypes/PropertyType.jsx";
+//import PropertyMaster from "../pages/PropertyMaster";
 var currentpropertyid;
 class MainNav extends React.Component {
   constructor(props) {
@@ -1076,6 +1077,15 @@ class MainNav extends React.Component {
                           </li>
                           <li className="nav-item">
                             <Link
+                              to="/Account/App/PropertyType"
+                              className="nav-link"
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Property Types </p>
+                            </Link>
+                          </li>
+                          <li className="nav-item">
+                            <Link
                               to="/Account/App/PropertyTower"
                               className="nav-link"
                             >
@@ -1466,6 +1476,7 @@ class MainNav extends React.Component {
             <Route path="/Account/App/UploaderPage">
               <UploaderPage />
             </Route>
+            <Route path="/Account/App/PropertyType" component={PropertyType} />
             <Route path="/Account/App/OTHours" component={OTHours} />
             <Route path="/Account/App/Linking" component={Linking} />
             <Route path="/Account/App/AttendanceSheet" component={AttendanceSheet} />
@@ -1485,7 +1496,7 @@ class MainNav extends React.Component {
             <Route path="/Account/App/EmployeeLeave" component={EmployeeLeave} />
             <Route path="/Account/App/ItemSpecification"><ItemSpecificationPage /></Route>
             <Route path="/Account/App/ItemAssigned"><ItemAssignedPage /></Route>
-
+            <Route path="/Account/App/PropertyType"><PropertyType /></Route>
             {/* <Route path="/AttendanceSummary">
                             <AttendanceSummaryPage />
                         </Route> */}
