@@ -68,28 +68,40 @@ export default function SalaryGroupView({
       : [];
 
   const handleAdd = async () => {
-    if (!selectedGroupData) return;
-    if (
-      finalAddedGroups.some(
-        (g) => g.SalaryGroup_ID === selectedGroupData.SalaryGroup_ID
-      ) ||
-      safeArray(facilityMemberSalaryData).some(
-        (g) => g.SalaryGroup_ID === selectedGroupData.SalaryGroup_ID
-      )
-    ) {
-      alert("This salary group is already assigned.");
-      return;
-    }
-    try {
-      await assignSalaryGroupToFacilityMember({
-        FacilityMemberIds: facilityMemberId,
-        SalaryGroup_ID: selectedGroupData.SalaryGroup_ID,
-      });
-      setFinalAddedGroups([{ ...selectedGroupData }]);
-    } catch {
-      alert("Failed to add salary group. Please try again.");
-    }
-  };
+  if (!selectedGroupData) return;
+
+  if (
+    finalAddedGroups.some(
+      (g) => g.SalaryGroup_ID === selectedGroupData.SalaryGroup_ID
+    ) ||
+    safeArray(facilityMemberSalaryData).some(
+      (g) => g.SalaryGroup_ID === selectedGroupData.SalaryGroup_ID
+    )
+  ) {
+    alert("This salary group is already assigned.");
+    return;
+  }
+
+  try {
+    await assignSalaryGroupToFacilityMember({
+      FacilityMemberIds: facilityMemberId,
+      SalaryGroup_ID: selectedGroupData.SalaryGroup_ID,
+    });
+
+    alert(
+      facilityMemberSalaryData.length > 0
+        ? "Salary Group modified successfully!"
+        : "Salary Group assigned successfully!"
+    );
+
+    // FIX: update both final and facility SG
+    setFinalAddedGroups([{ ...selectedGroupData }]);
+    setFacilityMemberSalaryData([{ ...selectedGroupData }]); 
+    setSelectedGroupId(selectedGroupData.SalaryGroup_ID); 
+  } catch {
+    alert("Failed to add salary group. Please try again.");
+  }
+};
 
   function getTotals(items, salaryValue = 0) {
     const totalAllowance =

@@ -1,57 +1,137 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { getOTHoursByProperty, addOTHours } from "../../Services/PayrollService";
+import {
+  getOTHoursByProperty,
+  addOTHours,
+  updateOTHours,
+  deleteOTHours,
+} from "../../Services/PayrollService";
+import { getEmployeesByOffice } from "../../Services/PayrollService";
 
 export default function OTHours() {
   const propertyId = useSelector((state) => state.Commonreducer.puidn);
 
   const [otHoursList, setOtHoursList] = useState([]);
+  const [designations, setDesignations] = useState([]);
 
-  // 🔹 Popup States
+  // Popup + Form States
   const [showDialog, setShowDialog] = useState(false);
+  const [dialogType, setDialogType] = useState("create");
+  const [selectedRecord, setSelectedRecord] = useState(null);
+
   const [designation, setDesignation] = useState("");
   const [price, setPrice] = useState("");
 
-  // 🔹 Load Data
+  // Load Table Data
+  useEffect(() => {
+    if (!propertyId) return;
+    loadData();
+  }, [propertyId]);
+
+  const fetchDesignations = async () => {
+    if (!propertyId) return;
+
+    try {
+      const data = await getEmployeesByOffice(propertyId);
+
+      const employees = (data || []).map(
+        (item) => item.EmployeeList?.Designation || ""
+      );
+
+      const uniq = [...new Set(employees.filter((d) => d.trim() !== ""))];
+
+      setDesignations(uniq);
+    } catch (err) {
+      setDesignations([]);
+    }
+  };
+
   useEffect(() => {
     if (!propertyId) return;
 
-    getOTHoursByProperty(propertyId).then((data) => setOtHoursList(data));
+    loadData();
+    fetchDesignations();
   }, [propertyId]);
 
-  // 🔹 Handle Create
-  const handleCreate = async () => {
+  const loadData = () => {
+    getOTHoursByProperty(propertyId).then((data) => setOtHoursList(data));
+  };
+
+  // Handle Save (Create + Edit)
+  const handleSave = async () => {
     if (!designation || !price) {
       alert("Please fill all fields");
       return;
     }
 
-    const model = {
-      ID: 0,
-      Property_id: propertyId,
-      designation: designation,
-      price: parseFloat(price),
-    };
+    if (dialogType === "create") {
+      const model = {
+        ID: 0,
+        Property_id: propertyId,
+        designation,
+        price: parseFloat(price),
+      };
 
-    const result = await addOTHours(model);
+      const result = await addOTHours(model);
+      if (result !== null) {
+        alert("OT Hours added successfully!");
+      }
+    } else if (dialogType === "edit") {
+      const body = [
+        {
+          ID: selectedRecord.ID,
+          Property_id: propertyId,
+          designation,
+          price: parseFloat(price),
+        },
+      ];
 
+      const result = await updateOTHours(propertyId, body);
+      if (result !== null) {
+        alert("OT Hours updated successfully!");
+      }
+    }
+
+    setShowDialog(false);
+    resetForm();
+    loadData();
+  };
+
+  const resetForm = () => {
+    setDesignation("");
+    setPrice("");
+    setSelectedRecord(null);
+  };
+
+  // Handle Delete
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this record?")) return;
+
+    const result = await deleteOTHours(id);
     if (result !== null) {
-      alert("OT Hours added successfully!");
+      loadData();
+    }
+  };
 
-      // Close dialog
-      setShowDialog(false);
+  // Open Modal (Create/Edit)
+  const openDialog = (type, record = null) => {
+    setDialogType(type);
+    setShowDialog(true);
 
-      // Clear fields
-      setDesignation("");
-      setPrice("");
-
-      // Reload table
-      getOTHoursByProperty(propertyId).then((data) => setOtHoursList(data));
+    if (type === "edit" && record) {
+      setSelectedRecord(record);
+      setDesignation(record.designation);
+      setPrice(record.price);
+    } else {
+      resetForm();
     }
   };
 
   return (
-    <div className="content-wrapper" style={{ minHeight: "100vh", padding: 30 }}>
+    <div
+      className="content-wrapper"
+      style={{ minHeight: "100vh", padding: 30 }}
+    >
       <div
         className="card"
         style={{
@@ -64,14 +144,22 @@ export default function OTHours() {
         }}
       >
         {/* Title + Create Button */}
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
-          <h2 style={{ fontWeight: "bold", color: "#2a4365" }}>OT Hours Amount List</h2>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: 20,
+          }}
+        >
+          <h2 style={{ fontWeight: "bold", color: "#2a4365" }}>
+            OT Hours Amount List
+          </h2>
 
           <button
-            className="btn btn-primary"
-            onClick={() => setShowDialog(true)}
+            className="btn btn-success"
+            onClick={() => openDialog("create")}
           >
-            + Create
+            Create
           </button>
         </div>
 
@@ -85,13 +173,17 @@ export default function OTHours() {
               <th>S.No.</th>
               <th>Designation</th>
               <th>Price</th>
+              <th style={{ width: 120, textAlign: "center" }}>Action</th>
             </tr>
           </thead>
 
           <tbody>
             {otHoursList.length === 0 ? (
               <tr>
-                <td colSpan={3} style={{ textAlign: "center", color: "#718096" }}>
+                <td
+                  colSpan={4}
+                  style={{ textAlign: "center", color: "#718096" }}
+                >
                   No data available
                 </td>
               </tr>
@@ -101,6 +193,24 @@ export default function OTHours() {
                   <td>{index + 1}</td>
                   <td>{item.designation}</td>
                   <td>{item.price}</td>
+
+                  <td style={{ textAlign: "center", fontSize: 18 }}>
+                    <button
+                      className="btn btn-sm btn-primary me-2"
+                      title="Edit"
+                      onClick={() => openDialog("edit", item)}
+                    >
+                      <i className="fa fa-pencil" aria-hidden="true" />
+                    </button>
+
+                    <button
+                      className="btn btn-sm btn-danger"
+                      title="Delete"
+                      onClick={() => handleDelete(item.ID)}
+                    >
+                      <i className="fa fa-trash" aria-hidden="true" />
+                    </button>
+                  </td>
                 </tr>
               ))
             )}
@@ -108,7 +218,7 @@ export default function OTHours() {
         </table>
       </div>
 
-      {/* 🔹 Popup Dialog */}
+      {/* Popup Dialog */}
       {showDialog && (
         <div
           style={{
@@ -133,16 +243,24 @@ export default function OTHours() {
               boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
             }}
           >
-            <h4 style={{ marginBottom: 20 }}>Create OT Hours</h4>
+            <h4 style={{ marginBottom: 20 }}>
+              {dialogType === "edit" ? "Edit OT Hours" : "Create OT Hours"}
+            </h4>
 
             <div className="form-group">
               <label>Designation</label>
-              <input
-                type="text"
+              <select
                 className="form-control"
                 value={designation}
                 onChange={(e) => setDesignation(e.target.value)}
-              />
+              >
+                <option value="">-- Select Designation --</option>
+                {designations.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="form-group mt-3">
@@ -157,7 +275,11 @@ export default function OTHours() {
             </div>
 
             <div
-              style={{ display: "flex", justifyContent: "flex-end", marginTop: 20 }}
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                marginTop: 20,
+              }}
             >
               <button
                 className="btn btn-secondary me-2"
@@ -166,8 +288,8 @@ export default function OTHours() {
                 Cancel
               </button>
 
-              <button className="btn btn-success" onClick={handleCreate}>
-                Save
+              <button className="btn btn-success" onClick={handleSave}>
+                {dialogType === "edit" ? "Update" : "Save"}
               </button>
             </div>
           </div>

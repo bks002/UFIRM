@@ -14,6 +14,11 @@ function getMonthYearString(month, year) {
   return `${year}-${mon}`;
 }
 
+// Helper BEFORE component
+function getDaysInMonth(month, year) {
+  return new Date(year, month, 0).getDate();
+}
+
 export default function AttendanceSheet() {
   const officeId = useSelector((state) => state.Commonreducer.puidn);
   const [employees, setEmployees] = useState([]);
@@ -86,6 +91,9 @@ export default function AttendanceSheet() {
             workingDays: att.WorkingDays,
             leaveDays: att.LeaveDays,
             weekDaysOff: att.WeekDaysOff,
+            otDays: att.OtDays || "",
+            otHours: att.OtHours || "",
+            totalDays: att.TotalWorkingDays ?? getDaysInMonth(month, year),
           };
         });
         setDayInputs(inputs);
@@ -104,7 +112,14 @@ export default function AttendanceSheet() {
         if (!dayInputs[empId]) {
           setDayInputs((old) => ({
             ...old,
-            [empId]: { workingDays: "", leaveDays: "", weekDaysOff: "" },
+            [empId]: {
+              workingDays: "",
+              leaveDays: "",
+              weekDaysOff: "",
+              otDays: "",
+              otHours: "",
+              totalDays: getDaysInMonth(month, year),
+            },
           }));
         }
       }
@@ -112,21 +127,41 @@ export default function AttendanceSheet() {
     });
   }
 
-  function isNumericInput(val) {
-    return /^\d*$/.test(val);
-  }
-
   function handleInputChange(empId, field, value) {
-    if (!isNumericInput(value)) return;
+    if (!/^\d*\.?\d*$/.test(value)) return; // allow decimals
+
     setDayInputs((prev) => {
       const current = prev[empId] || {
         workingDays: "",
         leaveDays: "",
         weekDaysOff: "",
+        otDays: "",
+        otHours: "",
+        totalDays: getDaysInMonth(month, year),
       };
+
+      let updated = { ...current, [field]: value };
+
+      const totalDays =
+        field === "totalDays"
+          ? parseFloat(value) || 0
+          : parseFloat(current.totalDays) || getDaysInMonth(month, year);
+
+      // VALIDATION FOR working / leave / week days
+      if (["workingDays", "leaveDays", "weekDaysOff"].includes(field)) {
+        if (parseFloat(value) > totalDays) return prev;
+      }
+
+      // VALIDATION OF TOTAL SUM
+      const w = parseFloat(updated.workingDays) || 0;
+      const l = parseFloat(updated.leaveDays) || 0;
+      const wk = parseFloat(updated.weekDaysOff) || 0;
+
+      if (w + l + wk > totalDays) return prev;
+
       return {
         ...prev,
-        [empId]: { ...current, [field]: value },
+        [empId]: updated,
       };
     });
   }
@@ -153,9 +188,10 @@ export default function AttendanceSheet() {
         });
 
         const empName =
-          emp && emp.FacilityMember && emp.FacilityMember.Name
-            ? emp.FacilityMember.Name
-            : "Unknown";
+          (emp.Profile && emp.Profile.EmployeeName) ||
+          (emp.EmployeeList && emp.EmployeeList.Designation) ||
+          (emp.FacilityMember && emp.FacilityMember.Name) ||
+          "Unknown";
 
         const inputs = dayInputs[empId] || {
           workingDays: 0,
@@ -169,6 +205,10 @@ export default function AttendanceSheet() {
           WorkingDays: Number(inputs.workingDays) || 0,
           LeaveDays: Number(inputs.leaveDays) || 0,
           WeekDaysOff: Number(inputs.weekDaysOff) || 0,
+          OtDays: Number(inputs.otDays) || 0,
+          OtHours: Number(inputs.otHours) || 0,
+          TotalWorkingDays:
+            Number(inputs.totalDays) || getDaysInMonth(month, year),
           PropertyID: propertyId,
           CreatedOn: new Date().toISOString(),
           IsActive: true,
@@ -275,9 +315,10 @@ export default function AttendanceSheet() {
           ? emp.FacilityMember.FacilityMemberId
           : idx;
       const name =
-        emp.FacilityMember && emp.FacilityMember.Name
-          ? emp.FacilityMember.Name
-          : "Unknown";
+        (emp.Profile && emp.Profile.EmployeeName) ||
+        (emp.EmployeeList && emp.EmployeeList.Designation) ||
+        (emp.FacilityMember && emp.FacilityMember.Name) ||
+        "Unknown";
       const data = dayInputs[empId] || {
         workingDays: "",
         leaveDays: "",
@@ -385,6 +426,7 @@ export default function AttendanceSheet() {
             marginBottom: 15,
           }}
         >
+          {/* RIGHT SIDE BUTTONS */}
           <button
             onClick={handleSaveAttendance}
             disabled={saving || selectedEmpIds.size === 0}
@@ -477,6 +519,33 @@ export default function AttendanceSheet() {
               >
                 Week Days Off
               </th>
+              <th
+                style={{
+                  border: "1px solid #b0b8cc",
+                  padding: 8,
+                  textAlign: "center",
+                }}
+              >
+                OT Days
+              </th>
+              <th
+                style={{
+                  border: "1px solid #b0b8cc",
+                  padding: 8,
+                  textAlign: "center",
+                }}
+              >
+                OT Hours
+              </th>
+              <th
+                style={{
+                  border: "1px solid #b0b8cc",
+                  padding: "8px",
+                  textAlign: "center",
+                }}
+              >
+                Total Days
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -496,9 +565,10 @@ export default function AttendanceSheet() {
                     ? emp.FacilityMember.FacilityMemberId
                     : index;
                 const name =
-                  emp.FacilityMember && emp.FacilityMember.Name
-                    ? emp.FacilityMember.Name
-                    : "Unknown";
+                  (emp.Profile && emp.Profile.EmployeeName) ||
+                  (emp.EmployeeList && emp.EmployeeList.Designation) ||
+                  (emp.FacilityMember && emp.FacilityMember.Name) ||
+                  "Unknown";
                 const isChecked = selectedEmpIds.has(empId);
                 const inputValues = dayInputs[empId] || {
                   workingDays: "",
@@ -552,7 +622,7 @@ export default function AttendanceSheet() {
                         }
                         disabled={!isChecked}
                         style={{ width: "80px", textAlign: "center" }}
-                        maxLength={2}
+                        maxLength={5}
                       />
                     </td>
                     <td
@@ -570,7 +640,7 @@ export default function AttendanceSheet() {
                         }
                         disabled={!isChecked}
                         style={{ width: "80px", textAlign: "center" }}
-                        maxLength={2}
+                        maxLength={5}
                       />
                     </td>
                     <td
@@ -592,7 +662,61 @@ export default function AttendanceSheet() {
                         }
                         disabled={!isChecked}
                         style={{ width: "80px", textAlign: "center" }}
-                        maxLength={2}
+                        maxLength={5}
+                      />
+                    </td>
+                    <td
+                      style={{
+                        border: "1px solid #b0b8cc",
+                        padding: "8px",
+                        textAlign: "center",
+                      }}
+                    >
+                      <input
+                        type="text"
+                        value={inputValues.otDays || ""}
+                        onChange={(e) =>
+                          handleInputChange(empId, "otDays", e.target.value)
+                        }
+                        disabled={!isChecked}
+                        style={{ width: "80px", textAlign: "center" }}
+                        maxLength={5}
+                      />
+                    </td>
+
+                    <td
+                      style={{
+                        border: "1px solid #b0b8cc",
+                        padding: "8px",
+                        textAlign: "center",
+                      }}
+                    >
+                      <input
+                        type="text"
+                        value={inputValues.otHours || ""}
+                        onChange={(e) =>
+                          handleInputChange(empId, "otHours", e.target.value)
+                        }
+                        disabled={!isChecked}
+                        style={{ width: "80px", textAlign: "center" }}
+                      />
+                    </td>
+                    <td
+                      style={{
+                        border: "1px solid #b0b8cc",
+                        padding: "8px",
+                        textAlign: "center",
+                      }}
+                    >
+                      <input
+                        type="text"
+                        value={inputValues.totalDays || ""}
+                        onChange={(e) =>
+                          handleInputChange(empId, "totalDays", e.target.value)
+                        }
+                        disabled={!isChecked}
+                        style={{ width: "80px", textAlign: "center" }}
+                        maxLength={5}
                       />
                     </td>
                   </tr>

@@ -44,15 +44,12 @@ export default function SalaryGroups() {
   const [isViewMode, setIsViewMode] = useState(false);
 
   // Derived state for functional logic
-  const fixedSalaryNum = Number(formData.FixedSalary);
   const baseSalaryNum = Number(formData.BaseSalary);
-  const isFixedActive = fixedSalaryNum > 0;
   const isBaseActive = baseSalaryNum > 0;
-  const canSelectType =
-    !isFixedActive && (isBaseActive || formData.BaseSalary === "");
+  const canSelectType = true; // always allow selecting Allowance/Deduction
   const canShowTable =
     canSelectType && (selectedAllowancesDeductions.length > 0 || !isViewMode);
-  const canCreate = isFixedActive || isBaseActive;
+  const canCreate = isBaseActive;
   const filteredAlDtOptions = alDtOptions.filter(
     (opt) => opt.Type === selectedType
   );
@@ -65,22 +62,17 @@ export default function SalaryGroups() {
     const formulaStrRaw = formulaObj.Formula?.trim();
     if (!formulaStrRaw) return 0;
 
-    // Replace known keywords
+    // Replace known keywords (Basic, Fixed)
     let formulaStr = formulaStrRaw
-      .replace(/Basic/gi, baseSalary || 0)
-      .replace(/Fixed/gi, fixedSalary || 0);
+      .replace(/\bBasic\b/gi, baseSalary || 0)
+      .replace(/\bFixed\b/gi, fixedSalary || 0);
 
-    // Replace already known calculated items (HRA, PF, etc.)
+    // Replace already known calculated items
     Object.entries(knownValues).forEach(([key, val]) => {
-      const regex = new RegExp(`\\b${key}\\b`, "gi");
+      const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(escapedKey, "gi");
       formulaStr = formulaStr.replace(regex, val || 0);
     });
-
-    // Convert percentage to decimal
-    formulaStr = formulaStr.replace(
-      /(\d*\.?\d+)%/g,
-      (_, p1) => parseFloat(p1) / 100
-    );
 
     try {
       const result = new Function("return " + formulaStr)();
@@ -131,7 +123,7 @@ export default function SalaryGroups() {
             a.Type === b.Type ? 0 : a.Type === "Allowance" ? -1 : 1
           )
         );
-        setFormulas((await FormulaService.getAllFormulas()) || []);
+        setFormulas((await FormulaService.getAllFormulas(propertyId)) || []);
       } catch {
         alert("Failed to load salary groups.");
       } finally {
@@ -316,7 +308,7 @@ export default function SalaryGroups() {
         setSelectedAllowancesDeductions(
           recalculateAmounts(
             [...selectedAllowancesDeductions, newItem],
-            +formData.FixedSalary,
+            0,
             +formData.BaseSalary
           )
         );
@@ -340,7 +332,7 @@ export default function SalaryGroups() {
       setSelectedAllowancesDeductions(
         recalculateAmounts(
           [...selectedAllowancesDeductions, customItem],
-          +formData.FixedSalary,
+          0,
           +formData.BaseSalary
         )
       );
@@ -354,45 +346,43 @@ export default function SalaryGroups() {
     );
 
   const handleSave = async () => {
-    const fixedSalaryNum = Number(formData.FixedSalary);
     const baseSalaryNum = Number(formData.BaseSalary);
-
-    if (
-      (formData.FixedSalary === "" ||
-        isNaN(fixedSalaryNum) ||
-        fixedSalaryNum < 0) &&
-      (formData.BaseSalary === "" || isNaN(baseSalaryNum) || baseSalaryNum < 0)
-    ) {
-      return alert(
-        "Please enter either Fixed Salary or Base Salary (one must be greater than 0)."
-      );
-    }
 
     if (!formData.SalaryGroup.trim())
       return alert("Salary Group Name is required");
 
-    // Only allow when at least one salary field filled
-    if (fixedSalaryNum <= 0 && baseSalaryNum <= 0) {
-      return alert("You must fill at least one salary: Fixed or Base Salary.");
+    // must have base salary
+    if (
+      formData.BaseSalary === "" ||
+      isNaN(baseSalaryNum) ||
+      baseSalaryNum < 0
+    ) {
+      return alert("Please enter Base Salary.");
     }
 
-    // If user has given Base Salary, then at least one Allowance or Deduction must be present
+    // If NO allowances/deductions → treat base salary as fixed salary
+    let finalFixed = 0;
+    let finalBase = baseSalaryNum;
+
     if (
-      baseSalaryNum > 0 &&
-      (!selectedAllowancesDeductions ||
-        selectedAllowancesDeductions.length === 0)
+      !selectedAllowancesDeductions ||
+      selectedAllowancesDeductions.length === 0
     ) {
-      return alert(
-        "When Base Salary is entered, please add at least one Allowance or Deduction."
-      );
+      // no AD → base becomes fixed
+      finalFixed = baseSalaryNum;
+      finalBase = 0;
+    } else {
+      // at least one AD → use as normal base salary
+      finalFixed = 0;
+      finalBase = baseSalaryNum;
     }
 
     const nowIso = new Date().toISOString();
     const model = {
       ...formData,
       SalaryGroup_ID: editId || 0,
-      FixedSalary: fixedSalaryNum,
-      BaseSalary: baseSalaryNum,
+      FixedSalary: finalFixed,
+      BaseSalary: finalBase,
       Property_ID: Number(propertyId),
       CreatedOn: formData.CreatedOn || nowIso,
       CreatedBy: formData.CreatedBy || 1,
@@ -447,7 +437,26 @@ export default function SalaryGroups() {
 
   const extractVariables = (formula) => {
     if (!formula) return [];
-    return formula.match(/[A-Za-z_]\w*/g) || [];
+
+    // 1. Extract tokens properly (no junk tokens)
+    const tokens =
+      formula.match(/[A-Za-z][A-Za-z0-9_]*(?:\([A-Za-z0-9 _]*\))?/g) || [];
+
+    // 2. Normalize extracted tokens
+    const cleanedTokens = tokens.map((t) => t.trim().toLowerCase());
+
+    // 3. Base Vars
+    const baseVars = ["basic", "fixed"];
+
+    // 4. Normalize valid names
+    const cleanedValidNames = alDtOptions.map((opt) =>
+      opt.Name.trim().toLowerCase()
+    );
+
+    // 5. Return only real matched items
+    return cleanedTokens.filter(
+      (t) => baseVars.includes(t) || cleanedValidNames.includes(t)
+    );
   };
 
   // Dialog footers
@@ -649,22 +658,6 @@ export default function SalaryGroups() {
           </div>
 
           <div className="mb-3">
-            <label className="form-label">Fixed Salary</label>
-            <input
-              type="number"
-              name="FixedSalary"
-              className="form-control"
-              value={formData.FixedSalary}
-              onChange={handleFormChange}
-              placeholder="Enter fixed salary"
-              min="0"
-              step="0.01"
-              required={!isBaseActive}
-              disabled={isBaseActive || isViewMode}
-            />
-          </div>
-
-          <div className="mb-3">
             <label className="form-label">Base Salary</label>
             <input
               type="number"
@@ -675,8 +668,8 @@ export default function SalaryGroups() {
               placeholder="Enter base salary"
               min="0"
               step="0.01"
-              required={!isFixedActive}
-              disabled={isFixedActive || isViewMode}
+              required={true}
+              disabled={isViewMode}
             />
           </div>
 
@@ -755,13 +748,21 @@ export default function SalaryGroups() {
                 </div>
               </div>
               <datalist id="alDtOptionsList">
-                {filteredAlDtOptions.map((opt) => (
-                  <option
-                    key={opt.ID}
-                    value={opt.Name}
-                    label={`${opt.Type} | ${opt.Name}`}
-                  />
-                ))}
+                {filteredAlDtOptions.map((opt) => {
+                  const relatedFormula = formulas.find(
+                    (f) => f.Name?.toLowerCase() === opt.Name?.toLowerCase()
+                  );
+                  const displayFormula = relatedFormula?.Formula
+                    ? ` (${relatedFormula.Formula})`
+                    : "";
+                  return (
+                    <option
+                      key={opt.ID}
+                      value={opt.Name}
+                      label={`Formula = ${displayFormula}`}
+                    />
+                  );
+                })}
               </datalist>
             </div>
           )}
@@ -804,10 +805,25 @@ export default function SalaryGroups() {
                     return (
                       <tr key={idx}>
                         <td style={{ textAlign: "center" }}>
-                          {allow ? allow.Name : ""}
+                          {allow ? (
+                            <>
+                              <div>{allow.Name}</div>
+                              {allow.Formula?.Formula && (
+                                <div
+                                  style={{ fontSize: "12px", color: "#6c757d" }}
+                                >
+                                  ({allow.Formula.Formula})
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            ""
+                          )}
                         </td>
                         <td style={{ textAlign: "center" }}>
-                          {allow ? allow.CalculatedAmount : ""}
+                          {allow
+                            ? Number(allow.CalculatedAmount).toFixed(2)
+                            : ""}
                         </td>
                         {!isViewMode && (
                           <td style={{ textAlign: "center" }}>
@@ -824,10 +840,25 @@ export default function SalaryGroups() {
                           </td>
                         )}
                         <td style={{ textAlign: "center" }}>
-                          {deduct ? deduct.Name : ""}
+                          {deduct ? (
+                            <>
+                              <div>{deduct.Name}</div>
+                              {deduct.Formula?.Formula && (
+                                <div
+                                  style={{ fontSize: "12px", color: "#6c757d" }}
+                                >
+                                  ({deduct.Formula.Formula})
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            ""
+                          )}
                         </td>
                         <td style={{ textAlign: "center" }}>
-                          {deduct ? deduct.CalculatedAmount : ""}
+                          {deduct
+                            ? Number(deduct.CalculatedAmount).toFixed(2)
+                            : ""}
                         </td>
                         {!isViewMode && (
                           <td style={{ textAlign: "center" }}>
