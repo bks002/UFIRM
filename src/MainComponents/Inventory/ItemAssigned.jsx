@@ -32,6 +32,7 @@ export default function ItemAssignedPage() {
   const [specifications, setSpecifications] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
   const [itemOptions, setItemOptions] = useState([]);
+  const [selectedRow, setSelectedRow] = useState(null);
 
   const [formData, setFormData] = useState({
     itemId: null,
@@ -111,6 +112,36 @@ export default function ItemAssignedPage() {
     }
     return <span className="badge badge-secondary">-</span>;
   };
+
+  // ... existing helper functions
+
+   const renderApprovedStatus = (row) => {
+    const isApproved = !!row.IsFMApproved; // Converts to boolean
+
+     // Display a green checkmark icon if approved
+    if (isApproved) {
+     return (
+       <div className="text-center">
+         <i
+           className="pi pi-check-circle" // Green checkmark icon
+             style={{ color: "green", fontSize: "1.2rem" }}
+           />
+        </div>
+      );
+    }
+
+    // Display a red cross icon if not approved (or null/false)
+    return (
+      <div className="text-center">
+        <i
+          className="pi pi-times-circle" // Red cross icon
+            style={{ color: "red", fontSize: "1.2rem" }}
+          />
+        </div>
+    );
+  };
+
+// ... remaining component logic
 
   // ✅ Clear table when propertyId changes (prevent stale data)
   useEffect(() => {
@@ -276,6 +307,32 @@ const handleItemSelect = async (value) => {
 
     return true;
   };
+
+  // **New Handler for Approval**
+const handleApprove = () => {
+  if (!selectedRow) {
+    toast.current?.show({
+      severity: "warn",
+      summary: "Selection Required",
+      detail: "Please select an item to approve.",
+    });
+    return;
+  }
+
+  // **PLACEHOLDER: Implement your actual API call here**
+  // Example: await approveItemAssigned(selectedRow.Id);
+
+  toast.current?.show({
+    severity: "info",
+    summary: "Approval Placeholder",
+    detail: `Approving item: ${selectedRow.Item_Name} (ID: ${selectedRow.Id})`,
+  });
+
+  // Clear selection after simulated approval
+  setSelectedRow(null); 
+  // Fetch data to update the table status (if status changes on approval)
+  // fetchGrouped(); 
+};
 
   const handleSave = async () => {
     if (!validateForm()) return;
@@ -463,11 +520,27 @@ const handleItemSelect = async (value) => {
     }}
   />
 
+  {/* **NEW** Approve button - Green for success/approval */}
+<Button
+  label="Approve"
+  icon="pi pi-check"
+  className="p-button-success" // Uses success style
+  style={{
+    padding: "8px 16px",
+    fontSize: "13px",
+    height: "38px",
+    borderRadius: "8px",
+    whiteSpace: "nowrap",
+  }}
+  onClick={handleApprove}
+  disabled={!selectedRow} // Disabled if no row is selected
+/>
+
   {/* ✅ Add button - rounded */}
   <Button
     label="Add Item"
     icon="pi pi-plus"
-    className="p-button-success"
+    className="p-button-primary" // Changed from success to primary
     style={{
       padding: "8px 16px",
       fontSize: "13px",
@@ -488,7 +561,9 @@ const handleItemSelect = async (value) => {
             >
               <thead className="thead-light">
                 <tr>
+                  <th style={{ width: "60px" }}>Select</th>
                   <th style={{ width: "80px" }}>S. No</th>
+
                   <th>Item Name</th>
                   <th style={{ width: "120px" }}>Gender</th>
                   <th style={{ width: "100px" }}>Quantity</th>
@@ -499,6 +574,7 @@ const handleItemSelect = async (value) => {
                   <th style={{ width: "130px" }}>Updated Date</th>
                   <th style={{ width: "130px" }}>Updated Time</th>
                   <th style={{ width: "120px" }}>Actions</th>
+                  <th style={{ width: "120px" }}>Approved </th>
                 </tr>
               </thead>
               <tbody>
@@ -512,6 +588,19 @@ const handleItemSelect = async (value) => {
 
                 {filtered.map((row, index) => (
                   <tr key={row.Id ?? index}>
+                    <td className="text-center">
+  <input
+    type="checkbox"
+    checked={selectedRow?.Id === row.Id}
+    onChange={() => {
+      if (selectedRow?.Id === row.Id) {
+        setSelectedRow(null); // unselect
+      } else {
+        setSelectedRow(row); // select
+      }
+    }}
+  />
+</td>
                     <td>{index + 1}</td>
                     <td>{row.Item_Name}</td>
                     <td>{row.Gender}</td>
@@ -549,28 +638,32 @@ const handleItemSelect = async (value) => {
                     <td>{formatTime12(row.Updated_On)}</td>
                     <td className="text-center">
                       <Button
-                        icon="pi pi-pencil"
-                        className="p-button-rounded p-button-warning p-button-sm mr-2"
-                        style={{
-                          width: "24px",
-                          height: "24px",
-                          padding: "0",
-                          fontSize: "0.65rem",
-                        }}
-                        onClick={() => openEditDialog(row)}
-                      />
+  icon="pi pi-pencil"
+  className="p-button-rounded p-button-warning p-button-sm mr-2"
+  style={{
+    width: "30px",
+    height: "30px",
+    padding: "0",
+    fontSize: "0.65rem",
+  }}
+  //disabled={selectedRow?.Id !== row.Id}   // 🟡 only selected record editable
+  onClick={() => openEditDialog(row)}
+/>
 
                       <Button
                         icon="pi pi-trash"
                         className="p-button-rounded p-button-danger p-button-sm"
                         style={{
-                          width: "24px",
-                          height: "24px",
+                          width: "30px",
+                          height: "30px",
                           padding: "0",
                           fontSize: "0.65rem",
                         }}
                         onClick={() => openDeleteDialog(row)}
                       />
+                    </td>
+                    <td className="text-center">
+                      {renderApprovedStatus(row)} 
                     </td>
                   </tr>
                 ))}
