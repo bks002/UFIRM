@@ -289,16 +289,10 @@ export default function SalaryGroups() {
         Value: value,
         Formula: rawFormula,
         FormulaId: ad.FormulaId || 0,
-        CalculatedAmount: 0, // THIS FIXES PF
+        CalculatedAmount: ad.CalculatedAmount || 0, 
         isFx: rawFormula !== "" && !rawFormula.startsWith("Base *"),
       };
     });
-
-    const recalculatedAD = recalculateAmounts(
-      initialAllowances,
-      0,
-      Number(item.BaseSalary)
-    );
 
     setFormData({
       ...item,
@@ -307,7 +301,8 @@ export default function SalaryGroups() {
       ShiftHours: item.ShiftHours || 0,
     });
 
-    setSelectedAllowancesDeductions(recalculatedAD);
+    // ✅ Use backend values directly
+    setSelectedAllowancesDeductions(initialAllowances);
     setIsViewMode(true);
     setDialogVisible(true);
   };
