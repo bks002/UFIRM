@@ -9,7 +9,7 @@ import UserProfile from "../pages/UserProfilePage";
 import ChangePassword from "../MainComponents/ChangePassword/ChangePassword";
 import DropDownList from "../ReactComponents/SelectBox/DropdownList";
 import ComplainManagement from "../pages/ComplainManagement";
-import PropertyMaster from "../pages/PropertyMaster";
+import PropertyMaster from "../MainComponents/PropertyMaster/PropertyMaster.jsx";
 import PropertyDetailsPage from "../pages/PropertyDetailsPage";
 import ParkingZonePage from "../pages/ParkingZonePage";
 import TicketCategoriesPage from "../pages/TicketCategoriesPage";
@@ -97,6 +97,7 @@ import Linking from "../MainComponents/Payroll/Linking.jsx";
 import ItemAssignedPage from "../MainComponents/Inventory/ItemAssigned.jsx";
 import ItemSpecificationPage from "../MainComponents/Inventory/ItemSpecification.jsx";
 import OTHours from "../MainComponents/Payroll/OTHours.jsx";
+import ClientMasterPage from "../MainComponents/PropertyMaster/ClientMaster.jsx";
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -1074,6 +1075,15 @@ class MainNav extends React.Component {
                           style={{ display: "none" }}
                         >
                           <li className="nav-item">
+                            <Link to= "/Account/App/ClientMaster"
+                                  className="nav-link"
+                            >
+                              <i className=" fas fa-caret-right nav-icon"></i>
+                              <p>Client Master </p>
+                            </Link>
+
+                          </li>
+                          <li className="nav-item">
                             <Link
                               to="/Account/App/PropertyMaster"
                               className="nav-link"
@@ -1305,6 +1315,9 @@ class MainNav extends React.Component {
             </Route>
             <Route path="/Account/App/PropertyMaster">
               <PropertyMaster />
+            </Route>
+            <Route path="/Account/App/ClientMaster">
+              <ClientMasterPage />
             </Route>
             <Route path="/Account/App/PropertyDetails">
               <PropertyDetailsPage />
