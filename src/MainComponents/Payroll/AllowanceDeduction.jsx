@@ -216,140 +216,138 @@ export default function AllowanceDeduction() {
             <>
               <style>
                 {`
-  .uniform-table th:nth-child(1),
-  .uniform-table td:nth-child(1) { 
-      width: 80%;   /* Name column */
-  }
-
-  .uniform-table th:nth-child(2),
-  .uniform-table td:nth-child(2) { 
-      width: 20%;   /* Action column */
-      text-align: center;
-  }
-`}
+          .uniform-table th:nth-child(1),
+          .uniform-table td:nth-child(1) { 
+              width: 80%;
+          }
+          .uniform-table th:nth-child(2),
+          .uniform-table td:nth-child(2) { 
+              width: 20%;
+              text-align: center;
+          }
+        `}
               </style>
-              {/* ALLOWANCES */}
-              <h4
-                style={{
-                  marginTop: 25,
-                  marginBottom: 12,
-                  fontWeight: 600,
-                  color: "#198754",
-                }}
-              >
-                Allowances
-              </h4>
-              <table
-                className="table table-bordered align-middle uniform-table"
-                style={{
-                  minWidth: 600,
-                  borderCollapse: "collapse",
-                }}
-              >
-                <thead className="table-light">
-                  <tr>
-                    <th>Name</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredData.filter((i) => i.Type === "Allowance").length ===
-                  0 ? (
-                    <tr>
-                      <td colSpan={2} className="text-center text-muted py-3">
-                        No Allowances Found.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredData
-                      .filter((i) => i.Type === "Allowance")
-                      .map((item) => (
-                        <tr key={item.ID}>
-                          <td>{item.Name}</td>
-                          <td>
-                            <button
-                              className="btn btn-sm btn-primary me-2"
-                              title="Edit"
-                              onClick={() => openEditDialog(item)}
-                            >
-                              <i className="fa fa-pencil" />
-                            </button>
-                            <button
-                              className="btn btn-sm btn-danger"
-                              title="Delete"
-                              onClick={() => handleDelete(item.ID)}
-                            >
-                              <i className="fa fa-trash" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                  )}
-                </tbody>
-              </table>
 
-              {/* DEDUCTIONS */}
-              <h4
-                style={{
-                  marginTop: 35,
-                  marginBottom: 12,
-                  fontWeight: 600,
-                  color: "#dc3545",
-                }}
-              >
-                Deductions
-              </h4>
-              <table
-                className="table table-bordered align-middle uniform-table"
-                style={{
-                  minWidth: 600,
-                  borderCollapse: "collapse",
-                }}
-              >
-                <thead className="table-light">
-                  <tr>
-                    <th>Name</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredData.filter((i) => i.Type === "Deduction").length ===
-                  0 ? (
-                    <tr>
-                      <td colSpan={2} className="text-center text-muted py-3">
-                        No Deductions Found.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredData
-                      .filter((i) => i.Type === "Deduction")
-                      .map((item) => (
-                        <tr key={item.ID}>
-                          <td>{item.Name}</td>
-                          <td>
-                            <button
-                              className="btn btn-sm btn-primary me-2"
-                              title="Edit"
-                              onClick={() => openEditDialog(item)}
-                            >
-                              <i className="fa fa-pencil" />
-                            </button>
-                            <button
-                              className="btn btn-sm btn-danger"
-                              title="Delete"
-                              onClick={() => handleDelete(item.ID)}
-                            >
-                              <i className="fa fa-trash" />
-                            </button>
+              {/* TWO COLUMNS */}
+              <div className="row">
+
+                {/* ALLOWANCES COLUMN */}
+                <div className="col-md-6">
+                  <h4
+                    style={{
+                      marginTop: 25,
+                      marginBottom: 12,
+                      fontWeight: 600,
+                      color: "#198754",
+                    }}
+                  >
+                    Allowances
+                  </h4>
+
+                  <table className="table table-bordered align-middle uniform-table">
+                    <thead className="table-light">
+                      <tr>
+                        <th>Name</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredData.filter((i) => i.Type === "Allowance").length === 0 ? (
+                        <tr>
+                          <td colSpan={2} className="text-center text-muted py-3">
+                            No Allowances Found.
                           </td>
                         </tr>
-                      ))
-                  )}
-                </tbody>
-              </table>
+                      ) : (
+                        filteredData
+                          .filter((i) => i.Type === "Allowance")
+                          .map((item) => (
+                            <tr key={item.ID}>
+                              <td>{item.Name}</td>
+                              <td>
+                                <button
+                                  className="btn btn-sm btn-primary me-2"
+                                  title="Edit"
+                                  onClick={() => openEditDialog(item)}
+                                >
+                                  <i className="fa fa-pencil" />
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-danger"
+                                  title="Delete"
+                                  onClick={() => handleDelete(item.ID)}
+                                >
+                                  <i className="fa fa-trash" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* DEDUCTIONS COLUMN */}
+                <div className="col-md-6">
+                  <h4
+                    style={{
+                      marginTop: 25,
+                      marginBottom: 12,
+                      fontWeight: 600,
+                      color: "#dc3545",
+                    }}
+                  >
+                    Deductions
+                  </h4>
+
+                  <table className="table table-bordered align-middle uniform-table">
+                    <thead className="table-light">
+                      <tr>
+                        <th>Name</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredData.filter((i) => i.Type === "Deduction").length === 0 ? (
+                        <tr>
+                          <td colSpan={2} className="text-center text-muted py-3">
+                            No Deductions Found.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredData
+                          .filter((i) => i.Type === "Deduction")
+                          .map((item) => (
+                            <tr key={item.ID}>
+                              <td>{item.Name}</td>
+                              <td>
+                                <button
+                                  className="btn btn-sm btn-primary me-2"
+                                  title="Edit"
+                                  onClick={() => openEditDialog(item)}
+                                >
+                                  <i className="fa fa-pencil" />
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-danger"
+                                  title="Delete"
+                                  onClick={() => handleDelete(item.ID)}
+                                >
+                                  <i className="fa fa-trash" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+              </div>
             </>
           )}
         </div>
+
 
         {/* DIALOG */}
         <Dialog
