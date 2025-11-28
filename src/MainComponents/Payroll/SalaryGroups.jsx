@@ -116,38 +116,38 @@ export default function SalaryGroups() {
   };
 
   const recalculateAmounts = (items, _, baseSalary) => {
-  // 1) Always compute in correct dependency order
-  const sorted = [...items].sort((a, b) => {
-    // Fx formulas last
-    if (a.isFx && !b.isFx) return 1;
-    if (!a.isFx && b.isFx) return -1;
+    // 1) Always compute in correct dependency order
+    const sorted = [...items].sort((a, b) => {
+      // Fx formulas last
+      if (a.isFx && !b.isFx) return 1;
+      if (!a.isFx && b.isFx) return -1;
 
-    // Basic % or # first
-    return 0;
-  });
+      // Basic % or # first
+      return 0;
+    });
 
-  const knownValues = {};
+    const knownValues = {};
 
-  const result = sorted.map((item) => {
-    let amount = 0;
+    const result = sorted.map((item) => {
+      let amount = 0;
 
-    if (item.isFx && item.Formula) {
-      // Complex formula
-      amount = calculateAmount(item, baseSalary, knownValues);
-    } else if (item.Mode === "#") {
-      amount = Number(item.Value || 0);
-    } else if (item.Mode === "%") {
-      const val = Number(item.Value || 0);
-      amount = (val / 100) * baseSalary;
-    }
+      if (item.isFx && item.Formula) {
+        // Complex formula
+        amount = calculateAmount(item, baseSalary, knownValues);
+      } else if (item.Mode === "#") {
+        amount = Number(item.Value || 0);
+      } else if (item.Mode === "%") {
+        const val = Number(item.Value || 0);
+        amount = (val / 100) * baseSalary;
+      }
 
-    knownValues[item.Name] = amount;
+      knownValues[item.Name] = amount;
 
-    return { ...item, CalculatedAmount: amount };
-  });
+      return { ...item, CalculatedAmount: amount };
+    });
 
-  return result;
-};
+    return result;
+  };
 
   // Data loading utilities
   useEffect(() => {
@@ -287,9 +287,10 @@ export default function SalaryGroups() {
         ID: ad.AD_Id || ad.ID,
         Mode: mode,
         Value: value,
-        Formula: rawFormula, // FIX: ALWAYS convert to string formula
+        Formula: rawFormula,
         FormulaId: ad.FormulaId || 0,
-        CalculatedAmount: 0,
+        CalculatedAmount: 0, // THIS FIXES PF
+        isFx: rawFormula !== "" && !rawFormula.startsWith("Base *"),
       };
     });
 
@@ -868,7 +869,7 @@ export default function SalaryGroups() {
                               UseFixedValue: false,
                               Mode: "%",
                               Value: "",
-                              CalculatedAmount: null,   // 🔥 FIXED
+                              CalculatedAmount: null, // 🔥 FIXED
                             };
                             setSelectedAllowancesDeductions((prev) =>
                               recalculateAmounts(
@@ -889,25 +890,53 @@ export default function SalaryGroups() {
                       </div>
 
                       {/* Mode */}
-                      <select
-                        disabled={!isChecked || row?.isFx}
-                        className="form-control"
-                        style={{ width: "70px" }}
-                        value={mode}
-                        onChange={(e) => {
-                          const newMode = e.target.value;
-                          setSelectedAllowancesDeductions((prev) =>
-                            prev.map((item) =>
-                              item.ID === opt.ID
-                                ? { ...item, Mode: newMode, Value: "" }
-                                : item
-                            )
-                          );
+                      <div
+                        style={{
+                          position: "relative",
+                          width: "70px",
                         }}
                       >
-                        <option value="%">%</option>
-                        <option value="#">#</option>
-                      </select>
+                        <select
+                          disabled={!isChecked || row?.isFx}
+                          className="form-control"
+                          value={mode}
+                          onChange={(e) => {
+                            const newMode = e.target.value;
+                            setSelectedAllowancesDeductions((prev) =>
+                              prev.map((item) =>
+                                item.ID === opt.ID
+                                  ? { ...item, Mode: newMode, Value: "" }
+                                  : item
+                              )
+                            );
+                          }}
+                          style={{
+                            appearance: "none",
+                            WebkitAppearance: "none",
+                            MozAppearance: "none",
+                            paddingRight: "20px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <option value="%">%</option>
+                          <option value="#">#</option>
+                        </select>
+
+                        {/* ▼ arrow */}
+                        <div
+                          style={{
+                            position: "absolute",
+                            right: "8px",
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            pointerEvents: "none",
+                            fontSize: "10px",
+                            color: "#333",
+                          }}
+                        >
+                          ▼
+                        </div>
+                      </div>
 
                       {/* Value box with formula below */}
                       <div style={{ width: "120px" }}>
@@ -921,25 +950,22 @@ export default function SalaryGroups() {
 
                             if (mode === "%" && (raw < 0 || raw > 100)) return;
 
-                            const numericVal = Number(raw || 0);
                             const base = Number(formData.BaseSalary || 0);
 
-                            const newCalc =
-                              mode === "%"
-                                ? (numericVal / 100) * base
-                                : numericVal;
-
-                            setSelectedAllowancesDeductions((prev) =>
-                              prev.map((item) =>
+                            setSelectedAllowancesDeductions((prev) => {
+                              // 1. update ONLY this row first
+                              const updated = prev.map((item) =>
                                 item.ID === opt.ID
                                   ? {
                                       ...item,
                                       Value: raw,
-                                      CalculatedAmount: newCalc, // 🔥 FIX: store real value in state
                                     }
                                   : item
-                              )
-                            );
+                              );
+
+                              // 2. RE-CALCULATE ALL rows (this fixes PF etc)
+                              return recalculateAmounts(updated, 0, base);
+                            });
                           }}
                         />
 
