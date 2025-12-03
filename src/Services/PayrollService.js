@@ -3,9 +3,9 @@ import axios from "axios";
 
 const API_BASE_URL = "https://api.urest.in:8096/api/allowancedeductions";
 
-export async function getAllowanceDeductionsByProperty(propertyId) {
+export async function getAllowanceDeductionsByProperty() {
   try {
-    const response = await fetch(`${API_BASE_URL}/byProperty/${propertyId}`, {
+    const response = await fetch(`${API_BASE_URL}/getall`, {
       method: "GET",
       headers: {
         Accept: "application/json",

@@ -44,7 +44,7 @@ const ItemSpecificationPage = () => {
   useEffect(() => {
     fetchAllItems();
     fetchItemOptions();
-  }, []);
+  }, [propertyId]);
 
   // 🔹 Fetch item specifications
   const fetchAllItems = async () => {
@@ -213,8 +213,9 @@ const ItemSpecificationPage = () => {
           <div className="modal-body">
             <div className="row">
               {/* 🔹 Dropdown for selecting item */}
-              <div className="col-12">
-                <label htmlFor="item">Select Item</label>
+              <div className="col-12 mt-3 flex flex-column">
+                <label htmlFor="item" className="mb-1">Select Item</label>
+
                 <Dropdown
                   id="item"
                   value={
