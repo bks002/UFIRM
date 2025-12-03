@@ -9,6 +9,7 @@ import {
   getAllowanceDeductionsByProperty,
 } from "../../Services/PayrollService";
 import Formulaone from "../../ReactComponents/DataGrid/Formula1stdialogbox.jsx";
+import CustomFormulaDialog from "../../ReactComponents/DataGrid/CustomFormulaDialog";
 import { getPropertyById } from "../../Services/PropertyService";
 
 export default function SalaryGroups() {
@@ -23,6 +24,8 @@ export default function SalaryGroups() {
     useState([]);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [fxAvailableItems, setFxAvailableItems] = useState([]);
+  const [customFormulaVisible, setCustomFormulaVisible] = useState(false);
+  const [customFormulaTarget, setCustomFormulaTarget] = useState(null);
 
   const [formData, setFormData] = useState({
     ID: 0,
@@ -74,6 +77,12 @@ export default function SalaryGroups() {
     setFxAvailableItems(filtered);
   };
 
+  const openCustomFormula = (item) => {
+    setFxVisible(false); // close current Fx dialog
+    setCustomFormulaTarget(item); // which item is being edited
+    setCustomFormulaVisible(true); // open big dialog
+  };
+  window.openCustomFormula = () => openCustomFormula(fxTargetItem);
   // Derived state for functional logic
   const baseSalaryNum = Number(formData.BaseSalary);
   const isBaseActive = baseSalaryNum > 0;
@@ -115,15 +124,26 @@ export default function SalaryGroups() {
     }
   };
 
+  function countDependencies(formula, items) {
+    if (!formula) return 0;
+    const names = items.map((x) => x.Name);
+    let count = 0;
+
+    names.forEach((name) => {
+      const regex = new RegExp(`\\b${name}\\b`, "i");
+      if (regex.test(formula)) count++;
+    });
+
+    return count;
+  }
+
   const recalculateAmounts = (items, _, baseSalary) => {
     // 1) Always compute in correct dependency order
     const sorted = [...items].sort((a, b) => {
-      // Fx formulas last
-      if (a.isFx && !b.isFx) return 1;
-      if (!a.isFx && b.isFx) return -1;
+      const aRefs = a.Formula ? countDependencies(a.Formula, items) : 0;
+      const bRefs = b.Formula ? countDependencies(b.Formula, items) : 0;
 
-      // Basic % or # first
-      return 0;
+      return aRefs - bRefs; // fewer dependencies first
     });
 
     const knownValues = {};
@@ -218,19 +238,28 @@ export default function SalaryGroups() {
       let mode = "%";
       let value = "";
 
-      // FIX: Normalize Formula
+      // Normalize formula
       const rawFormula =
         typeof ad.Formula === "string" ? ad.Formula : ad.Formula?.Formula || "";
 
-      // Determine mode + value
-      if (rawFormula !== "") {
-        // % mode
+      const isFxFormula = rawFormula !== "" && !rawFormula.startsWith("Base *");
+
+      // ⭐ CASE 1: Fx or Custom formula
+      if (isFxFormula) {
+        mode = "Fx";
+        value = ""; // no manual value in Fx mode
+      }
+
+      // ⭐ CASE 2: % manual (only when NOT Fx)
+      else if (rawFormula !== "") {
         const match = rawFormula.match(/\*\s*(\d+(\.\d+)?)/);
         const decimal = match ? parseFloat(match[1]) : 0;
         value = (decimal * 100).toString(); // convert 0.10 → 10
         mode = "%";
-      } else if (ad.FixedAmount > 0) {
-        // # mode
+      }
+
+      // ⭐ CASE 3: # fixed amount (only when NOT Fx)
+      else if (ad.FixedAmount > 0) {
         mode = "#";
         value = ad.FixedAmount.toString();
       }
@@ -242,8 +271,8 @@ export default function SalaryGroups() {
         Value: value,
         Formula: rawFormula,
         FormulaId: ad.FormulaId || 0,
-        CalculatedAmount: 0,
-        isFx: rawFormula !== "" && !rawFormula.startsWith("Base *"), // 🔥 detect Fx formula
+        CalculatedAmount: ad.CalculatedAmount || 0,
+        isFx: isFxFormula, // true only for Fx/Custom formulas
       };
     });
     setFormData({
@@ -289,7 +318,7 @@ export default function SalaryGroups() {
         Value: value,
         Formula: rawFormula,
         FormulaId: ad.FormulaId || 0,
-        CalculatedAmount: ad.CalculatedAmount || 0, 
+        CalculatedAmount: ad.CalculatedAmount || 0,
         isFx: rawFormula !== "" && !rawFormula.startsWith("Base *"),
       };
     });
@@ -344,6 +373,7 @@ export default function SalaryGroups() {
     }
 
     const nowIso = new Date().toISOString();
+
     const model = {
       SalaryGroup_ID: editId || 0,
       SalaryGroup: formData.SalaryGroup.trim(),
@@ -359,32 +389,42 @@ export default function SalaryGroups() {
       EndDate: nowIso,
       TotalWorkingDays: Number(formData.TotalWorkingDays || 0),
       ShiftHours: Number(formData.ShiftHours || 0),
+
       AllowancesDeductions: selectedAllowancesDeductions.map((item) => {
         let FixedAmount = 0;
-        let Formula = "";
-        let CalculatedAmount = 0;
+        let Formula = item.Formula || ""; // 🔥 KEEP existing formula
+        let CalculatedAmount = item.CalculatedAmount || 0; // 🔥 KEEP existing amount
 
-        // If Fx applied → trust the Fx values
+        // ✔ Case 1: Fx-based item (formula created using Fx/custom builder)
         if (item.isFx && item.Formula) {
-          Formula = item.Formula; // full formula like (Base + HRA + Leave) * 0.12
+          Formula = item.Formula;
           CalculatedAmount = Number(item.CalculatedAmount || 0);
-        } else {
-          // Normal manual % or #
-          const mode = item.Mode || "%";
-          const val = Number(item.Value || 0);
+        }
 
-          if (mode === "%") {
-            const decimal = (val / 100).toFixed(2);
+        // ✔ Case 2: Normal % item
+        else if (item.Mode === "%") {
+          const val = Number(item.Value || 0);
+          const decimal = (val / 100).toFixed(2);
+
+          // ⚠️ If user manually replaced formula via custom-builder earlier, KEEP IT
+          if (!item.Formula) {
             Formula = `Base * ${decimal}`;
-            CalculatedAmount = (
-              (val / 100) *
-              Number(formData.BaseSalary)
-            ).toFixed(2);
-          } else {
-            FixedAmount = val;
-            Formula = "";
-            CalculatedAmount = 0;
           }
+
+          // Keep recalculated amount OR use existing if available
+          CalculatedAmount =
+            item.CalculatedAmount || (val / 100) * Number(formData.BaseSalary);
+        }
+
+        // ✔ Case 3: Normal # (fixed) amount
+        else if (item.Mode === "#") {
+          const val = Number(item.Value || 0);
+          FixedAmount = val;
+
+          // Do NOT wipe formulas (they may exist from earlier)
+          Formula = item.Formula || "";
+          // Keep Fx-calculated amount if present
+          CalculatedAmount = item.CalculatedAmount || val;
         }
 
         return {
@@ -398,9 +438,11 @@ export default function SalaryGroups() {
         };
       }),
     };
+
     try {
       if (editId !== null) await updateSalaryAllowance(editId, model);
       else await createSalaryAllowance(model);
+
       alert(
         editId !== null ? "Updated successfully!" : "Created successfully!"
       );
@@ -433,6 +475,228 @@ export default function SalaryGroups() {
         alert("Failed to delete salary group.");
       }
     }
+  };
+
+  const renderRow = (opt) => {
+    const isChecked = selectedAllowancesDeductions.some(
+      (item) => item.ID === opt.ID
+    );
+
+    const row = selectedAllowancesDeductions.find((x) => x.ID === opt.ID);
+    const mode = row?.Mode || "%";
+    const val = Number(row?.Value || 0);
+
+    let calc = "";
+
+    if (row?.Formula) {
+      // When Fx is used → use calculatedAmount from state
+      calc = Number(row.CalculatedAmount || 0).toFixed(2);
+    } else if (mode === "%") {
+      // Normal % mode
+      calc = ((val / 100) * Number(formData.BaseSalary || 0)).toFixed(2);
+    } else {
+      // Fixed mode
+      calc = val;
+    }
+
+    return (
+      <div
+        key={opt.ID}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "18px",
+          padding: "12px 12px",
+          paddingLeft: "18px",
+          borderBottom: "1px solid #efefef",
+        }}
+      >
+        {/* Checkbox */}
+        <input
+          type="checkbox"
+          className="form-check-input"
+          style={{ marginTop: 3 }}
+          checked={isChecked}
+          onChange={(e) => {
+            if (e.target.checked) {
+              const base = Number(formData.BaseSalary || 0);
+
+              const newItem = {
+                ...opt,
+                Formula: "",
+                UseFixedValue: false,
+                Mode: "%",
+                Value: "",
+                CalculatedAmount: null, // 🔥 FIXED
+              };
+              setSelectedAllowancesDeductions((prev) =>
+                recalculateAmounts(
+                  [...prev, newItem],
+                  0,
+                  Number(formData.BaseSalary)
+                )
+              );
+            } else {
+              handleDeleteAlDtItem(opt.ID);
+            }
+          }}
+        />
+
+        {/* Name */}
+        <div style={{ width: "200px", fontWeight: 500 }}>{opt.Name}</div>
+
+        {/* Mode */}
+        <div
+          style={{
+            position: "relative",
+            width: "70px",
+          }}
+        >
+          {/* If Fx formula → show FX badge instead of dropdown */}
+          {row?.isFx ? (
+            <div
+              style={{
+                width: "70px",
+                height: "38px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "#e5f0ff",
+                border: "1px solid #b5d0ff",
+                borderRadius: "6px",
+                fontWeight: "600",
+                color: "#0057ff",
+              }}
+            >
+              Fx
+            </div>
+          ) : (
+            <select
+              disabled={!isChecked}
+              className="form-control"
+              value={mode}
+              onChange={(e) => {
+                const newMode = e.target.value;
+                setSelectedAllowancesDeductions((prev) =>
+                  prev.map((item) =>
+                    item.ID === opt.ID
+                      ? { ...item, Mode: newMode, Value: "" }
+                      : item
+                  )
+                );
+              }}
+            >
+              <option value="%">%</option>
+              <option value="#">#</option>
+            </select>
+          )}
+
+          {/* ▼ arrow ONLY when dropdown is shown */}
+          {!row?.isFx && (
+            <div
+              style={{
+                position: "absolute",
+                right: "8px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                pointerEvents: "none",
+                fontSize: "10px",
+                color: "#333",
+              }}
+            >
+              ▼
+            </div>
+          )}
+        </div>
+
+        {/* Value box with formula below */}
+        <div style={{ width: "120px" }}>
+          <input
+            type="number"
+            disabled={!isChecked || row?.isFx}
+            className="form-control"
+            value={row?.Value || ""}
+            onChange={(e) => {
+              let raw = e.target.value;
+
+              if (mode === "%" && (raw < 0 || raw > 100)) return;
+
+              const base = Number(formData.BaseSalary || 0);
+
+              setSelectedAllowancesDeductions((prev) => {
+                // 1. update ONLY this row first
+                const updated = prev.map((item) =>
+                  item.ID === opt.ID
+                    ? {
+                        ...item,
+                        Value: raw,
+                      }
+                    : item
+                );
+
+                // 2. RE-CALCULATE ALL rows (this fixes PF etc)
+                return recalculateAmounts(updated, 0, base);
+              });
+            }}
+          />
+
+          {/* Formula under box */}
+          {/* If Fx formula exists, show it. 
+    Else show normal Base * % formula */}
+          {isChecked && row?.Formula ? (
+            <div
+              style={{
+                fontSize: "10px",
+                color: "#7d7d7d",
+                marginTop: "3px",
+                marginLeft: "2px",
+              }}
+            >
+              {row.Formula}
+            </div>
+          ) : (
+            mode === "%" &&
+            isChecked && (
+              <div
+                style={{
+                  fontSize: "10px",
+                  color: "#7d7d7d",
+                  marginTop: "3px",
+                  marginLeft: "2px",
+                }}
+              >
+                Base * {(val / 100).toFixed(2)}
+              </div>
+            )
+          )}
+        </div>
+
+        {/* Calculated */}
+        <input
+          className="form-control"
+          style={{
+            width: "120px",
+            background: "#f4f4f4",
+            textAlign: "right",
+          }}
+          value={isChecked ? calc : ""}
+          readOnly
+        />
+
+        {/* Fx */}
+        <button
+          type="button"
+          className={`btn ${
+            row?.isFx ? "btn-primary" : "btn-outline-secondary"
+          }`}
+          style={{ width: "55px", fontWeight: 600 }}
+          disabled={!isChecked}
+          onClick={() => openFxFor(row)}
+        >
+          Fx
+        </button>
+      </div>
+    );
   };
 
   // Dialog footers
@@ -598,7 +862,11 @@ export default function SalaryGroups() {
             : "Create Salary Group"
         }
         visible={dialogVisible}
-        style={{ width: "850px" }}
+        style={{
+          width: "95vw",
+          height: "95vh",
+          maxWidth: "1500px",
+        }}
         modal
         onHide={() => setDialogVisible(false)}
         footer={isViewMode ? viewFooter : editFooter}
@@ -753,275 +1021,44 @@ export default function SalaryGroups() {
             </div>
           )}
 
-          {/* TYPE SELECTOR */}
+          {/* SIDE-BY-SIDE ALLOWANCE + DEDUCTION */}
           {!isViewMode && (
-            <div className="mb-3">
-              <label className="form-label">Select Type:</label>
-              <div className="d-flex align-items-center mt-1">
-                <div className="form-check me-4">
-                  <input
-                    className="form-check-input"
-                    type="radio"
-                    name="typeRadio"
-                    id="allowanceTypeBtn"
-                    checked={selectedType === "Allowance"}
-                    onChange={() => setSelectedType("Allowance")}
-                  />
-                  <label
-                    htmlFor="allowanceTypeBtn"
-                    className="form-check-label"
-                  >
-                    Allowance
-                  </label>
-                </div>
-
-                <div className="form-check">
-                  <input
-                    className="form-check-input"
-                    type="radio"
-                    name="typeRadio"
-                    id="deductionTypeBtn"
-                    checked={selectedType === "Deduction"}
-                    onChange={() => setSelectedType("Deduction")}
-                  />
-                  <label
-                    htmlFor="deductionTypeBtn"
-                    className="form-check-label"
-                  >
-                    Deduction
-                  </label>
+            <div className="row" style={{ marginTop: "10px" }}>
+              {/* ALLOWANCE LIST */}
+              <div className="col-6">
+                <h5 style={{ fontWeight: 600 }}>Allowances</h5>
+                <div
+                  className="p-3"
+                  style={{
+                    border: "1px solid #ddd",
+                    borderRadius: "8px",
+                    maxHeight: "60vh",
+                    overflowY: "auto",
+                  }}
+                >
+                  {alDtOptions
+                    .filter((opt) => opt.Type === "Allowance")
+                    .map((opt) => renderRow(opt))}
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* LIST OF ALLOWANCE OR DEDUCTION ITEMS */}
-          {!isViewMode && (
-            <div
-              className="p-3"
-              style={{
-                border: "1px solid #ddd",
-                borderRadius: "8px",
-                maxHeight: "270px",
-                overflowY: "auto",
-                position: "relative",
-              }}
-            >
-              {alDtOptions
-                .filter((opt) => opt.Type === selectedType)
-                .map((opt) => {
-                  const isChecked = selectedAllowancesDeductions.some(
-                    (item) => item.ID === opt.ID
-                  );
-
-                  const row = selectedAllowancesDeductions.find(
-                    (x) => x.ID === opt.ID
-                  );
-                  const mode = row?.Mode || "%";
-                  const val = Number(row?.Value || 0);
-
-                  let calc = "";
-
-                  if (row?.Formula) {
-                    // When Fx is used → use calculatedAmount from state
-                    calc = Number(row.CalculatedAmount || 0).toFixed(2);
-                  } else if (mode === "%") {
-                    // Normal % mode
-                    calc = (
-                      (val / 100) *
-                      Number(formData.BaseSalary || 0)
-                    ).toFixed(2);
-                  } else {
-                    // Fixed mode
-                    calc = val;
-                  }
-
-                  return (
-                    <div
-                      key={opt.ID}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "18px",
-                        padding: "12px 12px",
-                        paddingLeft: "18px",
-                        borderBottom: "1px solid #efefef",
-                      }}
-                    >
-                      {/* Checkbox */}
-                      <input
-                        type="checkbox"
-                        className="form-check-input"
-                        style={{ marginTop: 3 }}
-                        checked={isChecked}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            const base = Number(formData.BaseSalary || 0);
-
-                            const newItem = {
-                              ...opt,
-                              Formula: "",
-                              UseFixedValue: false,
-                              Mode: "%",
-                              Value: "",
-                              CalculatedAmount: null, // 🔥 FIXED
-                            };
-                            setSelectedAllowancesDeductions((prev) =>
-                              recalculateAmounts(
-                                [...prev, newItem],
-                                0,
-                                Number(formData.BaseSalary)
-                              )
-                            );
-                          } else {
-                            handleDeleteAlDtItem(opt.ID);
-                          }
-                        }}
-                      />
-
-                      {/* Name */}
-                      <div style={{ width: "200px", fontWeight: 500 }}>
-                        {opt.Name}
-                      </div>
-
-                      {/* Mode */}
-                      <div
-                        style={{
-                          position: "relative",
-                          width: "70px",
-                        }}
-                      >
-                        <select
-                          disabled={!isChecked || row?.isFx}
-                          className="form-control"
-                          value={mode}
-                          onChange={(e) => {
-                            const newMode = e.target.value;
-                            setSelectedAllowancesDeductions((prev) =>
-                              prev.map((item) =>
-                                item.ID === opt.ID
-                                  ? { ...item, Mode: newMode, Value: "" }
-                                  : item
-                              )
-                            );
-                          }}
-                          style={{
-                            appearance: "none",
-                            WebkitAppearance: "none",
-                            MozAppearance: "none",
-                            paddingRight: "20px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          <option value="%">%</option>
-                          <option value="#">#</option>
-                        </select>
-
-                        {/* ▼ arrow */}
-                        <div
-                          style={{
-                            position: "absolute",
-                            right: "8px",
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                            pointerEvents: "none",
-                            fontSize: "10px",
-                            color: "#333",
-                          }}
-                        >
-                          ▼
-                        </div>
-                      </div>
-
-                      {/* Value box with formula below */}
-                      <div style={{ width: "120px" }}>
-                        <input
-                          type="number"
-                          disabled={!isChecked || row?.isFx}
-                          className="form-control"
-                          value={row?.Value || ""}
-                          onChange={(e) => {
-                            let raw = e.target.value;
-
-                            if (mode === "%" && (raw < 0 || raw > 100)) return;
-
-                            const base = Number(formData.BaseSalary || 0);
-
-                            setSelectedAllowancesDeductions((prev) => {
-                              // 1. update ONLY this row first
-                              const updated = prev.map((item) =>
-                                item.ID === opt.ID
-                                  ? {
-                                      ...item,
-                                      Value: raw,
-                                    }
-                                  : item
-                              );
-
-                              // 2. RE-CALCULATE ALL rows (this fixes PF etc)
-                              return recalculateAmounts(updated, 0, base);
-                            });
-                          }}
-                        />
-
-                        {/* Formula under box */}
-                        {/* If Fx formula exists, show it. 
-    Else show normal Base * % formula */}
-                        {isChecked && row?.Formula ? (
-                          <div
-                            style={{
-                              fontSize: "10px",
-                              color: "#7d7d7d",
-                              marginTop: "3px",
-                              marginLeft: "2px",
-                            }}
-                          >
-                            {row.Formula}
-                          </div>
-                        ) : (
-                          mode === "%" &&
-                          isChecked && (
-                            <div
-                              style={{
-                                fontSize: "10px",
-                                color: "#7d7d7d",
-                                marginTop: "3px",
-                                marginLeft: "2px",
-                              }}
-                            >
-                              Base * {(val / 100).toFixed(2)}
-                            </div>
-                          )
-                        )}
-                      </div>
-
-                      {/* Calculated */}
-                      <input
-                        className="form-control"
-                        style={{
-                          width: "120px",
-                          background: "#f4f4f4",
-                          textAlign: "right",
-                        }}
-                        value={isChecked ? calc : ""}
-                        readOnly
-                      />
-
-                      {/* Fx */}
-                      <button
-                        type="button"
-                        className={`btn ${
-                          row?.isFx ? "btn-primary" : "btn-outline-secondary"
-                        }`}
-                        style={{ width: "55px", fontWeight: 600 }}
-                        disabled={!isChecked}
-                        onClick={() => openFxFor(row)}
-                      >
-                        Fx
-                      </button>
-                    </div>
-                  );
-                })}
+              {/* DEDUCTION LIST */}
+              <div className="col-6">
+                <h5 style={{ fontWeight: 600 }}>Deductions</h5>
+                <div
+                  className="p-3"
+                  style={{
+                    border: "1px solid #ddd",
+                    borderRadius: "8px",
+                    maxHeight: "60vh",
+                    overflowY: "auto",
+                  }}
+                >
+                  {alDtOptions
+                    .filter((opt) => opt.Type === "Deduction")
+                    .map((opt) => renderRow(opt))}
+                </div>
+              </div>
             </div>
           )}
         </form>
@@ -1040,8 +1077,8 @@ export default function SalaryGroups() {
                       ...it,
                       Formula: res.formulaString,
                       CalculatedAmount: res.calculatedAmount,
-                      Mode: "%", // lock to percent mode
-                      Value: res.usedValue, // NEW: store the percentage user typed
+                      Mode: "Fx", // ⭐ NEW
+                      Value: "", // empty always for Fx
                       FixedAmount: 0,
                       isFx: true, // NEW: mark row as “Fx applied”
                     }
@@ -1052,6 +1089,31 @@ export default function SalaryGroups() {
           }}
         />
       </Dialog>
+      <CustomFormulaDialog
+        visible={customFormulaVisible}
+        onHide={() => setCustomFormulaVisible(false)}
+        targetItem={customFormulaTarget}
+        items={fxAvailableItems} // 🔥 FIX #1 (now items will load)
+        baseSalary={Number(formData.BaseSalary || 0)} // 🔥 FIX #2 (for evaluation)
+        onSave={(newFormula, calculatedAmount) => {
+          setSelectedAllowancesDeductions((prev) =>
+            prev.map((it) =>
+              it.ID === customFormulaTarget.ID
+                ? {
+                    ...it,
+                    Formula: newFormula,
+                    CalculatedAmount: calculatedAmount, // 🔥 FIX #3
+                    isFx: true,
+                    Mode: "Fx", // ⭐ NEW
+                    Value: "", // ← Make it blank
+                  }
+                : it
+            )
+          );
+
+          setCustomFormulaVisible(false);
+        }}
+      />
     </div>
   );
 }
