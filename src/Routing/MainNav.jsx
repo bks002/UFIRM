@@ -105,6 +105,7 @@ import ItemSpecificationPage from "../MainComponents/Inventory/ItemSpecification
 import OTHours from "../MainComponents/Payroll/OTHours.jsx";
 import ClientMasterPage from "../MainComponents/PropertyMaster/ClientMaster.jsx";
 import AD_Percentage from "../MainComponents/Payroll/AD_Percentage.jsx";
+import SGNEW from "../MainComponents/Payroll/SGNEW.jsx";
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -844,7 +845,7 @@ class MainNav extends React.Component {
 
                         <li className="nav-item">
                           <Link
-                            to="/Account/App/SalaryGroups"
+                            to="/Account/App/SGNEW"
                             className="nav-link"
                           >
                             <i className="fas fa-caret-right nav-icon"></i>
@@ -912,6 +913,17 @@ class MainNav extends React.Component {
                             <p>Formula</p>
                           </Link>
                         </li>
+
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/SalaryGroups"
+                            className="nav-link"
+                          >
+                            <i className="fas fa-caret-right nav-icon"></i>
+                            <p>Salary Groups Old</p>
+                          </Link>
+                        </li>
+
                       </ul>
                     </li>
                   ) : null}
@@ -1563,6 +1575,7 @@ class MainNav extends React.Component {
               path="/Account/App/GenerateSalary"
               component={GenerateSalary}
             />
+            <Route path="/Account/App/SGNEW" component={SGNEW} />
             <Route path="/Account/App/SalaryGroups" component={SalaryGroups} />
             <Route
               path="/Account/App/AllowanceDeduction"
