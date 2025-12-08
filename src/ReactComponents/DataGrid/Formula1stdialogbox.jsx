@@ -206,7 +206,7 @@ export default function Formula1stDialogBox({
                   <tr>
                     <th style={{ width: 30 }} />
                     <th>Name</th>
-                    <th style={{ width: 120, textAlign: "right" }}>Value</th>
+                    <th style={{ width: 120, textAlign: "right" }}>Amount</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -287,21 +287,71 @@ export default function Formula1stDialogBox({
             </div>
           </div>
 
-          <div className="modal-footer">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={onClose}
+          <div className="modal-footer" style={{ display: "block" }}>
+            {/* Row 1: Cancel + Apply */}
+            <div
+              style={{
+                display: "flex",
+                gap: "10px",
+                justifyContent: "flex-end",
+                marginBottom: "8px",
+              }}
             >
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={handleApply}
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={onClose}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleApply}
+              >
+                Apply
+              </button>
+            </div>
+
+            {/* Row 2: Centered Custom Formula */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                marginTop: "10px",
+              }}
             >
-              Apply
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  if (window.openCustomFormula) window.openCustomFormula();
+                }}
+                style={{
+                  background: "linear-gradient(135deg, #ff9800, #ffb74d)",
+                  color: "#fff",
+                  fontWeight: "600",
+                  padding: "10px 26px",
+                  borderRadius: "8px",
+                  border: "none",
+                  boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+                  fontSize: "15px",
+                  transition: "transform 0.2s, box-shadow 0.2s",
+                  cursor: "pointer",
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.transform = "translateY(-2px)";
+                  e.target.style.boxShadow = "0 6px 12px rgba(0,0,0,0.2)";
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.transform = "translateY(0)";
+                  e.target.style.boxShadow = "0 4px 10px rgba(0,0,0,0.15)";
+                }}
+              >
+                ⚡ Custom Formula
+              </button>
+            </div>
           </div>
         </div>
       </div>
