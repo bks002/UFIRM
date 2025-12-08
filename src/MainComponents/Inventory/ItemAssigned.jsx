@@ -17,6 +17,7 @@ import {
   updateItemAssigned,
   deleteItemAssigned,
   getItemSpecificationsByItemId,
+  ApproveItemAssigned,
 } from "../../Services/ItemassignService";
 import { getAllItems } from "../../Services/InventoryService";
 
@@ -26,7 +27,7 @@ import "primereact/resources/primereact.min.css";
 export default function ItemAssignedPage() {
   const [grouped, setGrouped] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-
+const [selectedRows, setSelectedRows] = useState([]);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [specifications, setSpecifications] = useState([]);
@@ -449,6 +450,37 @@ const handleApprove = () => {
       });
     }
   };
+const handleApprove = async () => {
+  if (selectedRows.length === 0) {
+    toast.current?.show({
+      severity: "warn",
+      summary: "No Selection",
+      detail: "Please select at least one item to approve.",
+    });
+    return;
+  }
+
+  try {
+    // Call your API here (example function name)
+    await ApproveItemAssigned(selectedRows); 
+
+    toast.current?.show({
+      severity: "success",
+      summary: "Approved",
+      detail: "Selected items approved successfully.",
+    });
+
+    setSelectedRows([]);
+    fetchGrouped(); // refresh table
+  } catch (err) {
+    console.error("APPROVE_ERROR", err);
+    toast.current?.show({
+      severity: "error",
+      summary: "Error",
+      detail: err.message || "Failed to approve items.",
+    });
+  }
+};
 
   // ---------- filtering ----------
   const filtered = grouped.filter((row) => {
@@ -503,6 +535,7 @@ const handleApprove = () => {
           <h5 className="mb-0">Item Assigned</h5>
 
           <div className="ml-auto d-flex align-items-center" style={{ gap: "12px" }}>
+
   {/* ✅ Search bar - matches Add Item button size */}
       {/* <span className="search-icon-wrapper">
       <i className="fa fa-search" style={{ color: "#6b7280" }} />
@@ -519,6 +552,20 @@ const handleApprove = () => {
       paddingLeft: "12px",
     }}
   />
+<Button
+  label="Approve"
+  icon="pi pi-check"
+  className="p-button-info"
+  disabled={selectedRows.length === 0}
+  onClick={handleApprove}
+  style={{
+    padding: "8px 16px",
+    fontSize: "13px",
+    height: "38px",
+    borderRadius: "8px",
+    whiteSpace: "nowrap",
+  }}
+/>
 
   {/* **NEW** Approve button - Green for success/approval */}
 <Button
@@ -561,7 +608,23 @@ const handleApprove = () => {
             >
               <thead className="thead-light">
                 <tr>
+<<<<<<< HEAD
                   <th style={{ width: "60px" }}>Select</th>
+=======
+                  <th style={{ width: "40px" }}>
+  <input
+    type="checkbox"
+    checked={filtered.length > 0 && selectedRows.length === filtered.length}
+    onChange={(e) => {
+      if (e.target.checked) {
+        setSelectedRows(filtered.map((x) => x.Id));
+      } else {
+        setSelectedRows([]);
+      }
+    }}
+  />
+</th>
+>>>>>>> 029aa7298d8996602c0696bea662095705bf3ea1
                   <th style={{ width: "80px" }}>S. No</th>
 
                   <th>Item Name</th>
@@ -569,10 +632,10 @@ const handleApprove = () => {
                   <th style={{ width: "100px" }}>Quantity</th>
                   <th style={{ minWidth: "220px" }}>Specifications</th>
                   <th style={{ width: "140px" }}>Type</th>
-                  <th style={{ width: "130px" }}>Created Date</th>
-                  <th style={{ width: "130px" }}>Created Time</th>
-                  <th style={{ width: "130px" }}>Updated Date</th>
-                  <th style={{ width: "130px" }}>Updated Time</th>
+                  <th style={{ width: "130px" }}>Date</th>
+                  <th style={{ width: "130px" }}>Time</th>
+                  <th style={{ width: "100px" }}>Approved</th>
+
                   <th style={{ width: "120px" }}>Actions</th>
                   <th style={{ width: "120px" }}>Approved </th>
                 </tr>
@@ -588,6 +651,7 @@ const handleApprove = () => {
 
                 {filtered.map((row, index) => (
                   <tr key={row.Id ?? index}>
+<<<<<<< HEAD
                     <td className="text-center">
   <input
     type="checkbox"
@@ -597,6 +661,17 @@ const handleApprove = () => {
         setSelectedRow(null); // unselect
       } else {
         setSelectedRow(row); // select
+=======
+                    <td>
+  <input
+    type="checkbox"
+    checked={selectedRows.includes(row.Id)}
+    onChange={(e) => {
+      if (e.target.checked) {
+        setSelectedRows([...selectedRows, row.Id]);
+      } else {
+        setSelectedRows(selectedRows.filter((id) => id !== row.Id));
+>>>>>>> 029aa7298d8996602c0696bea662095705bf3ea1
       }
     }}
   />
@@ -634,8 +709,14 @@ const handleApprove = () => {
                     <td>{renderTypeBadge(row)}</td>
                     <td>{formatDate(row.Created_On)}</td>
                     <td>{formatTime12(row.Created_On)}</td>
-                    <td>{formatDate(row.Updated_On)}</td>
-                    <td>{formatTime12(row.Updated_On)}</td>
+                    <td className="text-center">
+  {row.IsFMApproved ? (
+    <i className="pi pi-check" style={{ color: "green", fontSize: "1.2rem" }}></i>
+  ) : (
+    <i className="pi pi-times" style={{ color: "red", fontSize: "1.2rem" }}></i>
+  )}
+</td>
+
                     <td className="text-center">
                       <Button
   icon="pi pi-pencil"

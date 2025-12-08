@@ -11,6 +11,53 @@
     width: 90px;
     width: 100px;
 }
+
+.custom-multiselect {
+  position: relative;
+  width: 100%;
+}
+
+/* The “select box” */
+.custom-multiselect-input {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Dropdown panel: directly below input, same width */
+.custom-multiselect-panel {
+  position: absolute;
+  top: 100%;          /* directly below the select box */
+  left: 0;
+  width: 100%;        /* same width */
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 0.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 9999;      /* above dialog content */
+  padding: 6px 10px;
+}
+
+.custom-multiselect-item {
+  padding: 4px 0;
+}
+
+
+.multiselect-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.multiselect-wrapper .p-multiselect-panel {
+  position: absolute !important;
+  top: 100% !important;       /* place directly below the select box */
+  left: 0 !important;         /* align left */
+  width: 100% !important;     /* match select box width */
+  z-index: 9999 !important;   /* above dialog content */
+  max-height: 250px !important;
+}
+
 .tblActionBtnContainer{
     width: 118px;
     text-align: center;
