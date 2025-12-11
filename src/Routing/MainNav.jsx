@@ -253,11 +253,7 @@ class MainNav extends React.Component {
                     <p>My Profile</p>
                   </Link>
                   <div className="dropdown-divider"></div>
-<<<<<<< HEAD
-                  <Link to="/ChangePassword" className="dropdown-item">
-=======
                   <Link to="/Account/App/ChangePassword" className="dropdown-item">
->>>>>>> d7f41d12be3be19b3fd340ceb7d9239d6e6917f4
                     <p>Change Password </p>
                   </Link>
                   <div className="dropdown-divider"></div>
