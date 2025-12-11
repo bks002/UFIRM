@@ -87,7 +87,7 @@ import Visitor from "../MainComponents/Visitor/Visitor.jsx";
 import FacilityLatlong from "../MainComponents/FacilityMember/FacilityLatlong.jsx";
 import LeaveMaster from "../MainComponents/Attendance/LeaveMaster.jsx";
 import EmployeeLeave from "../MainComponents/FacilityMember/EmployeeLeave.jsx";
-
+import SparePage from "../MainComponents/AssetsMaster/SpareMaster.jsx";
 import SpotVisitCalendar from "../MainComponents/Calendar/SpotVisitCalendar.jsx";
 import AllowanceDeduction from "../MainComponents/Payroll/AllowanceDeduction.jsx";
 import SalaryGroups from "../MainComponents/Payroll/SalaryGroups.jsx";
@@ -462,6 +462,15 @@ class MainNav extends React.Component {
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Assets Master</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/SpareMaster"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Spare Master</p> 
                           </Link>
                         </li>
                         <li className="nav-item">
@@ -1390,6 +1399,9 @@ class MainNav extends React.Component {
             </Route>
             <Route path="/Account/App/PropertyDetails">
               <PropertyDetailsPage />
+            </Route>
+            <Route path="/Account/App/SpareMaster">
+              <SparePage />
             </Route>
             <Route path="/Account/App/ParkingDetails">
               <ParkingDetailsPage />
