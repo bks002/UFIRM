@@ -25,6 +25,9 @@ export default function SGNEW() {
   const [adFormula, setAdFormula] = useState({});
   const [selectedSG, setSelectedSG] = useState("");
   const [deductionFormulaMap, setDeductionFormulaMap] = useState({});
+  const [odDoubleFlags, setOdDoubleFlags] = useState({});
+  const [multiplyValues, setMultiplyValues] = useState({});
+  const [showMultiplier, setShowMultiplier] = useState({});
 
   const [form, setForm] = useState({
     salaryGroupName: "",
@@ -132,6 +135,23 @@ export default function SGNEW() {
         fixed = allowanceAmounts[name] || 0;
       }
 
+      // Special case: OTAmount should always be included if selected
+      if (name === "OTAmount" && allowanceSelected["OTAmount"]) {
+        list.push({
+          AD_Id: item.ID,
+          Name: name,
+          Type: item.Type,
+          FixedAmount: 0,
+          IsDouble: odDoubleFlags[name] || false,
+          MultiplyValue: multiplyValues[name] || null,
+          Formula: null,
+          FormulaId: null,
+          CalculatedAmount: 0,
+        });
+        return;
+      }
+
+      // Default behavior
       if (fixed === 0 && calculated === 0) return;
 
       list.push({
@@ -142,6 +162,7 @@ export default function SGNEW() {
         Formula: adFormula[name] || null,
         FormulaId: null,
         CalculatedAmount: calculated,
+        IsDouble: odDoubleFlags[name] || false,
       });
     });
 
@@ -177,7 +198,9 @@ export default function SGNEW() {
       }
     });
 
-    const amount = total * (percentage / 100);
+    // ROUND OFF HERE
+    const rawAmount = total * (percentage / 100);
+    const amount = Math.round(rawAmount); // rounding to nearest whole number
 
     const formulaString =
       formulaParts.length === 1
@@ -384,9 +407,10 @@ export default function SGNEW() {
       style={{
         border: "1px solid #ddd",
         borderRadius: 8,
-        padding: 20,
+        padding: "8px 12px", // much smaller
         background: "#fff",
-        marginTop: 20,
+        marginTop: 15,
+        boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
       }}
     >
       <div
@@ -435,6 +459,36 @@ export default function SGNEW() {
     setCalculatedAD({});
     setAdFormula({});
     setSelectedSG("");
+    setOdDoubleFlags({});
+    setMultiplyValues({});
+  };
+
+  const allowOnlyNumbers = (e) => {
+    const value = e.target.value;
+
+    // Allow only digits + optional decimal point
+    if (/^\d*\.?\d*$/.test(value)) {
+      setForm({ ...form, [e.target.name]: value });
+    }
+  };
+
+  const handleRefreshSelections = () => {
+    // Unselect any deduction radio
+    setActiveDeduction(null);
+
+    // Clear selected allowances (but DO NOT touch allowanceAmounts)
+    setAllowanceSelected({});
+
+    // Clear selected allowance mapping for deductions
+    setDeductionAllowanceMap({});
+
+    // Reset OTAmount special flags
+    setOdDoubleFlags({});
+    setMultiplyValues({});
+    setShowMultiplier({});
+
+    // DO NOT remove formula or calculated data
+    // DO NOT remove deductionAmounts
   };
 
   return (
@@ -457,6 +511,8 @@ export default function SGNEW() {
           borderRadius: 10,
           boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
           background: "#fff",
+          marginBottom: 5,
+          marginTop: -15,
         }}
       >
         {/* ROW 1: TITLE + SG NAME + SELECT SG */}
@@ -464,32 +520,46 @@ export default function SGNEW() {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 25,
-            marginBottom: 10, // reduced gap
+            gap: 20,
+            marginBottom: 3, // reduced gap
           }}
         >
           {/* TITLE */}
-          <h2
+          <div
             style={{
-              margin: 0,
-              padding: 0,
-              color: "#2a4365",
-              fontWeight: "bold",
-              whiteSpace: "nowrap",
-              fontSize: 22,
-              minWidth: "250px", // increase the width
-              marginRight: "40px", // <-- THIS CREATES THE GAP
-              borderBottom: "2px solid #2a4365", // <-- underline
-              paddingBottom: "4px", // <-- small spacing below text
+              display: "inline-block",
+              background: "#e2e8f0", // soft gray-blue bg
+              padding: "8px 18px",
+              borderRadius: "6px",
+              borderLeft: "5px solid #1e3a8a", // professional blue accent
+              marginBottom: "5px",
+              marginTop: "-10px",
             }}
           >
-            CREATE SALARY GROUP
-          </h2>
+            <h2
+              style={{
+                margin: 0,
+                padding: 0,
+                fontSize: 22, // same size you wanted
+                fontWeight: 700,
+                color: "#1e3a8a",
+                letterSpacing: "0.3px",
+              }}
+            >
+              CREATE SALARY GROUP
+            </h2>
+          </div>
 
           {/* Salary Group Name */}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <label
-              style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap" }}
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+                paddingLeft: 45,
+                marginTop: "-10px",
+              }}
             >
               Salary Group Name =
             </label>
@@ -505,6 +575,7 @@ export default function SGNEW() {
                 height: "32px",
                 fontSize: "14px",
                 padding: "2px 8px",
+                marginTop: "-15px",
               }}
             />
           </div>
@@ -512,7 +583,13 @@ export default function SGNEW() {
           {/* Select Existing SG */}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <label
-              style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap" }}
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+                paddingLeft: 43,
+                marginTop: "-10px",
+              }}
             >
               Select Existing SG =
             </label>
@@ -523,6 +600,7 @@ export default function SGNEW() {
                 width: "200px",
                 height: "32px",
                 padding: "2px 8px",
+                marginTop: "-15px",
                 fontSize: "14px",
                 color: selectedSG ? "#000" : "#999",
               }}
@@ -557,7 +635,7 @@ export default function SGNEW() {
             alignItems: "center",
             gap: 25,
             marginBottom: 10,
-            paddingLeft: "290px", // <-- Shift right (adjust as needed)
+            paddingLeft: "10px", // <-- Shift right (adjust as needed)
           }}
         >
           {/* Base Salary */}
@@ -570,7 +648,7 @@ export default function SGNEW() {
               placeholder="Enter Base Salary"
               name="baseSalary"
               value={form.baseSalary}
-              onChange={handleChange}
+              onChange={allowOnlyNumbers}
               className="form-control"
               style={{
                 width: "150px",
@@ -583,14 +661,14 @@ export default function SGNEW() {
 
           {/* Total Working Days */}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <label style={{ fontSize: 14, fontWeight: 600 }}>
+            <label style={{ fontSize: 14, fontWeight: 600, paddingLeft: 86 }}>
               Total Working Days =
             </label>
 
             <input
               name="totalWorkingDays"
               value={form.totalWorkingDays}
-              onChange={handleChange}
+              onChange={allowOnlyNumbers}
               className="form-control"
               style={{
                 width: "90px",
@@ -603,14 +681,14 @@ export default function SGNEW() {
 
           {/* Shift Hours */}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <label style={{ fontSize: 14, fontWeight: 600 }}>
+            <label style={{ fontSize: 14, fontWeight: 600, paddingLeft: 152 }}>
               Total Shift Hours =
             </label>
 
             <input
               name="shiftHours"
               value={form.shiftHours}
-              onChange={handleChange}
+              onChange={allowOnlyNumbers}
               className="form-control"
               style={{
                 width: "90px",
@@ -633,7 +711,11 @@ export default function SGNEW() {
         >
           {/* ALLOWANCES */}
           <div>
-            <h4 style={{ color: "#2a4365", marginBottom: 10 }}>Allowances</h4>
+            <h4
+              style={{ color: "#2a4365", marginBottom: 10, maxHeight: "20px" }}
+            >
+              Allowances
+            </h4>
             <div
               style={{
                 border: "1px solid #ddd",
@@ -716,7 +798,13 @@ export default function SGNEW() {
             </div>
 
             {/* OTHER ALLOWANCES */}
-            <h4 style={{ color: "#2a4365", margin: "20px 0 10px" }}>
+            <h4
+              style={{
+                color: "#2a4365",
+                margin: "20px 0 10px",
+                maxHeight: "20px",
+              }}
+            >
               Other Allowances
             </h4>
             <div
@@ -739,6 +827,7 @@ export default function SGNEW() {
                     columnGap: 8,
                   }}
                 >
+                  {/* MAIN checkbox (select OTAmount allowance) */}
                   <input
                     type="checkbox"
                     checked={!!allowanceSelected[a.Name]}
@@ -767,26 +856,106 @@ export default function SGNEW() {
                     style={{ transform: "scale(1.1)" }}
                   />
 
-                  <div
-                    style={{ display: "flex", alignItems: "center", gap: 8 }}
-                  >
-                    <span style={{ width: 120 }}>{a.Name}</span>
-                    <input
-                      type="number"
-                      className="form-control"
+                  {/* UI BLOCK (special for OTAmount) */}
+                  {a.Name === "OTAmount" ? (
+                    <div
                       style={{
-                        width: 120,
-                        height: "28px",
-                        padding: "2px 6px",
-                        fontSize: "13px",
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 14, // more spacing
+                        marginTop: 4,
                       }}
-                      value={allowanceAmounts[a.Name] || ""}
-                      onChange={(e) =>
-                        handleAllowanceAmount(a.Name, e.target.value)
-                      }
-                    />
-                  </div>
+                    >
+                      {/* Label */}
+                      <span style={{ width: 120, marginTop: 2 }}>{a.Name}</span>
 
+                      {/* To Multiply Checkbox */}
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          marginTop: 3, // shift downward
+                          opacity: allowanceSelected[a.Name] ? 1 : 0.4,
+                          cursor: allowanceSelected[a.Name]
+                            ? "pointer"
+                            : "not-allowed",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          disabled={!allowanceSelected[a.Name]} // disable until first checkbox selected
+                          checked={odDoubleFlags[a.Name] || false}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+
+                            setOdDoubleFlags((prev) => ({
+                              ...prev,
+                              [a.Name]: checked,
+                            }));
+
+                            if (!checked) {
+                              setMultiplyValues((prev) => ({
+                                ...prev,
+                                [a.Name]: null,
+                              }));
+                            }
+                          }}
+                        />
+                        <span style={{ fontSize: 12 }}>To Multiply</span>
+                      </label>
+
+                      {/* Dropdown (shows only when 2nd checkbox is checked) */}
+                      {odDoubleFlags[a.Name] && (
+                        <select
+                          style={{
+                            width: 65,
+                            height: 26,
+                            fontSize: 12,
+                            marginLeft: 6, // add spacing between label and dropdown
+                            marginTop: 2, // slight downward shift
+                          }}
+                          value={multiplyValues[a.Name] || ""}
+                          onChange={(e) =>
+                            setMultiplyValues((prev) => ({
+                              ...prev,
+                              [a.Name]: e.target.value,
+                            }))
+                          }
+                        >
+                          <option value="">--</option>
+                          {[1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map((v) => (
+                            <option key={v} value={v}>
+                              {v}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  ) : (
+                    /* NORMAL Allowances */
+                    <div
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    >
+                      <span style={{ width: 120 }}>{a.Name}</span>
+                      <input
+                        type="number"
+                        className="form-control"
+                        style={{
+                          width: 120,
+                          height: "28px",
+                          padding: "2px 6px",
+                          fontSize: "13px",
+                        }}
+                        value={allowanceAmounts[a.Name] || ""}
+                        onChange={(e) =>
+                          handleAllowanceAmount(a.Name, e.target.value)
+                        }
+                      />
+                    </div>
+                  )}
+
+                  {/* FX BUTTON */}
                   <button
                     className="btn btn-sm btn-secondary"
                     style={{ width: "100%", padding: "4px 0", fontSize: 12 }}
@@ -801,7 +970,28 @@ export default function SGNEW() {
           {/* RIGHT SIDE: DEDUCTIONS + SUMMARY */}
           <div>
             {/* MAIN DEDUCTIONS */}
-            <h4 style={{ color: "#2a4365", marginBottom: 10 }}>Deductions</h4>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 2,
+              }}
+            >
+              <h4 style={{ color: "#2a4365", margin: 0 }}>Deductions</h4>
+
+              <button
+                className="btn btn-sm btn-outline-primary"
+                style={{
+                  padding: "2px 10px",
+                  fontSize: 12,
+                  fontWeight: 600,
+                }}
+                onClick={handleRefreshSelections}
+              >
+                Refresh
+              </button>
+            </div>
             <div
               style={{
                 border: "1px solid #ddd",
@@ -889,7 +1079,7 @@ export default function SGNEW() {
             </div>
 
             {/* SALARY SUMMARY */}
-            <h4 style={{ color: "#2a4365", margin: "20px 0 10px" }}>
+            <h4 style={{ color: "#2a4365", margin: "15px 0 8px" }}>
               Salary Summary
             </h4>
 
@@ -897,20 +1087,34 @@ export default function SGNEW() {
               style={{
                 border: "1px solid #ddd",
                 borderRadius: 8,
-                padding: 15,
+                padding: "10px 12px", // reduced padding
+                boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <strong>Total Gross:</strong>{" "}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: 4, // tighter spacing
+                }}
+              >
+                <strong>Total Gross:</strong>
                 <span>₹ {totalGross.toFixed(2)}</span>
               </div>
 
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <strong>Total Deduction:</strong>{" "}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: 4, // tighter spacing
+                }}
+              >
+                <strong>Total Deduction:</strong>
                 <span>₹ {totalDeduction.toFixed(2)}</span>
               </div>
 
-              <hr />
+              {/* TIGHT HR LINE */}
+              <hr style={{ margin: "6px 0" }} />
 
               <div
                 style={{
@@ -919,14 +1123,22 @@ export default function SGNEW() {
                   fontWeight: "bold",
                   fontSize: 16,
                   color: "#2b6cb0",
+                  marginTop: 2, // reduced gap above net pay
                 }}
               >
-                <span>Net Pay:</span> <span>₹ {netPay.toFixed(2)}</span>
+                <span>Net Pay:</span>
+                <span>₹ {netPay.toFixed(2)}</span>
               </div>
             </div>
 
             {/* OTHER DEDUCTIONS */}
-            <h4 style={{ color: "#2a4365", margin: "20px 0 10px" }}>
+            <h4
+              style={{
+                color: "#2a4365",
+                margin: "20px 0 10px",
+                maxHeight: "20px",
+              }}
+            >
               Other Deductions
             </h4>
 
@@ -1006,7 +1218,7 @@ export default function SGNEW() {
           </div>
         </div>
         {/* SALARY SUMMARY BOX */}
-        <div style={{ marginTop: 20 }}>
+        <div style={{ marginTop: 2 }}>
           <SalarySummaryBox />
         </div>
         {/* SAVE BUTTON */}
