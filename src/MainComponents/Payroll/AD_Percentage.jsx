@@ -4,27 +4,55 @@ import {
   getADPercentages,
   addADPercentage,
   updateADPercentage,
-  deleteADPercentage,
+  deleteADPercentage
 } from "../../Services/PayrollService";
+import { getAllProperties } from "../../Services/PropertyService";
+import { useSelector } from "react-redux";
 
 export default function AD_Percentage() {
   const [records, setRecords] = useState([]);
   const [adNames, setAdNames] = useState([]);
+  const [properties, setProperties] = useState([]);
 
   const [showDialog, setShowDialog] = useState(false);
   const [selectedName, setSelectedName] = useState("");
   const [percentage, setPercentage] = useState("");
+
+  const [isGlobal, setIsGlobal] = useState(true);
+  const [propertyId, setPropertyId] = useState(null);
+
   const [editRecord, setEditRecord] = useState(null);
   const [search, setSearch] = useState("");
+const PropertyId = useSelector((state) => state.Commonreducer.puidn);
 
-  // Load table + dropdown names
+  // Load Data
   useEffect(() => {
     loadTable();
     loadADNames();
-  }, []);
+    loadProperties();
+  }, [PropertyId]);
 
   const loadTable = () => {
-    getADPercentages().then((data) => setRecords(data || []));
+  // CASE 1 → PropertyId = 0 → Show GLOBAL only
+  if (!PropertyId || PropertyId === 0) {
+    getADPercentages(0).then((data) => {
+      const globalOnly = (data || []).filter((x) => x.IsGlobal === true);
+      setRecords(globalOnly);
+    });
+    return;
+  }
+
+  // CASE 2 → PropertyId > 0 → Show global + that property
+  getADPercentages(PropertyId).then((data) => setRecords(data || []));
+};
+
+  const loadProperties = async () => {
+    try {
+      const res = await getAllProperties();
+      setProperties(res || []);
+    } catch {
+      setProperties([]);
+    }
   };
 
   const loadADNames = async () => {
@@ -38,12 +66,12 @@ export default function AD_Percentage() {
         .map((x) => x.Name);
 
       setAdNames([...new Set(filtered)]);
-    } catch (error) {
+    } catch {
       setAdNames([]);
     }
   };
 
-  // Save (Create + Update)
+  // Save
   const handleSave = async () => {
     if (!selectedName || !percentage) {
       alert("Fill all fields");
@@ -54,6 +82,8 @@ export default function AD_Percentage() {
       ID: editRecord ? editRecord.ID : 0,
       AD_Name: selectedName,
       Percentage: parseFloat(percentage),
+      PropertyId: isGlobal ? null : propertyId,
+      IsGlobal: isGlobal,
       IsActive: true,
       CreatedOn: editRecord ? editRecord.CreatedOn : new Date().toISOString(),
       UpdatedOn: new Date().toISOString(),
@@ -68,17 +98,25 @@ export default function AD_Percentage() {
     }
 
     setShowDialog(false);
-    setSelectedName("");
-    setPercentage("");
-    setEditRecord(null);
+    resetForm();
     loadTable();
   };
 
-  // Open dialog for edit
+  const resetForm = () => {
+    setSelectedName("");
+    setPercentage("");
+    setIsGlobal(true);
+    setPropertyId(null);
+    setEditRecord(null);
+  };
+
+  // Edit
   const openEdit = (item) => {
     setEditRecord(item);
     setSelectedName(item.AD_Name);
     setPercentage(item.Percentage);
+    setIsGlobal(item.IsGlobal);
+    setPropertyId(item.PropertyId || null);
     setShowDialog(true);
   };
 
@@ -91,10 +129,7 @@ export default function AD_Percentage() {
   };
 
   return (
-    <div
-      className="content-wrapper"
-      style={{ minHeight: "100vh", padding: 30 }}
-    >
+    <div className="content-wrapper" style={{ minHeight: "100vh", padding: 30 }}>
       <div
         className="card"
         style={{
@@ -106,6 +141,7 @@ export default function AD_Percentage() {
           background: "#f7fafc",
         }}
       >
+        {/* Header */}
         <div
           style={{
             display: "flex",
@@ -114,12 +150,10 @@ export default function AD_Percentage() {
             marginBottom: 20,
           }}
         >
-          {/* LEFT: Heading */}
           <h2 style={{ fontWeight: "bold", color: "#2a4365", margin: 0 }}>
             Percentage Assigned List
           </h2>
 
-          {/* RIGHT: Search + Assign */}
           <div style={{ display: "flex", gap: 10 }}>
             <input
               type="text"
@@ -133,10 +167,8 @@ export default function AD_Percentage() {
             <button
               className="btn btn-success"
               onClick={() => {
+                resetForm();
                 setShowDialog(true);
-                setEditRecord(null);
-                setSelectedName("");
-                setPercentage("");
               }}
             >
               Assign
@@ -151,6 +183,7 @@ export default function AD_Percentage() {
               <th>S.No.</th>
               <th>Name</th>
               <th>Percentage</th>
+              <th>Applied To</th> {/* NEW COLUMN */}
               <th style={{ width: 120, textAlign: "center" }}>Action</th>
             </tr>
           </thead>
@@ -158,10 +191,7 @@ export default function AD_Percentage() {
           <tbody>
             {records.length === 0 ? (
               <tr>
-                <td
-                  colSpan={4}
-                  style={{ textAlign: "center", color: "#718096" }}
-                >
+                <td colSpan={5} style={{ textAlign: "center", color: "#718096" }}>
                   No data available
                 </td>
               </tr>
@@ -174,7 +204,25 @@ export default function AD_Percentage() {
                   <tr key={item.ID}>
                     <td>{index + 1}</td>
                     <td>{item.AD_Name}</td>
-                    <td>{item.Percentage}</td>
+                    <td>{item.Percentage}%</td>
+
+                    {/* Global / Property Column */}
+                    <td>
+                      {item.IsGlobal ? (
+                        <span style={{ color: "green", fontWeight: "bold" }}>
+                          Global
+                        </span>
+                      ) : item.PropertyName ? (
+                        <span style={{ color: "#2a4365" }}>
+                          {item.PropertyName}
+                        </span>
+                      ) : (
+                        <span style={{ color: "#dd6b20" }}>
+                          {properties.find(p => p.PropertyId === item.PropertyId) ? properties.find(p => p.PropertyId === item.PropertyId).Name : "N/A"}
+                        </span>
+                      )}
+                    </td>
+
                     <td style={{ textAlign: "center" }}>
                       <button
                         className="btn btn-sm btn-primary me-2"
@@ -223,6 +271,7 @@ export default function AD_Percentage() {
               {editRecord ? "Edit Percentage" : "Assign Percentage"}
             </h4>
 
+            {/* Name */}
             <div className="form-group">
               <label>Name</label>
               <select
@@ -239,6 +288,7 @@ export default function AD_Percentage() {
               </select>
             </div>
 
+            {/* Percentage */}
             <div className="form-group mt-3">
               <label>Percentage</label>
               <input
@@ -249,6 +299,39 @@ export default function AD_Percentage() {
               />
             </div>
 
+            {/* Global Toggle */}
+            <div className="form-group mt-3">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={isGlobal}
+                  onChange={(e) => setIsGlobal(e.target.checked)}
+                  style={{ marginRight: 8 }}
+                />
+                Use Globally for All Properties
+              </label>
+            </div>
+
+            {/* Property Dropdown */}
+            {!isGlobal && (
+              <div className="form-group mt-3">
+                <label>Select Property</label>
+                <select
+                  className="form-control"
+                  value={propertyId || ""}
+                  onChange={(e) => setPropertyId(e.target.value)}
+                >
+                  <option value="">-- Select Property --</option>
+                  {properties.map((p) => (
+                    <option key={p.PropertyId} value={p.PropertyId}>
+                      {p.Name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Buttons */}
             <div
               style={{
                 display: "flex",
@@ -260,7 +343,7 @@ export default function AD_Percentage() {
                 className="btn btn-secondary me-2"
                 onClick={() => {
                   setShowDialog(false);
-                  setEditRecord(null);
+                  resetForm();
                 }}
               >
                 Cancel
