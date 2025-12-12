@@ -143,7 +143,7 @@ export default function SGNEW() {
           Name: name,
           Type: item.Type,
           FixedAmount: 0,
-          IsDouble: odDoubleFlags[name] || false,
+          IsDouble: odDoubleFlags[name] && multiplyValues[name] ? true : false,
           MultiplyValue: multiplyValues[name] || null,
           Formula: null,
           FormulaId: null,
@@ -1077,7 +1077,9 @@ export default function SGNEW() {
                           height: "28px",
                           padding: "2px 6px",
                           fontSize: "13px",
-                          opacity: isReal ? 1 : 0.5,
+                          color: isReal ? "#000" : "rgba(0,0,0,0.3)",
+                          backgroundColor: "#fff", // keeps it crisp
+                          border: "1px solid #e5e7eb",
                         }}
                         value={
                           isReal
@@ -1241,7 +1243,9 @@ export default function SGNEW() {
                           height: "28px",
                           padding: "2px 6px",
                           fontSize: "13px",
-                          opacity: isReal ? 1 : 0.5,
+                          color: isReal ? "#000" : "rgba(0,0,0,0.3)",
+                          backgroundColor: "#fff", // keeps it crisp
+                          border: "1px solid #e5e7eb",
                         }}
                         value={
                           isReal
