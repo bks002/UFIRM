@@ -29,6 +29,8 @@ export default function SGNEW() {
   const [multiplyValues, setMultiplyValues] = useState({});
   const [showMultiplier, setShowMultiplier] = useState({});
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [manualAD, setManualAD] = useState({});
+  const [suppressPreview, setSuppressPreview] = useState({});
 
   const [form, setForm] = useState({
     salaryGroupName: "",
@@ -157,11 +159,16 @@ export default function SGNEW() {
         if (fixed === 0) return; // HRA = 0 means user didn't enter any value
       } else {
         // Deduction filtering
-        if (
-          !calculatedAD[name] &&
-          !(adFormula[name] && deductionFormulaMap[name])
-        )
-          return;
+        if (manualAD[name]) {
+          fixed = deductionAmounts[name] || 0;
+          calculated = 0;
+        } else {
+          if (
+            !calculatedAD[name] &&
+            !(adFormula[name] && deductionFormulaMap[name])
+          )
+            return;
+        }
       }
 
       list.push({
@@ -504,9 +511,22 @@ export default function SGNEW() {
     if (!isPreviewMode) return;
 
     [...deductions, ...otherDeductions].forEach((d) => {
-      handleDeductionSelect(d, true); // <-- PREVIEW MODE TRUE
+      const currentValue = deductionAmounts[d.Name];
+
+      // CASE 1: If it's manual → do not restore preview
+      if (manualAD[d.Name]) return;
+      if (suppressPreview[d.Name]) return;
+
+      // CASE 2: If user erased (undefined or empty string) → restore preview
+      if (currentValue === undefined || currentValue === "") {
+        handleDeductionSelect(d, true);
+        return;
+      }
+
+      // CASE 3: If a real value exists → skip preview
+      if (currentValue > 0) return;
     });
-  }, [form.baseSalary]);
+  }, [form.baseSalary, manualAD, deductionAmounts]);
 
   const handleRefreshSelections = () => {
     // Unselect any deduction radio
@@ -1039,6 +1059,7 @@ export default function SGNEW() {
                 // compute REAL vs PREVIEW for this deduction
                 const isReal =
                   activeDeduction === d.Name || !!calculatedAD[d.Name];
+                const isManual = manualAD[d.Name]; // ← PUT IT RIGHT HERE
 
                 return (
                   <div
@@ -1080,20 +1101,97 @@ export default function SGNEW() {
                           color: isReal ? "#000" : "rgba(0,0,0,0.3)",
                           backgroundColor: "#fff", // keeps it crisp
                           border: "1px solid #e5e7eb",
+                          // Dark text ONLY when manual
+                          color: isManual
+                            ? "#000"
+                            : isReal
+                            ? "#000"
+                            : "rgba(0,0,0,0.3)",
+                        }}
+                        // ⭐ NEW: vanish preview when input is focused
+                        onFocus={() => {
+                          // Mark this deduction as temporarily blocking preview restore
+                          setSuppressPreview((prev) => ({
+                            ...prev,
+                            [d.Name]: true,
+                          }));
+
+                          const val = deductionAmounts[d.Name];
+
+                          // Clear preview for typing
+                          if (
+                            !isManual &&
+                            !isReal &&
+                            isPreviewMode &&
+                            Number(val) > 0
+                          ) {
+                            setDeductionAmounts((prev) => ({
+                              ...prev,
+                              [d.Name]: "",
+                            }));
+                            setAdFormula((prev) => ({
+                              ...prev,
+                              [d.Name]: "",
+                            }));
+                          }
+                        }}
+                        onBlur={() => {
+                          const value = deductionAmounts[d.Name];
+
+                          // User didn't type anything → restore preview
+                          if (
+                            !isManual &&
+                            (value === "" || value === undefined)
+                          ) {
+                            handleDeductionSelect(d, true);
+                          }
+
+                          // Allow preview engine to restore again after blur
+                          setSuppressPreview((prev) => ({
+                            ...prev,
+                            [d.Name]: false,
+                          }));
                         }}
                         value={
-                          isReal
-                            ? deductionAmounts[d.Name] || "" // real for selected or previously calculated
+                          isManual
+                            ? deductionAmounts[d.Name] || "" // user typed manually
+                            : isReal
+                            ? deductionAmounts[d.Name] || "" // real calculated
                             : isPreviewMode
-                            ? deductionAmounts[d.Name]?.toFixed(2) || "" // preview
-                            : deductionAmounts[d.Name] || "" // fallback
+                            ? Number(deductionAmounts[d.Name]) > 0
+                              ? Number(deductionAmounts[d.Name]).toFixed(2)
+                              : ""
+                            : ""
                         }
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const value = e.target.value;
+
+                          // If user erased everything → restore preview mode
+                          if (value === "") {
+                            setManualAD((prev) => ({
+                              ...prev,
+                              [d.Name]: false,
+                            }));
+
+                            setDeductionAmounts((prev) => ({
+                              ...prev,
+                              [d.Name]: undefined,
+                            }));
+
+                            return;
+                          }
+
+                          // Normal manual typing
+                          setManualAD((prev) => ({
+                            ...prev,
+                            [d.Name]: true,
+                          }));
+
                           setDeductionAmounts((prev) => ({
                             ...prev,
-                            [d.Name]: Number(e.target.value),
-                          }))
-                        }
+                            [d.Name]: Number(value),
+                          }));
+                        }}
                       />
 
                       {/* FORMULA TEXT */}
@@ -1104,7 +1202,9 @@ export default function SGNEW() {
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {isReal ? (
+                        {isManual ? (
+                          "" // manual typed → no formula
+                        ) : isReal ? (
                           adFormula[d.Name] ? (
                             `= ${adFormula[d.Name]}`
                           ) : (
@@ -1114,8 +1214,6 @@ export default function SGNEW() {
                           <span style={{ opacity: 0.4 }}>
                             = {adFormula[d.Name]}
                           </span>
-                        ) : adFormula[d.Name] ? (
-                          `= ${adFormula[d.Name]}`
                         ) : (
                           ""
                         )}
@@ -1208,6 +1306,7 @@ export default function SGNEW() {
               {otherDeductions.map((d) => {
                 const isReal =
                   activeDeduction === d.Name || !!calculatedAD[d.Name];
+                const isManual = manualAD[d.Name];
 
                 return (
                   <div
@@ -1246,20 +1345,86 @@ export default function SGNEW() {
                           color: isReal ? "#000" : "rgba(0,0,0,0.3)",
                           backgroundColor: "#fff", // keeps it crisp
                           border: "1px solid #e5e7eb",
+                          // Dark text ONLY when manual
+                          color: isManual
+                            ? "#000"
+                            : isReal
+                            ? "#000"
+                            : "rgba(0,0,0,0.3)",
+                        }}
+                        // ⭐ NEW: vanish preview when input is focused
+                        onFocus={() => {
+                          const val = deductionAmounts[d.Name];
+
+                          const isShowingPreview =
+                            !isManual &&
+                            isPreviewMode &&
+                            !activeDeduction && // deduction is NOT selected
+                            (val === undefined || Number(val) > 0);
+
+                          if (isShowingPreview) {
+                            setDeductionAmounts((prev) => ({
+                              ...prev,
+                              [d.Name]: "", // vanish preview
+                            }));
+
+                            setAdFormula((prev) => ({
+                              ...prev,
+                              [d.Name]: "", // vanish formula
+                            }));
+                          }
+                        }}
+                        onBlur={() => {
+                          const value = deductionAmounts[d.Name];
+
+                          // User clicked but didn’t type anything → restore preview
+                          if (
+                            !isManual &&
+                            (value === "" || value === undefined)
+                          ) {
+                            handleDeductionSelect(d, true); // restore preview
+                          }
                         }}
                         value={
-                          isReal
-                            ? deductionAmounts[d.Name] || ""
+                          isManual
+                            ? deductionAmounts[d.Name] || "" // user typed manually
+                            : isReal
+                            ? deductionAmounts[d.Name] || "" // real calculated
                             : isPreviewMode
-                            ? deductionAmounts[d.Name]?.toFixed(2) || ""
-                            : deductionAmounts[d.Name] || ""
+                            ? Number(deductionAmounts[d.Name]) > 0
+                              ? Number(deductionAmounts[d.Name]).toFixed(2)
+                              : ""
+                            : ""
                         }
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const value = e.target.value;
+
+                          // If user erased everything → restore preview mode
+                          if (value === "") {
+                            setManualAD((prev) => ({
+                              ...prev,
+                              [d.Name]: false,
+                            }));
+
+                            setDeductionAmounts((prev) => ({
+                              ...prev,
+                              [d.Name]: undefined,
+                            }));
+
+                            return;
+                          }
+
+                          // Normal manual typing
+                          setManualAD((prev) => ({
+                            ...prev,
+                            [d.Name]: true,
+                          }));
+
                           setDeductionAmounts((prev) => ({
                             ...prev,
-                            [d.Name]: Number(e.target.value),
-                          }))
-                        }
+                            [d.Name]: Number(value),
+                          }));
+                        }}
                       />
 
                       {/* FORMULA TEXT */}
@@ -1270,7 +1435,9 @@ export default function SGNEW() {
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {isReal ? (
+                        {isManual ? (
+                          "" // manual typed → no formula
+                        ) : isReal ? (
                           adFormula[d.Name] ? (
                             `= ${adFormula[d.Name]}`
                           ) : (
@@ -1280,8 +1447,6 @@ export default function SGNEW() {
                           <span style={{ opacity: 0.4 }}>
                             = {adFormula[d.Name]}
                           </span>
-                        ) : adFormula[d.Name] ? (
-                          `= ${adFormula[d.Name]}`
                         ) : (
                           ""
                         )}
