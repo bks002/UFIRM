@@ -10,323 +10,343 @@ import { Dropdown } from "primereact/dropdown";
 import { Calendar } from "primereact/calendar";
 import { Toast } from "primereact/toast";
 import { useSelector } from "react-redux";
-import SpareService from "../../Services/SpareService"; // create this file
+import SpareService from "../../Services/SpareService";
 
 const SparePage = () => {
-  const toast = useRef(null);
-  const propertyId = useSelector((state) => state.Commonreducer.puidn);
+    const toast = useRef(null);
+    const propertyId = useSelector((state) => state.Commonreducer.puidn);
 
-  const [spares, setSpares] = useState([]);
-  const [assets, setAssets] = useState([]);
+    const [spares, setSpares] = useState([]);
+    const [assets, setAssets] = useState([]);
 
-  const [dialogVisible, setDialogVisible] = useState(false);
-  const [editMode, setEditMode] = useState(false);
+    const [dialogVisible, setDialogVisible] = useState(false);
 
-  const [selectedRow, setSelectedRow] = useState(null);
-  const [globalFilter, setGlobalFilter] = useState("");
+    const [selectedRow, setSelectedRow] = useState(null);
+    const [globalFilter, setGlobalFilter] = useState("");
 
-  // Form states
-  const [spareId, setSpareId] = useState(null);
-  const [assetId, setAssetId] = useState("");
-  const [spareType, setSpareType] = useState("");
-  const [rating, setRating] = useState("");
-  const [backupTime, setBackupTime] = useState("");
-  const [status, setStatus] = useState("");
-  const [quantity, setQuantity] = useState(1);
-  const [purchaseDate, setPurchaseDate] = useState(null);
-  const [expiryDate, setExpiryDate] = useState(null);
-  const [serialNumber, setSerialNumber] = useState("");
-  const [vendorName, setVendorName] = useState("");
-  const [invoiceNo, setInvoiceNo] = useState("");
-  const [remarks, setRemarks] = useState("");
-  const [warranty, setWarranty] = useState("");
+    const [assetId, setAssetId] = useState("");
 
-  const resetForm = () => {
-    setSpareId(null);
-    setAssetId("");
-    setSpareType("");
-    setRating("");
-    setBackupTime("");
-    setStatus("");
-    setQuantity(1);
-    setPurchaseDate(null);
-    setExpiryDate(null);
-    setSerialNumber("");
-    setVendorName("");
-    setInvoiceNo("");
-    setRemarks("");
-    setWarranty("");
-    setEditMode(false);
-  };
+    // MULTIPLE SPARE ROWS
+    const [spareRows, setSpareRows] = useState([
+        getEmptySpareRow()
+    ]);
 
-  // Load spares
-  const loadSpares = async () => {
-    try {
-      const data = await SpareService.getByProperty(propertyId);
-      setSpares(Array.isArray(data) ? data : []);
-    } catch (err) {
-      toast.current.show({
-        severity: "error",
-        summary: "Error",
-        detail: "Failed to load spares",
-      });
-    }
-  };
-
-  // Load assets for dropdown
-  const loadAssets = async () => {
-  try {
-    const res = await fetch(`https://api.urest.in:8096/GetAssets?propertyId=${propertyId}`);
-    const data = await res.json();
-
-    console.log("API RESPONSE:", data);
-
-    // Normalize into a single array for dropdown/list
-    const combined = [
-      ...(Array.isArray(data.PassedServiceDates) ? data.PassedServiceDates : []),
-      ...(Array.isArray(data.UpcomingServiceDates) ? data.UpcomingServiceDates : [])
-    ];
-
-    setAssets(combined);
-  } catch (err) {
-    console.error(err);
-    setAssets([]);
-  }
-};
-
-
-  useEffect(() => {
-    if (propertyId) {
-      loadSpares();
-      loadAssets();
-    }
-  }, [propertyId]);
-
-  const openNew = () => {
-    resetForm();
-    setDialogVisible(true);
-  };
-
-  const openEdit = (row) => {
-    setEditMode(true);
-
-    setSpareId(row.SpareID);
-    setAssetId(row.AssetID);
-    setSpareType(row.SpareType);
-    setRating(row.Rating);
-    setBackupTime(row.BackupTime);
-    setStatus(row.Status);
-    setQuantity(row.Quantity);
-    setPurchaseDate(row.PurchaseDate ? new Date(row.PurchaseDate) : null);
-    setExpiryDate(row.ExpiryDate ? new Date(row.ExpiryDate) : null);
-    setSerialNumber(row.SerialNumber);
-    setVendorName(row.VendorName);
-    setInvoiceNo(row.InvoiceNo);
-    setRemarks(row.Remarks);
-    setWarranty(row.Warranty);
-
-    setDialogVisible(true);
-  };
-
-  const saveSpare = async () => {
-    if (!assetId || !spareType || !serialNumber) {
-      toast.current.show({
-        severity: "warn",
-        summary: "Validation",
-        detail: "Asset, Spare Type and Serial Number are required",
-      });
-      return;
+    function getEmptySpareRow() {
+        return {
+            SpareType: "",
+            Rating: "",
+            BackupTime: "",
+            Status: "",
+            Quantity: 1,
+            PurchaseDate: null,
+            ExpiryDate: null,
+            SerialNumber: "",
+            VendorName: "",
+            InvoiceNo: "",
+            Warranty: "",
+            Remarks: ""
+        };
     }
 
-    const formData = new FormData();
-    formData.append("PropertyID", propertyId);
-    formData.append("AssetID", assetId);
-    formData.append("SpareType", spareType);
-    formData.append("Rating", rating);
-    formData.append("BackupTime", backupTime);
-    formData.append("Status", status);
-    formData.append("Quantity", quantity);
-    formData.append("PurchaseDate", purchaseDate?.toISOString() || "");
-    formData.append("ExpiryDate", expiryDate?.toISOString() || "");
-    formData.append("SerialNumber", serialNumber);
-    formData.append("VendorName", vendorName);
-    formData.append("InvoiceNo", invoiceNo);
-    formData.append("Warranty", warranty);
-    formData.append("Remarks", remarks);
-    formData.append("Reusable", 0);
+    // Reset all
+    const resetForm = () => {
+        setAssetId("");
+        setSpareRows([getEmptySpareRow()]);
+    };
 
-    try {
-      if (editMode) {
-        formData.append("SpareID", spareId);
-        await SpareService.update(formData);
-        toast.current.show({
-          severity: "success",
-          summary: "Updated",
-          detail: "Spare updated successfully",
-        });
-      } else {
-        await SpareService.create(formData);
-        toast.current.show({
-          severity: "success",
-          summary: "Added",
-          detail: "Spare added successfully",
-        });
-      }
+    // Load spares
+    const loadSpares = async () => {
+        try {
+            const data = await SpareService.getByProperty(propertyId);
+            setSpares(Array.isArray(data) ? data : []);
+        } catch {
+            toast.current.show({
+                severity: "error",
+                summary: "Error",
+                detail: "Failed to load spares",
+            });
+        }
+    };
 
-      setDialogVisible(false);
-      resetForm();
-      loadSpares();
-    } catch (err) {
-      toast.current.show({
-        severity: "error",
-        summary: "Error",
-        detail: "Failed to save spare",
-      });
-    }
-  };
+    // Load assets
+    const loadAssets = async () => {
+        try {
+            const res = await fetch(`https://api.urest.in:8096/GetAssets?propertyId=${propertyId}`);
+            const data = await res.json();
 
-  const deleteSpare = async (row) => {
-    if (!row) return;
-    try {
-      await SpareService.delete(row.SpareID);
-      toast.current.show({
-        severity: "success",
-        summary: "Deleted",
-        detail: "Spare deleted successfully",
-      });
-      loadSpares();
-    } catch (err) {
-      toast.current.show({
-        severity: "error",
-        summary: "Error",
-        detail: "Failed to delete spare",
-      });
-    }
-  };
-const assetOptions = Array.isArray(assets)
-  ? assets.map(a => ({
-      label: a.Name || a.name,
-      value: a.Id || a.id
-    }))
-  : [];
+            const combined = [
+                ...(Array.isArray(data.PassedServiceDates) ? data.PassedServiceDates : []),
+                ...(Array.isArray(data.UpcomingServiceDates) ? data.UpcomingServiceDates : [])
+            ];
 
+            setAssets(combined);
+        } catch {
+            setAssets([]);
+        }
+    };
 
-  const header = (
-    <div className="d-flex justify-content-between align-items-center p-2">
-      <h5 className="m-0">Spare Master</h5>
+    useEffect(() => {
+        if (propertyId) {
+            loadSpares();
+            loadAssets();
+        }
+    }, [propertyId]);
 
-      <div className="d-flex gap-2">
-        <InputText
-          placeholder="Search..."
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-        />
+    // Dropdown asset list
+    const assetOptions = Array.isArray(assets)
+        ? assets.map(a => ({
+            label: a.Name || a.name,
+            value: a.Id || a.id
+        }))
+        : [];
 
-        {selectedRow && (
-          <>
-            <Button icon="pi pi-pencil" className="p-button-info" onClick={() => openEdit(selectedRow)} />
-            <Button icon="pi pi-trash" className="p-button-danger" onClick={() => deleteSpare(selectedRow)} />
-          </>
-        )}
+    // Add new spare row
+    const addSpareRow = () => {
+        setSpareRows([...spareRows, getEmptySpareRow()]);
+    };
 
-        <Button label="Add Spare" icon="pi pi-plus" onClick={openNew} />
-      </div>
-    </div>
-  );
+    // Remove spare row
+    const removeSpareRow = (index) => {
+        setSpareRows(spareRows.filter((_, i) => i !== index));
+    };
 
-  const dialogFooter = (
-    <div>
-      <Button label="Cancel" className="p-button-text" onClick={() => setDialogVisible(false)} />
-      <Button label={editMode ? "Update" : "Save"} icon="pi pi-check" onClick={saveSpare} />
-    </div>
-  );
+    // Update a row field
+    const updateRow = (index, field, value) => {
+        const updated = [...spareRows];
+        updated[index][field] = value;
+        setSpareRows(updated);
+    };
 
-  return (
-    <div className="content-wrapper p-3">
-      <Toast ref={toast} />
+    // SAVE ALL SPARES FOR ONE ASSET
+    const saveAllSpares = async () => {
+        if (!assetId) {
+            toast.current.show({
+                severity: "warn",
+                summary: "Validation",
+                detail: "Please select an Asset",
+            });
+            return;
+        }
 
-      <DataTable
-        value={spares}
-        paginator
-        rows={10}
-        header={header}
-        selection={selectedRow}
-        onSelectionChange={(e) => setSelectedRow(e.value)}
-        globalFilter={globalFilter}
-        globalFilterFields={["SpareType", "SerialNumber", "VendorName"]}
-        dataKey="SpareID"
-      >
-        <Column selectionMode="single" headerStyle={{ width: "3em" }} />
-        <Column field="SpareType" header="Spare Type" />
-        <Column field="AssetID" header="Asset ID" />
-        <Column field="SerialNumber" header="Serial Number" />
-        <Column field="Rating" header="Rating" />
-        <Column field="VendorName" header="Vendor" />
-        <Column field="PurchaseDate" header="Purchase Date" body={(row) => row.PurchaseDate?.slice(0, 10)} />
-        <Column field="ExpiryDate" header="Expiry Date" body={(row) => row.ExpiryDate?.slice(0, 10)} />
-      </DataTable>
+        // Ensure mandatory fields are present
+        for (const row of spareRows) {
+            if (!row.SpareType || !row.SerialNumber) {
+                toast.current.show({
+                    severity: "warn",
+                    summary: "Validation",
+                    detail: "Spare Type & Serial Number required for all rows",
+                });
+                return;
+            }
+        }
 
-      <Dialog
-        header={editMode ? "Edit Spare" : "Add Spare"}
-        visible={dialogVisible}
-        onHide={() => setDialogVisible(false)}
-        footer={dialogFooter}
-        style={{ width: "600px" }}
-      >
-        <div className="p-fluid">
-          <label>Asset *</label>
-          <Dropdown
-  value={assetId}
-  options={assetOptions}
-  onChange={(e) => setAssetId(e.value)}
-  placeholder="Select Asset"
-  className="mb-3"
-/>
+        try {
+            for (const row of spareRows) {
+                const formData = new FormData();
+                formData.append("PropertyID", propertyId);
+                formData.append("AssetID", assetId);
+                formData.append("SpareType", row.SpareType);
+                formData.append("Rating", row.Rating);
+                formData.append("BackupTime", row.BackupTime);
+                formData.append("Status", row.Status);
+                formData.append("Quantity", row.Quantity);
+                formData.append("PurchaseDate", row.PurchaseDate?.toISOString() || "");
+                formData.append("ExpiryDate", row.ExpiryDate?.toISOString() || "");
+                formData.append("SerialNumber", row.SerialNumber);
+                formData.append("VendorName", row.VendorName);
+                formData.append("InvoiceNo", row.InvoiceNo);
+                formData.append("Warranty", row.Warranty);
+                formData.append("Remarks", row.Remarks);
+                formData.append("Reusable", 0);
 
-          <label>Spare Type *</label>
-          <InputText value={spareType} onChange={(e) => setSpareType(e.target.value)} className="mb-3" />
+                await SpareService.create(formData);
+            }
 
-          <label>Rating</label>
-          <InputText value={rating} onChange={(e) => setRating(e.target.value)} className="mb-3" />
+            toast.current.show({
+                severity: "success",
+                summary: "Saved",
+                detail: "All spares saved successfully",
+            });
 
-          <label>Backup Time</label>
-          <InputText value={backupTime} onChange={(e) => setBackupTime(e.target.value)} className="mb-3" />
+            setDialogVisible(false);
+            resetForm();
+            loadSpares();
 
-          <label>Status</label>
-          <InputText value={status} onChange={(e) => setStatus(e.target.value)} className="mb-3" />
+        } catch (err) {
+            toast.current.show({
+                severity: "error",
+                summary: "Error",
+                detail: "Failed to save spares",
+            });
+        }
+    };
 
-          <label>Quantity</label>
-          <InputText
-            type="number"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            className="mb-3"
-          />
+    const deleteSpare = async (row) => {
+        try {
+            await SpareService.delete(row.SpareID);
 
-          <label>Purchase Date</label>
-          <Calendar value={purchaseDate} onChange={(e) => setPurchaseDate(e.value)} className="mb-3" showIcon />
+            toast.current.show({
+                severity: "success",
+                summary: "Deleted",
+                detail: "Spare deleted",
+            });
 
-          <label>Expiry Date</label>
-          <Calendar value={expiryDate} onChange={(e) => setExpiryDate(e.value)} className="mb-3" showIcon />
+            loadSpares();
+        } catch {
+            toast.current.show({
+                severity: "error",
+                summary: "Error",
+                detail: "Failed to delete spare",
+            });
+        }
+    };
 
-          <label>Serial Number *</label>
-          <InputText value={serialNumber} onChange={(e) => setSerialNumber(e.target.value)} className="mb-3" />
+    const header = (
+        <div className="d-flex justify-content-between align-items-center p-2">
+            <h5 className="m-0">Spare Master</h5>
 
-          <label>Vendor</label>
-          <InputText value={vendorName} onChange={(e) => setVendorName(e.target.value)} className="mb-3" />
+            <div className="d-flex gap-2">
+                <InputText
+                    placeholder="Search..."
+                    value={globalFilter}
+                    onChange={(e) => setGlobalFilter(e.target.value)}
+                />
 
-          <label>Invoice No</label>
-          <InputText value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} className="mb-3" />
+                {selectedRow && (
+                    <Button
+                        icon="pi pi-trash"
+                        className="p-button-danger"
+                        onClick={() => deleteSpare(selectedRow)}
+                    />
+                )}
 
-          <label>Warranty</label>
-          <InputText value={warranty} onChange={(e) => setWarranty(e.target.value)} className="mb-3" />
-
-          <label>Remarks</label>
-          <InputText value={remarks} onChange={(e) => setRemarks(e.target.value)} className="mb-3" />
+                <Button
+                    label="Add Spare"
+                    icon="pi pi-plus"
+                    onClick={() => {
+                        resetForm();
+                        setDialogVisible(true);
+                    }}
+                />
+            </div>
         </div>
-      </Dialog>
-    </div>
-  );
+    );
+
+    return (
+        <div className="content-wrapper p-3">
+            <Toast ref={toast} />
+
+            {/* TABLE */}
+            <DataTable
+                value={spares}
+                paginator
+                rows={10}
+                header={header}
+                selection={selectedRow}
+                onSelectionChange={(e) => setSelectedRow(e.value)}
+                globalFilter={globalFilter}
+                globalFilterFields={["SpareType", "SerialNumber", "VendorName"]}
+                dataKey="SpareID"
+            >
+                <Column selectionMode="single" headerStyle={{ width: "3em" }} />
+                <Column field="SpareType" header="Spare Type" />
+                <Column field="AssetID" header="Asset ID" />
+                <Column field="SerialNumber" header="Serial Number" />
+                <Column field="Rating" header="Rating" />
+                <Column field="VendorName" header="Vendor" />
+                <Column field="PurchaseDate" header="Purchase Date" body={(row) => row.PurchaseDate?.slice(0, 10)} />
+                <Column field="ExpiryDate" header="Expiry Date" body={(row) => row.ExpiryDate?.slice(0, 10)} />
+            </DataTable>
+
+            {/* ADD MULTIPLE SPARES DIALOG */}
+            <Dialog
+                header="Add Multiple Spares"
+                visible={dialogVisible}
+                onHide={() => setDialogVisible(false)}
+                style={{ width: "650px" }}
+                footer={
+                    <div className="d-flex justify-content-end gap-2">
+                        <Button label="Cancel" className="p-button-text" onClick={() => setDialogVisible(false)} />
+                        <Button label="Save All" icon="pi pi-check" onClick={saveAllSpares} />
+                    </div>
+                }
+            >
+                <div className="p-fluid">
+
+                    {/* ASSET DROPDOWN */}
+                    <label>Asset *</label>
+                    <Dropdown
+                        value={assetId}
+                        options={assetOptions}
+                        onChange={(e) => setAssetId(e.value)}
+                        placeholder="Select Asset"
+                        className="mb-3"
+                    />
+
+                    {/* MULTIPLE SPARE ROWS */}
+                    {spareRows.map((row, index) => (
+                        <div key={index} className="border rounded p-3 mb-3 bg-light">
+
+                            <div className="d-flex justify-content-between align-items-center mb-2">
+                                <h6 className="m-0">Spare #{index + 1}</h6>
+                                {spareRows.length > 1 && (
+                                    <Button
+                                        icon="pi pi-trash"
+                                        className="p-button-danger p-button-sm"
+                                        onClick={() => removeSpareRow(index)}
+                                    />
+                                )}
+                            </div>
+
+                            <label>Spare Type *</label>
+                            <InputText value={row.SpareType} onChange={(e) => updateRow(index, "SpareType", e.target.value)} className="mb-2" />
+
+                            <label>Serial Number *</label>
+                            <InputText value={row.SerialNumber} onChange={(e) => updateRow(index, "SerialNumber", e.target.value)} className="mb-2" />
+
+                            <label>Rating</label>
+                            <InputText value={row.Rating} onChange={(e) => updateRow(index, "Rating", e.target.value)} className="mb-2" />
+
+                            <label>Backup Time</label>
+                            <InputText value={row.BackupTime} onChange={(e) => updateRow(index, "BackupTime", e.target.value)} className="mb-2" />
+
+                            <label>Status</label>
+                            <InputText value={row.Status} onChange={(e) => updateRow(index, "Status", e.target.value)} className="mb-2" />
+
+                            <label>Quantity</label>
+                            <InputText type="number" value={row.Quantity} onChange={(e) => updateRow(index, "Quantity", e.target.value)} className="mb-2" />
+
+                            <label>Purchase Date</label>
+                            <Calendar value={row.PurchaseDate} onChange={(e) => updateRow(index, "PurchaseDate", e.value)} className="mb-2" showIcon />
+
+                            <label>Expiry Date</label>
+                            <Calendar value={row.ExpiryDate} onChange={(e) => updateRow(index, "ExpiryDate", e.value)} className="mb-2" showIcon />
+
+                            <label>Vendor</label>
+                            <InputText value={row.VendorName} onChange={(e) => updateRow(index, "VendorName", e.target.value)} className="mb-2" />
+
+                            <label>Invoice No</label>
+                            <InputText value={row.InvoiceNo} onChange={(e) => updateRow(index, "InvoiceNo", e.target.value)} className="mb-2" />
+
+                            <label>Warranty</label>
+                            <InputText value={row.Warranty} onChange={(e) => updateRow(index, "Warranty", e.target.value)} className="mb-2" />
+
+                            <label>Remarks</label>
+                            <InputText value={row.Remarks} onChange={(e) => updateRow(index, "Remarks", e.target.value)} className="mb-2" />
+
+                        </div>
+                    ))}
+
+                    <Button
+                        label="Add Another Spare"
+                        icon="pi pi-plus"
+                        className="p-button-text p-button-success mt-1"
+                        onClick={addSpareRow}
+                    />
+                </div>
+            </Dialog>
+        </div>
+    );
 };
 
 export default SparePage;

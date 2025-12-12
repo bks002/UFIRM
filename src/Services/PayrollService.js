@@ -684,22 +684,20 @@ export async function deleteOTHours(id) {
 const AD_PERCENTAGE_URL = "https://api.urest.in:8096/api/adpercentages";
 
 // GET all AD Percentages
-export async function getADPercentages() {
-  try {
-    const response = await fetch(`${AD_PERCENTAGE_URL}`, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
-    });
+export const getADPercentages = async (propertyId = null) => {
+  const url = propertyId
+    ? `${AD_PERCENTAGE_URL}?propertyId=${propertyId}`
+    : `${AD_PERCENTAGE_URL}`;
 
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    return await response.json();
-  } catch (error) {
-    console.error("Error fetching AD percentages:", error);
-    throw error;
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error("Failed to load AD Percentages");
   }
-}
+
+  return await response.json();
+};
+
 
 // CREATE AD Percentage
 export async function addADPercentage(model) {
