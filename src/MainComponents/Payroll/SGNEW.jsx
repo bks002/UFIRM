@@ -62,6 +62,15 @@ export default function SGNEW() {
   }, [activeDeduction]);
 
   useEffect(() => {
+    allowances.forEach(a => {
+      if (!manualAD[a.Name]) {
+        handleAllowanceSelect(a, true); // preview mode
+      }
+    });
+  }, [form.baseSalary]);
+
+
+  useEffect(() => {
     if (!activeDeduction) return;
 
     // Load checkbox selections for this deduction
@@ -135,7 +144,12 @@ export default function SGNEW() {
           fixed = deductionAmounts[name] || 0;
         }
       } else {
-        fixed = allowanceAmounts[name] || 0;
+        if (calculatedAD[name] && adFormula[name]) {
+          calculated = allowanceAmounts[name] || 0;
+        } else {
+          fixed = allowanceAmounts[name] || 0;
+        }
+
       }
 
       // Special case: OTAmount should always be included if selected
@@ -144,12 +158,11 @@ export default function SGNEW() {
           AD_Id: item.ID,
           Name: name,
           Type: item.Type,
-          FixedAmount: 0,
-          IsDouble: odDoubleFlags[name] && multiplyValues[name] ? true : false,
-          MultiplyValue: multiplyValues[name] || null,
-          Formula: null,
+          FixedAmount: fixed,
+          CalculatedAmount: calculated,
+          Formula: adFormula[name] || null,
           FormulaId: null,
-          CalculatedAmount: 0,
+          IsDouble: false,
         });
         return;
       }
@@ -184,6 +197,48 @@ export default function SGNEW() {
     });
 
     return list;
+  };
+  const handleAllowanceSelect = (allowance, isPreview = false) => {
+    if (!allowance) return;
+
+    const name = allowance.Name;
+    const percentObj = adPercentages.find(x => x.AD_Name === name);
+    const percentage = percentObj ? percentObj.Percentage : 0;
+
+    if (!percentage) return;
+
+    const base = Number(form.baseSalary) || 0;
+
+    let total = base;
+    let formulaParts = ["Base"];
+
+    // allow allowance to depend on other allowances (optional)
+    Object.keys(allowanceSelected).forEach((key) => {
+      if (allowanceSelected[key] && key !== name) {
+        const value = Number(allowanceAmounts[key]) || 0;
+        total += value;
+        formulaParts.push(key);
+      }
+    });
+
+    const amount = Math.round(total * (percentage / 100));
+
+    const formula =
+      formulaParts.length === 1
+        ? `Base * ${percentage / 100}`
+        : `(${formulaParts.join(" + ")}) * ${percentage / 100}`;
+
+    // Preview only
+    if (isPreview) {
+      setAllowanceAmounts(prev => ({ ...prev, [name]: amount }));
+      setAdFormula(prev => ({ ...prev, [name]: formula }));
+      return;
+    }
+
+    // Real calculation
+    setCalculatedAD(prev => ({ ...prev, [name]: true }));
+    setAllowanceAmounts(prev => ({ ...prev, [name]: amount }));
+    setAdFormula(prev => ({ ...prev, [name]: formula }));
   };
 
   const handleAllowanceAmount = (name, value) => {
@@ -315,6 +370,20 @@ export default function SGNEW() {
     }
   };
 
+  const extractTermsFromFormula = (formula) => {
+    if (!formula) return [];
+
+    // remove brackets and operators
+    const clean = formula
+      .replace(/[()]/g, "")
+      .split("*")[0]; // only left side
+
+    return clean
+      .split("+")
+      .map(x => x.trim())
+      .filter(x => x !== "Base");
+  };
+
   const handleDropdownSelect = (sg) => {
     if (!sg) return;
 
@@ -339,16 +408,30 @@ export default function SGNEW() {
     sg.AllowancesDeductions.forEach((ad) => {
       const name = ad.Name;
 
-      // CASE 1: Calculated Amount exists → this AD was percentage-based
+      // CASE 1: CALCULATED (percentage-based)
       if (ad.CalculatedAmount && ad.CalculatedAmount > 0) {
         newDeductions[name] = ad.CalculatedAmount;
         calcFlags[name] = true;
-        if (ad.Formula) formulas[name] = ad.Formula;
-        active = name; // last active deduction
+
+        if (ad.Formula) {
+          formulas[name] = ad.Formula;
+
+          // 🟢 RESTORE LINKED ALLOWANCES FROM FORMULA
+          const linked = extractTermsFromFormula(ad.Formula);
+
+          deductionAllowanceMap[name] = {};
+          linked.forEach((l) => {
+            deductionAllowanceMap[name][l] = true;
+          });
+
+          // keep last active deduction
+          active = name;
+        }
+
         return;
       }
 
-      // CASE 2: Fixed Amount exists → this AD was manual / allowance
+      // CASE 2: FIXED AMOUNT
       if (ad.FixedAmount && ad.FixedAmount > 0) {
         if (ad.Type === "A" || ad.Type === "OA") {
           newAllowances[name] = ad.FixedAmount;
@@ -358,8 +441,15 @@ export default function SGNEW() {
       }
     });
 
+
     // 4. Set UI states
-    setAllowanceSelected({}); // allow user to choose allowance afresh
+    setDeductionAllowanceMap(deductionAllowanceMap);
+
+    setAllowanceSelected(
+      active && deductionAllowanceMap[active]
+        ? deductionAllowanceMap[active]
+        : {}
+    );
     setAllowanceAmounts(newAllowances);
     setDeductionAmounts(newDeductions);
     setCalculatedAD(calcFlags); // RESTORE calculated flags
@@ -384,7 +474,7 @@ export default function SGNEW() {
       const model = {
         SalaryGroup_ID: isUpdate
           ? salaryGroups.find((sg) => sg.SalaryGroup === form.salaryGroupName)
-              .SalaryGroup_ID
+            .SalaryGroup_ID
           : 0,
 
         SalaryGroup: form.salaryGroupName,
@@ -836,10 +926,31 @@ export default function SGNEW() {
                         fontSize: "13px",
                       }}
                       value={allowanceAmounts[a.Name] || ""}
-                      onChange={(e) =>
-                        handleAllowanceAmount(a.Name, e.target.value)
-                      }
+                      onChange={(e) => {
+                        const val = e.target.value;
+
+                        // manual override
+                        setManualAD(prev => ({ ...prev, [a.Name]: true }));
+
+                        setAllowanceAmounts(prev => ({
+                          ...prev,
+                          [a.Name]: Number(val),
+                        }));
+
+                        // clear formula when manual
+                        setAdFormula(prev => ({
+                          ...prev,
+                          [a.Name]: null,
+                        }));
+                      }}
+
                     />
+                    {adFormula[a.Name] && !manualAD[a.Name] && (
+                      <span style={{ fontSize: 12, color: "#555" }}>
+                        = {adFormula[a.Name]}
+                      </span>
+                    )}
+
                   </div>
 
                   {/* FX */}
@@ -1004,9 +1115,23 @@ export default function SGNEW() {
                           fontSize: "13px",
                         }}
                         value={allowanceAmounts[a.Name] || ""}
-                        onChange={(e) =>
-                          handleAllowanceAmount(a.Name, e.target.value)
-                        }
+                        onChange={(e) => {
+                          const val = e.target.value;
+
+                          // manual override
+                          setManualAD(prev => ({ ...prev, [a.Name]: true }));
+
+                          setAllowanceAmounts(prev => ({
+                            ...prev,
+                            [a.Name]: Number(val),
+                          }));
+
+                          // clear formula when manual
+                          setAdFormula(prev => ({
+                            ...prev,
+                            [a.Name]: null,
+                          }));
+                        }}
                       />
                     </div>
                   )}
@@ -1105,8 +1230,8 @@ export default function SGNEW() {
                           color: isManual
                             ? "#000"
                             : isReal
-                            ? "#000"
-                            : "rgba(0,0,0,0.3)",
+                              ? "#000"
+                              : "rgba(0,0,0,0.3)",
                         }}
                         // ⭐ NEW: vanish preview when input is focused
                         onFocus={() => {
@@ -1156,12 +1281,12 @@ export default function SGNEW() {
                           isManual
                             ? deductionAmounts[d.Name] || "" // user typed manually
                             : isReal
-                            ? deductionAmounts[d.Name] || "" // real calculated
-                            : isPreviewMode
-                            ? Number(deductionAmounts[d.Name]) > 0
-                              ? Number(deductionAmounts[d.Name]).toFixed(2)
-                              : ""
-                            : ""
+                              ? deductionAmounts[d.Name] || "" // real calculated
+                              : isPreviewMode
+                                ? Number(deductionAmounts[d.Name]) > 0
+                                  ? Number(deductionAmounts[d.Name]).toFixed(2)
+                                  : ""
+                                : ""
                         }
                         onChange={(e) => {
                           const value = e.target.value;
@@ -1349,8 +1474,8 @@ export default function SGNEW() {
                           color: isManual
                             ? "#000"
                             : isReal
-                            ? "#000"
-                            : "rgba(0,0,0,0.3)",
+                              ? "#000"
+                              : "rgba(0,0,0,0.3)",
                         }}
                         // ⭐ NEW: vanish preview when input is focused
                         onFocus={() => {
@@ -1389,12 +1514,12 @@ export default function SGNEW() {
                           isManual
                             ? deductionAmounts[d.Name] || "" // user typed manually
                             : isReal
-                            ? deductionAmounts[d.Name] || "" // real calculated
-                            : isPreviewMode
-                            ? Number(deductionAmounts[d.Name]) > 0
-                              ? Number(deductionAmounts[d.Name]).toFixed(2)
-                              : ""
-                            : ""
+                              ? deductionAmounts[d.Name] || "" // real calculated
+                              : isPreviewMode
+                                ? Number(deductionAmounts[d.Name]) > 0
+                                  ? Number(deductionAmounts[d.Name]).toFixed(2)
+                                  : ""
+                                : ""
                         }
                         onChange={(e) => {
                           const value = e.target.value;
