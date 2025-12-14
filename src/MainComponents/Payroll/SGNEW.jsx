@@ -27,10 +27,7 @@ export default function SGNEW() {
   const [deductionFormulaMap, setDeductionFormulaMap] = useState({});
   const [odDoubleFlags, setOdDoubleFlags] = useState({});
   const [multiplyValues, setMultiplyValues] = useState({});
-  const [showMultiplier, setShowMultiplier] = useState({});
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
-  const [manualAD, setManualAD] = useState({});
-  const [suppressPreview, setSuppressPreview] = useState({});
+  const [adValueType, setAdValueType] = useState({});
 
   const [form, setForm] = useState({
     salaryGroupName: "",
@@ -58,12 +55,6 @@ export default function SGNEW() {
   useEffect(() => {
     if (!activeDeduction) return;
 
-    setAllowanceSelected(deductionAllowanceMap[activeDeduction] || {});
-  }, [activeDeduction]);
-
-  useEffect(() => {
-    if (!activeDeduction) return;
-
     // Load checkbox selections for this deduction
     setAllowanceSelected(deductionAllowanceMap[activeDeduction] || {});
 
@@ -77,26 +68,14 @@ export default function SGNEW() {
   }, [activeDeduction]);
 
   useEffect(() => {
-    if (!activeDeduction) return;
-    if (loadingSG) return;
-
-    const deductionObj =
-      deductions.find((x) => x.Name === activeDeduction) ||
-      otherDeductions.find((x) => x.Name === activeDeduction);
-
-    // Recalculate ONLY when checkbox selection changes
-    handleDeductionSelect(deductionObj);
-  }, [allowanceSelected]);
-
-  useEffect(() => {
-    if (!activeDeduction) return;
+    if (!activeDeduction || loadingSG) return;
 
     const deductionObj =
       deductions.find((x) => x.Name === activeDeduction) ||
       otherDeductions.find((x) => x.Name === activeDeduction);
 
     handleDeductionSelect(deductionObj);
-  }, [allowanceSelected, allowanceAmounts, form.baseSalary]);
+  }, [activeDeduction, allowanceSelected, allowanceAmounts, form.baseSalary]);
 
   useEffect(() => {
     if (!salaryGroups.length || !adList.length) return;
@@ -127,15 +106,20 @@ export default function SGNEW() {
       let fixed = 0;
       let calculated = 0;
 
-      if (item.Type === "D" || item.Type === "OD") {
-        // If we have a formula OR the calculated flag, treat as calculated
-        if (calculatedAD[name] || (adFormula && adFormula[name])) {
-          calculated = deductionAmounts[name] || 0;
-        } else {
-          fixed = deductionAmounts[name] || 0;
+      // ✅ ALLOWANCES & OA
+      if (item.Type === "A" || item.Type === "OA") {
+        if (adValueType[name] === "FIXED") {
+          fixed = allowanceAmounts[name] || 0;
         }
-      } else {
-        fixed = allowanceAmounts[name] || 0;
+      }
+
+      // ✅ DEDUCTIONS & OD
+      if (item.Type === "D" || item.Type === "OD") {
+        if (adValueType[name] === "FIXED") {
+          fixed = deductionAmounts[name] || 0;
+        } else {
+          calculated = deductionAmounts[name] || 0;
+        }
       }
 
       // Special case: OTAmount should always be included if selected
@@ -159,15 +143,11 @@ export default function SGNEW() {
         if (fixed === 0) return; // HRA = 0 means user didn't enter any value
       } else {
         // Deduction filtering
-        if (manualAD[name]) {
+        if (adValueType[name] === "FIXED") {
           fixed = deductionAmounts[name] || 0;
           calculated = 0;
         } else {
-          if (
-            !calculatedAD[name] &&
-            !(adFormula[name] && deductionFormulaMap[name])
-          )
-            return;
+          if (!calculatedAD[name]) return;
         }
       }
 
@@ -193,7 +173,7 @@ export default function SGNEW() {
     }));
   };
 
-  const handleDeductionSelect = (deduction, isPreview = false) => {
+  const handleDeductionSelect = (deduction) => {
     if (!deduction) return;
 
     const name = deduction.Name;
@@ -221,25 +201,15 @@ export default function SGNEW() {
         ? `Base * ${percentage / 100}`
         : `(${formulaParts.join(" + ")}) * ${percentage / 100}`;
 
-    // 🟢 PREVIEW MODE: show preview but do NOT save real data
-    if (isPreview) {
-      setDeductionAmounts((prev) => ({
-        ...prev,
-        [name]: amount,
-      }));
-
-      setAdFormula((prev) => ({
-        ...prev,
-        [name]: formulaString,
-      }));
-
-      return;
-    }
-
     // 🟢 REAL MODE: user clicked radio
     setCalculatedAD((prev) => ({
       ...prev,
       [name]: true,
+    }));
+
+    setAdValueType((prev) => ({
+      ...prev,
+      [name]: "PERCENT",
     }));
 
     setDeductionAmounts((prev) => ({
@@ -333,28 +303,36 @@ export default function SGNEW() {
     let newDeductions = {};
     let calcFlags = {};
     let formulas = {};
-    let active = null;
 
     // 3. Read Allowances + Deductions from API model
     sg.AllowancesDeductions.forEach((ad) => {
       const name = ad.Name;
 
-      // CASE 1: Calculated Amount exists → this AD was percentage-based
+      // CASE 1: Calculated Amount exists → percentage-based
       if (ad.CalculatedAmount && ad.CalculatedAmount > 0) {
         newDeductions[name] = ad.CalculatedAmount;
         calcFlags[name] = true;
         if (ad.Formula) formulas[name] = ad.Formula;
-        active = name; // last active deduction
+
+        setAdValueType((prev) => ({
+          ...prev,
+          [name]: "PERCENT",
+        }));
         return;
       }
 
-      // CASE 2: Fixed Amount exists → this AD was manual / allowance
+      // CASE 2: Fixed Amount exists → fixed
       if (ad.FixedAmount && ad.FixedAmount > 0) {
         if (ad.Type === "A" || ad.Type === "OA") {
           newAllowances[name] = ad.FixedAmount;
         } else {
           newDeductions[name] = ad.FixedAmount;
         }
+
+        setAdValueType((prev) => ({
+          ...prev,
+          [name]: "FIXED",
+        }));
       }
     });
 
@@ -423,10 +401,16 @@ export default function SGNEW() {
     .reduce((sum, key) => sum + Number(allowanceAmounts[key]), 0);
 
   // SUM OF ALL DEDUCTIONS (D + OD)
-  const totalDeduction = Object.keys(deductionAmounts).reduce(
-    (sum, key) => sum + (Number(deductionAmounts[key]) || 0),
-    0
-  );
+  const totalDeduction = Object.keys(deductionAmounts).reduce((sum, key) => {
+    const val = Number(deductionAmounts[key]) || 0;
+
+    const isReal = calculatedAD[key];
+    const isFixed = adValueType[key] === "FIXED";
+
+    if (isReal || isFixed) return sum + val;
+
+    return sum;
+  }, 0);
 
   // GROSS = BASE + ALLOWANCES
   const totalGross = (Number(form.baseSalary) || 0) + totalAllowance;
@@ -500,33 +484,8 @@ export default function SGNEW() {
 
     if (/^\d*\.?\d*$/.test(value)) {
       setForm({ ...form, [e.target.name]: value });
-
-      if (e.target.name === "baseSalary") {
-        setIsPreviewMode(true);
-      }
     }
   };
-
-  useEffect(() => {
-    if (!isPreviewMode) return;
-
-    [...deductions, ...otherDeductions].forEach((d) => {
-      const currentValue = deductionAmounts[d.Name];
-
-      // CASE 1: If it's manual → do not restore preview
-      if (manualAD[d.Name]) return;
-      if (suppressPreview[d.Name]) return;
-
-      // CASE 2: If user erased (undefined or empty string) → restore preview
-      if (currentValue === undefined || currentValue === "") {
-        handleDeductionSelect(d, true);
-        return;
-      }
-
-      // CASE 3: If a real value exists → skip preview
-      if (currentValue > 0) return;
-    });
-  }, [form.baseSalary, manualAD, deductionAmounts]);
 
   const handleRefreshSelections = () => {
     // Unselect any deduction radio
@@ -541,7 +500,6 @@ export default function SGNEW() {
     // Reset OTAmount special flags
     setOdDoubleFlags({});
     setMultiplyValues({});
-    setShowMultiplier({});
 
     // DO NOT remove formula or calculated data
     // DO NOT remove deductionAmounts
@@ -823,16 +781,35 @@ export default function SGNEW() {
 
                   {/* Name + Amount */}
                   <div
-                    style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    style={{ display: "flex", alignItems: "center", gap: 6 }}
                   >
-                    <span style={{ width: 80 }}>{a.Name}</span>
+                    {/* % / # Dropdown */}
+                    <select
+                      value={adValueType[a.Name] || "FIXED"}
+                      onChange={(e) =>
+                        setAdValueType((prev) => ({
+                          ...prev,
+                          [a.Name]: e.target.value,
+                        }))
+                      }
+                      style={{
+                        width: 32,
+                        height: 28,
+                        fontSize: 12,
+                      }}
+                    >
+                      <option value="FIXED">#</option>
+                      <option value="PERCENT">%</option>
+                    </select>
+
+                    <span style={{ width: 70 }}>{a.Name}</span>
+
                     <input
                       type="number"
                       className="form-control"
                       style={{
-                        width: 120,
-                        height: "28px", // reduced height
-                        padding: "2px 6px", // tighter padding
+                        width: 110,
+                        height: "28px",
                         fontSize: "13px",
                       }}
                       value={allowanceAmounts[a.Name] || ""}
@@ -991,16 +968,35 @@ export default function SGNEW() {
                   ) : (
                     /* NORMAL Allowances */
                     <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                      style={{ display: "flex", alignItems: "center", gap: 6 }}
                     >
-                      <span style={{ width: 120 }}>{a.Name}</span>
+                      {/* % / # Dropdown */}
+                      <select
+                        value={adValueType[a.Name] || "FIXED"}
+                        onChange={(e) =>
+                          setAdValueType((prev) => ({
+                            ...prev,
+                            [a.Name]: e.target.value,
+                          }))
+                        }
+                        style={{
+                          width: 32,
+                          height: 28,
+                          fontSize: 12,
+                        }}
+                      >
+                        <option value="FIXED">#</option>
+                        <option value="PERCENT">%</option>
+                      </select>
+
+                      <span style={{ width: 70 }}>{a.Name}</span>
+
                       <input
                         type="number"
                         className="form-control"
                         style={{
-                          width: 120,
+                          width: 110,
                           height: "28px",
-                          padding: "2px 6px",
                           fontSize: "13px",
                         }}
                         value={allowanceAmounts[a.Name] || ""}
@@ -1057,9 +1053,14 @@ export default function SGNEW() {
             >
               {deductions.map((d) => {
                 // compute REAL vs PREVIEW for this deduction
-                const isReal =
-                  activeDeduction === d.Name || !!calculatedAD[d.Name];
-                const isManual = manualAD[d.Name]; // ← PUT IT RIGHT HERE
+                const isReal = !!calculatedAD[d.Name];
+                const valueType =
+                  adValueType[d.Name] ||
+                  (adPercentages.find((p) => p.AD_Name === d.Name)
+                    ? "PERCENT"
+                    : "FIXED");
+
+                const isPercentage = valueType === "PERCENT";
 
                 return (
                   <div
@@ -1088,110 +1089,66 @@ export default function SGNEW() {
                     <div
                       style={{ display: "flex", alignItems: "center", gap: 8 }}
                     >
+                      <select
+                        value={
+                          adValueType[d.Name] ||
+                          (adPercentages.find((p) => p.AD_Name === d.Name)
+                            ? "PERCENT"
+                            : "FIXED")
+                        }
+                        onChange={(e) => {
+                          const type = e.target.value;
+
+                          setAdValueType((prev) => ({
+                            ...prev,
+                            [d.Name]: type,
+                          }));
+
+                          if (type === "FIXED") {
+                            setCalculatedAD((prev) => ({
+                              ...prev,
+                              [d.Name]: false,
+                            }));
+                            setAdFormula((prev) => ({ ...prev, [d.Name]: "" }));
+                          }
+                        }}
+                        style={{
+                          width: 32,
+                          height: 28,
+                          fontSize: 12,
+                        }}
+                      >
+                        <option value="PERCENT">%</option>
+                        <option value="FIXED">#</option>
+                      </select>
                       <span style={{ width: 120 }}>{d.Name}</span>
 
                       <input
                         type="number"
                         className="form-control"
+                        disabled={isPercentage} // ⭐ THIS IS THE KEY LINE
                         style={{
                           width: 120,
                           height: "28px",
                           padding: "2px 6px",
                           fontSize: "13px",
-                          color: isReal ? "#000" : "rgba(0,0,0,0.3)",
-                          backgroundColor: "#fff", // keeps it crisp
+
+                          backgroundColor: isPercentage ? "#f1f5f9" : "#fff",
+                          cursor: isPercentage ? "not-allowed" : "text",
                           border: "1px solid #e5e7eb",
-                          // Dark text ONLY when manual
-                          color: isManual
-                            ? "#000"
-                            : isReal
-                            ? "#000"
-                            : "rgba(0,0,0,0.3)",
+
+                          color:
+                            isReal || adValueType[d.Name] === "FIXED"
+                              ? "#000"
+                              : "rgba(0,0,0,0.3)",
                         }}
-                        // ⭐ NEW: vanish preview when input is focused
-                        onFocus={() => {
-                          // Mark this deduction as temporarily blocking preview restore
-                          setSuppressPreview((prev) => ({
-                            ...prev,
-                            [d.Name]: true,
-                          }));
-
-                          const val = deductionAmounts[d.Name];
-
-                          // Clear preview for typing
-                          if (
-                            !isManual &&
-                            !isReal &&
-                            isPreviewMode &&
-                            Number(val) > 0
-                          ) {
-                            setDeductionAmounts((prev) => ({
-                              ...prev,
-                              [d.Name]: "",
-                            }));
-                            setAdFormula((prev) => ({
-                              ...prev,
-                              [d.Name]: "",
-                            }));
-                          }
-                        }}
-                        onBlur={() => {
-                          const value = deductionAmounts[d.Name];
-
-                          // User didn't type anything → restore preview
-                          if (
-                            !isManual &&
-                            (value === "" || value === undefined)
-                          ) {
-                            handleDeductionSelect(d, true);
-                          }
-
-                          // Allow preview engine to restore again after blur
-                          setSuppressPreview((prev) => ({
-                            ...prev,
-                            [d.Name]: false,
-                          }));
-                        }}
-                        value={
-                          isManual
-                            ? deductionAmounts[d.Name] || "" // user typed manually
-                            : isReal
-                            ? deductionAmounts[d.Name] || "" // real calculated
-                            : isPreviewMode
-                            ? Number(deductionAmounts[d.Name]) > 0
-                              ? Number(deductionAmounts[d.Name]).toFixed(2)
-                              : ""
-                            : ""
-                        }
-                        onChange={(e) => {
-                          const value = e.target.value;
-
-                          // If user erased everything → restore preview mode
-                          if (value === "") {
-                            setManualAD((prev) => ({
-                              ...prev,
-                              [d.Name]: false,
-                            }));
-
-                            setDeductionAmounts((prev) => ({
-                              ...prev,
-                              [d.Name]: undefined,
-                            }));
-
-                            return;
-                          }
-
-                          // Normal manual typing
-                          setManualAD((prev) => ({
-                            ...prev,
-                            [d.Name]: true,
-                          }));
-
+                        value={deductionAmounts[d.Name] || ""}
+                        onChange={(e) =>
                           setDeductionAmounts((prev) => ({
                             ...prev,
-                            [d.Name]: Number(value),
-                          }));
-                        }}
+                            [d.Name]: Number(e.target.value),
+                          }))
+                        }
                       />
 
                       {/* FORMULA TEXT */}
@@ -1202,21 +1159,9 @@ export default function SGNEW() {
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {isManual ? (
-                          "" // manual typed → no formula
-                        ) : isReal ? (
-                          adFormula[d.Name] ? (
-                            `= ${adFormula[d.Name]}`
-                          ) : (
-                            ""
-                          )
-                        ) : isPreviewMode ? (
-                          <span style={{ opacity: 0.4 }}>
-                            = {adFormula[d.Name]}
-                          </span>
-                        ) : (
-                          ""
-                        )}
+                        {adValueType[d.Name] === "PERCENT" && adFormula[d.Name]
+                          ? `= ${adFormula[d.Name]}`
+                          : ""}
                       </span>
                     </div>
 
@@ -1304,9 +1249,14 @@ export default function SGNEW() {
               }}
             >
               {otherDeductions.map((d) => {
-                const isReal =
-                  activeDeduction === d.Name || !!calculatedAD[d.Name];
-                const isManual = manualAD[d.Name];
+                const isReal = !!calculatedAD[d.Name];
+                const valueType =
+                  adValueType[d.Name] ||
+                  (adPercentages.find((p) => p.AD_Name === d.Name)
+                    ? "PERCENT"
+                    : "FIXED");
+
+                const isPercentage = valueType === "PERCENT";
 
                 return (
                   <div
@@ -1332,99 +1282,66 @@ export default function SGNEW() {
                     <div
                       style={{ display: "flex", alignItems: "center", gap: 8 }}
                     >
+                      <select
+                        value={
+                          adValueType[d.Name] ||
+                          (adPercentages.find((p) => p.AD_Name === d.Name)
+                            ? "PERCENT"
+                            : "FIXED")
+                        }
+                        onChange={(e) => {
+                          const type = e.target.value;
+
+                          setAdValueType((prev) => ({
+                            ...prev,
+                            [d.Name]: type,
+                          }));
+
+                          if (type === "FIXED") {
+                            setCalculatedAD((prev) => ({
+                              ...prev,
+                              [d.Name]: false,
+                            }));
+                            setAdFormula((prev) => ({ ...prev, [d.Name]: "" }));
+                          }
+                        }}
+                        style={{
+                          width: 32,
+                          height: 28,
+                          fontSize: 12,
+                        }}
+                      >
+                        <option value="PERCENT">%</option>
+                        <option value="FIXED">#</option>
+                      </select>
                       <span style={{ width: 120 }}>{d.Name}</span>
 
                       <input
                         type="number"
                         className="form-control"
+                        disabled={isPercentage} // ⭐ THIS IS THE KEY LINE
                         style={{
                           width: 120,
                           height: "28px",
                           padding: "2px 6px",
                           fontSize: "13px",
-                          color: isReal ? "#000" : "rgba(0,0,0,0.3)",
-                          backgroundColor: "#fff", // keeps it crisp
+
+                          backgroundColor: isPercentage ? "#f1f5f9" : "#fff",
+                          cursor: isPercentage ? "not-allowed" : "text",
                           border: "1px solid #e5e7eb",
-                          // Dark text ONLY when manual
-                          color: isManual
-                            ? "#000"
-                            : isReal
-                            ? "#000"
-                            : "rgba(0,0,0,0.3)",
+
+                          color:
+                            isReal || adValueType[d.Name] === "FIXED"
+                              ? "#000"
+                              : "rgba(0,0,0,0.3)",
                         }}
-                        // ⭐ NEW: vanish preview when input is focused
-                        onFocus={() => {
-                          const val = deductionAmounts[d.Name];
-
-                          const isShowingPreview =
-                            !isManual &&
-                            isPreviewMode &&
-                            !activeDeduction && // deduction is NOT selected
-                            (val === undefined || Number(val) > 0);
-
-                          if (isShowingPreview) {
-                            setDeductionAmounts((prev) => ({
-                              ...prev,
-                              [d.Name]: "", // vanish preview
-                            }));
-
-                            setAdFormula((prev) => ({
-                              ...prev,
-                              [d.Name]: "", // vanish formula
-                            }));
-                          }
-                        }}
-                        onBlur={() => {
-                          const value = deductionAmounts[d.Name];
-
-                          // User clicked but didn’t type anything → restore preview
-                          if (
-                            !isManual &&
-                            (value === "" || value === undefined)
-                          ) {
-                            handleDeductionSelect(d, true); // restore preview
-                          }
-                        }}
-                        value={
-                          isManual
-                            ? deductionAmounts[d.Name] || "" // user typed manually
-                            : isReal
-                            ? deductionAmounts[d.Name] || "" // real calculated
-                            : isPreviewMode
-                            ? Number(deductionAmounts[d.Name]) > 0
-                              ? Number(deductionAmounts[d.Name]).toFixed(2)
-                              : ""
-                            : ""
-                        }
-                        onChange={(e) => {
-                          const value = e.target.value;
-
-                          // If user erased everything → restore preview mode
-                          if (value === "") {
-                            setManualAD((prev) => ({
-                              ...prev,
-                              [d.Name]: false,
-                            }));
-
-                            setDeductionAmounts((prev) => ({
-                              ...prev,
-                              [d.Name]: undefined,
-                            }));
-
-                            return;
-                          }
-
-                          // Normal manual typing
-                          setManualAD((prev) => ({
-                            ...prev,
-                            [d.Name]: true,
-                          }));
-
+                        value={deductionAmounts[d.Name] || ""}
+                        onChange={(e) =>
                           setDeductionAmounts((prev) => ({
                             ...prev,
-                            [d.Name]: Number(value),
-                          }));
-                        }}
+                            [d.Name]: Number(e.target.value),
+                          }))
+                        }
                       />
 
                       {/* FORMULA TEXT */}
@@ -1435,21 +1352,9 @@ export default function SGNEW() {
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {isManual ? (
-                          "" // manual typed → no formula
-                        ) : isReal ? (
-                          adFormula[d.Name] ? (
-                            `= ${adFormula[d.Name]}`
-                          ) : (
-                            ""
-                          )
-                        ) : isPreviewMode ? (
-                          <span style={{ opacity: 0.4 }}>
-                            = {adFormula[d.Name]}
-                          </span>
-                        ) : (
-                          ""
-                        )}
+                        {adValueType[d.Name] === "PERCENT" && adFormula[d.Name]
+                          ? `= ${adFormula[d.Name]}`
+                          : ""}
                       </span>
                     </div>
 
