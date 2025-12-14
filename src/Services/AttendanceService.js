@@ -77,7 +77,7 @@ export const saveManualAttendance = async (attendanceData) => {
 export const getManualAttendanceByProperty = async (propertyId) => {
     try {
         const response = await fetch(
-            `https://api.urest.in:8096/api/attendance/manualattendance/getbyproperty/${propertyId}`,
+            `https://api.urest.in:8096/api/attendance/manualattendance/getall`,
             {
                 method: "GET",
                 headers: {
@@ -95,13 +95,13 @@ export const getManualAttendanceByProperty = async (propertyId) => {
 };
 
 // ✅ Approve Attendance
-export const processManualAttendance = async ({ id, approve }) => {
+export const processManualAttendance = async ({ id, approve, actionBy }) => {
   try {
     const response = await axios.post(
-      `https://api.urest.in:8096/api/attendance/ManualAttendance/ProcessManualAttendance`,
+      `https://api.urest.in:8096/api/attendance/manualattendance/process`,
       {}, // empty body
       {
-        params: { id, approve },
+        params: { id, approve, actionBy },
         headers: { "Content-Type": "application/json" },
         withCredentials: false
       }
@@ -114,13 +114,13 @@ export const processManualAttendance = async ({ id, approve }) => {
 };
 
 // ✅ Reject Attendance
-export const rejectprocessManualAttendance = async ({ id, approve, rejectionRemark }) => {
+export const rejectprocessManualAttendance = async ({ id, approve, actionBy, rejectionRemark }) => {
   try {
     const response = await axios.post(
-      `https://api.urest.in:8096/api/attendance/ManualAttendance/ProcessManualAttendance`,
+      `https://api.urest.in:8096/api/attendance/manualattendance/process`,
       {}, // empty body
       {
-        params: { id, approve, rejectionRemark },
+        params: { id, approve, actionBy, rejectionRemark },
         headers: { "Content-Type": "application/json" },
         withCredentials: false
       }
