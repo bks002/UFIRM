@@ -34,15 +34,21 @@ export default function SGNEW() {
 
   const [form, setForm] = useState({
     salaryGroupName: "",
-    baseSalary: "",
     totalWorkingDays: "",
     shiftHours: "",
   });
+
 
   const [propertyDefaults, setPropertyDefaults] = useState({
     totalWorkingDays: "",
     shiftHours: "",
   });
+
+  const basicAllowance = {
+    ID: "BASIC",
+    Name: "Basic",
+    Type: "A",
+  };
 
   useEffect(() => {
     if (!propertyId) return;
@@ -68,6 +74,7 @@ export default function SGNEW() {
       }
     });
   }, [form.baseSalary]);
+
 
 
   useEffect(() => {
@@ -128,11 +135,13 @@ export default function SGNEW() {
   }, [adList]);
 
   const buildADModel = () => {
+
+
     let list = [];
 
     adList.forEach((item) => {
       const name = item.Name;
-
+      if (name === "Basic") return;
       let fixed = 0;
       let calculated = 0;
 
@@ -207,7 +216,7 @@ export default function SGNEW() {
 
     if (!percentage) return;
 
-    const base = Number(form.baseSalary) || 0;
+    const base = Number(allowanceAmounts.Basic) || 0;
 
     let total = base;
     let formulaParts = ["Base"];
@@ -255,7 +264,7 @@ export default function SGNEW() {
     const percentObj = adPercentages.find((x) => x.AD_Name === name);
     const percentage = percentObj ? percentObj.Percentage : 0;
 
-    const base = Number(form.baseSalary) || 0;
+    const base = Number(allowanceAmounts.Basic) || 0;
 
     let total = base;
     let formulaParts = ["Base"];
@@ -332,7 +341,10 @@ export default function SGNEW() {
   };
 
   const cleanList = adList; // DO NOT REMOVE DUPLICATES
-  const allowances = cleanList.filter((x) => x.Type === "A");
+  const allowances = [
+    basicAllowance,
+    ...cleanList.filter((x) => x.Type === "A"),
+  ];
   const deductions = cleanList.filter((x) => x.Type === "D");
   const otherAllowances = cleanList.filter((x) => x.Type === "OA");
   const otherDeductions = cleanList.filter((x) => x.Type === "OD");
@@ -392,10 +404,15 @@ export default function SGNEW() {
     // 1. Fill main fields
     setForm({
       salaryGroupName: sg.SalaryGroup,
-      baseSalary: sg.BaseSalary,
       totalWorkingDays: sg.TotalWorkingDays,
       shiftHours: sg.ShiftHours,
     });
+
+    setAllowanceAmounts((prev) => ({
+      ...prev,
+      Basic: sg.BaseSalary,
+    }));
+
 
     // 2. Prepare maps
     let newAllowances = {};
@@ -450,7 +467,11 @@ export default function SGNEW() {
         ? deductionAllowanceMap[active]
         : {}
     );
-    setAllowanceAmounts(newAllowances);
+   setAllowanceAmounts({
+  Basic: sg.BaseSalary,   // 👈 ALWAYS include Basic
+  ...newAllowances,
+});
+
     setDeductionAmounts(newDeductions);
     setCalculatedAD(calcFlags); // RESTORE calculated flags
     setAdFormula(formulas); // RESTORE formulas
@@ -478,7 +499,7 @@ export default function SGNEW() {
           : 0,
 
         SalaryGroup: form.salaryGroupName,
-        BaseSalary: Number(form.baseSalary),
+        BaseSalary: Number(allowanceAmounts.Basic),
         Property_ID: propertyId,
         TotalWorkingDays: Number(form.totalWorkingDays),
         ShiftHours: Number(form.shiftHours),
@@ -519,7 +540,7 @@ export default function SGNEW() {
   );
 
   // GROSS = BASE + ALLOWANCES
-  const totalGross = (Number(form.baseSalary) || 0) + totalAllowance;
+  const totalGross = (Number(allowanceAmounts.Basic) || 0) + totalAllowance;
 
   // NET PAY
   const netPay = totalGross - totalDeduction;
@@ -569,7 +590,6 @@ export default function SGNEW() {
   const resetSalaryGroupForm = () => {
     setForm({
       salaryGroupName: "",
-      baseSalary: "",
       totalWorkingDays: propertyDefaults.totalWorkingDays,
       shiftHours: propertyDefaults.shiftHours,
     });
@@ -784,7 +804,7 @@ export default function SGNEW() {
             paddingLeft: "10px", // <-- Shift right (adjust as needed)
           }}
         >
-          {/* Base Salary */}
+          {/* Base Salary
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <label style={{ fontSize: 14, fontWeight: 600 }}>
               Base Salary =
@@ -803,7 +823,7 @@ export default function SGNEW() {
                 padding: "2px 8px",
               }}
             />
-          </div>
+          </div> */}
 
           {/* Total Working Days */}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -885,7 +905,7 @@ export default function SGNEW() {
                   {/* Checkbox */}
                   <input
                     type="checkbox"
-                    checked={!!allowanceSelected[a.Name]}
+                    checked={a.Name === "Basic" ? true : !!allowanceSelected[a.Name]}
                     onChange={(e) => {
                       if (!activeDeduction) {
                         alert("Please select a deduction first!");
@@ -909,6 +929,7 @@ export default function SGNEW() {
                       }));
                     }}
                     style={{ transform: "scale(1.1)" }}
+                    disabled={a.Name === "Basic"}
                   />
 
                   {/* Name + Amount */}
@@ -921,29 +942,35 @@ export default function SGNEW() {
                       className="form-control"
                       style={{
                         width: 120,
-                        height: "28px", // reduced height
-                        padding: "2px 6px", // tighter padding
+                        height: "28px",
+                        padding: "2px 6px",
                         fontSize: "13px",
+                        backgroundColor: "#fff", // editable
                       }}
                       value={allowanceAmounts[a.Name] || ""}
                       onChange={(e) => {
-                        const val = e.target.value;
+                        const value = Number(e.target.value) || 0;
 
-                        // manual override
-                        setManualAD(prev => ({ ...prev, [a.Name]: true }));
+                        // 🟢 BASIC = BASE SALARY (editable)
+                        if (a.Name === "Basic") {
+                          setAllowanceAmounts((prev) => ({
+                            ...prev,
+                            Basic: value,
+                          }));
 
-                        setAllowanceAmounts(prev => ({
+                          // trigger preview recalculation
+                          setIsPreviewMode(true);
+                          return;
+                        }
+
+                        // normal allowance manual override
+                        setManualAD((prev) => ({ ...prev, [a.Name]: true }));
+                        setAllowanceAmounts((prev) => ({
                           ...prev,
-                          [a.Name]: Number(val),
+                          [a.Name]: value,
                         }));
-
-                        // clear formula when manual
-                        setAdFormula(prev => ({
-                          ...prev,
-                          [a.Name]: null,
-                        }));
+                        setAdFormula((prev) => ({ ...prev, [a.Name]: null }));
                       }}
-
                     />
                     {adFormula[a.Name] && !manualAD[a.Name] && (
                       <span style={{ fontSize: 12, color: "#555" }}>
