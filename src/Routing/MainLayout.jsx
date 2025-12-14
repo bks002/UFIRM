@@ -12,7 +12,7 @@ import ChangePassword from '../MainComponents/ChangePassword/ChangePassword';
 import PropertyDashboard from '../pages/Dashboards/PropertyDashboard';
 import DropDownList from '../ReactComponents/SelectBox/DropdownList'
 import ComplainManagement from '../pages/ComplainManagement';
-import PropertyMaster from '../pages/PropertyMaster'
+import PropertyMaster from '../MainComponents/PropertyMaster/PropertyMaster.jsx'
 import PropertyDetailsPage from '../pages/PropertyDetailsPage'
 import Parking from '../pages/Parking'
 import ParkingZonePage from '../pages/ParkingZonePage'
