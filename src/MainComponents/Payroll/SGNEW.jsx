@@ -49,8 +49,9 @@ export default function SGNEW() {
   }, [propertyId]);
 
   useEffect(() => {
+    if (!propertyId) return;
     loadADPercentages();
-  }, []);
+  }, [propertyId]);
 
   useEffect(() => {
     if (!activeDeduction) return;
@@ -96,6 +97,56 @@ export default function SGNEW() {
 
     setDeductionAmounts((prev) => ({ ...prev, ...newDeductions }));
   }, [adList]);
+
+  useEffect(() => {
+    const base = Number(form.baseSalary) || 0;
+    if (!base) return;
+
+    let newAllowanceAmounts = {};
+    let newFormulas = {};
+
+    allowances.concat(otherAllowances).forEach((a) => {
+      const name = a.Name;
+
+      if (adValueType[name] !== "PERCENT") return;
+
+      const percentObj = getEffectivePercentage(name);
+      if (!percentObj) return;
+
+      const percentage = percentObj.Percentage;
+      const amount = Math.round(base * (percentage / 100));
+
+      newAllowanceAmounts[name] = amount;
+      newFormulas[name] = `Base * ${percentage / 100}`;
+    });
+
+    setAllowanceAmounts((prev) => ({ ...prev, ...newAllowanceAmounts }));
+    setAdFormula((prev) => ({ ...prev, ...newFormulas }));
+  }, [form.baseSalary, adValueType, adPercentages, propertyId]);
+
+  const getEffectivePercentage = (adName) => {
+    if (!adPercentages.length || !propertyId) return null;
+
+    const pid = Number(propertyId); // 🔥 FORCE NUMBER
+
+    // 1️⃣ Property-specific (highest priority)
+    const propertySpecific = adPercentages.find(
+      (p) =>
+        p.AD_Name === adName &&
+        Number(p.PropertyId) === pid &&
+        p.IsGlobal === false &&
+        p.IsActive
+    );
+
+    if (propertySpecific) return propertySpecific;
+
+    // 2️⃣ Global fallback
+    const globalPercent = adPercentages.find(
+      (p) => p.AD_Name === adName && p.IsGlobal === true && p.IsActive
+    );
+
+    return globalPercent || null;
+  };
 
   const buildADModel = () => {
     let list = [];
@@ -177,7 +228,7 @@ export default function SGNEW() {
     if (!deduction) return;
 
     const name = deduction.Name;
-    const percentObj = adPercentages.find((x) => x.AD_Name === name);
+    const percentObj = getEffectivePercentage(name);
     const percentage = percentObj ? percentObj.Percentage : 0;
 
     const base = Number(form.baseSalary) || 0;
@@ -230,7 +281,7 @@ export default function SGNEW() {
 
   const loadADPercentages = async () => {
     try {
-      const res = await getADPercentages();
+      const res = await getADPercentages(propertyId); // ✅ PASS propertyId
       setAdPercentages(res);
     } catch (err) {
       console.log("Failed to fetch AD Percentages:", err);
@@ -739,95 +790,111 @@ export default function SGNEW() {
                 overflowY: "auto",
               }}
             >
-              {allowances.map((a) => (
-                <div
-                  key={a.ID}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "30px 1fr 60px",
-                    alignItems: "center",
-                    marginBottom: 8,
-                    columnGap: 8,
-                  }}
-                >
-                  {/* Checkbox */}
-                  <input
-                    type="checkbox"
-                    checked={!!allowanceSelected[a.Name]}
-                    onChange={(e) => {
-                      if (!activeDeduction) {
-                        alert("Please select a deduction first!");
-                        return;
-                      }
-
-                      const checked = e.target.checked;
-
-                      setDeductionAllowanceMap((prev) => ({
-                        ...prev,
-                        [activeDeduction]: {
-                          ...(prev[activeDeduction] || {}),
-                          [a.Name]: checked,
-                        },
-                      }));
-
-                      // Update visible selected allowances
-                      setAllowanceSelected((prev) => ({
-                        ...prev,
-                        [a.Name]: checked,
-                      }));
-                    }}
-                    style={{ transform: "scale(1.1)" }}
-                  />
-
-                  {/* Name + Amount */}
+              {allowances.map((a) => {
+                const isPercentage = adValueType[a.Name] === "PERCENT";
+                return (
                   <div
-                    style={{ display: "flex", alignItems: "center", gap: 6 }}
+                    key={a.ID}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "30px 1fr 60px",
+                      alignItems: "center",
+                      marginBottom: 8,
+                      columnGap: 8,
+                    }}
                   >
-                    {/* % / # Dropdown */}
-                    <select
-                      value={adValueType[a.Name] || "FIXED"}
-                      onChange={(e) =>
-                        setAdValueType((prev) => ({
-                          ...prev,
-                          [a.Name]: e.target.value,
-                        }))
-                      }
-                      style={{
-                        width: 32,
-                        height: 28,
-                        fontSize: 12,
-                      }}
-                    >
-                      <option value="FIXED">#</option>
-                      <option value="PERCENT">%</option>
-                    </select>
-
-                    <span style={{ width: 70 }}>{a.Name}</span>
-
+                    {/* Checkbox */}
                     <input
-                      type="number"
-                      className="form-control"
-                      style={{
-                        width: 110,
-                        height: "28px",
-                        fontSize: "13px",
-                      }}
-                      value={allowanceAmounts[a.Name] || ""}
-                      onChange={(e) =>
-                        handleAllowanceAmount(a.Name, e.target.value)
-                      }
-                    />
-                  </div>
+                      type="checkbox"
+                      checked={!!allowanceSelected[a.Name]}
+                      onChange={(e) => {
+                        if (!activeDeduction) {
+                          alert("Please select a deduction first!");
+                          return;
+                        }
 
-                  {/* FX */}
-                  <button
-                    className="btn btn-sm btn-secondary"
-                    style={{ width: "100%", padding: "4px 0", fontSize: 12 }}
-                  >
-                    FX
-                  </button>
-                </div>
-              ))}
+                        const checked = e.target.checked;
+
+                        setDeductionAllowanceMap((prev) => ({
+                          ...prev,
+                          [activeDeduction]: {
+                            ...(prev[activeDeduction] || {}),
+                            [a.Name]: checked,
+                          },
+                        }));
+
+                        // Update visible selected allowances
+                        setAllowanceSelected((prev) => ({
+                          ...prev,
+                          [a.Name]: checked,
+                        }));
+                      }}
+                      style={{ transform: "scale(1.1)" }}
+                    />
+
+                    {/* Name + Amount */}
+                    <div
+                      style={{ display: "flex", alignItems: "center", gap: 6 }}
+                    >
+                      <span style={{ width: 70 }}>{a.Name}</span>
+                      {/* % / # Dropdown */}
+                      <select
+                        value={adValueType[a.Name] || "FIXED"}
+                        onChange={(e) =>
+                          setAdValueType((prev) => ({
+                            ...prev,
+                            [a.Name]: e.target.value,
+                          }))
+                        }
+                        style={{
+                          width: 32,
+                          height: 28,
+                          fontSize: 12,
+                        }}
+                      >
+                        <option value="FIXED">#</option>
+                        <option value="PERCENT">%</option>
+                      </select>
+
+                      <input
+                        type="number"
+                        className="form-control"
+                        disabled={isPercentage}
+                        style={{
+                          width: 110,
+                          height: "28px",
+                          fontSize: "13px",
+                          backgroundColor: isPercentage ? "#f1f5f9" : "#fff",
+                          cursor: isPercentage ? "not-allowed" : "text",
+                        }}
+                        value={allowanceAmounts[a.Name] || ""}
+                        onChange={(e) =>
+                          handleAllowanceAmount(a.Name, e.target.value)
+                        }
+                      />
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: "#555",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {adValueType[a.Name] === "PERCENT" && adFormula[a.Name]
+                          ? `= ${adFormula[a.Name]}`
+                          : ""}
+                      </span>
+                    </div>
+
+                    {/* FX */}
+                    <button
+                      className="btn btn-sm btn-secondary"
+                      style={{ width: "100%", padding: "4px 0", fontSize: 12 }}
+                    >
+                      FX
+                    </button>
+                  </div>
+                );
+              })}
             </div>
 
             {/* OTHER ALLOWANCES */}
@@ -849,173 +916,184 @@ export default function SGNEW() {
                 overflowY: "auto",
               }}
             >
-              {otherAllowances.map((a) => (
-                <div
-                  key={a.ID}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "30px 1fr 60px",
-                    alignItems: "center",
-                    marginBottom: 8,
-                    columnGap: 8,
-                  }}
-                >
-                  {/* MAIN checkbox (select OTAmount allowance) */}
-                  <input
-                    type="checkbox"
-                    checked={!!allowanceSelected[a.Name]}
-                    onChange={(e) => {
-                      if (!activeDeduction) {
-                        alert("Please select a deduction first!");
-                        return;
-                      }
-
-                      const checked = e.target.checked;
-
-                      setDeductionAllowanceMap((prev) => ({
-                        ...prev,
-                        [activeDeduction]: {
-                          ...(prev[activeDeduction] || {}),
-                          [a.Name]: checked,
-                        },
-                      }));
-
-                      // Update visible selected allowances
-                      setAllowanceSelected((prev) => ({
-                        ...prev,
-                        [a.Name]: checked,
-                      }));
+              {otherAllowances.map((a) => {
+                const isPercentage = adValueType[a.Name] === "PERCENT";
+                return (
+                  <div
+                    key={a.ID}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "30px 1fr 60px",
+                      alignItems: "center",
+                      marginBottom: 8,
+                      columnGap: 8,
                     }}
-                    style={{ transform: "scale(1.1)" }}
-                  />
+                  >
+                    {/* MAIN checkbox (select OTAmount allowance) */}
+                    <input
+                      type="checkbox"
+                      checked={!!allowanceSelected[a.Name]}
+                      onChange={(e) => {
+                        if (!activeDeduction) {
+                          alert("Please select a deduction first!");
+                          return;
+                        }
 
-                  {/* UI BLOCK (special for OTAmount) */}
-                  {a.Name === "OTAmount" ? (
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: 14, // more spacing
-                        marginTop: 4,
+                        const checked = e.target.checked;
+
+                        setDeductionAllowanceMap((prev) => ({
+                          ...prev,
+                          [activeDeduction]: {
+                            ...(prev[activeDeduction] || {}),
+                            [a.Name]: checked,
+                          },
+                        }));
+
+                        // Update visible selected allowances
+                        setAllowanceSelected((prev) => ({
+                          ...prev,
+                          [a.Name]: checked,
+                        }));
                       }}
-                    >
-                      {/* Label */}
-                      <span style={{ width: 120, marginTop: 2 }}>{a.Name}</span>
+                      style={{ transform: "scale(1.1)" }}
+                    />
 
-                      {/* To Multiply Checkbox */}
-                      <label
+                    {/* UI BLOCK (special for OTAmount) */}
+                    {a.Name === "OTAmount" ? (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: 14, // more spacing
+                          marginTop: 4,
+                        }}
+                      >
+                        {/* Label */}
+                        <span style={{ width: 120, marginTop: 2 }}>
+                          {a.Name}
+                        </span>
+
+                        {/* To Multiply Checkbox */}
+                        <label
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            marginTop: 3, // shift downward
+                            opacity: allowanceSelected[a.Name] ? 1 : 0.4,
+                            cursor: allowanceSelected[a.Name]
+                              ? "pointer"
+                              : "not-allowed",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            disabled={!allowanceSelected[a.Name]} // disable until first checkbox selected
+                            checked={odDoubleFlags[a.Name] || false}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+
+                              setOdDoubleFlags((prev) => ({
+                                ...prev,
+                                [a.Name]: checked,
+                              }));
+
+                              if (!checked) {
+                                setMultiplyValues((prev) => ({
+                                  ...prev,
+                                  [a.Name]: null,
+                                }));
+                              }
+                            }}
+                          />
+                          <span style={{ fontSize: 12 }}>To Multiply</span>
+                        </label>
+
+                        {/* Dropdown (shows only when 2nd checkbox is checked) */}
+                        {odDoubleFlags[a.Name] && (
+                          <select
+                            style={{
+                              width: 65,
+                              height: 26,
+                              fontSize: 12,
+                              marginLeft: 6, // add spacing between label and dropdown
+                              marginTop: 2, // slight downward shift
+                            }}
+                            value={multiplyValues[a.Name] || ""}
+                            onChange={(e) =>
+                              setMultiplyValues((prev) => ({
+                                ...prev,
+                                [a.Name]: e.target.value,
+                              }))
+                            }
+                          >
+                            <option value="">--</option>
+                            {[1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map((v) => (
+                              <option key={v} value={v}>
+                                {v}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                    ) : (
+                      /* NORMAL Allowances */
+                      <div
                         style={{
                           display: "flex",
                           alignItems: "center",
                           gap: 6,
-                          marginTop: 3, // shift downward
-                          opacity: allowanceSelected[a.Name] ? 1 : 0.4,
-                          cursor: allowanceSelected[a.Name]
-                            ? "pointer"
-                            : "not-allowed",
                         }}
                       >
-                        <input
-                          type="checkbox"
-                          disabled={!allowanceSelected[a.Name]} // disable until first checkbox selected
-                          checked={odDoubleFlags[a.Name] || false}
-                          onChange={(e) => {
-                            const checked = e.target.checked;
-
-                            setOdDoubleFlags((prev) => ({
-                              ...prev,
-                              [a.Name]: checked,
-                            }));
-
-                            if (!checked) {
-                              setMultiplyValues((prev) => ({
-                                ...prev,
-                                [a.Name]: null,
-                              }));
-                            }
-                          }}
-                        />
-                        <span style={{ fontSize: 12 }}>To Multiply</span>
-                      </label>
-
-                      {/* Dropdown (shows only when 2nd checkbox is checked) */}
-                      {odDoubleFlags[a.Name] && (
+                        <span style={{ width: 70 }}>{a.Name}</span>
+                        {/* % / # Dropdown */}
                         <select
-                          style={{
-                            width: 65,
-                            height: 26,
-                            fontSize: 12,
-                            marginLeft: 6, // add spacing between label and dropdown
-                            marginTop: 2, // slight downward shift
-                          }}
-                          value={multiplyValues[a.Name] || ""}
+                          value={adValueType[a.Name] || "FIXED"}
                           onChange={(e) =>
-                            setMultiplyValues((prev) => ({
+                            setAdValueType((prev) => ({
                               ...prev,
                               [a.Name]: e.target.value,
                             }))
                           }
+                          style={{
+                            width: 32,
+                            height: 28,
+                            fontSize: 12,
+                          }}
                         >
-                          <option value="">--</option>
-                          {[1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map((v) => (
-                            <option key={v} value={v}>
-                              {v}
-                            </option>
-                          ))}
+                          <option value="FIXED">#</option>
+                          <option value="PERCENT">%</option>
                         </select>
-                      )}
-                    </div>
-                  ) : (
-                    /* NORMAL Allowances */
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 6 }}
+
+                        <input
+                          type="number"
+                          className="form-control"
+                          disabled={isPercentage}
+                          style={{
+                            width: 110,
+                            height: "28px",
+                            fontSize: "13px",
+                            backgroundColor: isPercentage ? "#f1f5f9" : "#fff",
+                            cursor: isPercentage ? "not-allowed" : "text",
+                          }}
+                          value={allowanceAmounts[a.Name] || ""}
+                          onChange={(e) =>
+                            handleAllowanceAmount(a.Name, e.target.value)
+                          }
+                        />
+                      </div>
+                    )}
+
+                    {/* FX BUTTON */}
+                    <button
+                      className="btn btn-sm btn-secondary"
+                      style={{ width: "100%", padding: "4px 0", fontSize: 12 }}
                     >
-                      {/* % / # Dropdown */}
-                      <select
-                        value={adValueType[a.Name] || "FIXED"}
-                        onChange={(e) =>
-                          setAdValueType((prev) => ({
-                            ...prev,
-                            [a.Name]: e.target.value,
-                          }))
-                        }
-                        style={{
-                          width: 32,
-                          height: 28,
-                          fontSize: 12,
-                        }}
-                      >
-                        <option value="FIXED">#</option>
-                        <option value="PERCENT">%</option>
-                      </select>
-
-                      <span style={{ width: 70 }}>{a.Name}</span>
-
-                      <input
-                        type="number"
-                        className="form-control"
-                        style={{
-                          width: 110,
-                          height: "28px",
-                          fontSize: "13px",
-                        }}
-                        value={allowanceAmounts[a.Name] || ""}
-                        onChange={(e) =>
-                          handleAllowanceAmount(a.Name, e.target.value)
-                        }
-                      />
-                    </div>
-                  )}
-
-                  {/* FX BUTTON */}
-                  <button
-                    className="btn btn-sm btn-secondary"
-                    style={{ width: "100%", padding: "4px 0", fontSize: 12 }}
-                  >
-                    FX
-                  </button>
-                </div>
-              ))}
+                      FX
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -1056,9 +1134,7 @@ export default function SGNEW() {
                 const isReal = !!calculatedAD[d.Name];
                 const valueType =
                   adValueType[d.Name] ||
-                  (adPercentages.find((p) => p.AD_Name === d.Name)
-                    ? "PERCENT"
-                    : "FIXED");
+                  (getEffectivePercentage(d.Name) ? "PERCENT" : "FIXED");
 
                 const isPercentage = valueType === "PERCENT";
 
@@ -1089,12 +1165,11 @@ export default function SGNEW() {
                     <div
                       style={{ display: "flex", alignItems: "center", gap: 8 }}
                     >
+                      <span style={{ width: 120 }}>{d.Name}</span>
                       <select
                         value={
                           adValueType[d.Name] ||
-                          (adPercentages.find((p) => p.AD_Name === d.Name)
-                            ? "PERCENT"
-                            : "FIXED")
+                          (getEffectivePercentage(d.Name) ? "PERCENT" : "FIXED")
                         }
                         onChange={(e) => {
                           const type = e.target.value;
@@ -1121,7 +1196,6 @@ export default function SGNEW() {
                         <option value="PERCENT">%</option>
                         <option value="FIXED">#</option>
                       </select>
-                      <span style={{ width: 120 }}>{d.Name}</span>
 
                       <input
                         type="number"
@@ -1252,9 +1326,7 @@ export default function SGNEW() {
                 const isReal = !!calculatedAD[d.Name];
                 const valueType =
                   adValueType[d.Name] ||
-                  (adPercentages.find((p) => p.AD_Name === d.Name)
-                    ? "PERCENT"
-                    : "FIXED");
+                  (getEffectivePercentage(d.Name) ? "PERCENT" : "FIXED");
 
                 const isPercentage = valueType === "PERCENT";
 
@@ -1282,12 +1354,11 @@ export default function SGNEW() {
                     <div
                       style={{ display: "flex", alignItems: "center", gap: 8 }}
                     >
+                      <span style={{ width: 120 }}>{d.Name}</span>
                       <select
                         value={
                           adValueType[d.Name] ||
-                          (adPercentages.find((p) => p.AD_Name === d.Name)
-                            ? "PERCENT"
-                            : "FIXED")
+                          (getEffectivePercentage(d.Name) ? "PERCENT" : "FIXED")
                         }
                         onChange={(e) => {
                           const type = e.target.value;
@@ -1314,7 +1385,6 @@ export default function SGNEW() {
                         <option value="PERCENT">%</option>
                         <option value="FIXED">#</option>
                       </select>
-                      <span style={{ width: 120 }}>{d.Name}</span>
 
                       <input
                         type="number"
