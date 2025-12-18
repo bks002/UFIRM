@@ -10,6 +10,7 @@ import {
   getAllowanceDeductionsByProperty,
   getADPercentages,
 } from "../../Services/PayrollService";
+import { FacilityMemberService } from "../../Services/FacilityService.js";
 import Formulaone from "../../ReactComponents/DataGrid/Formula1stdialogbox.jsx";
 import CustomFormulaDialog from "../../ReactComponents/DataGrid/CustomFormulaDialog";
 import { getPropertyById } from "../../Services/PropertyService";
@@ -22,8 +23,12 @@ export default function SalaryGroups() {
   const [loading, setLoading] = useState(false);
   const [alDtOptions, setAlDtOptions] = useState([]);
   const [selectedType, setSelectedType] = useState("Allowance");
-  const [selectedAllowancesDeductions, setSelectedAllowancesDeductions] =
-    useState([]);
+  const [selectedAllowancesDeductions, setSelectedAllowancesDeductions] =useState([]);
+// designation & employee handling
+const [designation, setDesignation] = useState("");
+const [excludeEmployees, setExcludeEmployees] = useState(false);
+const [employees, setEmployees] = useState([]);
+const [excludedEmployeeIds, setExcludedEmployeeIds] = useState([]);
 
   const [dialogVisible, setDialogVisible] = useState(false);
   const [fxAvailableItems, setFxAvailableItems] = useState([]);
@@ -85,6 +90,20 @@ export default function SalaryGroups() {
     }
     return found;
   }
+
+  useEffect(() => {
+  if (!propertyId) return;
+
+  (async () => {
+    try {
+      const empData = await FacilityMemberService.getFacilityMembers(propertyId);
+      setEmployees(empData || []);
+    } catch (err) {
+      console.error("Failed to load employees", err);
+    }
+  })();
+}, [propertyId]);
+
   // ---------------- END NEW FUNCTION ----------------
 
   function countDependencies(formula, items) {

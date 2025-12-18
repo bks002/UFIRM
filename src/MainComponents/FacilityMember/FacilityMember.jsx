@@ -219,6 +219,7 @@ const fetchEmployee = async () => {
     setAddressLine2(profile.AddressLine2 || "");
     setCity(profile.City || "");
     setStateName(profile.State || "");
+    setSelectedFacilityMemberId(row?.FacilityMember?.FacilityMemberId || "");
 
     // Work History - Handle both single and array
     if (row?.WorkHistories && Array.isArray(row.WorkHistories) && row.WorkHistories.length > 0) {
@@ -459,7 +460,7 @@ const fetchEmployee = async () => {
       },
 
       FacilityMember: {
-        FacilityMemberId: 0,
+        FacilityMemberId: selectedFacilityMemberId || 0,
         PropertyId: propertyId || 0,
         Address: (addressLine1 + " " + addressLine2).trim() || "",
         FacilityMasterId: facilityMasterId,
