@@ -297,7 +297,11 @@ export default function SGNEW() {
     const percentage = editablePercentages[name] || 0;
     if (!percentage) return;
 
-    const selectedAllowances = deductionAllowanceMap[name] || {};
+    const selectedAllowances =
+  deductionAllowanceMap[name] && Object.keys(deductionAllowanceMap[name]).length
+    ? deductionAllowanceMap[name]
+    : { Basic: true };
+
 
     let total = 0;
     let formulaParts = [];
@@ -740,7 +744,32 @@ export default function SGNEW() {
           name={radioName}
           value={d.Name}
           checked={activeDeduction === d.Name}
-          onChange={(e) => setActiveDeduction(e.target.value)}
+          onChange={(e) => {
+  const name = e.target.value;
+
+  // 1️⃣ Set active deduction
+  setActiveDeduction(name);
+
+  // 2️⃣ Ensure Basic is selected by default for this deduction
+  setDeductionAllowanceMap((prev) => ({
+    ...prev,
+    [name]: {
+      Basic: true,
+      ...(prev[name] || {}),
+    },
+  }));
+
+  // 3️⃣ Reflect Basic as selected in UI
+  setAllowanceSelected((prev) => ({
+    ...prev,
+    Basic: true,
+  }));
+
+  // 4️⃣ Trigger initial calculation (preview)
+  setTimeout(() => {
+    handleDeductionSelect(d, true);
+  }, 0);
+}}
           style={{ transform: "scale(1.1)" }}
         />
 
