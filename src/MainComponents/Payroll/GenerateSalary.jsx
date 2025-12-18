@@ -17,7 +17,51 @@ const monthNames = [
   "July", "August", "September", "October", "November", "December"
 ];
 
-// Display name map (optional nicer labels)
+const allowanceKeys = [
+  "Basic",
+  "LEAVEWAGES",
+  "HRA",
+  "Gratuity",
+  "OTDaysAmount",
+  "OTHoursAmount",
+  "AdjAmt/Incentive",
+  "PFArrear",
+  "OthArrear",
+  "Bonus",
+  "DA",
+  "CONVEYACNE",
+  // "Contractor Allowance",
+  // "Housing Allowance",
+  // "Transport Allowance",
+  // "Medical Allowance",
+  // "Performance Bonus",
+  // "Overtime Allowance",
+  // "Freelancer Allowance",
+];
+
+const deductionKeys = [
+  "PF",
+  "PftAmount",
+  "LwfEmployeeAmount",
+  "Fine",
+  "AdvanceAmount",
+  "OthDeduction",
+  "DocDeduction",
+  "FoodDeduction",
+  "MaintDeduction",
+  "ESI",
+  "AccommodationDeduction",
+  "IncomeTax",
+  // "Pension Deduction",
+  // "Health Insurance Deduction",
+  // "Union Fees Deduction",
+  // "Garnishment Deduction",
+  // "Service Charge Deduction",
+  // "Miscellaneous Deduction",
+  // "Income Tax",
+  //"LoanAdvanceAmount",
+];
+
 const displayNameMap = {
   Basic: "Basic",
   LEAVEWAGES: "Leave Wages",
@@ -210,6 +254,12 @@ export default function GenerateSalary() {
       fetchGeneratedEmployees();
     }
   }, [officeId, selectedMonth, selectedYear]);
+
+  useEffect(() => {
+  // Whenever property changes → clear regen box + hide grid
+  setSelectedRegenEmployees([]);
+  setShowGrid(false);
+}, [officeId]);
 
   useEffect(() => {
     setSelectedRegenEmployees([]);
@@ -476,127 +526,259 @@ export default function GenerateSalary() {
     ];
 
     return `
-      <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 0; padding: 0; color: #000; font-size: 15px; }
-            .header-row { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;}
-            .header-left { text-align: left; line-height: 1.5;}
-            .co-bold { font-size: 17px; font-weight: bold; letter-spacing: 1px;}
-            .header-right { text-align: right; font-size: 13px; max-width: 270px; line-height: 1.5;}
-            .est-header { font-size: 13px; font-weight: normal;}
-            .est-bold { font-weight: bold; font-size: 15px; }
-            .center-title { text-align: center; font-size: 20px; font-weight: bold; margin: 15px 0 12px 0;}
-            .info-table { width: 100%; margin-bottom: 7px;}
-            .info-table td { padding: 3px 7px; border: none; font-size: 15px;}
-            table.pay-slip-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            table.pay-slip-table th { background: #fff; font-weight: bold; border-top: 2.8px double #111; border-bottom: 2.8px double #111; border-left: none; border-right: none; text-align: left;}
-            table.pay-slip-table td { font-size: 15px; border: none; padding: 9px 9px; }
-            .v-bold { border-right: 2.8px solid #111 !important; }
-            .v-light { border-right: 1px solid #bababa !important; }
-            .no-horiz-border td { border-top: none !important; }
-            .double-bottom td { border-bottom: 2.8px double #111 !important; padding-bottom: 9px;}
-            .bold-top { border-top: 2.8px double #111 !important; }
-            .net-salary { color: #169c12; font-size: 19px; font-weight: bold; margin-top: 18px; text-align:center; letter-spacing:0.5px; }
-          </style>
-        </head>
-        <body>
-          <div class="center-title">Wages Slip for the month ${row.Month || ""} ${row.Year || ""}</div>
-          <div class="header-row">
-            <div class="header-left">
-              <div class="co-bold">UFIRM TECHNOLOGIES PVT. LTD.</div>
-              <div>H-64, SEC-63</div>
-              <div>NOIDA, UP</div>
-            </div>
-            <div class="header-right">
-              <div class="est-header">Name and Address of Establishment in under which contract is carried on</div>
-              <div class="est-bold">${row.PropertyName || ""}${row.AddressLine1 ? " - " + row.AddressLine1 : ""}${row.Landmark ? ", " + row.Landmark : ""}${row.Pincode ? ", PIN: " + row.Pincode : ""}</div>
-              <div>${row.ContactNumber ? "Contact: " + row.ContactNumber : ""}</div>
-            </div>
-          </div>
-
-          <table class="info-table">
-            <tr>
-              <td><b>Employee Name:</b></td><td>${row.FacilityMemberName || ""}</td>
-              <td><b>Bank Name:</b></td><td>${row.BankName || "-"}</td>
-              <td><b>Acc/Card No.:</b></td><td>${row.BankAccountNumber || "-"}</td>
-            </tr>
-            <tr>
-              <td><b>Emp ID:</b></td><td>${row.FacilityMemberId || ""}</td>
-              <td><b>IFSC Code:</b></td><td>${row.BankIFSCCode || "-"}</td>
-              <td><b>PF No.:</b></td><td>${row.PF_number || ""}</td>
-            </tr>
-            <tr>
-              <td><b>Father's Name:</b></td><td>${row.FatherName || ""}</td>
-              <td><b>Pay Mode:</b></td><td>${"Bank Transfer"}</td>
-              <td><b>UAN No.:</b></td><td>${row.UANNumber || "-"}</td>
-            </tr>
-            <tr>
-              <td><b>Designation:</b></td><td>${row.Designation || ""}</td>
-              <td><b>ESI No.:</b></td><td>${row.ESINumber || ""}</td>
-              <td><b>Mobile No.:</b></td><td>${row.MobileNumber || ""}</td>
-            </tr>
-            <tr>
-              <td><b>Joining Date:</b></td><td>${row.DateOfJoining ? row.DateOfJoining.split("T")[0] : ""}</td>
-            </tr>
-          </table>
-
-          <table class="pay-slip-table">
-            <tr>
-              <th>ALLOWANCE</th><th class="v-bold">AMOUNT</th><th>DEDUCTION</th><th class="v-light">AMOUNT</th><th>ATTENDANCE</th><th>VALUE</th>
-            </tr>
-
-           ${(() => {
-        const rows = [];
-        const maxLen = Math.max(
-          allowanceKeysForRow.length,
-          deductionKeysForRow.length,
-          attendanceList.length
-        );
-
-        for (let i = 0; i < maxLen; i++) {
-          const aKey = allowanceKeysForRow[i];
-          const dKey = deductionKeysForRow[i];
-          const att = attendanceList[i];
-
-          const aLabel = aKey ? (displayNameMap[aKey] || aKey) : "";
-          const aValue = aKey ? Number(row[aKey] || 0) : "";
-
-          const dLabel = dKey ? (displayNameMap[dKey] || dKey) : "";
-          const dValue = dKey ? Number(row[dKey] || 0) : "";
-
-          const attLabel = att ? att.label : "";
-          const attValue = att ? att.value : "";
-
-          rows.push(`
-      <tr class="no-horiz-border">
-        <td>${aLabel}</td>
-        <td class="v-bold">${aValue}</td>
-        <td>${dLabel}</td>
-        <td class="v-light">${dValue}</td>
-        <td>${attLabel}</td>
-        <td>${attValue}</td>
-      </tr>
-    `);
+  <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; color: #000; font-size: 15px; }
+        .header-row { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;}
+        .header-left { text-align: left; line-height: 1.5;}
+        .co-bold { font-size: 17px; font-weight: bold; letter-spacing: 1px;}
+        .header-right { text-align: right; font-size: 13px; max-width: 270px; line-height: 1.5;}
+        .est-header { font-size: 13px; font-weight: normal;}
+        .est-bold { font-weight: bold; font-size: 15px; }
+        .center-title { text-align: center; font-size: 20px; font-weight: bold; margin: 15px 0 12px 0;}
+        .info-table { width: 100%; margin-bottom: 7px;}
+        .info-table td { padding: 3px 7px; border: none; font-size: 15px;}
+        .summary-table { width: 100%; margin-bottom: 12px;}
+        .summary-table td { padding: 3px 7px; border: none; font-size: 15px;}
+        table.pay-slip-table {
+          width: 100%; border-collapse: collapse; margin-top: 10px;
         }
-
-        return rows.join("");
-      })()}
-
-
-            <tr class="bold-top double-bottom">
-              <td><b>Total Allowance</b></td>
-              <td class="v-bold"><b>${totalAllowance}</b></td>
-              <td><b>Total Deduction</b></td>
-              <td><b>${totalDeduction}</b></td>
-              <td></td><td></td>
-            </tr>
-          </table>
-
-          <div class="net-salary">Net Salary: ₹ ${netSalary}</div>
-        </body>
-      </html>
-    `;
+        table.pay-slip-table th {
+          background: #fff; font-weight: bold; border-top: 2.8px double #111; border-bottom: 2.8px double #111;
+          border-left: none; border-right: none;
+          text-align: left;
+        }
+        table.pay-slip-table td {
+          font-size: 15px; border: none; padding: 9px 9px;
+        }
+        /* vertical lines, custom: */
+        .v-bold { border-right: 2.8px solid #111 !important; }
+        .v-light { border-right: 1px solid #bababa !important; }
+        /* No horizontal border for mid rows: */
+        .no-horiz-border td { border-top: none !important; }
+        /* double line for last row */
+        .double-bottom td { border-bottom: 2.8px double #111 !important; padding-bottom: 9px;}
+        .bold-top {
+  border-top: 2.8px double #111 !important;
+}
+        .net-salary {
+          color: #169c12; font-size: 19px; font-weight: bold; margin-top: 18px; text-align:center; letter-spacing:0.5px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="center-title">Wages Slip for the month ${row.Month || ""} ${
+      row.Year
+    }</div>
+      <div class="header-row">
+        <div class="header-left">
+          <div class="co-bold">UFIRM TECHNOLOGIES PVT. LTD.</div>
+          <div>H-64, SEC-63</div>
+          <div>NOIDA, UP</div>
+        </div>
+        <div class="header-right">
+          <div class="est-header">Name and Address of Establishment in under which contract is carried on</div>
+          <div class="est-bold">${row.PropertyName || ""}${
+      row.AddressLine1 ? " - " + row.AddressLine1 : ""
+    }${row.Landmark ? ", " + row.Landmark : ""}${
+      row.Pincode ? ", PIN: " + row.Pincode : ""
+    }</div>
+          <div>${row.ContactNumber ? "Contact: " + row.ContactNumber : ""}</div>
+        </div>
+      </div>
+      <table class="info-table">
+  <tr>
+    <td><b>Employee Name:</b></td>
+    <td>${row.FacilityMemberName || ""}</td>
+    <td><b>Bank Name:</b></td>
+    <td>${row.BankName || "-"}</td>
+    <td><b>Acc/Card No.:</b></td>
+    <td>${row.BankAccountNumber || "-"}</td>
+  </tr>
+  <tr>
+    <td><b>Emp ID:</b></td>
+    <td>${row.FacilityMemberId || ""}</td>
+    <td><b>IFSC Code:</b></td>
+    <td>${row.BankIFSCCode || "-"}</td>
+    <td><b>PF No.:</b></td>
+    <td>${row.PF_number || ""}</td>
+  </tr>
+  <tr>
+    <td><b>Father's Name:</b></td>
+    <td>${row.FatherName || ""}</td>
+    <td><b>Pay Mode:</b></td>
+    <td>${"Bank Transfer"}</td>
+    <td><b>UAN No.:</b></td>
+    <td>${row.UANNumber || "-"}</td>
+  </tr>
+  <tr>
+    <td><b>Designation:</b></td>
+    <td>${row.Designation || ""}</td>
+    <td><b>ESI No.:</b></td>
+    <td>${row.ESINumber || ""}</td>
+    <td><b>Mobile No.:</b></td>
+    <td>${row.MobileNumber || ""}</td>
+  </tr>
+  <tr>
+    <td><b>Joining Date:</b></td>
+    <td>${row.DateOfJoining.split("T")[0] || ""}</td>
+  </tr>
+</table>
+      <table class="pay-slip-table">
+        <tr>
+          <th>EARNING</th>
+          <th class="v-bold">AMOUNT</th>
+          <th>DEDUCTION</th>
+          <th class="v-light">AMOUNT</th>
+          <th>ATTENDANCE</th>
+          <th>VALUE</th>
+        </tr>
+        <tr>
+          <td>Basic</td>
+          <td class="v-bold">${row.Basic || row.ProRatedSalary || 0}</td>
+          <td >PF</td>
+          <td class="v-light">${row.PF || 0}</td>
+          <td >Working Days</td>
+          <td>${row.WorkingDays || ""}</td>
+        </tr>
+        <tr class="no-horiz-border">
+          <td>Leave Wages</td>
+          <td class="v-bold">${row.LEAVEWAGES || 0}</td>
+          <td >PFT</td>
+          <td class="v-light">${row.PftAmount || 0}</td>
+          <td >Leave Days</td>
+          <td>${row.LeaveDays || 0}</td>
+        </tr>
+        <tr class="no-horiz-border">
+          <td>HRA</td>
+          <td class="v-bold">${row.HRA || 0}</td>
+          <td>LWF</td>
+          <td class="v-light">${row.LwfEmployeeAmount || 0}</td>
+          <td>Week Offs</td>
+          <td>${row.WeekDaysOff || 0}</td>
+        </tr>
+        <tr class="no-horiz-border">
+          <td>Gratuity</td>
+          <td class="v-bold">${row.Gratuity || 0}</td>
+          <td>Fine</td>
+          <td class="v-light">${row.Fine || 0}</td>
+          <td>OTDays</td>
+          <td>${row.OTDays || 0}</td>
+        </tr>
+        <tr class="no-horiz-border">
+          <td>OTDaysAmount</td>
+          <td class="v-bold">${row.OTDaysAmount || 0}</td>
+          <td>Adv.</td>
+          <td class="v-light">${row.AdvanceAmount || 0}</td>
+          <td>OTHours</td>
+          <td>${row.OTHours || 0}</td>
+        </tr>
+        <tr class="no-horiz-border">
+          <td>OTHoursAmount</td>
+          <td class="v-bold">${row.OTHoursAmount || 0}</td>
+          <td>OthDed</td>
+          <td>${row.OthDeduction || 0}</td>
+        </tr>
+        <tr class="no-horiz-border">
+          <td>AdjAmt/Incentive</td>
+          <td class="v-bold">${row.AdjAmt || row.Incentive || 0}</td>
+          <td>DocDed</td>
+          <td>${row.DocDeduction || 0}</td>
+        </tr>
+        <tr class="no-horiz-border">
+          <td>PFArrear</td>
+          <td class="v-bold">${row.PFArrear || 0}</td>
+          <td>Food</td>
+          <td>${row.FoodDeduction || 0}</td>
+        </tr>
+        <tr class="no-horiz-border">
+          <td>OthArrear</td>
+          <td class="v-bold">${row.OthArrear || 0}</td>
+          <td>Maint.</td>
+          <td>${row.MaintDeduction || 0}</td>
+        </tr>
+        <tr class="no-horiz-border">
+          <td>Bonus</td>
+          <td class="v-bold">${row.Bonus || 0}</td>
+          <td>ESI</td>
+          <td>${row.ESI || 0}</td>
+        </tr>
+        <tr class="no-horiz-border">
+          <td>DA</td>
+          <td class="v-bold">${row.DA || 0}</td>
+          <td>Acmd.Ded</td>
+          <td>${row.AccommodationDeduction || 0}</td>
+        </tr>
+        <tr class="no-horiz-border">
+          <td>Conv</td>
+          <td class="v-bold">${row.CONVEYACNE || 0}</td>
+          <td>IncomeTax</td>
+          <td>${row.IncomeTax || 0}</td>
+        </tr>
+        <tr class="bold-top double-bottom">
+          <td><b>Total Allowance</b></td>
+          <td class="v-bold"><b>${
+            (row.Basic || row.ProRatedSalary || 0) +
+            (row.HRA || 0) +
+            (row.LEAVEWAGES || 0) +
+            (row.CONVEYACNE || 0) +
+            (row.DA || 0) +
+            (row.Gratuity || 0) +
+            (row.Bonus || 0) +
+            (row.OTDaysAmount || 0) +
+            (row.OTHoursAmount || 0) +
+            (row.AdjAmt || row.Incentive || 0) +
+            (row.PFArrear || 0) +
+            (row.OthArrear || 0)
+          }</b></td>
+          <td ><b>Total Deduction</b></td>
+          <td><b>${
+            (row.PF || 0) +
+            (row.LwfEmployeeAmount || 0) +
+            (row.PftAmount || 0) +
+            (row.Fine || 0) +
+            (row.AdvanceAmount || 0) +
+            (row.OthDeduction || 0) +
+            (row.DocDeduction || 0) +
+            (row.FoodDeduction || 0) +
+            (row.MaintDeduction || 0) +
+            (row.ESI || 0) +
+            (row.AccommodationDeduction || 0) +
+            (row.IncomeTax || 0)
+          }</b></td>
+          <td><b></b></td>
+          <td><b></b></td>
+        </tr>
+      </table>
+      <div class="net-salary">Net Salary: ₹ ${
+        (row.Basic || row.ProRatedSalary || 0) +
+        (row.LEAVEWAGES || 0) +
+        (row.HRA || 0) +
+        (row.OTDaysAmount || 0) +
+        (row.OTHoursAmount || 0) +
+        (row.AdjAmt || row.Incentive || 0) +
+        (row.PFArrear || 0) +
+        (row.OthArrear || 0) +
+        (row.Bonus || 0) +
+        (row.DA || 0) +
+        (row.CONVEYACNE || 0) -
+        ((row.PF || 0) +
+          (row.LwfEmployeeAmount || 0) +
+          (row.PftAmount || 0) +
+          (row.Fine || 0) +
+          (row.AdvanceAmount || 0) +
+          (row.OthDeduction || 0) +
+          (row.DocDeduction || 0) +
+          (row.FoodDeduction || 0) +
+          (row.MaintDeduction || 0) +
+          (row.ESI || 0) +
+          (row.AccommodationDeduction || 0) +
+          (row.IncomeTax || 0))
+      }</div>
+    </body>
+  </html>
+  `;
   }
 
   // ----------------------------

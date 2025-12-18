@@ -923,7 +923,7 @@ class MainNav extends React.Component {
                           </Link>
                         </li>
 
-                        <li className="nav-item">
+                        {/* <li className="nav-item">
                           <Link
                             to="/Account/App/SalaryGroups"
                             className="nav-link"
@@ -931,7 +931,7 @@ class MainNav extends React.Component {
                             <i className="fas fa-caret-right nav-icon"></i>
                             <p>Salary Groups Old</p>
                           </Link>
-                        </li>
+                        </li> */}
 
                       </ul>
                     </li>
