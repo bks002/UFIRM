@@ -518,8 +518,7 @@ class MainNav extends React.Component {
                   (this.state.userRoles.includes("Admin") ||
                     this.state.userRoles.includes("Property Manager") ||
                     this.state.userRoles.includes("Property Admin") ||
-                    this.state.userRoles.includes("Inventory Manager") ||
-                    this.state.userRoles.includes("HR")) ? (
+                    this.state.userRoles.includes("Inventory Manager")) ? (
                     <li className="nav-item has-treeview">
                       <a href="#" className="nav-link">
                         <i className="nav-icon fas fa-boxes"></i>
