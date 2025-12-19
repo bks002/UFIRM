@@ -248,44 +248,50 @@ export default function SGNEW() {
   };
 
   const handleAllowanceSelect = (allowance, isPreview = false) => {
-    if (!allowance) return;
+  if (!allowance) return;
 
-    const name = allowance.Name;
-    const mode = adModeMap[name] || "percentage";
+  const name = allowance.Name;
+  const mode = adModeMap[name] || "percentage";
+  if (mode === "fixed") return;
 
-    if (mode === "fixed") return;
+  const percentage = editablePercentages[name] || 0;
+  if (!percentage) return;
 
-    const percentage = editablePercentages[name] || 0;
-    if (!percentage) return;
+  const basic = Number(allowanceAmounts.Basic) || 0;
 
-    const base = Number(allowanceAmounts.Basic) || 0;
-    let total = base;
-    let formulaParts = ["Base"];
+  // ✅ DEFAULT: only Basic
+  let total = basic;
+  let formulaParts = ["Basic"];
 
-    Object.keys(allowanceSelected).forEach((key) => {
-      if (allowanceSelected[key] && key !== name) {
-        const value = Number(allowanceAmounts[key]) || 0;
-        total += value;
-        formulaParts.push(key);
-      }
-    });
-
-    const amount = Math.round(total * (percentage / 100));
-    const formula =
-      formulaParts.length === 1
-        ? `Base * ${percentage / 100}`
-        : `(${formulaParts.join(" + ")}) * ${percentage / 100}`;
-
-    if (isPreview) {
-      setAllowanceAmounts((prev) => ({ ...prev, [name]: amount }));
-      setAdFormula((prev) => ({ ...prev, [name]: formula }));
-      return;
+  // 🔁 ONLY include other allowances if explicitly selected (and not Basic)
+  Object.keys(allowanceSelected).forEach((key) => {
+    if (
+      allowanceSelected[key] &&
+      key !== "Basic" &&
+      key !== name
+    ) {
+      const value = Number(allowanceAmounts[key]) || 0;
+      total += value;
+      formulaParts.push(key);
     }
+  });
 
-    setCalculatedAD((prev) => ({ ...prev, [name]: true }));
+  const amount = Math.round(total * (percentage / 100));
+  const formula =
+    formulaParts.length === 1
+      ? `Basic * ${percentage / 100}`
+      : `(${formulaParts.join(" + ")}) * ${percentage / 100}`;
+
+  if (isPreview) {
     setAllowanceAmounts((prev) => ({ ...prev, [name]: amount }));
     setAdFormula((prev) => ({ ...prev, [name]: formula }));
-  };
+    return;
+  }
+
+  setCalculatedAD((prev) => ({ ...prev, [name]: true }));
+  setAllowanceAmounts((prev) => ({ ...prev, [name]: amount }));
+  setAdFormula((prev) => ({ ...prev, [name]: formula }));
+};
 
   const handleDeductionSelect = (deduction, isPreview = false) => {
     if (!deduction) return;
@@ -587,10 +593,169 @@ export default function SGNEW() {
     setMultiplyValues({});
     setShowMultiplier({});
   };
+useEffect(() => {
+  if (!activeDeduction) return;
+
+  const deduction =
+    deductions.find((d) => d.Name === activeDeduction) ||
+    otherDeductions.find((d) => d.Name === activeDeduction);
+
+  if (!deduction) return;
+  if (adModeMap[deduction.Name] !== "percentage") return;
+  if (manualAD[deduction.Name]) return;
+
+  handleDeductionSelect(deduction, true);
+}, [
+  activeDeduction,
+  editablePercentages,
+  deductionAllowanceMap,
+  allowanceAmounts,
+  adModeMap,
+]);
+useEffect(() => {
+  if (!allowanceAmounts.Basic) return;
+
+  allowances.forEach((a) => {
+    if (a.Name === "Basic") return;
+    if (adModeMap[a.Name] !== "percentage") return;
+    if (manualAD[a.Name]) return;
+
+    handleAllowanceSelect(a, true); // preview recalculation
+  });
+}, [
+  allowanceAmounts.Basic,
+  editablePercentages,
+  allowanceSelected,
+  adModeMap,
+]);
 
   const renderAllowanceRow = (a) => (
+  <div
+    key={a.ID}
+    style={{
+      display: "grid",
+      gridTemplateColumns: "24px 90px 100px 1fr 44px",
+      columnGap: 4,
+      marginBottom: 4,
+      alignItems: "center",
+    }}
+  >
+    {/* Checkbox */}
+    <input
+      type="checkbox"
+      checked={a.Name === "Basic" ? true : !!allowanceSelected[a.Name]}
+      disabled={a.Name === "Basic"}
+      onChange={(e) => {
+        if (!activeDeduction && a.Name !== "Basic") {
+          alert("Please select a deduction first!");
+          return;
+        }
+
+        const checked = e.target.checked;
+
+        setDeductionAllowanceMap((prev) => ({
+          ...prev,
+          [activeDeduction]: {
+            ...(prev[activeDeduction] || {}),
+            [a.Name]: checked,
+          },
+        }));
+
+        setAllowanceSelected((prev) => ({
+          ...prev,
+          [a.Name]: checked,
+        }));
+      }}
+      style={{ transform: "scale(1.1)" }}
+    />
+
+    <span style={{ fontSize: 14 }}>{a.Name}</span>
+
+    {/* Mode + Percentage */}
+    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+      <select
+        className="form-control"
+        style={{ width: 60, height: 28, fontSize: 12 }}
+        value={adModeMap[a.Name] || "percentage"}
+        disabled={a.Name === "Basic"}
+        onChange={(e) => {
+          const mode = e.target.value;
+          setAdModeMap((prev) => ({ ...prev, [a.Name]: mode }));
+
+          if (mode === "fixed") {
+            setCalculatedAD((prev) => ({ ...prev, [a.Name]: false }));
+            setAdFormula((prev) => ({ ...prev, [a.Name]: null }));
+          }
+        }}
+      >
+        <option value="percentage">%</option>
+        <option value="fixed">#</option>
+      </select>
+
+      {adModeMap[a.Name] === "percentage" && a.Name !== "Basic" && (
+        <input
+          type="number"
+          className="form-control"
+          style={{ width: 60, height: 28, fontSize: 12 }}
+          value={editablePercentages[a.Name] ?? ""}
+          placeholder="%"
+          onChange={(e) => {
+            const value = Number(e.target.value);
+            setEditablePercentages((prev) => ({
+              ...prev,
+              [a.Name]: value,
+            }));
+            // 🔥 recalculation handled by useEffect
+          }}
+        />
+      )}
+    </div>
+
+    {/* Amount + Formula */}
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <input
+        type="number"
+        className="form-control"
+        style={{ width: 120, height: 28, fontSize: 13 }}
+        value={allowanceAmounts[a.Name] ?? ""}
+        disabled={
+          a.Name !== "Basic" &&
+          adModeMap[a.Name] === "percentage" &&
+          !manualAD[a.Name]
+        }
+        onChange={(e) => {
+          const value = Number(e.target.value) || 0;
+
+          if (a.Name === "Basic") {
+            setAllowanceAmounts((prev) => ({ ...prev, Basic: value }));
+            setIsPreviewMode(true);
+            return;
+          }
+
+          setManualAD((prev) => ({ ...prev, [a.Name]: true }));
+          setAllowanceAmounts((prev) => ({ ...prev, [a.Name]: value }));
+          setAdFormula((prev) => ({ ...prev, [a.Name]: null }));
+        }}
+      />
+
+      {!manualAD[a.Name] && adFormula[a.Name] && (
+        <span style={{ fontSize: 12, color: "#555" }}>
+          = {adFormula[a.Name]}
+        </span>
+      )}
+    </div>
+
+    <button className="btn btn-sm btn-secondary">FX</button>
+  </div>
+);
+
+  const renderDeductionRow = (d, radioName) => {
+  const isReal = activeDeduction === d.Name || !!calculatedAD[d.Name];
+  const isManual = manualAD[d.Name];
+
+  return (
     <div
-      key={a.ID}
+      key={d.ID}
       style={{
         display: "grid",
         gridTemplateColumns: "24px 90px 100px 1fr 44px",
@@ -599,304 +764,102 @@ export default function SGNEW() {
         alignItems: "center",
       }}
     >
+      {/* Radio */}
       <input
-        type="checkbox"
-        checked={a.Name === "Basic" ? true : !!allowanceSelected[a.Name]}
-        onChange={(e) => {
-          if (!activeDeduction && a.Name !== "Basic") {
-            alert("Please select a deduction first!");
-            return;
-          }
-
-          const checked = e.target.checked;
-
-          setDeductionAllowanceMap((prev) => {
-            const existing = prev[activeDeduction] || {};
-            return {
-              ...prev,
-              [activeDeduction]: {
-                ...existing,
-                [a.Name]: checked,
-              },
-            };
-          });
-
-          setAllowanceSelected((prev) => ({
-            ...prev,
-            [a.Name]: checked,
-          }));
-        }}
+        type="radio"
+        name={radioName}
+        value={d.Name}
+        checked={activeDeduction === d.Name}
         style={{ transform: "scale(1.1)" }}
-        disabled={a.Name === "Basic"}
+        onChange={() => {
+          setActiveDeduction(d.Name);
+
+          setDeductionAllowanceMap((prev) => ({
+            ...prev,
+            [d.Name]: { Basic: true, ...(prev[d.Name] || {}) },
+          }));
+
+          setAllowanceSelected({ Basic: true });
+        }}
       />
 
-      <span style={{ fontSize: 14 }}>{a.Name}</span>
+      <span style={{ fontSize: 14 }}>{d.Name}</span>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 1 }}>
+      {/* Mode + Percentage */}
+      <div style={{ display: "flex", gap: 4 }}>
         <select
           className="form-control"
-          style={{
-            width: "60px",
-            height: "28px",
-            padding: "2px 4px",
-            fontSize: "12px",
-          }}
-          value={adModeMap[a.Name] || "percentage"}
+          style={{ width: 60, height: 28, fontSize: 12 }}
+          value={adModeMap[d.Name] || "percentage"}
           onChange={(e) => {
             const mode = e.target.value;
-            setAdModeMap((prev) => ({ ...prev, [a.Name]: mode }));
+            setAdModeMap((prev) => ({ ...prev, [d.Name]: mode }));
+
             if (mode === "fixed") {
-              setAdFormula((prev) => ({ ...prev, [a.Name]: null }));
-              setCalculatedAD((prev) => ({ ...prev, [a.Name]: false }));
+              setCalculatedAD((prev) => ({ ...prev, [d.Name]: false }));
+              setAdFormula((prev) => ({ ...prev, [d.Name]: null }));
             }
           }}
-          disabled={a.Name === "Basic"}
         >
           <option value="percentage">%</option>
           <option value="fixed">#</option>
         </select>
 
-        {adModeMap[a.Name] === "percentage" && a.Name !== "Basic" && (
+        {adModeMap[d.Name] === "percentage" && (
           <input
             type="number"
             className="form-control"
-            style={{
-              width: "50px",
-              height: "28px",
-              padding: "2px 4px",
-              fontSize: "12px",
-            }}
-            value={editablePercentages[a.Name] || ""}
+            style={{ width: 70, height: 28, fontSize: 12 }}
+            value={editablePercentages[d.Name] ?? ""}
+            placeholder="%"
             onChange={(e) => {
               const value = Number(e.target.value);
-              setEditablePercentages((prev) => ({ ...prev, [a.Name]: value }));
-              if (value > 0) {
-                handleAllowanceSelect(a, true);
-              }
+              setEditablePercentages((prev) => ({
+                ...prev,
+                [d.Name]: value,
+              }));
+              // 🔥 recalculation handled by useEffect
             }}
-            placeholder="%"
           />
         )}
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      {/* Amount + Formula */}
+      <div style={{ display: "flex", gap: 8 }}>
         <input
           type="number"
           className="form-control"
-          style={{
-            width: 120,
-            height: "28px",
-            padding: "2px 6px",
-            fontSize: "13px",
-            backgroundColor: "#fff",
-          }}
-          value={allowanceAmounts[a.Name] || ""}
+          style={{ width: 120, height: 28, fontSize: 13 }}
+          value={deductionAmounts[d.Name] ?? ""}
+          disabled={adModeMap[d.Name] === "percentage" && !isManual}
           onChange={(e) => {
-            const value = Number(e.target.value) || 0;
-            if (a.Name === "Basic") {
-              setAllowanceAmounts((prev) => ({ ...prev, Basic: value }));
-              setIsPreviewMode(true);
+            const val = e.target.value;
+            if (val === "") {
+              setManualAD((prev) => ({ ...prev, [d.Name]: false }));
+              setDeductionAmounts((prev) => ({ ...prev, [d.Name]: undefined }));
               return;
             }
-            setManualAD((prev) => ({ ...prev, [a.Name]: true }));
-            setAllowanceAmounts((prev) => ({ ...prev, [a.Name]: value }));
-            setAdFormula((prev) => ({ ...prev, [a.Name]: null }));
+
+            setManualAD((prev) => ({ ...prev, [d.Name]: true }));
+            setDeductionAmounts((prev) => ({
+              ...prev,
+              [d.Name]: Number(val),
+            }));
           }}
-          disabled={
-            a.Name !== "Basic" &&
-            adModeMap[a.Name] === "percentage" &&
-            !manualAD[a.Name]
-          }
         />
-        {adFormula[a.Name] && !manualAD[a.Name] && (
+
+        {!isManual && adFormula[d.Name] && (
           <span style={{ fontSize: 12, color: "#555" }}>
-            = {adFormula[a.Name]}
+            = {adFormula[d.Name]}
           </span>
         )}
       </div>
 
-      <button
-        className="btn btn-sm btn-secondary"
-        style={{ width: "100%", padding: "4px 0", fontSize: 12 }}
-      >
-        FX
-      </button>
+      <button className="btn btn-sm btn-secondary">FX</button>
     </div>
   );
+};
 
-  const renderDeductionRow = (d, radioName) => {
-    const isReal = activeDeduction === d.Name || !!calculatedAD[d.Name];
-    const isManual = manualAD[d.Name];
-
-    return (
-      <div
-        key={d.ID}
-        style={{
-          display: "grid",
-          gridTemplateColumns: "24px 90px 100px 1fr 44px",
-          columnGap: 4,
-          marginBottom: 4,
-          alignItems: "center",
-        }}
-      >
-        <input
-          type="radio"
-          name={radioName}
-          value={d.Name}
-          checked={activeDeduction === d.Name}
-          onChange={(e) => {
-  const name = e.target.value;
-
-  // 1️⃣ Set active deduction
-  setActiveDeduction(name);
-
-  // 2️⃣ Ensure Basic is selected by default for this deduction
-  setDeductionAllowanceMap((prev) => ({
-    ...prev,
-    [name]: {
-      Basic: true,
-      ...(prev[name] || {}),
-    },
-  }));
-
-  // 3️⃣ Reflect Basic as selected in UI
-  setAllowanceSelected((prev) => ({
-    ...prev,
-    Basic: true,
-  }));
-
-  // 4️⃣ Trigger initial calculation (preview)
-  setTimeout(() => {
-    handleDeductionSelect(d, true);
-  }, 0);
-}}
-          style={{ transform: "scale(1.1)" }}
-        />
-
-        <span style={{ fontSize: 14 }}>{d.Name}</span>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <select
-            className="form-control"
-            style={{
-              width: "60px",
-              height: "28px",
-              padding: "2px 4px",
-              fontSize: "12px",
-            }}
-            value={adModeMap[d.Name] || "percentage"}
-            onChange={(e) => {
-              const mode = e.target.value;
-              setAdModeMap((prev) => ({ ...prev, [d.Name]: mode }));
-              if (mode === "fixed") {
-                setAdFormula((prev) => ({ ...prev, [d.Name]: null }));
-                setCalculatedAD((prev) => ({ ...prev, [d.Name]: false }));
-              }
-            }}
-          >
-            <option value="percentage">%</option>
-            <option value="fixed">#</option>
-          </select>
-
-          {adModeMap[d.Name] === "percentage" && (
-            <input
-              type="number"
-              className="form-control"
-              style={{
-                width: "50px",
-                height: "28px",
-                padding: "2px 4px",
-                fontSize: "12px",
-              }}
-              value={editablePercentages[d.Name] || ""}
-              onChange={(e) => {
-                const value = Number(e.target.value);
-                setEditablePercentages((prev) => ({ ...prev, [d.Name]: value }));
-                if (value > 0) {
-                  handleDeductionSelect(d, true);
-                }
-              }}
-              placeholder="%"
-            />
-          )}
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <input
-            type="number"
-            className="form-control"
-            style={{
-              width: 120,
-              height: "28px",
-              padding: "2px 6px",
-              fontSize: "13px",
-              color: isManual ? "#000" : isReal ? "#000" : "rgba(0,0,0,0.3)",
-              backgroundColor: "#fff",
-              border: "1px solid #e5e7eb",
-            }}
-            onFocus={() => {
-              setSuppressPreview((prev) => ({ ...prev, [d.Name]: true }));
-              const val = deductionAmounts[d.Name];
-              if (!isManual && !isReal && isPreviewMode && Number(val) > 0) {
-                setDeductionAmounts((prev) => ({ ...prev, [d.Name]: "" }));
-                setAdFormula((prev) => ({ ...prev, [d.Name]: "" }));
-              }
-            }}
-            onBlur={() => {
-              const value = deductionAmounts[d.Name];
-              if (!isManual && (value === "" || value === undefined)) {
-                handleDeductionSelect(d, true);
-              }
-              setSuppressPreview((prev) => ({ ...prev, [d.Name]: false }));
-            }}
-            value={
-              isManual
-                ? deductionAmounts[d.Name] || ""
-                : isReal
-                  ? deductionAmounts[d.Name] || ""
-                  : isPreviewMode
-                    ? Number(deductionAmounts[d.Name]) > 0
-                      ? Number(deductionAmounts[d.Name]).toFixed(2)
-                      : ""
-                    : ""
-            }
-            onChange={(e) => {
-              const value = e.target.value;
-              if (value === "") {
-                setManualAD((prev) => ({ ...prev, [d.Name]: false }));
-                setDeductionAmounts((prev) => ({ ...prev, [d.Name]: undefined }));
-                return;
-              }
-              setManualAD((prev) => ({ ...prev, [d.Name]: true }));
-              setDeductionAmounts((prev) => ({ ...prev, [d.Name]: Number(value) }));
-            }}
-            disabled={adModeMap[d.Name] === "percentage" && !isManual}
-          />
-
-          <span style={{ fontSize: 12, color: "#555", whiteSpace: "nowrap" }}>
-            {isManual
-              ? ""
-              : isReal
-                ? adFormula[d.Name]
-                  ? `= ${adFormula[d.Name]}`
-                  : ""
-                : isPreviewMode
-                  ? adFormula[d.Name] && (
-                    <span style={{ opacity: 0.4 }}>= {adFormula[d.Name]}</span>
-                  )
-                  : ""}
-          </span>
-        </div>
-
-        <button
-          className="btn btn-sm btn-secondary"
-          style={{ width: "100%", padding: "4px 0", fontSize: 12 }}
-        >
-          FX
-        </button>
-      </div>
-    );
-  };
 
   return (
     <div
@@ -1027,13 +990,13 @@ export default function SGNEW() {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 25,
+            gap: 20,
             marginBottom: 10,
             paddingLeft: "10px",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <label style={{ fontSize: 14, fontWeight: 600, paddingLeft: 86 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <label style={{ fontSize: 14, fontWeight: 600, paddingLeft: 60 }}>
               Total Working Days =
             </label>
             <input
@@ -1051,7 +1014,7 @@ export default function SGNEW() {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <label style={{ fontSize: 14, fontWeight: 600, paddingLeft: 152 }}>
+            <label style={{ fontSize: 14, fontWeight: 600, paddingLeft: 100 }}>
               Total Shift Hours =
             </label>
             <input
