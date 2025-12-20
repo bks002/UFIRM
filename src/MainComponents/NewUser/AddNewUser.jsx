@@ -227,7 +227,7 @@ const AddNewUser = () => {
                                     value={formData.propertyId}
                                     onChange={handleInputChange}
                                     required
-                                    disabled={formData.roleId==="3" || formData.roleId==="4"}
+                                    disabled={formData.roleId==="3" || formData.roleId==="4"|| formData.roleId==="10" }
                                 >
                                     <option value="">Select Property</option>
                                     {propertyNames.map((property) => (
