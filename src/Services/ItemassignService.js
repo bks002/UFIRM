@@ -92,3 +92,12 @@ export const deleteItemAssigned = async (id) => {
         handleApiError(error);
     }
 };
+
+export const ApproveItemAssigned = async (id) => {
+    try {
+        const response = await api.put(`/itemspecifications/approve/${id}`);
+        return response.data;
+    } catch (error) {
+        handleApiError(error);
+    }
+};

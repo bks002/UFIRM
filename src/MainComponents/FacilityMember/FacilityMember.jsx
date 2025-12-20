@@ -100,10 +100,7 @@ const StaffPage = () => {
     { label: "TECHNICAL SUPERVISOR", value: "TECHNICAL SUPERVISOR" },
     { label: "OTHER", value: "OTHER" },
   ];
-
-  // Load staff
-  useEffect(() => {
-    const fetchEmployee = async () => {
+const fetchEmployee = async () => {
       try {
         const data = await getEmployeesByOffice(propertyId);
         setStaff(Array.isArray(data) ? data : [data]);
@@ -113,6 +110,9 @@ const StaffPage = () => {
         setLoading(false);
       }
     };
+  // Load staff
+  useEffect(() => {
+    
 
     if (propertyId) fetchEmployee();
   }, [propertyId]);
@@ -129,6 +129,14 @@ const StaffPage = () => {
   const closeSalaryGroupView = () => {
     setShowSalaryGroupView(false);
     setSelectedFacilityMemberId(null);
+  };
+  // Convert JS Date to IST ISO String
+  const toISTISOString = (date) => {
+    if (!date) return null;
+    const dt = new Date(date);
+    const offsetIST = 5.5 * 60 * 60 * 1000; // IST offset (+5:30)
+    const istTime = new Date(dt.getTime() + offsetIST);
+    return istTime.toISOString().slice(0, 19); // remove 'Z'
   };
 
   const openLoanAdvanceDialog = (row) => {
@@ -211,6 +219,7 @@ const StaffPage = () => {
     setAddressLine2(profile.AddressLine2 || "");
     setCity(profile.City || "");
     setStateName(profile.State || "");
+    setSelectedFacilityMemberId(row?.FacilityMember?.FacilityMemberId || "");
 
     // Work History - Handle both single and array
     if (row?.WorkHistories && Array.isArray(row.WorkHistories) && row.WorkHistories.length > 0) {
@@ -386,12 +395,12 @@ const StaffPage = () => {
     );
 
     // Format work histories
-    const now = new Date().toISOString();
+    const now = toISTISOString(new Date());
     const formattedWorkHistories = validWorkHistories.map((wh) => ({
       CompanyName: wh.CompanyName,
       Role: wh.Role,
-      StartDate: wh.StartDate ? wh.StartDate.toISOString() : null,
-      EndDate: wh.EndDate ? wh.EndDate.toISOString() : null,
+      StartDate: wh.StartDate ? toISTISOString(wh.StartDate) : null,
+      EndDate: wh.EndDate ? toISTISOString(wh.EndDate) : null,
       ThirdPartyVerification: wh.ThirdPartyVerification,
       UploadResume: wh.ResumeUrl || "",
       CreatedOn: now,
@@ -405,8 +414,9 @@ const StaffPage = () => {
     else if (department === "TECHNICAL SUPERVISOR") facilityMasterId = 34;
 
     // Build Payload matching backend structure
-    // If DateOfBirth is empty, use a default date (e.g., 1900-01-01) to avoid SQL parameter issues
-    const dobValue = dateOfBirth ? new Date(dateOfBirth).toISOString() : new Date('1900-01-01').toISOString();
+    const dobValue = dateOfBirth
+      ? toISTISOString(dateOfBirth)
+      : toISTISOString('1900-01-01');
 
     const employeeData = {
       Profile: {
@@ -420,7 +430,7 @@ const StaffPage = () => {
         Email: email || "",
         PhoneNumber: mobile,
         Designation: department === "OTHER" ? customDesignation : department,
-Department: department === "OTHER" ? customDesignation : department,
+        Department: department === "OTHER" ? customDesignation : department,
         Gender: gender,
         DateOfBirth: dobValue,
         PanCard: panCard || "",
@@ -450,7 +460,7 @@ Department: department === "OTHER" ? customDesignation : department,
       },
 
       FacilityMember: {
-        FacilityMemberId: 0,
+        FacilityMemberId: selectedFacilityMemberId || 0,
         PropertyId: propertyId || 0,
         Address: (addressLine1 + " " + addressLine2).trim() || "",
         FacilityMasterId: facilityMasterId,
@@ -489,8 +499,7 @@ Department: department === "OTHER" ? customDesignation : department,
         });
 
         // Refresh the list
-        const updatedData = await getEmployeesByOffice(propertyId);
-        setStaff(Array.isArray(updatedData) ? updatedData : [updatedData]);
+        await fetchEmployee();
       } else {
         const response = await createEmployee(employeeData);
         toast.current.show({
@@ -500,8 +509,7 @@ Department: department === "OTHER" ? customDesignation : department,
         });
 
         // Refresh the list
-        const updatedData = await getEmployeesByOffice(propertyId);
-        setStaff(Array.isArray(updatedData) ? updatedData : [updatedData]);
+        await fetchEmployee();
       }
 
       setDialogVisible(false);
@@ -597,6 +605,16 @@ Department: department === "OTHER" ? customDesignation : department,
     </div>
   );
 
+  // Allow selecting and deselecting a row
+const handleRowSelection = (e) => {
+  if (selectedRow?.FacilityMember?.FacilityMemberId === e.value?.FacilityMember?.FacilityMemberId) {
+    // clicking same row → DESELECT
+    setSelectedRow(null);
+  } else {
+    setSelectedRow(e.value);
+  }
+};
+
   return (
     <div className="content-wrapper">
       <section className="content">
@@ -615,7 +633,7 @@ Department: department === "OTHER" ? customDesignation : department,
                 responsiveLayout="scroll"
                 emptyMessage="No staff found."
                 selection={selectedRow}
-                onSelectionChange={(e) => setSelectedRow(e.value)}
+                onSelectionChange={handleRowSelection}
                 globalFilter={globalFilterValue}
                 globalFilterFields={[
                   "Profile.EmployeeName",

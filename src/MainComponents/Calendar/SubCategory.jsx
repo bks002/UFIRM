@@ -1,277 +1,207 @@
-import React, { Component } from 'react'
+import React, { useEffect, useState } from 'react';
 import { ToastContainer } from 'react-toastify';
 import Button from '../../ReactComponents/Button/Button';
 import DataGrid from '../../ReactComponents/DataGrid/DataGrid';
-import InputBox from '../../ReactComponents/InputBox/InputBox';
-import DropdownList from '../../ReactComponents/SelectBox/DropdownList';
 import ApiProvider from './DataProvider';
-import * as appCommon from '../../Common/AppCommon.js';
 
-export default class SubCategory extends Component {
-  constructor(props) {
-    super(props);
-    
-    this.state = {
-      PageMode: 'Home',
-      subCategoryData: [],
-      gridData: [],
-      gridHeader: [
-        { sTitle: 'Id',titleValue:'Value' },
-        { sTitle: 'Sub Category Name' , titleValue: 'Name' },
-        { sTitle: 'Category Name' , titleValue: 'CategoryId' },
-      
-      ],
-      subCategoryName: '',
-      selectedCategoryId: '',
-      subCategoryId: '',
-      categoryData: [],
-    };
+export default function SubCategory() {
 
-    this.ApiProvider = new ApiProvider();
-  }
+  const [pageMode, setPageMode] = useState('Home');
+  const [subCategoryData, setSubCategoryData] = useState([]);
+  const [categoryData, setCategoryData] = useState([]);
 
-  AddNew = () => {
-    this.setState({ PageMode: 'Add' });
-  }
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [subCategoryName, setSubCategoryName] = useState('');
+  const [subCategoryId, setSubCategoryId] = useState('');
 
-  handleSave = () => {
-    var type = 'C';
-    var model = this.getModel(type);
-    this.saveSubCategory(model, type);
+  const Api = new ApiProvider();
 
-    if (this.state.PageMode == 'Edit')
-      type = 'U';
-    var model = this.getModel(type);
+  const gridHeader = [
+    { sTitle: 'Id', titleValue: 'Value' },
+    { sTitle: 'Sub Category Name', titleValue: 'Name' },
+    { sTitle: 'Category Name', titleValue: 'CategoryName' },
+  ];
 
-  }
+  // ---------------------------------------------------
+  // LOAD CATEGORY LIST
+  // ---------------------------------------------------
+  const getCategory = async () => {
+    const resp = await Api.manageCategory([{ CmdType: "R" }], 'R', 0);
 
-  saveSubCategory = (model, type) => {
-    console.log(model);
-    this.ApiProvider.manageSubCategory(model, type).then(
-        resp => {
-            if (resp.ok && resp.status == 200) {
-                return resp.json().then(rData => {
-                    switch (type) {
-                        case 'C':
-                          this.handleCancel();
-                          break;
-                        default:
-                    }
-                });
-            }
-        });
-  }
+    if (resp.ok) {
+      const data = await resp.json();
 
-  handleCancel = () => {
-    this.setState({
-        PageMode: 'Home',
-        subCategoryName: '',
-        selectedCategoryId: '',
-        subCategoryId: '',
-        catColor: "#FFA500",
-    }, () => this.getSubCategory());
+      const formatted = data.map(item => ({
+        Value: item.catId,
+        Name: item.name,
+      }));
+
+      setCategoryData(formatted);
+    }
   };
 
-  getModel = (type) => {
-    var model = [];
-    switch(type) {
-      case 'C':
-        model.push({
-          "categoryId": parseInt(this.state.selectedCategoryId),
-          "subCategoryName": this.state.subCategoryName,     
-        });
-        break;
-      case 'R':
-        model.push({
-          "CmdType": type
-        });
-        break;
-      default:
-    };
-    return model;
-  }
+  // ---------------------------------------------------
+  // LOAD SUBCATEGORY LIST
+  // ---------------------------------------------------
+  const getSubCategory = async () => {
+    const resp = await Api.manageSubCategory([{ CmdType: "R" }], 'R', 0);
 
-  manageCategory = (model, type,catId) => {
-    this.ApiProvider.manageCategory(model, type,catId).then(
-      resp => {
-        if (resp.ok && resp.status == 200) {
-          return resp.json().then(rData => {
-            switch(type) {
-              case 'R':
-                let catData = rData.map(element => ({
-                  Value: element.catId,
-                  Name: element.name,
-                  Description: element.description,
-                  Color: element.color
-                }));
-                this.setState({ categoryData: catData });
-                break;
-              default:
-            }
-          })
-        }
-      }
-    )
-  }
+    if (resp.ok) {
+      const data = await resp.json();
 
-  manageSubCategory = (model, type,catId) => {
-    this.ApiProvider.manageSubCategory(model, type,catId).then(
-      resp => {
-        if (resp.ok && resp.status == 200) {
-          return resp.json().then(rData => {
-            switch(type) {
-              case 'R':
-                let subCatData = rData.map(element => ({
-                  Value: element.SubCategoryId,
-                  Name: element.SubCategoryName,
-                  CategoryId: element.CategoryId,
-                }));
-                this.setState({ subCategoryData: subCatData });
-                break;
-              default:
-            }
-          })
-        }
-      }
-    )
-  }
+      const formatted = data.map(item => {
+        const cat = categoryData.find(c => c.Value === item.CategoryId);
+        return {
+          Value: item.SubCategoryId,
+          Name: item.SubCategoryName,
+          CategoryName: cat ? cat.Name : "—"
+        };
+      });
 
-  getSubCategory() {
-    var type = 'R';
-    var model = this.getModel(type);
-    var catId =0
-    this.manageSubCategory(model, type,catId);
-  }
- 
-  getCategory() {
-    var type = 'R';
-    var model = this.getModel(type);
-    var catId =0
-    this.manageCategory(model, type,catId);
-  }
+      setSubCategoryData(formatted);
+    }
+  };
 
-  onCategoryChanged = value => this.setState({ selectedCategoryId: parseInt(value) });
+  // ---------------------------------------------------
+  // LOAD CATEGORY FIRST → THEN SUBCATEGORY
+  // ---------------------------------------------------
+  useEffect(() => {
+    (async () => {
+      await getCategory();
+    })();
+  }, []);
 
-  componentDidMount() {
-    this.getSubCategory();
-    this.getCategory();
-  }
+  // reload subcategories after categories are loaded
+  useEffect(() => {
+    if (categoryData.length > 0) {
+      getSubCategory();
+    }
+  }, [categoryData]);
 
-  render() {
-    return (
-      <div>
-        {this.state.PageMode == 'Home' && (
-          <div className='row'>
-            <div className='col-12'>
-              <div className='card'>
-                <div className='card-header d-flex p-0'>
-                  <ul className="nav ml-auto tableFilterContainer">
-                      <li className="nav-item">
-                          <div className="input-group input-group-sm">
-                              <div className="input-group-prepend">
-                                  <Button id="btnaddCalendarCategory"
-                                      Action={this.AddNew.bind(this)}
-                                      ClassName="btn btn-success btn-sm"
-                                      Icon={<i className="fa fa-plus" aria-hidden="true"></i>}
-                                      Text=" Create New" />
-                              </div>
-                          </div>
-                      </li>
-                  </ul>
-                </div>
-                <div className='card-body pt-2'>
-                  <DataGrid
-                    Id="grdSubCategory"
-                    key={1}
-                    IsPagination={false}
-                    ColumnCollection={this.state.gridHeader}
-                    GridData={this.state.subCategoryData}
-                  />
-                </div>
+  // ---------------------------------------------------
+  // SAVE SUBCATEGORY
+  // ---------------------------------------------------
+  const handleSave = async () => {
+    let type = subCategoryId ? 'U' : 'C';
+
+    const model = [{
+      categoryId: parseInt(selectedCategoryId),
+      subCategoryName,
+      subCategoryId: subCategoryId ? parseInt(subCategoryId) : null
+    }];
+
+    const resp = await Api.manageSubCategory(model, type);
+
+    if (resp.ok) {
+      setPageMode('Home');
+      resetForm();
+      getSubCategory();
+    }
+  };
+
+  const resetForm = () => {
+    setSelectedCategoryId('');
+    setSubCategoryName('');
+    setSubCategoryId('');
+  };
+
+  // ---------------------------------------------------
+  // EDIT SUBCATEGORY
+  // ---------------------------------------------------
+  const editSubCategory = (row) => {
+    setPageMode('Edit');
+    setSubCategoryId(row.Value);
+    setSubCategoryName(row.Name);
+    const match = categoryData.find(c => c.Name === row.CategoryName);
+    if (match) setSelectedCategoryId(match.Value);
+  };
+
+  // ---------------------------------------------------
+  // UI RENDER
+  // ---------------------------------------------------
+  return (
+    <div>
+
+      {pageMode === 'Home' && (
+        <div className='row'>
+          <div className='col-12'>
+            <div className='card'>
+              <div className='card-header d-flex p-0'>
+                <ul className="nav ml-auto tableFilterContainer">
+                  <li className="nav-item">
+                    <Button
+                      Text="Create New"
+                      Action={() => setPageMode('Add')}
+                      ClassName="btn btn-success btn-sm"
+                      Icon={<i className="fa fa-plus"></i>}
+                    />
+                  </li>
+                </ul>
+              </div>
+
+              <div className='card-body pt-2'>
+                <DataGrid
+                  Id="gridSubCategory"
+                  ColumnCollection={gridHeader}
+                  GridData={subCategoryData}
+                  IsPagination={false}
+                  onRowClick={editSubCategory}
+                />
               </div>
             </div>
           </div>
-        )}
-        {(this.state.PageMode == 'Add' || this.state.PageMode == 'Edit') && (
-          <div>
-            <div className='modal-content'>
-              <div className='modal-body'>
-                <div className='row'>
-                  <div className='col-sm-6'>
-                    <div className='form-group'>
-                      <label htmlFor='ddlCategoryName'>Category Name</label>
-                      {/* <DropdownList
-                        Id="ddlCategoryName"
-                        Options={this.state.categoryData}
-                        onSelected={this.onCategoryChanged.bind(this)}
-                      /> */}
+        </div>
+      )}
 
-                    <select
-                        id="dllCategory"
-                        className='form-control'
-                        onChange={(e) => this.setState({
-                          selectedCategoryId: e.target.value
-                      })}
-                      >
-                          console.log(this.state.categoryData);
-                        <option value={0}>Select Category</option>
-                        {
-                          this.state.categoryData ? this.state.categoryData.map((e, key) => {
-                            return <option key={key} value={e.Value}>{e.Name}
-                            </option>
-                          }) : null
-                        }
-                      </select>
+      {(pageMode === 'Add' || pageMode === 'Edit') && (
+        <div className='modal-content'>
+          <div className='modal-body'>
+            <div className='row'>
 
-
-
-                    </div>
-                  </div>
-                  <div className='col-sm-6'>
-                    <div className='form-group'>
-                      <label htmlFor='txtSubCategoryName'>Sub Category Name</label>
-                    <input
-                        id="txtSubCategoryName"
-                        placeholder="Enter Sub Category Name"
-                        type="text"
-                        className="form-control"
-                        value={this.state.subCategoryName}
-                        onChange={(e) => { this.setState({ subCategoryName: e.target.value }) }}
-                    />
-
-                    </div>
-                  </div>
-                </div>
+              <div className='col-sm-6'>
+                <label>Category Name</label>
+                <select
+                  className='form-control'
+                  value={selectedCategoryId}
+                  onChange={(e) => setSelectedCategoryId(e.target.value)}
+                >
+                  <option value="">Select Category</option>
+                  {categoryData.map(c => (
+                    <option key={c.Value} value={c.Value}>{c.Name}</option>
+                  ))}
+                </select>
               </div>
-              <div className='modal-footer'>
-                <Button
-                  Id="btnSave"
-                  Text="Save"
-                  Action={this.handleSave}
-                  ClassName="btn btn-primary"
-                />
-                <Button
-                  Id="btnCancel"
-                  Text="Cancel"
-                  Action={this.handleCancel}
-                  ClassName="btn btn-secondary"
+
+              <div className='col-sm-6'>
+                <label>Sub Category Name</label>
+                <input
+                  className='form-control'
+                  type="text"
+                  value={subCategoryName}
+                  onChange={(e) => setSubCategoryName(e.target.value)}
                 />
               </div>
+
             </div>
-            <ToastContainer
-              position='top-right'
-              autoClose={5000}
-              hideProgressBar={false}
-              newestOnTop={false}
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
+          </div>
+
+          <div className='modal-footer'>
+            <Button
+              Text="Save"
+              ClassName="btn btn-primary"
+              Action={handleSave}
+            />
+            <Button
+              Text="Cancel"
+              ClassName="btn btn-secondary"
+              Action={() => { setPageMode('Home'); resetForm(); }}
             />
           </div>
-        )}
-      </div>
-    )
-  }
+
+          <ToastContainer />
+        </div>
+      )}
+
+    </div>
+  );
 }

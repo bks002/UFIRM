@@ -3,9 +3,9 @@ import axios from "axios";
 
 const API_BASE_URL = "https://api.urest.in:8096/api/allowancedeductions";
 
-export async function getAllowanceDeductionsByProperty(propertyId) {
+export async function getAllowanceDeductionsByProperty() {
   try {
-    const response = await fetch(`${API_BASE_URL}/byProperty/${propertyId}`, {
+    const response = await fetch(`${API_BASE_URL}/getall`, {
       method: "GET",
       headers: {
         Accept: "application/json",
@@ -632,6 +632,134 @@ export async function addOTHours(model) {
   } catch (error) {
     console.error("Add OT Hours Error:", error);
     return null;
+  }
+}
+
+// UPDATE OT Hours
+export async function updateOTHours(propertyId, dataArray) {
+  try {
+    const response = await fetch(
+      `https://api.urest.in:8096/api/othours/edit-property/${propertyId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(dataArray),
+      }
+    );
+
+    if (!response.ok) throw new Error("Failed to update OT Hours");
+
+    return await response.json();
+  } catch (error) {
+    console.error("Update OT Hours Error:", error);
+    return null;
+  }
+}
+
+// DELETE OT Hours
+export async function deleteOTHours(id) {
+  try {
+    const response = await fetch(
+      `https://api.urest.in:8096/api/othours/delete/${id}`,
+      {
+        method: "DELETE",
+        headers: { Accept: "application/json" },
+      }
+    );
+
+    if (!response.ok) throw new Error("Failed to delete OT Hours");
+
+    return await response.json();
+  } catch (error) {
+    console.error("Delete OT Hours Error:", error);
+    return null;
+  }
+}
+
+// ================= AD PERCENTAGE =================
+
+const AD_PERCENTAGE_URL = "https://api.urest.in:8096/api/adpercentages";
+
+// GET all AD Percentages
+export const getADPercentages = async (propertyId = null) => {
+  const url = propertyId
+    ? `${AD_PERCENTAGE_URL}?propertyId=${propertyId}`
+    : `${AD_PERCENTAGE_URL}`;
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error("Failed to load AD Percentages");
+  }
+
+  return await response.json();
+};
+
+
+// CREATE AD Percentage
+export async function addADPercentage(model) {
+  try {
+    const response = await fetch(`${AD_PERCENTAGE_URL}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(model),
+    });
+
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.error("Error adding AD percentage:", error);
+    throw error;
+  }
+}
+
+// UPDATE AD Percentage
+export async function updateADPercentage(id, model) {
+  try {
+    const response = await fetch(
+      `https://api.urest.in:8096/api/adpercentages/${id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(model),
+      }
+    );
+
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating AD percentage:", error);
+    throw error;
+  }
+}
+
+// DELETE AD Percentage
+export async function deleteADPercentage(id) {
+  try {
+    const response = await fetch(
+      `https://api.urest.in:8096/api/adpercentages/${id}`,
+      {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.error("Error deleting AD percentage:", error);
+    throw error;
   }
 }
 
