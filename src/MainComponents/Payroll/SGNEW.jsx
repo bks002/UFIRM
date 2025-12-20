@@ -43,7 +43,7 @@ export default function SGNEW() {
   const [suppressPreview, setSuppressPreview] = useState({});
   const [adModeMap, setAdModeMap] = useState({}); // "percentage" or "fixed"
   const [editablePercentages, setEditablePercentages] = useState({});
-const [designationList, setDesignationList] = useState([]);
+  const [designationList, setDesignationList] = useState([]);
 
   const [form, setForm] = useState({
     salaryGroupName: "",
@@ -57,15 +57,15 @@ const [designationList, setDesignationList] = useState([]);
   });
 
   useEffect(() => {
-  (async () => {
-    try {
-      const res = await getAllDesignations();
-      setDesignationList(res || []);
-    } catch (err) {
-      console.error("Failed to load designations", err);
-    }
-  })();
-}, []);
+    (async () => {
+      try {
+        const res = await getAllDesignations();
+        setDesignationList(res || []);
+      } catch (err) {
+        console.error("Failed to load designations", err);
+      }
+    })();
+  }, []);
 
 
   const basicAllowance = {
@@ -439,6 +439,16 @@ const [designationList, setDesignationList] = useState([]);
       ...prev,
       Basic: sg.BaseSalary,
     }));
+    setDesignations(sg.Designations || []);
+
+    // ✅ EXCLUDED EMPLOYEES (AUTO CHECK)
+    if (sg.ExcludedEmployeeIds && sg.ExcludedEmployeeIds.length > 0) {
+      setExcludeEmployees(true);
+      setExcludedEmployeeIds(sg.ExcludedEmployeeIds);
+    } else {
+      setExcludeEmployees(false);
+      setExcludedEmployeeIds([]);
+    }
 
     let newAllowances = {};
     let newDeductions = {};
@@ -603,13 +613,13 @@ const [designationList, setDesignationList] = useState([]);
     setPopupVisible(true);
   };
 
-const filteredEmployees = React.useMemo(() => {
-  if (!designations.length) return employees;
+  const filteredEmployees = React.useMemo(() => {
+    if (!designations.length) return employees;
 
-  return employees.filter((emp) =>
-    designations.includes(emp.Designation)
-  );
-}, [employees, designations]);
+    return employees.filter((emp) =>
+      designations.includes(emp.Designation)
+    );
+  }, [employees, designations]);
 
 
   const resetSalaryGroupForm = () => {
@@ -1100,27 +1110,7 @@ const filteredEmployees = React.useMemo(() => {
             <label style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 5 }}>
               Designation <span style={{ color: '#ef4444' }}>*</span>
             </label>
-           <select
-  className="form-control"
-  value={designations[0] || ""}
-  onChange={(e) =>
-    setDesignations(
-      e.target.value ? [e.target.value] : []
-    )
-  }
-  disabled={isViewMode}
-  required
->
-  <option value="">-- Select Designation --</option>
-
-  {designationList.map((d) => (
-    <option key={d.Designation_ID} value={d.DesignationName}>
-      {d.DesignationName}
-    </option>
-  ))}
-</select>
-
-
+            <select className="form-control" value={designations} onChange={(e) => setDesignations(e.target.value)} disabled={isViewMode} required > <option value="">-- Select Designation --</option> {Array.from(new Set(employees.map(emp => emp.Designation).filter(Boolean))).sort().map((desig) => (<option key={desig} value={desig}> {desig} </option>))} </select>
           </div>
 
           <div className="form-check mb-3">
