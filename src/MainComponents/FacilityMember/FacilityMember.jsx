@@ -11,10 +11,12 @@ import { Dropdown } from "primereact/dropdown";
 import { Checkbox } from "primereact/checkbox";
 import { TabView, TabPanel } from "primereact/tabview";
 import { Calendar } from "primereact/calendar";
+import { PrimeReactProvider } from "primereact/api";
 import "primeicons/primeicons.css";
 import "primereact/resources/primereact.min.css";
 import "primereact/resources/themes/lara-light-indigo/theme.css";
 import { useSelector } from "react-redux";
+import { getAllDesignations } from "../../Services/DesignationService";
 
 import FacilityService, {
   getEmployeesByOffice,
@@ -26,11 +28,28 @@ import FacilityService, {
 // Import existing components from old project
 import SalaryGroupView from "../../ReactComponents/DataGrid/SalaryGroupView.jsx";
 import LoanAdvanceDialog from "../../ReactComponents/DataGrid/LoanAdvances.jsx";
+const getSalaryGroupsByDesignation = async (propertyId, designation) => {
+  const encodedDesignation = encodeURIComponent(designation);
+  const response = await fetch(
+    `https://api.urest.in:8096/api/salaryallowances/byDesignationFull/${propertyId}/${encodedDesignation}`
+  );
+  if (!response.ok) {
+    throw new Error(`HTTP error! Status: ${response.status}`);
+  }
+  return await response.json();
+};
 
 const StaffPage = () => {
   const toast = useRef(null);
   const propertyId = useSelector((state) => state.Commonreducer.puidn);
   const [customDesignation, setCustomDesignation] = useState("");
+  const [designations, setDesignations] = useState([]);
+  const [isLoadingDesignations, setIsLoadingDesignations] = useState(false);
+  const [salaryGroups, setSalaryGroups] = useState([]);
+const [selectedSalaryGroup, setSelectedSalaryGroup] = useState(null);
+const [isLoadingSalaryGroups, setIsLoadingSalaryGroups] = useState(false);
+const [showSalaryGroupPopup, setShowSalaryGroupPopup] = useState(false);
+const [salaryGroupDetails, setSalaryGroupDetails] = useState(null);
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [globalFilterValue, setGlobalFilterValue] = useState("");
@@ -95,11 +114,6 @@ const StaffPage = () => {
     { label: "Contractual", value: "Contractual" }
   ];
 
-  const designations = [
-    { label: "H.K. SUPERVISOR", value: "H.K. SUPERVISOR" },
-    { label: "TECHNICAL SUPERVISOR", value: "TECHNICAL SUPERVISOR" },
-    { label: "OTHER", value: "OTHER" },
-  ];
 const fetchEmployee = async () => {
       try {
         const data = await getEmployeesByOffice(propertyId);
@@ -110,11 +124,78 @@ const fetchEmployee = async () => {
         setLoading(false);
       }
     };
-  // Load staff
-  useEffect(() => {
-    
 
-    if (propertyId) fetchEmployee();
+// ADD THIS FUNCTION
+const fetchSalaryGroups = async (designation) => {
+  if (!designation || !propertyId || designation === "OTHER") {
+    setSalaryGroups([]);
+    setSelectedSalaryGroup(null);
+    return;
+  }
+
+  setIsLoadingSalaryGroups(true);
+  try {
+    const data = await getSalaryGroupsByDesignation(propertyId, designation);
+    const formatted = Array.isArray(data)
+      ? data.map(sg => ({
+          label: sg.SalaryGroup,
+          value: sg.SalaryGroup_ID,
+          data: sg
+        }))
+      : [];
+    setSalaryGroups(formatted);
+  } catch (err) {
+    console.error("[SALARY_GROUP_FETCH_ERR]", err);
+    toast.current?.show({
+      severity: "warn",
+      summary: "Warning",
+      detail: "Failed to load salary groups"
+    });
+    setSalaryGroups([]);
+  } finally {
+    setIsLoadingSalaryGroups(false);
+  }
+};
+  // Load staff
+useEffect(() => {
+    const loadInitialData = async () => {
+      // Fetch designations
+      setIsLoadingDesignations(true);
+      try {
+        const designationsData = await getAllDesignations();
+        const formatted = Array.isArray(designationsData)
+          ? designationsData.map(d => ({ 
+              label: d.DesignationName || d.Designation || d, 
+              value: d.DesignationName || d.Designation || d 
+            }))
+          : [];
+        
+        // Always include OTHER option
+        formatted.push({ label: "OTHER", value: "OTHER" });
+        
+        setDesignations(formatted);
+      } catch (err) {
+        console.error("[DESIGNATION_FETCH_ERR]", err);
+        toast.current?.show({ 
+          severity: "warn", 
+          summary: "Warning", 
+          detail: "Using default designations" 
+        });
+        // Fallback to hardcoded options
+        setDesignations([
+          { label: "H.K. SUPERVISOR", value: "H.K. SUPERVISOR" },
+          { label: "TECHNICAL SUPERVISOR", value: "TECHNICAL SUPERVISOR" },
+          { label: "OTHER", value: "OTHER" },
+        ]);
+      } finally {
+        setIsLoadingDesignations(false);
+      }
+
+      // Fetch employees
+      if (propertyId) fetchEmployee();
+    };
+
+    loadInitialData();
   }, [propertyId]);
 
   // Salary & Loan actions
@@ -197,6 +278,9 @@ const fetchEmployee = async () => {
     ]);
     setIsEditMode(false);
     setEditEmployeeId(null);
+        setSalaryGroups([]);
+    setSelectedSalaryGroup(null);
+    setSalaryGroupDetails(null);
   };
 
   const openEditDialog = (row) => {
@@ -616,7 +700,8 @@ const handleRowSelection = (e) => {
 };
 
   return (
-    <div className="content-wrapper">
+    <PrimeReactProvider>
+      <div className="content-wrapper">
       <section className="content">
         <div className="container-fluid">
           <Toast ref={toast} />
@@ -748,13 +833,39 @@ const handleRowSelection = (e) => {
               />
 
               <label>Department/Designation</label>
-              <Dropdown
-                placeholder="Select Department"
-                value={department}
-                options={designations}
-                onChange={(e) => setDepartment(e.value)}
-                className="mb-3"
-              />
+              <div className="d-flex gap-2 mb-3">
+                <Dropdown
+                  placeholder={isLoadingDesignations ? "Loading..." : "Select Department"}
+                  value={department}
+                  options={designations}
+                  onChange={(e) => {
+                    setDepartment(e.value);
+                    fetchSalaryGroups(e.value);
+                  }}
+                  style={{ flex: 1 }}
+                  disabled={isLoadingDesignations}
+                  emptyMessage="No designations available"
+                />
+
+                {salaryGroups.length > 0 && (
+                  <Dropdown
+                    placeholder={isLoadingSalaryGroups ? "Loading..." : "Select Salary Group"}
+                    value={selectedSalaryGroup}
+                    options={salaryGroups}
+                    onChange={(e) => {
+                      setSelectedSalaryGroup(e.value);
+                      const selected = salaryGroups.find(sg => sg.value === e.value);
+                      if (selected) {
+                        setSalaryGroupDetails(selected.data);
+                        setShowSalaryGroupPopup(true);
+                      }
+                    }}
+                    style={{ flex: 1 }}
+                    disabled={isLoadingSalaryGroups}
+                    emptyMessage="No salary groups available"
+                  />
+                )}
+              </div>
 
               {department === "OTHER" && (
                 <InputText
@@ -1254,7 +1365,112 @@ const handleRowSelection = (e) => {
           </TabView>
         )}
       </Dialog>
+      {/* Salary Group Details Popup */}
+      <Dialog
+        header={`Salary Group → ${salaryGroupDetails?.SalaryGroup || 'Details'}`}
+        visible={showSalaryGroupPopup}
+        style={{ width: "900px" }}
+        modal
+        onHide={() => {
+          setShowSalaryGroupPopup(false);
+          setSalaryGroupDetails(null);
+        }}
+        footer={
+          <Button
+            label="Close"
+            icon="pi pi-times"
+            onClick={() => {
+              setShowSalaryGroupPopup(false);
+              setSalaryGroupDetails(null);
+            }}
+            className="p-button-primary"
+          />
+        }
+      >
+        {salaryGroupDetails && (
+          <div className="row">
+            {/* Allowances Section */}
+            <div className="col-md-6">
+              <div className="p-3 mb-3" style={{ backgroundColor: '#d4edda', borderRadius: '8px' }}>
+                <h5 className="text-center mb-3">Allowance</h5>
+                <table className="table table-borderless">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th className="text-end">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Base Salary</td>
+                      <td className="text-end">₹{salaryGroupDetails.BaseSalary?.toLocaleString()}</td>
+                    </tr>
+                    {salaryGroupDetails.AllowancesDeductions
+                      ?.filter(ad => ad.Type === 'A')
+                      .map((allowance, idx) => (
+                        <tr key={idx}>
+                          <td>{allowance.Name}</td>
+                          <td className="text-end">₹{allowance.FixedAmount?.toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    <tr className="border-top border-dark">
+                      <td><strong>Total Allowance:</strong></td>
+                      <td className="text-end">
+                        <strong>
+                          ₹{(
+                            salaryGroupDetails.BaseSalary +
+                            (salaryGroupDetails.AllowancesDeductions
+                              ?.filter(ad => ad.Type === 'A')
+                              .reduce((sum, ad) => sum + (ad.FixedAmount || 0), 0) || 0)
+                          ).toLocaleString()}
+                        </strong>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Deductions Section */}
+            <div className="col-md-6">
+              <div className="p-3 mb-3" style={{ backgroundColor: '#f8d7da', borderRadius: '8px' }}>
+                <h5 className="text-center mb-3">Deduction</h5>
+                <table className="table table-borderless">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th className="text-end">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {salaryGroupDetails.AllowancesDeductions
+                      ?.filter(ad => ad.Type === 'D')
+                      .map((deduction, idx) => (
+                        <tr key={idx}>
+                          <td>{deduction.Name}</td>
+                          <td className="text-end">₹{deduction.CalculatedAmount?.toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    <tr className="border-top border-dark">
+                      <td><strong>Total Deduction:</strong></td>
+                      <td className="text-end">
+                        <strong>
+                          ₹{salaryGroupDetails.AllowancesDeductions
+                            ?.filter(ad => ad.Type === 'D')
+                            .reduce((sum, ad) => sum + (ad.CalculatedAmount || 0), 0)
+                            .toLocaleString()}
+                        </strong>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+      </Dialog>
     </div>
+        </PrimeReactProvider>
   );
 };
 
