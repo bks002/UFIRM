@@ -513,6 +513,11 @@ export default function SGNEW() {
       const isUpdate = salaryGroups.some(
         (sg) => sg.SalaryGroup === form.salaryGroupName
       );
+const normalizedDesignations = Array.isArray(designations)
+  ? designations
+  : designations
+    ? [designations]
+    : [];
 
       const model = {
         SalaryGroup_ID: isUpdate
@@ -528,7 +533,7 @@ export default function SGNEW() {
         CreatedBy: 1,
         UpdatedBy: 1,
         IsActive: true,
-        Designations: designations,
+       Designations: normalizedDesignations,
         ExcludedEmployeeIds: excludedEmployeeIds,
       };
 
@@ -1110,9 +1115,25 @@ export default function SGNEW() {
             <label style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 5 }}>
               Designation <span style={{ color: '#ef4444' }}>*</span>
             </label>
-            <select className="form-control" value={designations} onChange={(e) => setDesignations(e.target.value)} disabled={isViewMode} required > <option value="">-- Select Designation --</option> {Array.from(new Set(employees.map(emp => emp.Designation).filter(Boolean))).sort().map((desig) => (<option key={desig} value={desig}> {desig} </option>))} </select>
-          </div>
-
+          <select
+  className="form-control"
+  value={designations[0] || ""}
+  onChange={(e) => setDesignations(e.target.value ? [e.target.value] : [])}
+  disabled={isViewMode}
+  required
+>
+  <option value="">-- Select Designation --</option>
+  {Array.from(
+    new Set(employees.map(emp => emp.Designation).filter(Boolean))
+  )
+    .sort()
+    .map((desig) => (
+      <option key={desig} value={desig}>
+        {desig}
+      </option>
+    ))}
+</select>
+          </div>  
           <div className="form-check mb-3">
             <input
               className="form-check-input"
