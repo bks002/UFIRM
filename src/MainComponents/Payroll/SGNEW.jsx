@@ -57,6 +57,21 @@ export default function SGNEW() {
   });
 
   useEffect(() => {
+    if (!propertyId) return;
+
+    // 🔄 HARD RESET on property switch
+    resetSalaryGroupForm();
+
+    setSalaryGroups([]);
+    setSalaryGroupsData([]);
+    setEmployees([]);
+    setSelectedSG("");
+    setIsViewMode(false);
+    setPopupVisible(false);
+    setPopupGroup(null);
+  }, [propertyId]);
+
+  useEffect(() => {
     (async () => {
       try {
         const res = await getAllDesignations();
@@ -66,7 +81,6 @@ export default function SGNEW() {
       }
     })();
   }, []);
-
 
   const basicAllowance = {
     ID: "BASIC",
@@ -89,15 +103,13 @@ export default function SGNEW() {
         const data = await getEmployeesByOffice(propertyId);
 
         const mappedEmployees = (data || [])
-          .filter(e => e.Profile && e.FacilityMember)
+          .filter((e) => e.Profile && e.FacilityMember)
           .map((e) => ({
             FacilityMemberId: e.FacilityMember.FacilityMemberId,
             EmployeeName: e.Profile.EmployeeName || "",
             PhoneNumber: e.Profile.PhoneNumber || "",
             Designation:
-              e.EmployeeList?.Designation ||
-              e.Profile.Designation ||
-              "",
+              e.EmployeeList?.Designation || e.Profile.Designation || "",
             SG_Link_ID: e.FacilityMember.SG_Link_ID
               ? parseInt(e.FacilityMember.SG_Link_ID)
               : null,
@@ -128,16 +140,17 @@ export default function SGNEW() {
   useEffect(() => {
     if (adPercentages.length === 0) return;
 
-    const modeMap = {};
-    const percentMap = {};
+    setEditablePercentages((prev) => {
+      const updated = { ...prev };
 
-    adPercentages.forEach((item) => {
-      modeMap[item.AD_Name] = "percentage";
-      percentMap[item.AD_Name] = item.Percentage;
+      adPercentages.forEach((item) => {
+        if (updated[item.AD_Name] == null) {
+          updated[item.AD_Name] = item.Percentage; // default only if empty
+        }
+      });
+
+      return updated;
     });
-
-    setAdModeMap(modeMap);
-    setEditablePercentages(percentMap);
   }, [adPercentages]);
 
   useEffect(() => {
@@ -145,7 +158,9 @@ export default function SGNEW() {
 
     (async () => {
       try {
-        const empData = await FacilityMemberService.getFacilityMembers(propertyId);
+        const empData = await FacilityMemberService.getFacilityMembers(
+          propertyId
+        );
         setEmployees(empData || []);
       } catch (err) {
         console.error("Failed to load employees", err);
@@ -268,8 +283,8 @@ export default function SGNEW() {
         Dependencies:
           item.Type === "D" || item.Type === "OD"
             ? Object.keys(deductionAllowanceMap[name] || {}).filter(
-              (k) => deductionAllowanceMap[name][k]
-            )
+                (k) => deductionAllowanceMap[name][k]
+              )
             : null,
       });
     });
@@ -295,11 +310,7 @@ export default function SGNEW() {
 
     // 🔁 ONLY include other allowances if explicitly selected (and not Basic)
     Object.keys(allowanceSelected).forEach((key) => {
-      if (
-        allowanceSelected[key] &&
-        key !== "Basic" &&
-        key !== name
-      ) {
+      if (allowanceSelected[key] && key !== "Basic" && key !== name) {
         const value = Number(allowanceAmounts[key]) || 0;
         total += value;
         formulaParts.push(key);
@@ -334,10 +345,10 @@ export default function SGNEW() {
     if (!percentage) return;
 
     const selectedAllowances =
-      deductionAllowanceMap[name] && Object.keys(deductionAllowanceMap[name]).length
+      deductionAllowanceMap[name] &&
+      Object.keys(deductionAllowanceMap[name]).length
         ? deductionAllowanceMap[name]
         : { Basic: true };
-
 
     let total = 0;
     let formulaParts = [];
@@ -357,8 +368,7 @@ export default function SGNEW() {
     if (total === 0) return;
 
     const amount = Math.round(total * (percentage / 100));
-    const formula =
-      `(${formulaParts.join(" + ")}) * ${percentage / 100}`;
+    const formula = `(${formulaParts.join(" + ")}) * ${percentage / 100}`;
 
     if (isPreview) {
       setDeductionAmounts((prev) => ({ ...prev, [name]: amount }));
@@ -390,7 +400,10 @@ export default function SGNEW() {
   };
 
   const cleanList = adList;
-  const allowances = [basicAllowance, ...cleanList.filter((x) => x.Type === "A")];
+  const allowances = [
+    basicAllowance,
+    ...cleanList.filter((x) => x.Type === "A"),
+  ];
   const deductions = cleanList.filter((x) => x.Type === "D");
   const otherAllowances = cleanList.filter((x) => x.Type === "OA");
   const otherDeductions = cleanList.filter((x) => x.Type === "OD");
@@ -425,24 +438,30 @@ export default function SGNEW() {
     }
   };
 
+  const extractPercentageFromFormula = (formula) => {
+    if (!formula) return null;
+
+    // matches: * 0.56 , *0.15 , * 0.0275
+    const match = formula.match(/\*\s*([\d.]+)/);
+    return match ? Number(match[1]) * 100 : null;
+  };
+
   const handleDropdownSelect = (sg) => {
     if (!sg) return;
     setLoadingSG(true);
 
+    // 🔹 BASIC FORM DATA
     setForm({
       salaryGroupName: sg.SalaryGroup,
       totalWorkingDays: sg.TotalWorkingDays,
       shiftHours: sg.ShiftHours,
     });
 
-    setAllowanceAmounts((prev) => ({
-      ...prev,
-      Basic: sg.BaseSalary,
-    }));
+    setAllowanceAmounts({ Basic: sg.BaseSalary });
     setDesignations(sg.Designations || []);
 
-    // ✅ EXCLUDED EMPLOYEES (AUTO CHECK)
-    if (sg.ExcludedEmployeeIds && sg.ExcludedEmployeeIds.length > 0) {
+    // 🔹 EXCLUDED EMPLOYEES
+    if (sg.ExcludedEmployeeIds?.length) {
       setExcludeEmployees(true);
       setExcludedEmployeeIds(sg.ExcludedEmployeeIds);
     } else {
@@ -454,8 +473,11 @@ export default function SGNEW() {
     let newDeductions = {};
     let calcFlags = {};
     let formulas = {};
+    let percentMap = {};
+    let modeMap = {}; // 🔥 THIS WAS MISSING
     let newDeductionAllowanceMap = {};
 
+    // 🔹 DEPENDENCIES
     sg.AllowancesDeductions.forEach((ad) => {
       if ((ad.Type === "D" || ad.Type === "OD") && ad.Dependencies?.length) {
         newDeductionAllowanceMap[ad.Name] = {};
@@ -467,21 +489,27 @@ export default function SGNEW() {
 
     setDeductionAllowanceMap(newDeductionAllowanceMap);
 
-
+    // 🔹 AMOUNTS + FORMULAS + PERCENTAGES + MODE
     sg.AllowancesDeductions.forEach((ad) => {
       const name = ad.Name;
 
-      if (ad.CalculatedAmount && ad.CalculatedAmount > 0) {
+      // ✅ percentage + mode from formula
+      if (ad.Formula) {
+        const percent = extractPercentageFromFormula(ad.Formula);
+        if (percent !== null) {
+          percentMap[name] = percent;
+          modeMap[name] = "percentage"; // 🔑 FORCE % MODE
+        }
+      }
+
+      if (ad.CalculatedAmount > 0) {
         newDeductions[name] = ad.CalculatedAmount;
         calcFlags[name] = true;
-
-        if (ad.Formula) {
-          formulas[name] = ad.Formula;
-        }
+        formulas[name] = ad.Formula || null;
         return;
       }
 
-      if (ad.FixedAmount && ad.FixedAmount > 0) {
+      if (ad.FixedAmount > 0) {
         if (ad.Type === "A" || ad.Type === "OA") {
           newAllowances[name] = ad.FixedAmount;
         } else {
@@ -490,6 +518,7 @@ export default function SGNEW() {
       }
     });
 
+    // 🔹 FINAL STATE SETS (ORDER MATTERS)
     setAllowanceAmounts({
       Basic: sg.BaseSalary,
       ...newAllowances,
@@ -498,6 +527,19 @@ export default function SGNEW() {
     setDeductionAmounts(newDeductions);
     setCalculatedAD(calcFlags);
     setAdFormula(formulas);
+
+    // ✅ % VALUES
+    setEditablePercentages((prev) => ({
+      ...prev,
+      ...percentMap,
+    }));
+
+    // ✅ % MODE (THIS FIXES THE MISSING INPUT BOXES)
+    setAdModeMap((prev) => ({
+      ...prev,
+      ...modeMap,
+    }));
+
     setActiveDeduction(null);
 
     setTimeout(() => setLoadingSG(false), 100);
@@ -513,16 +555,16 @@ export default function SGNEW() {
       const isUpdate = salaryGroups.some(
         (sg) => sg.SalaryGroup === form.salaryGroupName
       );
-const normalizedDesignations = Array.isArray(designations)
-  ? designations
-  : designations
-    ? [designations]
-    : [];
+      const normalizedDesignations = Array.isArray(designations)
+        ? designations
+        : designations
+        ? [designations]
+        : [];
 
       const model = {
         SalaryGroup_ID: isUpdate
           ? salaryGroups.find((sg) => sg.SalaryGroup === form.salaryGroupName)
-            .SalaryGroup_ID
+              .SalaryGroup_ID
           : 0,
         SalaryGroup: form.salaryGroupName,
         BaseSalary: Number(allowanceAmounts.Basic),
@@ -533,7 +575,7 @@ const normalizedDesignations = Array.isArray(designations)
         CreatedBy: 1,
         UpdatedBy: 1,
         IsActive: true,
-       Designations: normalizedDesignations,
+        Designations: normalizedDesignations,
         ExcludedEmployeeIds: excludedEmployeeIds,
       };
 
@@ -553,16 +595,18 @@ const normalizedDesignations = Array.isArray(designations)
     }
   };
 
-  const totalAllowance = Object.keys(allowanceAmounts)
-    .filter((key) => Number(allowanceAmounts[key]) > 0)
-    .reduce((sum, key) => sum + Number(allowanceAmounts[key]), 0);
-
   const totalDeduction = Object.keys(deductionAmounts).reduce(
     (sum, key) => sum + (Number(deductionAmounts[key]) || 0),
     0
   );
 
-  const totalGross = (Number(allowanceAmounts.Basic) || 0) + totalAllowance;
+  const basic = Number(allowanceAmounts.Basic) || 0;
+
+  const otherAllowancesTotal = Object.keys(allowanceAmounts)
+    .filter((key) => key !== "Basic" && Number(allowanceAmounts[key]) > 0)
+    .reduce((sum, key) => sum + Number(allowanceAmounts[key]), 0);
+
+  const totalGross = basic + otherAllowancesTotal;
   const netPay = totalGross - totalDeduction;
 
   const SalarySummaryBox = () => (
@@ -587,13 +631,16 @@ const normalizedDesignations = Array.isArray(designations)
         }}
       >
         <div style={{ flex: 1 }}>
-          Total Gross = <span style={{ color: "#000" }}>₹ {totalGross.toFixed(2)}</span>
+          Total Gross ={" "}
+          <span style={{ color: "#000" }}>₹ {totalGross.toFixed(2)}</span>
         </div>
         <div style={{ flex: 1, textAlign: "center" }}>
-          Total Deduction = <span style={{ color: "#000" }}>₹ {totalDeduction.toFixed(2)}</span>
+          Total Deduction ={" "}
+          <span style={{ color: "#000" }}>₹ {totalDeduction.toFixed(2)}</span>
         </div>
         <div style={{ flex: 1, textAlign: "right" }}>
-          Net Pay = <span style={{ color: "#2b6cb0" }}>₹ {netPay.toFixed(2)}</span>
+          Net Pay ={" "}
+          <span style={{ color: "#2b6cb0" }}>₹ {netPay.toFixed(2)}</span>
         </div>
       </div>
     </div>
@@ -621,11 +668,8 @@ const normalizedDesignations = Array.isArray(designations)
   const filteredEmployees = React.useMemo(() => {
     if (!designations.length) return employees;
 
-    return employees.filter((emp) =>
-      designations.includes(emp.Designation)
-    );
+    return employees.filter((emp) => designations.includes(emp.Designation));
   }, [employees, designations]);
-
 
   const resetSalaryGroupForm = () => {
     setForm({
@@ -907,7 +951,10 @@ const normalizedDesignations = Array.isArray(designations)
               const val = e.target.value;
               if (val === "") {
                 setManualAD((prev) => ({ ...prev, [d.Name]: false }));
-                setDeductionAmounts((prev) => ({ ...prev, [d.Name]: undefined }));
+                setDeductionAmounts((prev) => ({
+                  ...prev,
+                  [d.Name]: undefined,
+                }));
                 return;
               }
 
@@ -941,7 +988,6 @@ const normalizedDesignations = Array.isArray(designations)
     a.CalculatedAmount > 0 ? a.CalculatedAmount : a.FixedAmount;
 
   return (
-
     <div
       className="content-wrapper"
       style={{
@@ -966,7 +1012,14 @@ const normalizedDesignations = Array.isArray(designations)
         }}
       >
         {/* Header Section */}
-        <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 3 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 20,
+            marginBottom: 3,
+          }}
+        >
           <div
             style={{
               display: "inline-block",
@@ -1112,28 +1165,37 @@ const normalizedDesignations = Array.isArray(designations)
           </div>
 
           <div style={{ marginBottom: 10 }}>
-            <label style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 5 }}>
-              Designation <span style={{ color: '#ef4444' }}>*</span>
+            <label
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                display: "block",
+                marginBottom: 5,
+              }}
+            >
+              Designation <span style={{ color: "#ef4444" }}>*</span>
             </label>
-          <select
-  className="form-control"
-  value={designations[0] || ""}
-  onChange={(e) => setDesignations(e.target.value ? [e.target.value] : [])}
-  disabled={isViewMode}
-  required
->
-  <option value="">-- Select Designation --</option>
-  {Array.from(
-    new Set(employees.map(emp => emp.Designation).filter(Boolean))
-  )
-    .sort()
-    .map((desig) => (
-      <option key={desig} value={desig}>
-        {desig}
-      </option>
-    ))}
-</select>
-          </div>  
+            <select
+              className="form-control"
+              value={designations[0] || ""}
+              onChange={(e) =>
+                setDesignations(e.target.value ? [e.target.value] : [])
+              }
+              disabled={isViewMode}
+              required
+            >
+              <option value="">-- Select Designation --</option>
+              {Array.from(
+                new Set(employees.map((emp) => emp.Designation).filter(Boolean))
+              )
+                .sort()
+                .map((desig) => (
+                  <option key={desig} value={desig}>
+                    {desig}
+                  </option>
+                ))}
+            </select>
+          </div>
           <div className="form-check mb-3">
             <input
               className="form-check-input"
@@ -1164,13 +1226,14 @@ const normalizedDesignations = Array.isArray(designations)
                 {filteredEmployees.map((emp) => {
                   const assignedGroup = getGroupNameById(emp.SG_Link_ID);
 
-
                   return (
                     <div key={emp.FacilityMemberId} className="form-check">
                       <input
                         type="checkbox"
                         className="form-check-input"
-                        checked={excludedEmployeeIds.includes(emp.FacilityMemberId)}
+                        checked={excludedEmployeeIds.includes(
+                          emp.FacilityMemberId
+                        )}
                         onChange={(e) => {
                           const checked = e.target.checked;
                           setExcludedEmployeeIds((prev) =>
@@ -1186,7 +1249,6 @@ const normalizedDesignations = Array.isArray(designations)
 
                         {/* 👇 Salary Group Link */}
                         {emp.SG_Link_ID && assignedGroup && (
-
                           <span
                             onClick={() => handleGroupClick(emp.SG_Link_ID)}
                             style={{
@@ -1203,12 +1265,9 @@ const normalizedDesignations = Array.isArray(designations)
                     </div>
                   );
                 })}
-
-
               </div>
             </div>
           )}
-
         </div>
 
         <hr style={{ margin: "3px 0", borderTop: "3px solid #001affff" }} />
@@ -1224,7 +1283,9 @@ const normalizedDesignations = Array.isArray(designations)
         >
           {/* LEFT SIDE: ALLOWANCES */}
           <div>
-            <h4 style={{ color: "#2a4365", marginBottom: 10, maxHeight: "20px" }}>
+            <h4
+              style={{ color: "#2a4365", marginBottom: 10, maxHeight: "20px" }}
+            >
               Allowances
             </h4>
             <div
@@ -1303,7 +1364,9 @@ const normalizedDesignations = Array.isArray(designations)
                           marginTop: 4,
                         }}
                       >
-                        <span style={{ width: 120, marginTop: 2 }}>{a.Name}</span>
+                        <span style={{ width: 120, marginTop: 2 }}>
+                          {a.Name}
+                        </span>
 
                         <label
                           style={{
@@ -1367,7 +1430,11 @@ const normalizedDesignations = Array.isArray(designations)
 
                       <button
                         className="btn btn-sm btn-secondary"
-                        style={{ width: "100%", padding: "4px 0", fontSize: 12 }}
+                        style={{
+                          width: "100%",
+                          padding: "4px 0",
+                          fontSize: 12,
+                        }}
                       >
                         FX
                       </button>
@@ -1478,7 +1545,9 @@ const normalizedDesignations = Array.isArray(designations)
                 padding: 10,
               }}
             >
-              {otherDeductions.map((d) => renderDeductionRow(d, "deductionOther"))}
+              {otherDeductions.map((d) =>
+                renderDeductionRow(d, "deductionOther")
+              )}
             </div>
           </div>
         </div>
@@ -1531,7 +1600,7 @@ const normalizedDesignations = Array.isArray(designations)
 
             {/* FIXED SALARY ONLY VIEW */}
             {popupGroup.FixedSalary > 0 &&
-              popupGroup.AllowancesDeductions.length === 0 ? (
+            popupGroup.AllowancesDeductions.length === 0 ? (
               <table style={{ width: "100%" }}>
                 <tbody>
                   <tr>
@@ -1541,7 +1610,9 @@ const normalizedDesignations = Array.isArray(designations)
                     </td>
                   </tr>
                   <tr>
-                    <td><b>Total Allowance:</b></td>
+                    <td>
+                      <b>Total Allowance:</b>
+                    </td>
                     <td style={{ textAlign: "right" }}>
                       <b>₹{popupGroup.FixedSalary}</b>
                     </td>
@@ -1551,7 +1622,6 @@ const normalizedDesignations = Array.isArray(designations)
             ) : (
               /* NORMAL ALLOWANCE + DEDUCTION VIEW */
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-
                 {/* Allowance Box */}
                 <div
                   style={{
@@ -1560,7 +1630,7 @@ const normalizedDesignations = Array.isArray(designations)
                     background: "#E8FBE8",
                     borderRadius: 12,
                     padding: "0 0 10px 0",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.08)"
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
                   }}
                 >
                   <div
@@ -1570,7 +1640,7 @@ const normalizedDesignations = Array.isArray(designations)
                       textAlign: "center",
                       fontWeight: 700,
                       borderTopLeftRadius: 12,
-                      borderTopRightRadius: 12
+                      borderTopRightRadius: 12,
                     }}
                   >
                     Allowance
@@ -1580,7 +1650,9 @@ const normalizedDesignations = Array.isArray(designations)
                     <thead>
                       <tr>
                         <th style={{ padding: 8, textAlign: "left" }}>Name</th>
-                        <th style={{ padding: 8, textAlign: "right" }}>Amount</th>
+                        <th style={{ padding: 8, textAlign: "right" }}>
+                          Amount
+                        </th>
                       </tr>
                     </thead>
 
@@ -1609,8 +1681,16 @@ const normalizedDesignations = Array.isArray(designations)
 
                       {/* Total */}
                       <tr style={{ borderTop: "2px solid #999" }}>
-                        <td style={{ padding: 8, fontWeight: 700 }}>Total Allowance:</td>
-                        <td style={{ padding: 8, textAlign: "right", fontWeight: 700 }}>
+                        <td style={{ padding: 8, fontWeight: 700 }}>
+                          Total Allowance:
+                        </td>
+                        <td
+                          style={{
+                            padding: 8,
+                            textAlign: "right",
+                            fontWeight: 700,
+                          }}
+                        >
                           ₹
                           {(
                             (popupGroup.BaseSalary || 0) +
@@ -1631,7 +1711,7 @@ const normalizedDesignations = Array.isArray(designations)
                     background: "#FFECEC",
                     borderRadius: 12,
                     padding: "0 0 10px 0",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.08)"
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
                   }}
                 >
                   <div
@@ -1641,7 +1721,7 @@ const normalizedDesignations = Array.isArray(designations)
                       textAlign: "center",
                       fontWeight: 700,
                       borderTopLeftRadius: 12,
-                      borderTopRightRadius: 12
+                      borderTopRightRadius: 12,
                     }}
                   >
                     Deduction
@@ -1651,7 +1731,9 @@ const normalizedDesignations = Array.isArray(designations)
                     <thead>
                       <tr>
                         <th style={{ padding: 8, textAlign: "left" }}>Name</th>
-                        <th style={{ padding: 8, textAlign: "right" }}>Amount</th>
+                        <th style={{ padding: 8, textAlign: "right" }}>
+                          Amount
+                        </th>
                       </tr>
                     </thead>
 
@@ -1670,8 +1752,16 @@ const normalizedDesignations = Array.isArray(designations)
 
                       {/* Total Deduction */}
                       <tr style={{ borderTop: "2px solid #999" }}>
-                        <td style={{ padding: 8, fontWeight: 700 }}>Total Deduction:</td>
-                        <td style={{ padding: 8, textAlign: "right", fontWeight: 700 }}>
+                        <td style={{ padding: 8, fontWeight: 700 }}>
+                          Total Deduction:
+                        </td>
+                        <td
+                          style={{
+                            padding: 8,
+                            textAlign: "right",
+                            fontWeight: 700,
+                          }}
+                        >
                           ₹
                           {popupGroup.AllowancesDeductions.filter((d) =>
                             isDeduction(d.Type)
