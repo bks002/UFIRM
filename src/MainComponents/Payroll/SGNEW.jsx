@@ -9,10 +9,10 @@ import {
 } from "../../Services/PayrollService";
 import { getPropertyById } from "../../Services/PropertyService";
 import { getEmployeesByOffice } from "../../Services/PayrollService";
+import { getAllDesignations } from "../../Services/DesignationService";
 
 export default function SGNEW() {
   const propertyId = useSelector((state) => state.Commonreducer.puidn);
-
   const [salaryGroups, setSalaryGroups] = useState([]);
   const [adList, setAdList] = useState([]);
   const [adPercentages, setAdPercentages] = useState([]);
@@ -368,6 +368,14 @@ export default function SGNEW() {
     }
   };
 
+  const extractPercentageFromFormula = (formula) => {
+    if (!formula) return null;
+
+    // matches: * 0.56 , *0.15 , * 0.0275
+    const match = formula.match(/\*\s*([\d.]+)/);
+    return match ? Number(match[1]) * 100 : null;
+  };
+
   const handleDropdownSelect = (sg) => {
     if (!sg) return;
 
@@ -452,6 +460,11 @@ export default function SGNEW() {
       const isUpdate = salaryGroups.some(
         (sg) => sg.SalaryGroup === form.salaryGroupName
       );
+      const normalizedDesignations = Array.isArray(designations)
+        ? designations
+        : designations
+        ? [designations]
+        : [];
 
       const model = {
         SalaryGroup_ID: isUpdate
@@ -468,6 +481,8 @@ export default function SGNEW() {
         CreatedBy: 1,
         UpdatedBy: 1,
         IsActive: true,
+        Designations: normalizedDesignations,
+        ExcludedEmployeeIds: excludedEmployeeIds,
       };
 
       if (isUpdate) {
@@ -571,6 +586,8 @@ export default function SGNEW() {
     setSelectedSG("");
     setOdDoubleFlags({});
     setMultiplyValues({});
+    setDesignations([]);
+    setExcludedEmployeeIds([]);
   };
 
   const allowOnlyNumbers = (e) => {
@@ -598,6 +615,15 @@ export default function SGNEW() {
     // DO NOT remove formula or calculated data
     // DO NOT remove deductionAmounts
   };
+  // ================================
+  // TYPE HELPERS (REQUIRED FOR POPUP)
+  // ================================
+  const isAllowance = (type) => type === "A" || type === "OA";
+  const isDeduction = (type) => type === "D" || type === "OD";
+
+  // Allowance amount resolver (Calculated > Fixed)
+  const getAllowanceAmount = (a) =>
+    a.CalculatedAmount > 0 ? a.CalculatedAmount : a.FixedAmount;
 
   return (
     <div
@@ -1747,6 +1773,231 @@ export default function SGNEW() {
           Save
         </button>
       </div>
+      {popupVisible && popupGroup && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0,0,0,0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+          }}
+          onClick={() => setPopupVisible(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#fff",
+              borderRadius: 12,
+              padding: 25,
+              maxWidth: 850,
+              width: "92%",
+              maxHeight: "85vh",
+              overflowY: "auto",
+            }}
+          >
+            <h2 style={{ marginBottom: 15 }}>
+              Salary Group → {popupGroup.SalaryGroup}
+            </h2>
+
+            {/* FIXED SALARY ONLY VIEW */}
+            {popupGroup.FixedSalary > 0 &&
+            popupGroup.AllowancesDeductions.length === 0 ? (
+              <table style={{ width: "100%" }}>
+                <tbody>
+                  <tr>
+                    <td>Fixed Salary</td>
+                    <td style={{ textAlign: "right" }}>
+                      ₹{popupGroup.FixedSalary}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <b>Total Allowance:</b>
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      <b>₹{popupGroup.FixedSalary}</b>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            ) : (
+              /* NORMAL ALLOWANCE + DEDUCTION VIEW */
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                {/* Allowance Box */}
+                <div
+                  style={{
+                    flex: 1,
+                    marginRight: 20,
+                    background: "#E8FBE8",
+                    borderRadius: 12,
+                    padding: "0 0 10px 0",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+                  }}
+                >
+                  <div
+                    style={{
+                      background: "#C6F6D5",
+                      padding: "10px 0",
+                      textAlign: "center",
+                      fontWeight: 700,
+                      borderTopLeftRadius: 12,
+                      borderTopRightRadius: 12,
+                    }}
+                  >
+                    Allowance
+                  </div>
+
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr>
+                        <th style={{ padding: 8, textAlign: "left" }}>Name</th>
+                        <th style={{ padding: 8, textAlign: "right" }}>
+                          Amount
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {/* Base Salary */}
+                      {popupGroup.BaseSalary > 0 && (
+                        <tr>
+                          <td style={{ padding: 8 }}>Base Salary</td>
+                          <td style={{ padding: 8, textAlign: "right" }}>
+                            ₹{popupGroup.BaseSalary}
+                          </td>
+                        </tr>
+                      )}
+
+                      {/* Allowances */}
+                      {popupGroup.AllowancesDeductions.filter((a) =>
+                        isAllowance(a.Type)
+                      ).map((a) => (
+                        <tr key={a.AD_Id}>
+                          <td style={{ padding: 8 }}>{a.Name}</td>
+                          <td style={{ padding: 8, textAlign: "right" }}>
+                            ₹{getAllowanceAmount(a)}
+                          </td>
+                        </tr>
+                      ))}
+
+                      {/* Total */}
+                      <tr style={{ borderTop: "2px solid #999" }}>
+                        <td style={{ padding: 8, fontWeight: 700 }}>
+                          Total Allowance:
+                        </td>
+                        <td
+                          style={{
+                            padding: 8,
+                            textAlign: "right",
+                            fontWeight: 700,
+                          }}
+                        >
+                          ₹
+                          {(
+                            (popupGroup.BaseSalary || 0) +
+                            popupGroup.AllowancesDeductions.filter((a) =>
+                              isAllowance(a.Type)
+                            ).reduce((sum, a) => sum + getAllowanceAmount(a), 0)
+                          ).toLocaleString()}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Deduction Box */}
+                <div
+                  style={{
+                    flex: 1,
+                    background: "#FFECEC",
+                    borderRadius: 12,
+                    padding: "0 0 10px 0",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+                  }}
+                >
+                  <div
+                    style={{
+                      background: "#FED7D7",
+                      padding: "10px 0",
+                      textAlign: "center",
+                      fontWeight: 700,
+                      borderTopLeftRadius: 12,
+                      borderTopRightRadius: 12,
+                    }}
+                  >
+                    Deduction
+                  </div>
+
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr>
+                        <th style={{ padding: 8, textAlign: "left" }}>Name</th>
+                        <th style={{ padding: 8, textAlign: "right" }}>
+                          Amount
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {/* Deductions */}
+                      {popupGroup.AllowancesDeductions.filter((d) =>
+                        isDeduction(d.Type)
+                      ).map((d) => (
+                        <tr key={d.AD_Id}>
+                          <td style={{ padding: 8 }}>{d.Name}</td>
+                          <td style={{ padding: 8, textAlign: "right" }}>
+                            ₹{d.CalculatedAmount}
+                          </td>
+                        </tr>
+                      ))}
+
+                      {/* Total Deduction */}
+                      <tr style={{ borderTop: "2px solid #999" }}>
+                        <td style={{ padding: 8, fontWeight: 700 }}>
+                          Total Deduction:
+                        </td>
+                        <td
+                          style={{
+                            padding: 8,
+                            textAlign: "right",
+                            fontWeight: 700,
+                          }}
+                        >
+                          ₹
+                          {popupGroup.AllowancesDeductions.filter((d) =>
+                            isDeduction(d.Type)
+                          ).reduce((sum, d) => sum + d.CalculatedAmount, 0)}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            <div style={{ textAlign: "right", marginTop: 10 }}>
+              <button
+                onClick={() => setPopupVisible(false)}
+                style={{
+                  padding: "10px 22px",
+                  background: "#2563eb",
+                  color: "#fff",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
