@@ -225,23 +225,34 @@ export default function SGNEW() {
     adList.forEach((item) => {
       const name = item.Name;
       if (name === "Basic") return;
+
       let fixed = 0;
       let calculated = 0;
+      const mode = adModeMap[name] || "percentage";
 
+      // DEDUCTIONS
       if (item.Type === "D" || item.Type === "OD") {
-        if (calculatedAD[name] || (adFormula && adFormula[name])) {
-          calculated = deductionAmounts[name] || 0;
-        } else {
+        if (manualAD[name] || mode === "fixed") {
           fixed = deductionAmounts[name] || 0;
-        }
-      } else {
-        if (calculatedAD[name] && adFormula[name]) {
-          calculated = allowanceAmounts[name] || 0;
+          calculated = 0;
         } else {
-          fixed = allowanceAmounts[name] || 0;
+          calculated = deductionAmounts[name] || 0;
+          fixed = 0;
         }
       }
 
+      // ALLOWANCES
+      else {
+        if (mode === "percentage" && adFormula[name]) {
+          calculated = allowanceAmounts[name] || 0;
+          fixed = 0;
+        } else {
+          fixed = allowanceAmounts[name] || 0;
+          calculated = 0;
+        }
+      }
+
+      // OT AMOUNT SPECIAL CASE
       if (name === "OTAmount" && allowanceSelected["OTAmount"]) {
         list.push({
           AD_Id: item.ID,
@@ -256,21 +267,14 @@ export default function SGNEW() {
         return;
       }
 
+      // SKIP ZERO AMOUNTS
       if (item.Type !== "D" && item.Type !== "OD") {
-        if (fixed === 0) return;
+        if (fixed === 0 && calculated === 0) return;
       } else {
-        if (manualAD[name]) {
-          fixed = deductionAmounts[name] || 0;
-          calculated = 0;
-        } else {
-          if (
-            !calculatedAD[name] &&
-            !(adFormula[name] && deductionFormulaMap[name])
-          )
-            return;
-        }
+        if (fixed === 0 && calculated === 0) return;
       }
 
+      // FINAL PUSH
       list.push({
         AD_Id: item.ID,
         Name: name,
@@ -493,13 +497,15 @@ export default function SGNEW() {
     sg.AllowancesDeductions.forEach((ad) => {
       const name = ad.Name;
 
-      // ✅ percentage + mode from formula
+      // 🔑 DETERMINE MODE CORRECTLY
       if (ad.Formula) {
         const percent = extractPercentageFromFormula(ad.Formula);
         if (percent !== null) {
           percentMap[name] = percent;
-          modeMap[name] = "percentage"; // 🔑 FORCE % MODE
         }
+        modeMap[name] = "percentage";
+      } else if (ad.FixedAmount > 0) {
+        modeMap[name] = "fixed";
       }
 
       if (ad.CalculatedAmount > 0) {
