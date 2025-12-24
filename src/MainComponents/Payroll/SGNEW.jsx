@@ -32,6 +32,8 @@ export default function SGNEW() {
   const [excludeEmployees, setExcludeEmployees] = useState(false);
   const [employees, setEmployees] = useState([]);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
+  const [designations, setDesignations] = useState([]);
+  const [excludedEmployeeIds, setExcludedEmployeeIds] = useState([]);
 
   const [form, setForm] = useState({
     salaryGroupName: "",
@@ -50,6 +52,36 @@ export default function SGNEW() {
     loadPropertyInfo();
     loadSG();
     loadAD();
+  }, [propertyId]);
+
+  useEffect(() => {
+    if (!propertyId) return;
+
+    // 🔥 FULL HARD RESET ON PROPERTY CHANGE
+    setSelectedSG("");
+    setDesignation("");
+    setExcludeEmployees(false);
+    setExcludedEmployeeIds([]);
+
+    // 🔥 CLEAR ALL MONEY + MODE STATE (THIS WAS MISSING)
+    setAllowanceAmounts({});
+    setDeductionAmounts({});
+    setAdValueType({});
+    setEditablePercentages({});
+    setCalculatedAD({});
+    setAdFormula({});
+    setActiveDeduction(null);
+
+    // 🔥 ALSO CLEAR API PERCENT CACHE
+    setAdPercentages([]);
+
+    // 🔥 RESET FORM
+    setForm({
+      salaryGroupName: "",
+      baseSalary: "",
+      totalWorkingDays: "",
+      shiftHours: "",
+    });
   }, [propertyId]);
 
   useEffect(() => {
@@ -165,20 +197,30 @@ export default function SGNEW() {
     form.baseSalary,
     editablePercentages,
     allowanceSelected,
+    allowanceAmounts,
     activeDeduction,
+    adValueType,
   ]);
 
   useEffect(() => {
-    if (!excludeEmployees || !propertyId) {
-      setEmployees([]);
-      return;
-    }
+    if (!propertyId) return;
 
     const fetchEmployees = async () => {
       try {
         setLoadingEmployees(true);
         const res = await getEmployeesByOffice(propertyId);
         setEmployees(res || []);
+
+        // extract unique designations
+        const uniqueDesignations = [
+          ...new Set(
+            (res || [])
+              .map((e) => e.EmployeeList?.Designation || e.Profile?.Designation)
+              .filter(Boolean)
+          ),
+        ];
+
+        setDesignations(uniqueDesignations);
       } catch (err) {
         console.log("Failed to load employees", err);
       } finally {
@@ -187,7 +229,7 @@ export default function SGNEW() {
     };
 
     fetchEmployees();
-  }, [excludeEmployees, propertyId]);
+  }, [propertyId]);
 
   const getEffectivePercentage = (adName) => {
     if (!adPercentages.length || !propertyId) return null;
@@ -213,6 +255,45 @@ export default function SGNEW() {
     return globalPercent || null;
   };
 
+  const hasApiPercent = (name) => {
+    return !!getEffectivePercentage(name);
+  };
+
+  useEffect(() => {
+    const base = Number(form.baseSalary) || 0;
+    if (!base) return;
+
+    let previewDeductions = {};
+    let previewFormulas = {};
+
+    deductions.concat(otherDeductions).forEach((d) => {
+      const name = d.Name;
+
+      // Skip if already REAL
+      if (calculatedAD[name]) return;
+
+      const percentObj = getEffectivePercentage(name);
+      if (!percentObj) return;
+
+      const percentage = percentObj.Percentage;
+      const amount = Math.round(base * (percentage / 100));
+
+      previewDeductions[name] = amount;
+      previewFormulas[name] = `Base * ${percentage / 100}`;
+
+      // ensure dropdown shows %
+      if (!adValueType[name]) {
+        setAdValueType((prev) => ({
+          ...prev,
+          [name]: "PERCENT",
+        }));
+      }
+    });
+
+    setDeductionAmounts((prev) => ({ ...prev, ...previewDeductions }));
+    setAdFormula((prev) => ({ ...prev, ...previewFormulas }));
+  }, [form.baseSalary, adPercentages, calculatedAD]);
+
   const buildADModel = () => {
     let list = [];
 
@@ -222,22 +303,19 @@ export default function SGNEW() {
       let fixed = 0;
       let calculated = 0;
 
-      // ✅ ALLOWANCES & OA
+      // ✅ ALLOWANCES & OA (FIXED OR PERCENT)
       if (item.Type === "A" || item.Type === "OA") {
-        const valueType = adValueType[name];
+        const amount = Number(allowanceAmounts[name]) || 0;
+        if (amount <= 0) return;
 
-        if (valueType === "FIXED") {
-          fixed = Number(allowanceAmounts[name]) || 0;
-          if (fixed <= 0) return; // 🚫 DO NOT SEND
+        if (adValueType[name] === "PERCENT") {
+          calculated = amount;
+          fixed = 0;
+        } else {
+          // 🔥 DEFAULT TO FIXED
+          fixed = amount;
+          calculated = 0;
         }
-
-        if (valueType === "PERCENT") {
-          calculated = Number(allowanceAmounts[name]) || 0;
-          if (calculated <= 0) return; // 🚫 DO NOT SEND
-        }
-
-        // ❗ If user never touched this allowance
-        if (!valueType) return; // 🚫 DO NOT SEND
       }
 
       // ✅ DEDUCTIONS & OD
@@ -271,12 +349,16 @@ export default function SGNEW() {
         if (adValueType[name] === "FIXED" && fixed === 0) return;
         if (adValueType[name] === "PERCENT" && calculated === 0) return;
       } else {
-        // Deduction filtering
+        // DEDUCTIONS & OD
         if (adValueType[name] === "FIXED") {
-          fixed = deductionAmounts[name] || 0;
+          fixed = Number(deductionAmounts[name]) || 0;
+          if (fixed <= 0) return; // ❗ don’t send zero junk
           calculated = 0;
         } else {
+          // percentage-based deduction
           if (!calculatedAD[name]) return;
+          calculated = Number(deductionAmounts[name]) || 0;
+          if (calculated <= 0) return;
         }
       }
 
@@ -362,6 +444,13 @@ export default function SGNEW() {
   const handleDropdownSelect = (sg) => {
     if (!sg) return;
 
+    // 🔥 Store SG-based exclusions & designations
+    setExcludedEmployeeIds(sg.ExcludedEmployeeIds || []);
+
+    if (Array.isArray(sg.Designations) && sg.Designations.length > 0) {
+      setDesignation(sg.Designations[0]); // auto-select designation
+    }
+
     // 1. Fill main fields
     setForm({
       salaryGroupName: sg.SalaryGroup,
@@ -375,20 +464,34 @@ export default function SGNEW() {
     let newDeductions = {};
     let calcFlags = {};
     let formulas = {};
+    let deductionAllowanceRestoreMap = {}; // 🔥 NEW
 
     // 3. Read Allowances + Deductions from API model
     sg.AllowancesDeductions.forEach((ad) => {
       const name = ad.Name;
 
+      // 🔥 RESTORE allowance usage FROM DEDUCTION FORMULA
+      if (ad.Type === "D" && ad.Formula) {
+        const usedAllowances = {};
+
+        const tokens = ad.Formula.match(/[A-Z][A-Za-z0-9_]*/g) || [];
+        tokens.forEach((t) => {
+          if (t !== "Base") {
+            usedAllowances[t] = true;
+          }
+        });
+
+        deductionAllowanceRestoreMap[name] = usedAllowances;
+      }
+
       // CASE 1: Calculated Amount exists → percentage-based
       if (ad.CalculatedAmount && ad.CalculatedAmount > 0) {
-        // restore % mode
         setAdValueType((prev) => ({
           ...prev,
           [name]: "PERCENT",
         }));
 
-        // 🔥 restore editable percentage from formula
+        // restore editable percentage from formula
         const match = ad.Formula?.match(/([\d.]+)$/);
         const percentage = match ? Number(match[1]) * 100 : 0;
 
@@ -416,20 +519,32 @@ export default function SGNEW() {
           newDeductions[name] = ad.FixedAmount;
         }
 
+        // 🔥 THIS WAS MISSING
         setAdValueType((prev) => ({
           ...prev,
           [name]: "FIXED",
         }));
+
+        // 🔥 ALSO MARK DEDUCTION AS VALID
+        if (ad.Type === "D" || ad.Type === "OD") {
+          setCalculatedAD((prev) => ({
+            ...prev,
+            [name]: false,
+          }));
+        }
       }
     });
 
     // 4. Set UI states
-    setAllowanceSelected({}); // allow user to choose allowance afresh
+    setAllowanceSelected({}); // do NOT auto-check allowances globally
     setAllowanceAmounts(newAllowances);
     setDeductionAmounts(newDeductions);
-    setCalculatedAD(calcFlags); // RESTORE calculated flags
-    setAdFormula(formulas); // RESTORE formulas
-    setActiveDeduction(null); // keep all radios unchecked
+    setCalculatedAD((prev) => ({ ...prev, ...calcFlags }));
+    setAdFormula(formulas);
+    setActiveDeduction(null); // radios unchecked initially
+
+    // 🔥 FINAL STEP: store deduction → allowance dependency map
+    setDeductionAllowanceMap(deductionAllowanceRestoreMap);
   };
 
   const handleChange = (e) => {
@@ -455,6 +570,8 @@ export default function SGNEW() {
         Property_ID: propertyId,
         TotalWorkingDays: Number(form.totalWorkingDays),
         ShiftHours: Number(form.shiftHours),
+        Designations: designation ? [designation] : [],
+        ExcludedEmployeeIds: excludeEmployees ? excludedEmployeeIds : [],
         AllowancesDeductions: adModel,
         CreatedBy: 1,
         UpdatedBy: 1,
@@ -553,6 +670,8 @@ export default function SGNEW() {
       shiftHours: propertyDefaults.shiftHours,
     });
 
+    setAdValueType({});
+    setEditablePercentages({});
     setAllowanceSelected({});
     setAllowanceAmounts({});
     setDeductionAmounts({});
@@ -590,6 +709,23 @@ export default function SGNEW() {
     // DO NOT remove deductionAmounts
   };
 
+  const filteredEmployees = designation
+    ? employees.filter(
+        (e) =>
+          e.EmployeeList?.Designation === designation ||
+          e.Profile?.Designation === designation
+      )
+    : [];
+
+  const getEmployeeSalaryGroupName = (emp) => {
+    const sgId = Number(emp.FacilityMember?.SG_Link_ID);
+    if (!sgId) return "Not Assigned";
+
+    const sg = salaryGroups.find((s) => Number(s.SalaryGroup_ID) === sgId);
+
+    return sg?.SalaryGroup || "Not Assigned";
+  };
+
   return (
     <div
       className="content-wrapper"
@@ -625,14 +761,23 @@ export default function SGNEW() {
         >
           {/* TITLE */}
           <div
+            onClick={() => {
+              // 🔥 FULL RESET TO CREATE MODE
+              setSelectedSG("");
+              setDesignation("");
+              setExcludeEmployees(false);
+              setExcludedEmployeeIds([]);
+              resetSalaryGroupForm();
+            }}
             style={{
               display: "inline-block",
-              background: "#e2e8f0", // soft gray-blue bg
+              background: "#e2e8f0",
               padding: "8px 18px",
               borderRadius: "6px",
-              borderLeft: "5px solid #1e3a8a", // professional blue accent
+              borderLeft: "5px solid #1e3a8a",
               marginBottom: "5px",
               marginTop: "-10px",
+              cursor: "pointer", // UX hint only
             }}
           >
             <h2
@@ -656,7 +801,7 @@ export default function SGNEW() {
                 fontSize: 14,
                 fontWeight: 600,
                 whiteSpace: "nowrap",
-                paddingLeft: 45,
+                paddingLeft: 25,
                 marginTop: "-10px",
               }}
             >
@@ -686,7 +831,7 @@ export default function SGNEW() {
                 fontSize: 14,
                 fontWeight: 600,
                 whiteSpace: "nowrap",
-                paddingLeft: 43,
+                paddingLeft: 25,
                 marginTop: "-10px",
               }}
             >
@@ -709,7 +854,11 @@ export default function SGNEW() {
                 setSelectedSG(id);
 
                 if (id === "") {
+                  // 🔥 FULL RESET (same as clicking CREATE SALARY GROUP)
                   resetSalaryGroupForm();
+                  setDesignation("");
+                  setExcludeEmployees(false);
+                  setExcludedEmployeeIds([]);
                 } else {
                   handleDropdownSelect(
                     salaryGroups.find((s) => s.SalaryGroup_ID == id)
@@ -725,6 +874,21 @@ export default function SGNEW() {
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* TOP RIGHT SAVE BUTTON */}
+          <div style={{ marginLeft: "auto", marginTop: "-15px" }}>
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={handleSave}
+              style={{
+                padding: "6px 14px",
+                fontSize: 13,
+                fontWeight: 600,
+              }}
+            >
+              Save
+            </button>
           </div>
         </div>
         {/* ROW 2: WORKING DAYS + SHIFT HOURS + DESIGNATION + EXCLUDE */}
@@ -793,7 +957,10 @@ export default function SGNEW() {
           <select
             className="form-control"
             value={designation}
-            onChange={(e) => setDesignation(e.target.value)}
+            onChange={(e) => {
+              setDesignation(e.target.value);
+              setExcludeEmployees(false); // reset exclusion when designation changes
+            }}
             style={{
               width: 170,
               height: 30,
@@ -802,6 +969,11 @@ export default function SGNEW() {
             }}
           >
             <option value="">-- Select Designation --</option>
+            {designations.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
           </select>
 
           {/* Exclude checkbox + popup */}
@@ -818,7 +990,19 @@ export default function SGNEW() {
             <input
               type="checkbox"
               checked={excludeEmployees}
-              onChange={(e) => setExcludeEmployees(e.target.checked)}
+              onChange={(e) => {
+                if (!designation) {
+                  alert("Please select designation first");
+                  return;
+                }
+
+                const checked = e.target.checked;
+                setExcludeEmployees(checked);
+
+                if (!checked) {
+                  setExcludedEmployeeIds([]);
+                }
+              }}
             />
             <span style={{ fontSize: 13, fontWeight: 500 }}>
               Exclude specific employees
@@ -860,7 +1044,7 @@ export default function SGNEW() {
                   </div>
                 ) : (
                   <div style={{ maxHeight: 180, overflowY: "auto" }}>
-                    {employees.map((emp, idx) => (
+                    {filteredEmployees.map((emp, idx) => (
                       <label
                         key={idx}
                         style={{
@@ -871,8 +1055,27 @@ export default function SGNEW() {
                           marginBottom: 6,
                         }}
                       >
-                        <input type="checkbox" />
-                        {emp.Profile?.EmployeeName}
+                        <input
+                          type="checkbox"
+                          checked={excludedEmployeeIds.includes(
+                            emp.FacilityMember?.FacilityMemberId
+                          )}
+                          onChange={(e) => {
+                            const empId = emp.FacilityMember?.FacilityMemberId;
+
+                            setExcludedEmployeeIds((prev) =>
+                              e.target.checked
+                                ? [...prev, empId]
+                                : prev.filter((id) => id !== empId)
+                            );
+                          }}
+                        />
+                        <span>
+                          {emp.Profile?.EmployeeName}{" "}
+                          <span style={{ color: "#0f766e", fontWeight: 500 }}>
+                            ({getEmployeeSalaryGroupName(emp)})
+                          </span>
+                        </span>
                       </label>
                     ))}
                   </div>
@@ -944,7 +1147,8 @@ export default function SGNEW() {
                 />
               </div>
               {allowances.map((a) => {
-                const isPercentage = adValueType[a.Name] === "PERCENT";
+                const disableAmount =
+                  adValueType[a.Name] === "PERCENT" || hasApiPercent(a.Name);
                 return (
                   <div
                     key={a.ID}
@@ -990,9 +1194,9 @@ export default function SGNEW() {
                       style={{ display: "flex", alignItems: "center", gap: 6 }}
                     >
                       <span style={{ width: 70 }}>{a.Name}</span>
-                      {/* % / # Dropdown */}
+                      {/* % / # Dropdown control */}
                       <select
-                        value={adValueType[a.Name] || "FIXED"}
+                        value={adValueType[a.Name] || ""}
                         onChange={(e) => {
                           const type = e.target.value;
 
@@ -1013,8 +1217,19 @@ export default function SGNEW() {
                           width: 32,
                           height: 28,
                           fontSize: 12,
+                          color:
+                            !adValueType[a.Name] && hasApiPercent(a.Name)
+                              ? "#94a3b8" // 🔥 light preview %
+                              : "#000",
                         }}
                       >
+                        {/* PREVIEW PLACEHOLDER (NOT A REAL OPTION) */}
+                        {!adValueType[a.Name] && hasApiPercent(a.Name) && (
+                          <option value="" hidden>
+                            %
+                          </option>
+                        )}
+
                         <option value="FIXED">#</option>
                         <option value="PERCENT">%</option>
                       </select>
@@ -1041,13 +1256,13 @@ export default function SGNEW() {
                       <input
                         type="number"
                         className="form-control"
-                        disabled={isPercentage}
+                        disabled={disableAmount}
                         style={{
                           width: 110,
                           height: "28px",
                           fontSize: "13px",
-                          backgroundColor: isPercentage ? "#f1f5f9" : "#fff",
-                          cursor: isPercentage ? "not-allowed" : "text",
+                          backgroundColor: disableAmount ? "#f1f5f9" : "#fff",
+                          cursor: disableAmount ? "not-allowed" : "text",
                         }}
                         value={allowanceAmounts[a.Name] || ""}
                         onChange={(e) =>
@@ -1099,7 +1314,8 @@ export default function SGNEW() {
               }}
             >
               {otherAllowances.map((a) => {
-                const isPercentage = adValueType[a.Name] === "PERCENT";
+                const disableAmount =
+                  adValueType[a.Name] === "PERCENT" || hasApiPercent(a.Name);
                 return (
                   <div
                     key={a.ID}
@@ -1230,7 +1446,7 @@ export default function SGNEW() {
                         <span style={{ width: 70 }}>{a.Name}</span>
                         {/* % / # Dropdown */}
                         <select
-                          value={adValueType[a.Name] || "FIXED"}
+                          value={adValueType[a.Name] || ""}
                           onChange={(e) => {
                             const type = e.target.value;
 
@@ -1251,8 +1467,19 @@ export default function SGNEW() {
                             width: 32,
                             height: 28,
                             fontSize: 12,
+                            color:
+                              !adValueType[a.Name] && hasApiPercent(a.Name)
+                                ? "#94a3b8" // 🔥 light preview %
+                                : "#000",
                           }}
                         >
+                          {/* PREVIEW PLACEHOLDER (NOT A REAL OPTION) */}
+                          {!adValueType[a.Name] && hasApiPercent(a.Name) && (
+                            <option value="" hidden>
+                              %
+                            </option>
+                          )}
+
                           <option value="FIXED">#</option>
                           <option value="PERCENT">%</option>
                         </select>
@@ -1279,13 +1506,13 @@ export default function SGNEW() {
                         <input
                           type="number"
                           className="form-control"
-                          disabled={isPercentage}
+                          disabled={disableAmount}
                           style={{
                             width: 110,
                             height: "28px",
                             fontSize: "13px",
-                            backgroundColor: isPercentage ? "#f1f5f9" : "#fff",
-                            cursor: isPercentage ? "not-allowed" : "text",
+                            backgroundColor: disableAmount ? "#f1f5f9" : "#fff",
+                            cursor: disableAmount ? "not-allowed" : "text",
                           }}
                           value={allowanceAmounts[a.Name] || ""}
                           onChange={(e) =>
@@ -1369,24 +1596,36 @@ export default function SGNEW() {
                       onChange={(e) => {
                         const name = e.target.value;
 
+                        // Activate deduction
                         setActiveDeduction(name);
 
+                        // SAFETY NET: restore % from API if not already present
                         const percentObj = getEffectivePercentage(name);
-                        const percentage = percentObj?.Percentage || 0;
 
                         setEditablePercentages((prev) => ({
                           ...prev,
-                          [name]: percentage,
+                          [name]: prev[name] ?? percentObj?.Percentage ?? 0,
                         }));
 
+                        // Restore allowance checkboxes used in formula
+                        setAllowanceSelected(deductionAllowanceMap[name] || {});
+
+                        // Force PERCENT mode
                         setAdValueType((prev) => ({
                           ...prev,
                           [name]: "PERCENT",
                         }));
 
+                        // Mark as calculated
                         setCalculatedAD((prev) => ({
                           ...prev,
                           [name]: true,
+                        }));
+
+                        // FORCE recalculation immediately 🔥
+                        setDeductionAmounts((prev) => ({
+                          ...prev,
+                          [name]: prev[name] || 0, // triggers useEffect
                         }));
                       }}
                       style={{ transform: "scale(1.1)" }}
@@ -1599,12 +1838,12 @@ export default function SGNEW() {
 
                         setActiveDeduction(name);
 
+                        // 🔥 SAME SAFETY NET AS MAIN DEDUCTIONS
                         const percentObj = getEffectivePercentage(name);
-                        const percentage = percentObj?.Percentage || 0;
 
                         setEditablePercentages((prev) => ({
                           ...prev,
-                          [name]: percentage,
+                          [name]: prev[name] ?? percentObj?.Percentage ?? 0,
                         }));
 
                         setAdValueType((prev) => ({
