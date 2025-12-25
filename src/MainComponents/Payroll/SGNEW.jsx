@@ -1147,8 +1147,13 @@ export default function SGNEW() {
                 />
               </div>
               {allowances.map((a) => {
-                const disableAmount =
-                  adValueType[a.Name] === "PERCENT" || hasApiPercent(a.Name);
+                const isPreviewPercent =
+                  !adValueType[a.Name] && hasApiPercent(a.Name);
+
+                const isPercentMode = adValueType[a.Name] === "PERCENT";
+
+                const disableAmount = isPreviewPercent || isPercentMode;
+
                 return (
                   <div
                     key={a.ID}
@@ -1212,6 +1217,13 @@ export default function SGNEW() {
                               [a.Name]: percentObj?.Percentage || 0,
                             }));
                           }
+                          if (type === "FIXED") {
+                            setEditablePercentages((prev) => ({
+                              ...prev,
+                              [a.Name]: "",
+                            }));
+                            setAdFormula((prev) => ({ ...prev, [a.Name]: "" }));
+                          }
                         }}
                         style={{
                           width: 32,
@@ -1263,6 +1275,7 @@ export default function SGNEW() {
                           fontSize: "13px",
                           backgroundColor: disableAmount ? "#f1f5f9" : "#fff",
                           cursor: disableAmount ? "not-allowed" : "text",
+                          opacity: isPreviewPercent ? 0.6 : 1,
                         }}
                         value={allowanceAmounts[a.Name] || ""}
                         onChange={(e) =>
@@ -1314,8 +1327,13 @@ export default function SGNEW() {
               }}
             >
               {otherAllowances.map((a) => {
-                const disableAmount =
-                  adValueType[a.Name] === "PERCENT" || hasApiPercent(a.Name);
+                const isPreviewPercent =
+                  !adValueType[a.Name] && hasApiPercent(a.Name);
+
+                const isPercentMode = adValueType[a.Name] === "PERCENT";
+
+                const disableAmount = isPreviewPercent || isPercentMode;
+
                 return (
                   <div
                     key={a.ID}
@@ -1462,6 +1480,16 @@ export default function SGNEW() {
                                 [a.Name]: percentObj?.Percentage || 0,
                               }));
                             }
+                            if (type === "FIXED") {
+                              setEditablePercentages((prev) => ({
+                                ...prev,
+                                [a.Name]: "",
+                              }));
+                              setAdFormula((prev) => ({
+                                ...prev,
+                                [a.Name]: "",
+                              }));
+                            }
                           }}
                           style={{
                             width: 32,
@@ -1513,6 +1541,7 @@ export default function SGNEW() {
                             fontSize: "13px",
                             backgroundColor: disableAmount ? "#f1f5f9" : "#fff",
                             cursor: disableAmount ? "not-allowed" : "text",
+                            opacity: isPreviewPercent ? 0.6 : 1,
                           }}
                           value={allowanceAmounts[a.Name] || ""}
                           onChange={(e) =>
