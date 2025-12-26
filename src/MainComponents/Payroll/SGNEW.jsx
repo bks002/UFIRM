@@ -34,6 +34,7 @@ export default function SGNEW() {
   const [loadingEmployees, setLoadingEmployees] = useState(false);
   const [designations, setDesignations] = useState([]);
   const [excludedEmployeeIds, setExcludedEmployeeIds] = useState([]);
+  const [designationTouched, setDesignationTouched] = useState(false);
 
   const [form, setForm] = useState({
     salaryGroupName: "",
@@ -214,9 +215,7 @@ export default function SGNEW() {
         // extract unique designations
         const uniqueDesignations = [
           ...new Set(
-            (res || [])
-              .map((e) => e.EmployeeList?.Designation || e.Profile?.Designation)
-              .filter(Boolean)
+            (res || []).map((e) => e.EmployeeList?.Designation).filter(Boolean)
           ),
         ];
 
@@ -263,23 +262,42 @@ export default function SGNEW() {
     const base = Number(form.baseSalary) || 0;
     if (!base) return;
 
-    let previewDeductions = {};
-    let previewFormulas = {};
+    let newDeductions = {};
+    let newFormulas = {};
 
     deductions.concat(otherDeductions).forEach((d) => {
       const name = d.Name;
 
-      // Skip if already REAL
-      if (calculatedAD[name]) return;
+      // ❌ Fixed deductions never recalc
+      if (adValueType[name] === "FIXED") return;
 
+      // 🔥 CASE 1: API FORMULA EXISTS (e.g. ESI)
+      if (adFormula[name]) {
+        let total = base;
+
+        // add allowance dependencies if any
+        const usedAllowances = deductionAllowanceMap[name] || {};
+        Object.keys(usedAllowances).forEach((a) => {
+          if (usedAllowances[a]) {
+            total += Number(allowanceAmounts[a]) || 0;
+          }
+        });
+
+        const match = adFormula[name].match(/([\d.]+)$/);
+        if (!match) return;
+
+        const multiplier = Number(match[1]);
+        newDeductions[name] = Math.round(total * multiplier);
+        return;
+      }
+
+      // 🔹 CASE 2: SIMPLE % DEDUCTION (Base only)
       const percentObj = getEffectivePercentage(name);
       if (!percentObj) return;
 
       const percentage = percentObj.Percentage;
-      const amount = Math.round(base * (percentage / 100));
-
-      previewDeductions[name] = amount;
-      previewFormulas[name] = `Base * ${percentage / 100}`;
+      newDeductions[name] = Math.round(base * (percentage / 100));
+      newFormulas[name] = `Base * ${percentage / 100}`;
 
       // ensure dropdown shows %
       if (!adValueType[name]) {
@@ -290,9 +308,15 @@ export default function SGNEW() {
       }
     });
 
-    setDeductionAmounts((prev) => ({ ...prev, ...previewDeductions }));
-    setAdFormula((prev) => ({ ...prev, ...previewFormulas }));
-  }, [form.baseSalary, adPercentages, calculatedAD]);
+    setDeductionAmounts((prev) => ({ ...prev, ...newDeductions }));
+    setAdFormula((prev) => ({ ...prev, ...newFormulas }));
+  }, [
+    form.baseSalary,
+    allowanceAmounts,
+    deductionAllowanceMap,
+    adValueType,
+    adPercentages,
+  ]);
 
   const buildADModel = () => {
     let list = [];
@@ -368,7 +392,7 @@ export default function SGNEW() {
         Type: item.Type,
         FixedAmount: fixed,
         CalculatedAmount: calculated,
-        Formula: adFormula[name] || null,
+        Formula: adValueType[name] === "FIXED" ? null : adFormula[name] || null,
         FormulaId: null,
         IsDouble: odDoubleFlags[name] || false,
       });
@@ -681,6 +705,10 @@ export default function SGNEW() {
     setSelectedSG("");
     setOdDoubleFlags({});
     setMultiplyValues({});
+    setDesignation("");
+    setExcludeEmployees(false);
+    setExcludedEmployeeIds([]);
+    setDesignationTouched(false);
   };
 
   const allowOnlyNumbers = (e) => {
@@ -710,11 +738,7 @@ export default function SGNEW() {
   };
 
   const filteredEmployees = designation
-    ? employees.filter(
-        (e) =>
-          e.EmployeeList?.Designation === designation ||
-          e.Profile?.Designation === designation
-      )
+    ? employees.filter((e) => e.EmployeeList?.Designation === designation)
     : [];
 
   const getEmployeeSalaryGroupName = (emp) => {
@@ -958,8 +982,18 @@ export default function SGNEW() {
             className="form-control"
             value={designation}
             onChange={(e) => {
-              setDesignation(e.target.value);
-              setExcludeEmployees(false); // reset exclusion when designation changes
+              const newDesignation = e.target.value;
+
+              // 🔥 ONLY clear if user had interacted in previous designation
+              if (designationTouched) {
+                setExcludedEmployeeIds([]);
+              }
+
+              setDesignation(newDesignation);
+              setExcludeEmployees(false);
+
+              // reset interaction flag for new designation
+              setDesignationTouched(false);
             }}
             style={{
               width: 170,
@@ -998,10 +1032,6 @@ export default function SGNEW() {
 
                 const checked = e.target.checked;
                 setExcludeEmployees(checked);
-
-                if (!checked) {
-                  setExcludedEmployeeIds([]);
-                }
               }}
             />
             <span style={{ fontSize: 13, fontWeight: 500 }}>
@@ -1062,6 +1092,9 @@ export default function SGNEW() {
                           )}
                           onChange={(e) => {
                             const empId = emp.FacilityMember?.FacilityMemberId;
+
+                            // 🔥 mark that this designation was interacted with
+                            setDesignationTouched(true);
 
                             setExcludedEmployeeIds((prev) =>
                               e.target.checked
@@ -1683,7 +1716,16 @@ export default function SGNEW() {
                               ...prev,
                               [d.Name]: false,
                             }));
-                            setAdFormula((prev) => ({ ...prev, [d.Name]: "" }));
+
+                            setEditablePercentages((prev) => ({
+                              ...prev,
+                              [d.Name]: "",
+                            }));
+
+                            setAdFormula((prev) => ({
+                              ...prev,
+                              [d.Name]: null,
+                            }));
                           }
                         }}
                         style={{
@@ -1910,7 +1952,16 @@ export default function SGNEW() {
                               ...prev,
                               [d.Name]: false,
                             }));
-                            setAdFormula((prev) => ({ ...prev, [d.Name]: "" }));
+
+                            setEditablePercentages((prev) => ({
+                              ...prev,
+                              [d.Name]: "",
+                            }));
+
+                            setAdFormula((prev) => ({
+                              ...prev,
+                              [d.Name]: null,
+                            }));
                           }
                         }}
                         style={{
