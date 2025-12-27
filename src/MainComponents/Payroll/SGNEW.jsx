@@ -35,6 +35,8 @@ export default function SGNEW() {
   const [designations, setDesignations] = useState([]);
   const [excludedEmployeeIds, setExcludedEmployeeIds] = useState([]);
   const [designationTouched, setDesignationTouched] = useState(false);
+  const [pfLimit, setPfLimit] = useState("");
+  const [esiLimit, setEsiLimit] = useState("");
 
   const [form, setForm] = useState({
     salaryGroupName: "",
@@ -268,6 +270,57 @@ export default function SGNEW() {
     deductions.concat(otherDeductions).forEach((d) => {
       const name = d.Name;
 
+      /* ================= PF LIMIT LOGIC (SAFE INSERT) ================= */
+      const gross =
+        base +
+        Object.keys(allowanceAmounts)
+          .filter((key) => Number(allowanceAmounts[key]) > 0)
+          .reduce((sum, key) => sum + Number(allowanceAmounts[key]), 0);
+      const pfCap = Number(pfLimit) || 0;
+
+      if (
+        name === "PF" &&
+        adValueType[name] === "PERCENT" &&
+        pfCap > 0 &&
+        gross >= pfCap
+      ) {
+        const percentage =
+          Number(editablePercentages[name]) ||
+          getEffectivePercentage(name)?.Percentage ||
+          0;
+
+        newDeductions[name] = Math.round((pfCap * percentage) / 100);
+
+        // ❌ NO FORMULA when PF limit is applied
+        newFormulas[name] = null;
+
+        return; // 🚨 stop PF from falling into normal logic
+      }
+      /* ================================================================ */
+
+      /* ================= ESI LIMIT LOGIC ================= */
+      const esiCap = Number(esiLimit) || 0;
+
+      if (
+        name === "ESI" &&
+        adValueType[name] === "PERCENT" &&
+        esiCap > 0 &&
+        gross >= esiCap
+      ) {
+        const percentage =
+          Number(editablePercentages[name]) ||
+          getEffectivePercentage(name)?.Percentage ||
+          0;
+
+        newDeductions[name] = Math.round((esiCap * percentage) / 100);
+
+        // ❌ NO FORMULA when ESI limit is applied
+        newFormulas[name] = null;
+
+        return; // 🚨 stop ESI from falling into normal logic
+      }
+      /* ================================================== */
+
       // ❌ Fixed deductions never recalc
       if (adValueType[name] === "FIXED") return;
 
@@ -316,6 +369,8 @@ export default function SGNEW() {
     deductionAllowanceMap,
     adValueType,
     adPercentages,
+    pfLimit,
+    esiLimit,
   ]);
 
   const buildADModel = () => {
@@ -569,6 +624,9 @@ export default function SGNEW() {
 
     // 🔥 FINAL STEP: store deduction → allowance dependency map
     setDeductionAllowanceMap(deductionAllowanceRestoreMap);
+
+    setPfLimit(sg.PFLimit ?? "");
+    setEsiLimit(sg.ESILimit ?? "");
   };
 
   const handleChange = (e) => {
@@ -592,6 +650,8 @@ export default function SGNEW() {
         SalaryGroup: form.salaryGroupName,
         BaseSalary: Number(form.baseSalary),
         Property_ID: propertyId,
+        PFLimit: pfLimit ? Number(pfLimit) : null,
+        ESILimit: esiLimit ? Number(esiLimit) : null,
         TotalWorkingDays: Number(form.totalWorkingDays),
         ShiftHours: Number(form.shiftHours),
         Designations: designation ? [designation] : [],
@@ -709,6 +769,8 @@ export default function SGNEW() {
     setExcludeEmployees(false);
     setExcludedEmployeeIds([]);
     setDesignationTouched(false);
+    setPfLimit("");
+    setEsiLimit("");
   };
 
   const allowOnlyNumbers = (e) => {
@@ -984,11 +1046,6 @@ export default function SGNEW() {
             onChange={(e) => {
               const newDesignation = e.target.value;
 
-              // 🔥 ONLY clear if user had interacted in previous designation
-              if (designationTouched) {
-                setExcludedEmployeeIds([]);
-              }
-
               setDesignation(newDesignation);
               setExcludeEmployees(false);
 
@@ -1092,6 +1149,11 @@ export default function SGNEW() {
                           )}
                           onChange={(e) => {
                             const empId = emp.FacilityMember?.FacilityMemberId;
+
+                            // 🔥 FIRST interaction in this designation clears old data
+                            if (!designationTouched) {
+                              setExcludedEmployeeIds([]);
+                            }
 
                             // 🔥 mark that this designation was interacted with
                             setDesignationTouched(true);
@@ -1603,13 +1665,72 @@ export default function SGNEW() {
             <div
               style={{
                 display: "flex",
-                justifyContent: "space-between",
                 alignItems: "center",
-                marginBottom: 2,
+                justifyContent: "space-between",
+                marginBottom: 6,
+                gap: 12,
               }}
             >
-              <h4 style={{ color: "#2a4365", margin: 0 }}>Deductions</h4>
+              {/* LEFT: DEDUCTIONS + LIMITS */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 16,
+                }}
+              >
+                <h4 style={{ color: "#2a4365", margin: 0 }}>Deductions</h4>
 
+                {/* PF LIMIT */}
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span
+                    style={{ fontSize: 13, fontWeight: 600, marginLeft: 22 }}
+                  >
+                    PF Limit
+                  </span>
+                  <input
+                    type="text"
+                    value={pfLimit}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (/^\d*\.?\d*$/.test(val)) setPfLimit(val);
+                    }}
+                    className="form-control"
+                    style={{
+                      width: 90,
+                      height: 26,
+                      fontSize: 13,
+                      padding: "2px 6px",
+                    }}
+                    placeholder="0.00"
+                  />
+                </div>
+
+                {/* ESI LIMIT */}
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>
+                    ESI Limit
+                  </span>
+                  <input
+                    type="text"
+                    value={esiLimit}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (/^\d*\.?\d*$/.test(val)) setEsiLimit(val);
+                    }}
+                    className="form-control"
+                    style={{
+                      width: 90,
+                      height: 26,
+                      fontSize: 13,
+                      padding: "2px 6px",
+                    }}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              {/* RIGHT: REFRESH BUTTON */}
               <button
                 className="btn btn-sm btn-outline-primary"
                 style={{
@@ -1660,6 +1781,46 @@ export default function SGNEW() {
 
                         // Activate deduction
                         setActiveDeduction(name);
+
+                        // 🔥 PF LIMIT REMOVAL RECOVERY
+                        if (
+                          name === "PF" &&
+                          (!pfLimit || Number(pfLimit) === 0)
+                        ) {
+                          const percentObj = getEffectivePercentage("PF");
+
+                          setEditablePercentages((prev) => ({
+                            ...prev,
+                            PF: percentObj?.Percentage || prev.PF || 0,
+                          }));
+
+                          setAdFormula((prev) => ({
+                            ...prev,
+                            PF: percentObj
+                              ? `Base * ${percentObj.Percentage / 100}`
+                              : prev.PF,
+                          }));
+                        }
+
+                        // 🔥 ESI LIMIT REMOVAL RECOVERY
+                        if (
+                          name === "ESI" &&
+                          (!esiLimit || Number(esiLimit) === 0)
+                        ) {
+                          const percentObj = getEffectivePercentage("ESI");
+
+                          setEditablePercentages((prev) => ({
+                            ...prev,
+                            ESI: percentObj?.Percentage || prev.ESI || 0,
+                          }));
+
+                          setAdFormula((prev) => ({
+                            ...prev,
+                            ESI: percentObj
+                              ? `(Base + HRA) * ${percentObj.Percentage / 100}`
+                              : prev.ESI,
+                          }));
+                        }
 
                         // SAFETY NET: restore % from API if not already present
                         const percentObj = getEffectivePercentage(name);
