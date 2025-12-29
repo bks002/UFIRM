@@ -22,12 +22,8 @@ export default function SGNEW() {
   const [deductionAllowanceMap, setDeductionAllowanceMap] = useState({});
   const [allowanceSelected, setAllowanceSelected] = useState({});
   const [calculatedAD, setCalculatedAD] = useState({});
-  const [designation, setDesignation] = useState("");
-  const [excludeEmployees, setExcludeEmployees] = useState(false);
-  const [excludedEmployeeIds, setExcludedEmployeeIds] = useState([]);
   const [adFormula, setAdFormula] = useState({});
   const [selectedSG, setSelectedSG] = useState("");
-  const [employees, setEmployees] = useState([]);
   const [deductionFormulaMap, setDeductionFormulaMap] = useState({});
   const [odDoubleFlags, setOdDoubleFlags] = useState({});
   const [multiplyValues, setMultiplyValues] = useState({});
@@ -63,12 +59,18 @@ export default function SGNEW() {
   }, [propertyId]);
 
   useEffect(() => {
-    loadADPercentages();
-  }, []);
-
-  useEffect(() => {
     if (!activeDeduction) return;
+
+    // Load checkbox selections for this deduction
     setAllowanceSelected(deductionAllowanceMap[activeDeduction] || {});
+
+    // Load saved formula if present
+    if (deductionFormulaMap[activeDeduction]) {
+      setAdFormula((prev) => ({
+        ...prev,
+        [activeDeduction]: deductionFormulaMap[activeDeduction],
+      }));
+    }
   }, [activeDeduction]);
 
   useEffect(() => {
@@ -257,6 +259,7 @@ export default function SGNEW() {
         }
       }
 
+      // Special case: OTAmount should always be included if selected
       if (name === "OTAmount" && allowanceSelected["OTAmount"]) {
         list.push({
           AD_Id: item.ID,
@@ -297,28 +300,18 @@ export default function SGNEW() {
         Formula: adFormula[name] || null,
         FormulaId: null,
         IsDouble: odDoubleFlags[name] || false,
-        Dependencies:
-          item.Type === "D" || item.Type === "OD"
-            ? Object.keys(deductionAllowanceMap[name] || {}).filter(
-              (k) => deductionAllowanceMap[name][k]
-            )
-            : null,
       });
     });
 
     return list;
   };
 
-  if (isPreview) {
-    setAllowanceAmounts((prev) => ({ ...prev, [name]: amount }));
-    setAdFormula((prev) => ({ ...prev, [name]: formula }));
-    return;
-  }
-
-  setCalculatedAD((prev) => ({ ...prev, [name]: true }));
-  setAllowanceAmounts((prev) => ({ ...prev, [name]: amount }));
-  setAdFormula((prev) => ({ ...prev, [name]: formula }));
-};
+  const handleAllowanceAmount = (name, value) => {
+    setAllowanceAmounts((prev) => ({
+      ...prev,
+      [name]: Number(value),
+    }));
+  };
 
   const loadADPercentages = async () => {
     try {
@@ -356,14 +349,17 @@ export default function SGNEW() {
   const loadPropertyInfo = async () => {
     try {
       const res = await getPropertyById(propertyId);
+
       const twd = res.TotalWorkingDays || "";
       const sh = res.ShiftHours || "";
 
+      // store defaults
       setPropertyDefaults({
         totalWorkingDays: twd,
         shiftHours: sh,
       });
 
+      // update form initially
       setForm((prev) => ({
         ...prev,
         totalWorkingDays: twd,
@@ -399,6 +395,7 @@ export default function SGNEW() {
     let calcFlags = {};
     let formulas = {};
 
+    // 3. Read Allowances + Deductions from API model
     sg.AllowancesDeductions.forEach((ad) => {
       const name = ad.Name;
 
@@ -461,6 +458,7 @@ export default function SGNEW() {
   const handleSave = async () => {
     try {
       const adModel = buildADModel();
+
       const isUpdate = salaryGroups.some(
         (sg) => sg.SalaryGroup === form.salaryGroupName
       );
@@ -475,6 +473,7 @@ export default function SGNEW() {
           ? salaryGroups.find((sg) => sg.SalaryGroup === form.salaryGroupName)
               .SalaryGroup_ID
           : 0,
+
         SalaryGroup: form.salaryGroupName,
         BaseSalary: Number(form.baseSalary),
         Property_ID: propertyId,
@@ -489,14 +488,17 @@ export default function SGNEW() {
       };
 
       if (isUpdate) {
-        await updateSalaryAllowance(model.SalaryGroup_ID, model);
+        const id = model.SalaryGroup_ID;
+        await updateSalaryAllowance(id, model);
         alert("Salary group updated!");
       } else {
         await createSalaryAllowance(model);
         alert("Salary group created!");
       }
 
-      await loadSG();
+      // IMPORTANT FIX
+      await loadSG(); // <-- reload SG list so formulas update immediately
+      // reset ONLY when save succeeds
       resetSalaryGroupForm();
     } catch (err) {
       alert("Save failed! Check console.");
@@ -504,6 +506,7 @@ export default function SGNEW() {
     }
   };
 
+  // SUM OF ALLOWANCES (A + OA)
   const totalAllowance = Object.keys(allowanceAmounts)
     .filter((key) => Number(allowanceAmounts[key]) > 0)
     .reduce((sum, key) => sum + Number(allowanceAmounts[key]), 0);
@@ -531,7 +534,7 @@ export default function SGNEW() {
       style={{
         border: "1px solid #ddd",
         borderRadius: 8,
-        padding: "8px 12px",
+        padding: "8px 12px", // much smaller
         background: "#fff",
         marginTop: 15,
         boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
@@ -547,24 +550,26 @@ export default function SGNEW() {
           color: "#2a4365",
         }}
       >
+        {/* Gross */}
         <div style={{ flex: 1 }}>
-          Total Gross = <span style={{ color: "#000" }}>₹ {totalGross.toFixed(2)}</span>
+          Total Gross ={" "}
+          <span style={{ color: "#000" }}>₹ {totalGross.toFixed(2)}</span>
         </div>
+
+        {/* Deduction */}
         <div style={{ flex: 1, textAlign: "center" }}>
-          Total Deduction = <span style={{ color: "#000" }}>₹ {totalDeduction.toFixed(2)}</span>
+          Total Deduction ={" "}
+          <span style={{ color: "#000" }}>₹ {totalDeduction.toFixed(2)}</span>
         </div>
+
+        {/* Net Pay */}
         <div style={{ flex: 1, textAlign: "right" }}>
-          Net Pay = <span style={{ color: "#2b6cb0" }}>₹ {netPay.toFixed(2)}</span>
+          Net Pay ={" "}
+          <span style={{ color: "#2b6cb0" }}>₹ {netPay.toFixed(2)}</span>
         </div>
       </div>
     </div>
   );
-  const filteredEmployees = React.useMemo(() => {
-    if (!designation) return employees; // no designation selected → show all
-    return employees.filter(
-      (emp) => emp.Designation === designation
-    );
-  }, [employees, designation]);
 
   const resetSalaryGroupForm = () => {
     setForm({
@@ -573,6 +578,7 @@ export default function SGNEW() {
       totalWorkingDays: propertyDefaults.totalWorkingDays,
       shiftHours: propertyDefaults.shiftHours,
     });
+
     setAllowanceSelected({});
     setAllowanceAmounts({});
     setDeductionAmounts({});
@@ -588,6 +594,7 @@ export default function SGNEW() {
 
   const allowOnlyNumbers = (e) => {
     const value = e.target.value;
+
     if (/^\d*\.?\d*$/.test(value)) {
       setForm({ ...form, [e.target.name]: value });
     }
@@ -597,18 +604,11 @@ export default function SGNEW() {
     // Unselect any deduction radio
     setActiveDeduction(null);
 
-          setManualAD((prev) => ({ ...prev, [a.Name]: true }));
-          setAllowanceAmounts((prev) => ({ ...prev, [a.Name]: value }));
-          setAdFormula((prev) => ({ ...prev, [a.Name]: null }));
-        }}
-      />
+    // Clear selected allowances (but DO NOT touch allowanceAmounts)
+    setAllowanceSelected({});
 
-      {!manualAD[a.Name] && adFormula[a.Name] && (
-        <span style={{ fontSize: 12, color: "#555" }}>
-          = {adFormula[a.Name]}
-        </span>
-      )}
-    </div>
+    // Clear selected allowance mapping for deductions
+    setDeductionAllowanceMap({});
 
     // Reset OTAmount special flags
     setOdDoubleFlags({});
@@ -651,15 +651,23 @@ export default function SGNEW() {
           marginTop: -15,
         }}
       >
-        {/* Header Section */}
-        <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 3 }}>
+        {/* ROW 1: TITLE + SG NAME + SELECT SG */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 20,
+            marginBottom: 3, // reduced gap
+          }}
+        >
+          {/* TITLE */}
           <div
             style={{
               display: "inline-block",
-              background: "#e2e8f0",
+              background: "#e2e8f0", // soft gray-blue bg
               padding: "8px 18px",
               borderRadius: "6px",
-              borderLeft: "5px solid #1e3a8a",
+              borderLeft: "5px solid #1e3a8a", // professional blue accent
               marginBottom: "5px",
               marginTop: "-10px",
             }}
@@ -668,7 +676,7 @@ export default function SGNEW() {
               style={{
                 margin: 0,
                 padding: 0,
-                fontSize: 22,
+                fontSize: 22, // same size you wanted
                 fontWeight: 700,
                 color: "#1e3a8a",
                 letterSpacing: "0.3px",
@@ -678,6 +686,7 @@ export default function SGNEW() {
             </h2>
           </div>
 
+          {/* Salary Group Name */}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <label
               style={{
@@ -690,6 +699,7 @@ export default function SGNEW() {
             >
               Salary Group Name =
             </label>
+
             <input
               placeholder="Enter Name"
               name="salaryGroupName"
@@ -706,6 +716,7 @@ export default function SGNEW() {
             />
           </div>
 
+          {/* Select Existing SG */}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <label
               style={{
@@ -718,6 +729,7 @@ export default function SGNEW() {
             >
               Select Existing SG =
             </label>
+
             <select
               className="form-control"
               style={{
@@ -732,6 +744,7 @@ export default function SGNEW() {
               onChange={(e) => {
                 const id = e.target.value;
                 setSelectedSG(id);
+
                 if (id === "") {
                   resetSalaryGroupForm();
                 } else {
@@ -742,6 +755,7 @@ export default function SGNEW() {
               }}
             >
               <option value="">-- Select Existing SG --</option>
+
               {salaryGroups.map((sg) => (
                 <option key={sg.SalaryGroup_ID} value={sg.SalaryGroup_ID}>
                   {sg.SalaryGroup}
@@ -903,86 +917,9 @@ export default function SGNEW() {
               </div>
             )}
           </div>
-
-          <div style={{ marginBottom: 10 }}>
-            <label style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 5 }}>
-              Designation <span style={{ color: '#ef4444' }}>*</span>
-            </label>
-            <select
-              className="form-control"
-              value={designation}
-              onChange={(e) => setDesignation(e.target.value)}
-              disabled={isViewMode}
-              required
-            >
-              <option value="">-- Select Designation --</option>
-              {Array.from(new Set(employees.map(emp => emp.Designation).filter(Boolean)))
-                .sort()
-                .map((desig) => (
-                  <option key={desig} value={desig}>
-                    {desig}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          <div className="form-check mb-3">
-            <input
-              className="form-check-input"
-              type="checkbox"
-              id="excludeEmployees"
-              checked={excludeEmployees}
-              onChange={(e) => setExcludeEmployees(e.target.checked)}
-              disabled={isViewMode}
-            />
-            <label className="form-check-label" htmlFor="excludeEmployees">
-              Exclude specific employees
-            </label>
-          </div>
-          {excludeEmployees && (
-            <div className="mb-3">
-              <label className="form-label">Exclude Employees</label>
-
-              <div
-                style={{
-                  border: "1px solid #ddd",
-                  borderRadius: 8,
-                  maxHeight: 250,
-                  overflowY: "auto",
-                  padding: 10,
-                  background: "#fafafa",
-                }}
-              >
-                {filteredEmployees.map((emp) => (
-                  <div key={emp.FacilityMemberId} className="form-check">
-                    <input
-                      type="checkbox"
-                      className="form-check-input"
-                      checked={excludedEmployeeIds.includes(emp.FacilityMemberId)}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setExcludedEmployeeIds((prev) =>
-                          checked
-                            ? [...prev, emp.FacilityMemberId]
-                            : prev.filter((id) => id !== emp.FacilityMemberId)
-                        );
-                      }}
-                    />
-                    <label className="form-check-label">
-                      {emp.EmployeeName}
-                    </label>
-                  </div>
-                ))}
-
-              </div>
-            </div>
-          )}
-
         </div>
-
         <hr style={{ margin: "3px 0", borderTop: "3px solid #001affff" }} />
-
-        {/* Main Grid Layout */}
+        {/* MAIN BODY GRID */}
         <div
           style={{
             display: "grid",
@@ -991,9 +928,11 @@ export default function SGNEW() {
             alignItems: "start",
           }}
         >
-          {/* LEFT SIDE: ALLOWANCES */}
+          {/* ALLOWANCES */}
           <div>
-            <h4 style={{ color: "#2a4365", marginBottom: 10, maxHeight: "20px" }}>
+            <h4
+              style={{ color: "#2a4365", marginBottom: 10, maxHeight: "20px" }}
+            >
               Allowances
             </h4>
             <div
@@ -1406,8 +1345,9 @@ export default function SGNEW() {
             </div>
           </div>
 
-          {/* RIGHT SIDE: DEDUCTIONS */}
+          {/* RIGHT SIDE: DEDUCTIONS + SUMMARY */}
           <div>
+            {/* MAIN DEDUCTIONS */}
             <div
               style={{
                 display: "flex",
@@ -1417,6 +1357,7 @@ export default function SGNEW() {
               }}
             >
               <h4 style={{ color: "#2a4365", margin: 0 }}>Deductions</h4>
+
               <button
                 className="btn btn-sm btn-outline-primary"
                 style={{
@@ -1429,7 +1370,6 @@ export default function SGNEW() {
                 Refresh
               </button>
             </div>
-
             <div
               style={{
                 border: "1px solid #ddd",
@@ -1599,11 +1539,12 @@ export default function SGNEW() {
             <h4 style={{ color: "#2a4365", margin: "15px 0 8px" }}>
               Salary Summary
             </h4>
+
             <div
               style={{
                 border: "1px solid #ddd",
                 borderRadius: 8,
-                padding: "10px 12px",
+                padding: "10px 12px", // reduced padding
                 boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
               }}
             >
@@ -1611,23 +1552,27 @@ export default function SGNEW() {
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  marginBottom: 4,
+                  marginBottom: 4, // tighter spacing
                 }}
               >
                 <strong>Total Gross:</strong>
                 <span>₹ {totalGross.toFixed(2)}</span>
               </div>
+
               <div
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  marginBottom: 4,
+                  marginBottom: 4, // tighter spacing
                 }}
               >
                 <strong>Total Deduction:</strong>
                 <span>₹ {totalDeduction.toFixed(2)}</span>
               </div>
+
+              {/* TIGHT HR LINE */}
               <hr style={{ margin: "6px 0" }} />
+
               <div
                 style={{
                   display: "flex",
@@ -1635,7 +1580,7 @@ export default function SGNEW() {
                   fontWeight: "bold",
                   fontSize: 16,
                   color: "#2b6cb0",
-                  marginTop: 2,
+                  marginTop: 2, // reduced gap above net pay
                 }}
               >
                 <span>Net Pay:</span>
@@ -1653,6 +1598,7 @@ export default function SGNEW() {
             >
               Other Deductions
             </h4>
+
             <div
               style={{
                 border: "1px solid #ddd",
@@ -1816,12 +1762,10 @@ export default function SGNEW() {
             </div>
           </div>
         </div>
-
         {/* SALARY SUMMARY BOX */}
         <div style={{ marginTop: 2 }}>
           <SalarySummaryBox />
         </div>
-
         {/* SAVE BUTTON */}
         <button
           className="btn btn-primary mt-4"
