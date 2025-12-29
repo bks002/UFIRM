@@ -106,6 +106,8 @@ import OTHours from "../MainComponents/Payroll/OTHours.jsx";
 import ClientMasterPage from "../MainComponents/PropertyMaster/ClientMaster.jsx";
 import AD_Percentage from "../MainComponents/Payroll/AD_Percentage.jsx";
 import SGNEW from "../MainComponents/Payroll/SGNEW.jsx";
+import DMRReport from "../MainComponents/Reports/DMRReport.jsx";
+import AttendanceReportPage from "../MainComponents/Reports/AttendanceReport.jsx";
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -598,18 +600,6 @@ class MainNav extends React.Component {
                             <p>Item Assigned</p>
                           </Link>
                         </li>
-                        {/* <li className="nav-item">
-                                        <Link to="/FacilityMember" className="nav-link">
-                                            <i className=" fas fa-caret-right nav-icon"></i>
-                                            <p>In Out Register</p>
-                                        </Link>
-                                    </li> */}
-                        {/* <li className="nav-item">
-                                        <Link to="/FacilityMember" className="nav-link">
-                                            <i className=" fas fa-caret-right nav-icon"></i>
-                                            <p>Get Pass</p>
-                                        </Link>
-                                    </li> */}
                       </ul>
                     </li>
                   ) : null}
@@ -818,8 +808,6 @@ class MainNav extends React.Component {
 
                   {this.state.userRoles &&
                   (this.state.userRoles.includes("Admin") ||
-                    this.state.userRoles.includes("Property Manager") ||
-                    this.state.userRoles.includes("Facility Manager") ||
                     this.state.userRoles.includes("HR") ||
                     this.state.userRoles.includes("Property Admin")) ? (
                     <li className="nav-item has-treeview">
@@ -935,7 +923,35 @@ class MainNav extends React.Component {
                       </ul>
                     </li>
                   ) : null}
-
+{this.state.userRoles &&
+                  (this.state.userRoles.includes("Admin") ||
+                    this.state.userRoles.includes("Property Manager") ||
+                    this.state.userRoles.includes("Property Admin") ||
+                    this.state.userRoles.includes("Inventory Manager")) ? (
+                    <li className="nav-item has-treeview">
+                      <a href="#" className="nav-link">
+                    <i className="nav-icon fas fa-chart-bar"></i>
+                        <p>
+                          Report
+                          <i className="right fas fa-angle-left"></i>
+                        </p>
+                      </a>
+                      <ul className="nav nav-treeview">
+                        <li className="nav-item">
+                          <Link to="/Account/App/DMRReport" className="nav-link">
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>DMR Report</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link to="/Account/App/AttendanceReport" className="nav-link">
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Attendance Report</p>
+                          </Link>
+                        </li>
+                      </ul>
+                    </li>
+                  ) : null}
                   {this.state.userRoles &&
                   (this.state.userRoles.includes("Admin") ||
                     this.state.userRoles.includes("Property Manager") ||
@@ -1601,6 +1617,10 @@ class MainNav extends React.Component {
               path="/Account/App/ExpenseReport"
               component={ExpenseReport}
             />
+             <Route
+              path="/Account/App/AttendanceReport"
+              component={AttendanceReportPage}
+            />
             <Route
               path="/Account/App/ExpenseTypeMaster"
               component={ExpenseTypeMaster}
@@ -1615,6 +1635,7 @@ class MainNav extends React.Component {
               path="/Account/App/Facility"
               component={FacilityLatlongPage}
             />
+            <Route path="/Account/App/DMRReport" component={DMRReport} />
             <Route
               path="/Account/App/EmployeeLeave"
               component={EmployeeLeave}
