@@ -176,11 +176,14 @@ export default function SGNEW() {
       let formulaParts = ["Base"];
 
       Object.keys(allowanceSelected).forEach((key) => {
-        if (allowanceSelected[key]) {
-          const val = Number(allowanceAmounts[key]) || 0;
-          total += val;
-          formulaParts.push(key);
-        }
+        if (!allowanceSelected[key]) return;
+
+        // 🔥 IMPORTANT: Base is already included
+        if (key === "BaseSalary") return;
+
+        const val = Number(allowanceAmounts[key]) || 0;
+        total += val;
+        formulaParts.push(key);
       });
 
       const amount = Math.round(total * (percentage / 100));
@@ -812,6 +815,45 @@ export default function SGNEW() {
     return sg?.SalaryGroup || "Not Assigned";
   };
 
+  const activateDeductionWithBase = (deductionName) => {
+    // 1️⃣ Activate radio
+    setActiveDeduction(deductionName);
+
+    // 2️⃣ Force deduction into PERCENT mode
+    setAdValueType((prev) => ({
+      ...prev,
+      [deductionName]: "PERCENT",
+    }));
+
+    // 3️⃣ Restore % from API if missing
+    const percentObj = getEffectivePercentage(deductionName);
+    setEditablePercentages((prev) => ({
+      ...prev,
+      [deductionName]: prev[deductionName] ?? percentObj?.Percentage ?? 0,
+    }));
+
+    // 4️⃣ Mark as calculated
+    setCalculatedAD((prev) => ({
+      ...prev,
+      [deductionName]: true,
+    }));
+
+    // 5️⃣ FORCE Base Salary inclusion
+    setDeductionAllowanceMap((prev) => ({
+      ...prev,
+      [deductionName]: {
+        ...(prev[deductionName] || {}),
+        BaseSalary: true,
+      },
+    }));
+
+    // 6️⃣ Sync visible selection
+    setAllowanceSelected((prev) => ({
+      ...prev,
+      BaseSalary: true,
+    }));
+  };
+
   return (
     <div
       className="content-wrapper"
@@ -1191,11 +1233,36 @@ export default function SGNEW() {
         >
           {/* ALLOWANCES */}
           <div>
-            <h4
-              style={{ color: "#2a4365", marginBottom: 10, maxHeight: "20px" }}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 80px 80px",
+                alignItems: "center",
+                marginBottom: 10,
+              }}
             >
-              Allowances
-            </h4>
+              <h4 style={{ color: "#2a4365", margin: 0 }}>Allowances</h4>
+
+              <div
+                style={{
+                  textAlign: "center",
+                  fontWeight: 600,
+                  marginLeft: -81,
+                }}
+              >
+                PF
+              </div>
+
+              <div
+                style={{
+                  textAlign: "center",
+                  fontWeight: 600,
+                  marginLeft: -148,
+                }}
+              >
+                ESI
+              </div>
+            </div>
             <div
               style={{
                 border: "1px solid #ddd",
@@ -1208,38 +1275,91 @@ export default function SGNEW() {
               {/* BASE SALARY (MOVED HERE) */}
               <div
                 style={{
-                  display: "flex",
+                  display: "grid",
+                  gridTemplateColumns: "30px 1fr 40px 110px 40px 40px 60px",
                   alignItems: "center",
-                  gap: 10,
-                  paddingBottom: 8,
-                  marginBottom: 10,
-                  borderBottom: "1px dashed #cbd5e1",
+                  columnGap: 8,
+                  marginBottom: 8,
                 }}
               >
-                <span
+                {/* Checkbox placeholder (no checkbox for Base Salary selection) */}
+                <div />
+
+                {/* Label */}
+                <span>Base Salary</span>
+
+                {/* Fixed # box (aligned above others) */}
+                <input
+                  value="#"
+                  disabled
                   style={{
-                    width: 80,
-                    fontWeight: 700,
-                    fontSize: 13,
-                    color: "#1e293b", // dark slate
+                    width: 32,
+                    height: 28,
+                    fontSize: 12,
+                    textAlign: "center",
+                    marginLeft: -95,
+                    backgroundColor: "#f1f5f9",
+                    border: "1px solid #e5e7eb",
+                    cursor: "not-allowed",
                   }}
-                >
-                  Base Salary
-                </span>
+                />
 
-                <span style={{ fontWeight: 600 }}>=</span>
-
+                {/* Amount input (aligned above other amounts) */}
                 <input
                   name="baseSalary"
                   value={form.baseSalary}
                   onChange={allowOnlyNumbers}
                   className="form-control"
                   style={{
-                    width: 140,
+                    width: 110,
                     height: 28,
                     fontSize: 13,
+                    marginLeft: -107,
                   }}
                 />
+
+                {/* PF checkbox */}
+                <input
+                  type="checkbox"
+                  checked={!!deductionAllowanceMap.PF?.BaseSalary}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      activateDeductionWithBase("PF");
+                    } else {
+                      setDeductionAllowanceMap((prev) => ({
+                        ...prev,
+                        PF: {
+                          ...(prev.PF || {}),
+                          BaseSalary: false,
+                        },
+                      }));
+                    }
+                  }}
+                  style={{ transform: "scale(1.1)", justifySelf: "center" }}
+                />
+
+                {/* ESI checkbox */}
+                <input
+                  type="checkbox"
+                  checked={!!deductionAllowanceMap.ESI?.BaseSalary}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      activateDeductionWithBase("ESI");
+                    } else {
+                      setDeductionAllowanceMap((prev) => ({
+                        ...prev,
+                        ESI: {
+                          ...(prev.ESI || {}),
+                          BaseSalary: false,
+                        },
+                      }));
+                    }
+                  }}
+                  style={{ transform: "scale(1.1)", justifySelf: "center" }}
+                />
+
+                {/* Empty FX placeholder to keep alignment */}
+                <div />
               </div>
               {allowances.map((a) => {
                 const isPreviewPercent =
@@ -1254,7 +1374,7 @@ export default function SGNEW() {
                     key={a.ID}
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "30px 1fr 60px",
+                      gridTemplateColumns: "30px 1fr 40px 40px 60px",
                       alignItems: "center",
                       marginBottom: 8,
                       columnGap: 8,
@@ -1389,6 +1509,63 @@ export default function SGNEW() {
                           : ""}
                       </span>
                     </div>
+                    {/* PF Checkbox */}
+                    <input
+                      type="checkbox"
+                      checked={!!deductionAllowanceMap.PF?.[a.Name]}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+
+                        if (checked) {
+                          activateDeductionWithBase("PF");
+                        }
+
+                        // 🔥 update deduction map
+                        setDeductionAllowanceMap((prev) => ({
+                          ...prev,
+                          PF: {
+                            ...(prev.PF || {}),
+                            [a.Name]: checked,
+                          },
+                        }));
+
+                        // 🔥 sync allowanceSelected (THIS WAS MISSING)
+                        if (activeDeduction === "PF") {
+                          setAllowanceSelected((prev) => ({
+                            ...prev,
+                            [a.Name]: checked,
+                          }));
+                        }
+                      }}
+                    />
+
+                    {/* ESI Checkbox */}
+                    <input
+                      type="checkbox"
+                      checked={!!deductionAllowanceMap.ESI?.[a.Name]}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+
+                        if (checked) {
+                          activateDeductionWithBase("ESI");
+                        }
+
+                        setDeductionAllowanceMap((prev) => ({
+                          ...prev,
+                          ESI: {
+                            ...(prev.ESI || {}),
+                            [a.Name]: checked,
+                          },
+                        }));
+
+                        if (activeDeduction === "ESI") {
+                          setAllowanceSelected((prev) => ({
+                            ...prev,
+                            [a.Name]: checked,
+                          }));
+                        }
+                      }}
+                    />
 
                     {/* FX */}
                     <button
