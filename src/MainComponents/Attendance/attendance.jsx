@@ -549,6 +549,17 @@ export default function AttendanceMaster() {
             </div>
         </div>
     );
+    const startYear = 2025;
+const endYear = new Date().getFullYear() + 2; // optional future years
+const yearOptions = Array.from(
+    { length: endYear - startYear + 1 },
+    (_, i) => startYear + i
+);
+const handleYearChange = (e) => {
+    const newYear = parseInt(e.target.value, 10);
+    setCurrentDate(new Date(newYear, currentDate.getMonth(), 1));
+};
+
 
     return (
         <div style={{ padding: '20px',paddingLeft: '80px',  fontFamily: 'Arial, sans-serif' }}>
@@ -562,30 +573,45 @@ export default function AttendanceMaster() {
             }}>
                 <div></div>
 
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center' }}>
-                    <select
-                        value={currentDate.getMonth()}
-                        onChange={handleMonthChange}
-                        style={{ padding: '8px', fontSize: '14px', borderRadius: '4px', border: '1px solid #ccc' }}
-                    >
-                        {monthNames.map((name, idx) => (
-                            <option key={idx} value={idx}>{name}</option>
-                        ))}
-                    </select>
-                    <span style={{ fontSize: '18px', fontWeight: 'bold' }}>{currentDate.getFullYear()}</span>
-                    <Button
-                        label="Export to CSV"
-                        icon="pi pi-file-excel"
-                        className="p-button-success"
-                        onClick={() => {
-                            if (propertyId == 27) {
-                                exportMonthToCSV(attendanceData, currentDate);
-                            } else {
-                                exportMonthToCSV_Horizontal(attendanceData, currentDate);
-                            }
-                        }}
-                    />
-                </div>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center' }}>
+    
+    {/* Month Dropdown */}
+    <select
+        value={currentDate.getMonth()}
+        onChange={handleMonthChange}
+        style={{ padding: '8px', fontSize: '14px', borderRadius: '4px', border: '1px solid #ccc' }}
+    >
+        {monthNames.map((name, idx) => (
+            <option key={idx} value={idx}>{name}</option>
+        ))}
+    </select>
+
+    {/* Year Dropdown */}
+    <select
+        value={currentDate.getFullYear()}
+        onChange={handleYearChange}
+        style={{ padding: '8px', fontSize: '14px', borderRadius: '4px', border: '1px solid #ccc' }}
+    >
+        {yearOptions.map(year => (
+            <option key={year} value={year}>{year}</option>
+        ))}
+    </select>
+
+    {/* Export Button */}
+    <Button
+        label="Export to CSV"
+        icon="pi pi-file-excel"
+        className="p-button-success"
+        onClick={() => {
+            if (propertyId == 27) {
+                exportMonthToCSV(attendanceData, currentDate);
+            } else {
+                exportMonthToCSV_Horizontal(attendanceData, currentDate);
+            }
+        }}
+    />
+</div>
+
 
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                     <Button
