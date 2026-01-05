@@ -338,8 +338,8 @@ export default function AttendanceMaster() {
         setCurrentDate(new Date(currentDate.getFullYear(), newMonth, 1));
     };
 
-    const handleDayClick = (dayNumber, dayIndex) => {
-        if (!dayNumber || dayIndex === 6) return;
+    const handleDayClick = (dayNumber) => {
+        if (!dayNumber) return;
         const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), dayNumber);
         const attendance = getAttendanceForDate(date);
         setSelectedDayAttendance(attendance);
@@ -549,6 +549,17 @@ export default function AttendanceMaster() {
             </div>
         </div>
     );
+    const startYear = 2025;
+const endYear = new Date().getFullYear() + 2; // optional future years
+const yearOptions = Array.from(
+    { length: endYear - startYear + 1 },
+    (_, i) => startYear + i
+);
+const handleYearChange = (e) => {
+    const newYear = parseInt(e.target.value, 10);
+    setCurrentDate(new Date(newYear, currentDate.getMonth(), 1));
+};
+
 
     return (
         <div style={{ padding: '20px',paddingLeft: '80px',  fontFamily: 'Arial, sans-serif' }}>
@@ -562,30 +573,45 @@ export default function AttendanceMaster() {
             }}>
                 <div></div>
 
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center' }}>
-                    <select
-                        value={currentDate.getMonth()}
-                        onChange={handleMonthChange}
-                        style={{ padding: '8px', fontSize: '14px', borderRadius: '4px', border: '1px solid #ccc' }}
-                    >
-                        {monthNames.map((name, idx) => (
-                            <option key={idx} value={idx}>{name}</option>
-                        ))}
-                    </select>
-                    <span style={{ fontSize: '18px', fontWeight: 'bold' }}>{currentDate.getFullYear()}</span>
-                    <Button
-                        label="Export to CSV"
-                        icon="pi pi-file-excel"
-                        className="p-button-success"
-                        onClick={() => {
-                            if (propertyId == 27) {
-                                exportMonthToCSV(attendanceData, currentDate);
-                            } else {
-                                exportMonthToCSV_Horizontal(attendanceData, currentDate);
-                            }
-                        }}
-                    />
-                </div>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center' }}>
+    
+    {/* Month Dropdown */}
+    <select
+        value={currentDate.getMonth()}
+        onChange={handleMonthChange}
+        style={{ padding: '8px', fontSize: '14px', borderRadius: '4px', border: '1px solid #ccc' }}
+    >
+        {monthNames.map((name, idx) => (
+            <option key={idx} value={idx}>{name}</option>
+        ))}
+    </select>
+
+    {/* Year Dropdown */}
+    <select
+        value={currentDate.getFullYear()}
+        onChange={handleYearChange}
+        style={{ padding: '8px', fontSize: '14px', borderRadius: '4px', border: '1px solid #ccc' }}
+    >
+        {yearOptions.map(year => (
+            <option key={year} value={year}>{year}</option>
+        ))}
+    </select>
+
+    {/* Export Button */}
+    <Button
+        label="Export to CSV"
+        icon="pi pi-file-excel"
+        className="p-button-success"
+        onClick={() => {
+            if (propertyId == 27) {
+                exportMonthToCSV(attendanceData, currentDate);
+            } else {
+                exportMonthToCSV_Horizontal(attendanceData, currentDate);
+            }
+        }}
+    />
+</div>
+
 
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                     <Button
@@ -629,8 +655,8 @@ export default function AttendanceMaster() {
                     Array.from({ length: 7 }, (_, dayIndex) => {
                         const dayNumber = calendarDays[weekIndex * 7 + dayIndex];
                         const dateForDay = dayNumber ? new Date(currentDate.getFullYear(), currentDate.getMonth(), dayNumber) : null;
-                        const isSunday = dayIndex === 6;
-                        const dayAttendance = dateForDay && !isSunday ? getAttendanceForDate(dateForDay) : [];
+                        
+                        const dayAttendance = dateForDay ? getAttendanceForDate(dateForDay) : [];
                         const presentCount = dayAttendance.filter(record => record.Status === 'Present').length;
                         const leaveCount = dayAttendance.filter(record => record.Status === 'Leave').length;
                         const absentCount = dayAttendance.filter(record => record.Status === 'Absent').length;
@@ -643,17 +669,17 @@ export default function AttendanceMaster() {
                                 style={{
                                     minHeight: '80px',
                                     padding: '10px',
-                                    backgroundColor: isSunday ? '#ffe6e6' : (dayNumber ? '#fff' : 'transparent'),
+                                    backgroundColor: dayNumber ? '#fff' : 'transparent',
                                     border: dayNumber ? '1px solid #dee2e6' : 'none',
                                     borderRadius: '4px',
-                                    cursor: dayNumber && !isSunday ? 'pointer' : 'default',
+                                    cursor: dayNumber  ? 'pointer' : 'default',
                                     transition: 'all 0.2s',
                                 }}
                                 onMouseEnter={(e) => {
-                                    if (dayNumber && !isSunday) e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                                    if (dayNumber ) e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
                                 }}
                                 onMouseLeave={(e) => {
-                                    if (dayNumber && !isSunday) e.currentTarget.style.boxShadow = 'none';
+                                    if (dayNumber) e.currentTarget.style.boxShadow = 'none';
                                 }}
                             >
                                 {dayNumber && (
@@ -661,7 +687,7 @@ export default function AttendanceMaster() {
                                         <div style={{ fontWeight: 'bold', marginBottom: '5px', fontSize: '16px' }}>
                                             {dayNumber}
                                         </div>
-                                        {!isSunday && dayAttendance.length > 0 && (
+                                        {dayAttendance.length > 0 && (
                                             dayStatus === "Holiday" ? (
                                                 <div style={{
                                                     fontSize: '12px',
