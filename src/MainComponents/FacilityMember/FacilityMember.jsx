@@ -212,7 +212,8 @@ const StaffPage = () => {
       }
 
       // Fetch employees
-      if (propertyId) fetchEmployee();
+      if (propertyId){ fetchEmployee();
+       fetchManagersForDropdown(); }
     };
 
     loadInitialData();
@@ -228,6 +229,60 @@ const StaffPage = () => {
       .map(row => row?.Profile?.EmployeeName)
       .filter(Boolean);
   };
+const fetchManagersForDropdown = async () => {
+  try {
+    let employees = [];
+
+    // Always include propertyId 27
+    if (propertyId === 27) {
+      // Redux already gives 27 → fetch once
+      const data = await getEmployeesByOffice(27);
+      employees = Array.isArray(data) ? data : [data];
+    } else {
+      // Fetch both: 27 + redux propertyId
+      const [defaultData, reduxData] = await Promise.all([
+        getEmployeesByOffice(27),
+        getEmployeesByOffice(propertyId),
+      ]);
+
+      const list27 = Array.isArray(defaultData) ? defaultData : [defaultData];
+      const listRedux = Array.isArray(reduxData) ? reduxData : [reduxData];
+
+      // Merge both lists
+      employees = [...list27, ...listRedux];
+    }
+
+    // 🔥 Remove duplicates by FacilityMemberId
+    const uniqueMap = new Map();
+    employees.forEach(row => {
+      const id = row?.FacilityMember?.FacilityMemberId;
+      if (id && !uniqueMap.has(id)) {
+        uniqueMap.set(id, row);
+      }
+    });
+
+    const uniqueEmployees = Array.from(uniqueMap.values());
+
+    // Build manager dropdown
+    const managers = uniqueEmployees
+      .filter(row =>
+        row?.FacilityMember?.FacilityMemberId &&
+        row?.FacilityMember?.FacilityMemberId !== selectedFacilityMemberId
+      )
+      .map(row => ({
+        label: row?.Profile?.EmployeeName || "Unknown",
+        value: row.FacilityMember.FacilityMemberId
+      }));
+
+    setManagerOptions(managers);
+  } catch (err) {
+    toast.current?.show({
+      severity: "error",
+      summary: "Error",
+      detail: "Failed to load managers"
+    });
+  }
+};
 
   // Salary & Loan actions
   const openSalaryGroupView = (row) => {
