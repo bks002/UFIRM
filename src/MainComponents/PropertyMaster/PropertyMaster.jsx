@@ -28,9 +28,6 @@ export default function PropertyMaster() {
     const toast = useRef(null);
     const PropertyId = useSelector((state) => state.Commonreducer.puidn);
 
-    // ---------------------------------------------------------
-    // STATE
-    // ---------------------------------------------------------
     const [loading, setLoading] = useState(false);
     const [properties, setProperties] = useState([]);
     const [searchText, setSearchText] = useState("");
@@ -56,16 +53,24 @@ export default function PropertyMaster() {
         ContactNumber: "",
         Landmark: "",
         Pincode: "",
-        CreatedBy: 1,
+        State: "",
         Latitude: "",
         Longitude: "",
-        State: "",
         ShiftHour: 0,
-        IsActive: 1,
         TotalWorkingDays: 0,
         ClientID: 0,
         ServiceIds: [],
+
+        // NEW (ADDED)
+        SalaryCycleDayFrom: 1,
+        SalaryCycleDayTo: 30,
+        ExcludeSunday: false,
+        MonthSundays: 0,
+
+        CreatedBy: 1,
+        IsActive: 1,
     });
+    const [showForm, setShowForm] = useState(false);
 
     // ---------------------------------------------------------
     // LOAD DATA
@@ -142,20 +147,28 @@ export default function PropertyMaster() {
             ContactNumber: "",
             Landmark: "",
             Pincode: "",
-            CreatedBy: 1,
+            State: "",
             Latitude: "",
             Longitude: "",
-            State: "",
             ShiftHour: 0,
-            IsActive: 1,
             TotalWorkingDays: 0,
             ClientID: 0,
             ServiceIds: [],
+
+            // ✅ KEEP NEW FIELDS
+            SalaryCycleDayFrom: 1,
+            SalaryCycleDayTo: 30,
+            ExcludeSunday: false,
+            MonthSundays: 0,
+
+            CreatedBy: 1,
+            IsActive: 1,
         });
 
         setEditId(null);
-        setDialogVisible(true);
+        setShowForm(true);     // ✅ THIS IS IMPORTANT
     };
+
 
     // ---------------------------------------------------------
     // EDIT
@@ -176,16 +189,26 @@ export default function PropertyMaster() {
                 ContactNumber: data.ContactNumber,
                 Landmark: data.Landmark,
                 Pincode: data.Pincode,
-                CreatedBy: data.CreatedBy,
+                State: data.State,
                 Latitude: data.Latitude,
                 Longitude: data.Longitude,
-                State: data.State,
                 ShiftHour: data.ShiftHours || 0,
-                IsActive: 1,
                 TotalWorkingDays: data.TotalWorkingDays || 0,
                 ClientID: data.ClientID || 0,
                 ServiceIds: data.ServiceIds || [],
+
+                // ✅ MAP NEW FIELDS
+                SalaryCycleDayFrom: data.SalaryCycleDayFrom || 1,
+                SalaryCycleDayTo: data.SalaryCycleDayTo || 30,
+                ExcludeSunday: data.ExcludeSunday || false,
+                MonthSundays: data.MonthSundays || 0,
+
+                CreatedBy: data.CreatedBy,
+                IsActive: 1,
             });
+
+            setShowForm(true);   // ✅ ADD THIS
+
 
             setDialogVisible(true);
         } catch (err) {
@@ -234,7 +257,8 @@ export default function PropertyMaster() {
                 toast.current.show({ severity: "success", summary: "Created", detail: "Property created" });
             }
 
-            setDialogVisible(false);
+            setShowForm(false);
+
             loadData();
         } catch {
             toast.current.show({ severity: "error", summary: "Error", detail: "Save failed" });
@@ -303,7 +327,7 @@ export default function PropertyMaster() {
             <Toast ref={toast} />
 
             <div className="card" style={{ borderRadius: 10, maxWidth: 1400, margin: "0 auto" }}>
-                
+
                 {/* HEADER */}
                 <div className="d-flex justify-content-between align-items-center p-3 border-bottom">
                     <h2>Property Master</h2>
@@ -351,145 +375,129 @@ export default function PropertyMaster() {
                 {/* CREATE/EDIT DIALOG */}
                 <Dialog
                     header={editId ? "Edit Property" : "Create Property"}
-                    visible={dialogVisible}
-                    style={{ width: "650px" }}
+                    visible={showForm}
                     modal
-                    onHide={() => setDialogVisible(false)}
-                    footer={dialogFooter}
+                    style={{ width: "95vw" }}
+                    maximizable
+                    onHide={() => setShowForm(false)}
                 >
-                    <div className="p-fluid">
+                    <div className="row g-4">
 
-                        <div className="mb-3">
-                            <label>Property Type</label>
-                            <Dropdown
-                                value={form.PropertyTypeId}
-                                options={propertyTypes}
-                                placeholder="Select Type"
-                                onChange={(e) => setForm({ ...form, PropertyTypeId: e.value })}
-                            />
+                        {/* LEFT COLUMN */}
+                        <div className="col-md-6">
+                            <div className="card p-3 shadow-sm">
+                                <h5 className="mb-3">Property Details</h5>
+
+                                <label>Property Type</label>
+                                <Dropdown
+                                    value={form.PropertyTypeId}
+                                    options={propertyTypes}
+                                    className="w-100 mb-2"
+                                    onChange={(e) => setForm({ ...form, PropertyTypeId: e.value })}
+                                />
+
+                                <label>Property Name</label>
+                                <InputText className="w-100 mb-2" value={form.Name}
+                                    onChange={(e) => setForm({ ...form, Name: e.target.value })} />
+
+                                <label>Address Line 1</label>
+                                <InputText className="w-100 mb-2" value={form.AddressLine1}
+                                    onChange={(e) => setForm({ ...form, AddressLine1: e.target.value })} />
+
+                                <label>Address Line 2</label>
+                                <InputText className="w-100 mb-2" value={form.AddressLine12}
+                                    onChange={(e) => setForm({ ...form, AddressLine12: e.target.value })} />
+
+                                <label>City</label>
+                                <Dropdown
+                                    value={form.CityId}
+                                    options={cities}
+                                    filter
+                                    className="w-100 mb-2"
+                                    onChange={(e) => setForm({ ...form, CityId: e.value })}
+                                />
+
+                                <label>Contact Number</label>
+                                <InputText className="w-100 mb-2" value={form.ContactNumber}
+                                    onChange={(e) => setForm({ ...form, ContactNumber: e.target.value })} />
+
+                                <label>Landmark</label>
+                                <InputText className="w-100 mb-2" value={form.Landmark}
+                                    onChange={(e) => setForm({ ...form, Landmark: e.target.value })} />
+
+                                <label>Pincode</label>
+                                <InputText className="w-100 mb-2" value={form.Pincode}
+                                    onChange={(e) => setForm({ ...form, Pincode: e.target.value })} />
+
+                                <label>State</label>
+                                <InputText className="w-100 mb-2" value={form.State}
+                                    onChange={(e) => setForm({ ...form, State: e.target.value })} />
+                            </div>
                         </div>
 
-                        <div className="mb-3">
-                            <label>Property Name</label>
-                            <InputText
-                                value={form.Name}
-                                onChange={(e) => setForm({ ...form, Name: e.target.value })}
-                            />
+                        {/* RIGHT COLUMN */}
+                        <div className="col-md-6">
+                            <div className="card p-3 shadow-sm">
+                                <h5 className="mb-3">Operational & Payroll</h5>
+
+                                <label>Latitude</label>
+                                <InputText className="w-100 mb-2" value={form.Latitude}
+                                    onChange={(e) => setForm({ ...form, Latitude: e.target.value })} />
+
+                                <label>Longitude</label>
+                                <InputText className="w-100 mb-2" value={form.Longitude}
+                                    onChange={(e) => setForm({ ...form, Longitude: e.target.value })} />
+
+                                <label>Shift Hours</label>
+                                <InputText type="number" className="w-100 mb-2" value={form.ShiftHour}
+                                    onChange={(e) => setForm({ ...form, ShiftHour: Number(e.target.value) })} />
+
+                                <label>Total Working Days</label>
+                                <InputText type="number" className="w-100 mb-2" value={form.TotalWorkingDays}
+                                    onChange={(e) => setForm({ ...form, TotalWorkingDays: Number(e.target.value) })} />
+
+                                <hr />
+
+                                <label>Salary Cycle Day From</label>
+                                <InputText type="number" className="w-100 mb-2" value={form.SalaryCycleDayFrom}
+                                    onChange={(e) => setForm({ ...form, SalaryCycleDayFrom: Number(e.target.value) })} />
+
+                                <label>Salary Cycle Day To</label>
+                                <InputText type="number" className="w-100 mb-2" value={form.SalaryCycleDayTo}
+                                    onChange={(e) => setForm({ ...form, SalaryCycleDayTo: Number(e.target.value) })} />
+
+                                <div className="mb-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={form.ExcludeSunday}
+                                        onChange={(e) => setForm({ ...form, ExcludeSunday: e.target.checked })}
+                                    />
+                                    <span className="ms-2">Exclude Sundays</span>
+                                </div>
+
+                                <label>Monthly Sundays</label>
+                                <InputText type="number" className="w-100 mb-2" value={form.MonthSundays}
+                                    onChange={(e) => setForm({ ...form, MonthSundays: Number(e.target.value) })} />
+
+                                <label>Client</label>
+                                <Dropdown className="w-100 mb-2" value={form.ClientID}
+                                    options={clients}
+                                    onChange={(e) => setForm({ ...form, ClientID: e.value })} />
+
+                                <label>Services</label>
+                                <MultiSelect className="w-100"
+                                    value={form.ServiceIds}
+                                    options={services}
+                                    filter
+                                    display="chip"
+                                    onChange={(e) => setForm({ ...form, ServiceIds: e.value })} />
+                            </div>
                         </div>
 
-                        <div className="mb-3">
-                            <label>Address Line 1</label>
-                            <InputText
-                                value={form.AddressLine1}
-                                onChange={(e) => setForm({ ...form, AddressLine1: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="mb-3">
-                            <label>Address Line 2</label>
-                            <InputText
-                                value={form.AddressLine12}
-                                onChange={(e) => setForm({ ...form, AddressLine12: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="mb-3">
-                            <label>City</label>
-                            <Dropdown
-                                value={form.CityId}
-                                options={cities}
-                                placeholder="Select City"
-                                filter
-                                onChange={(e) => setForm({ ...form, CityId: e.value })}
-                            />
-                        </div>
-
-                        <div className="mb-3">
-                            <label>Contact Number</label>
-                            <InputText
-                                value={form.ContactNumber}
-                                onChange={(e) => setForm({ ...form, ContactNumber: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="mb-3">
-                            <label>Landmark</label>
-                            <InputText
-                                value={form.Landmark}
-                                onChange={(e) => setForm({ ...form, Landmark: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="mb-3">
-                            <label>Pincode</label>
-                            <InputText
-                                value={form.Pincode}
-                                onChange={(e) => setForm({ ...form, Pincode: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="mb-3">
-                            <label>State</label>
-                            <InputText
-                                value={form.State}
-                                onChange={(e) => setForm({ ...form, State: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="mb-3">
-                            <label>Latitude</label>
-                            <InputText
-                                value={form.Latitude}
-                                onChange={(e) => setForm({ ...form, Latitude: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="mb-3">
-                            <label>Longitude</label>
-                            <InputText
-                                value={form.Longitude}
-                                onChange={(e) => setForm({ ...form, Longitude: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="mb-3">
-                            <label>Shift Hours</label>
-                            <InputText
-                                type="number"
-                                value={form.ShiftHour}
-                                onChange={(e) => setForm({ ...form, ShiftHour: Number(e.target.value) })}
-                            />
-                        </div>
-
-                        <div className="mb-3">
-                            <label>Total Working Days</label>
-                            <InputText
-                                type="number"
-                                value={form.TotalWorkingDays}
-                                onChange={(e) => setForm({ ...form, TotalWorkingDays: Number(e.target.value) })}
-                            />
-                        </div>
-
-                        <div className="mb-3">
-                            <label>Client</label>
-                            <Dropdown
-                                value={form.ClientID}
-                                options={clients}
-                                placeholder="Select Client"
-                                onChange={(e) => setForm({ ...form, ClientID: e.value })}
-                            />
-                        </div>
-
-                        <div className="mb-3">
-                            <label>Services</label>
-                            <MultiSelect
-                                value={form.ServiceIds}
-                                options={services}
-                                placeholder="Select Services"
-                                filter
-                                display="chip"
-                                onChange={(e) => setForm({ ...form, ServiceIds: e.value })}
-                            />
+                        {/* ACTIONS */}
+                        <div className="col-12 text-end">
+                            <Button label="Cancel" className="p-button-text me-2" onClick={() => setShowForm(false)} />
+                            <Button label="Save Property" icon="pi pi-save" onClick={handleSave} />
                         </div>
 
                     </div>
@@ -500,41 +508,72 @@ export default function PropertyMaster() {
                     header="Property Details"
                     visible={viewDialogVisible}
                     modal
-                    style={{ width: "600px" }}
+                    style={{ width: "850px" }}
                     onHide={() => setViewDialogVisible(false)}
                 >
                     {viewData && (
                         <div className="p-fluid">
-                            <div className="mb-2"><b>Property Name:</b> {viewData.Name}</div>
-                            <div className="mb-2"><b>Type:</b> {propertyTypes.find(pt => pt.value === viewData.PropertyTypeId)?.label}</div>
-                            <div className="mb-2"><b>Address Line 1:</b> {viewData.AddressLine1}</div>
-                            <div className="mb-2"><b>Address Line 2:</b> {viewData.AddressLine12}</div>
-                            <div className="mb-2"><b>City:</b> {viewData.CityName}</div>
-                            <div className="mb-2"><b>State:</b> {viewData.State}</div>
-                            <div className="mb-2"><b>Pincode:</b> {viewData.Pincode}</div>
-                            <div className="mb-2"><b>Contact:</b> {viewData.ContactNumber}</div>
-                            <div className="mb-2"><b>Landmark:</b> {viewData.Landmark}</div>
-                            <div className="mb-2"><b>Latitude:</b> {viewData.Latitude}</div>
-                            <div className="mb-2"><b>Longitude:</b> {viewData.Longitude}</div>
-                            <div className="mb-2"><b>Shift Hours:</b> {viewData.ShiftHours}</div>
-                            <div className="mb-2"><b>Total Working Days:</b> {viewData.TotalWorkingDays}</div>
 
+                            {/* BASIC DETAILS */}
+                            <h6 className="mb-2">Basic Details</h6>
+                            <div className="row">
+                                <div className="col-md-6 mb-2"><b>Property Name:</b> {viewData.Name}</div>
+                                <div className="col-md-6 mb-2"><b>Type:</b> {propertyTypes.find(pt => pt.value === viewData.PropertyTypeId)?.label}</div>
+                            </div>
+
+                            {/* ADDRESS */}
+                            <h6 className="mt-3 mb-2">Address</h6>
+                            <div className="row">
+                                <div className="col-md-6 mb-2"><b>Address Line 1:</b> {viewData.AddressLine1}</div>
+                                <div className="col-md-6 mb-2"><b>Address Line 2:</b> {viewData.AddressLine12}</div>
+                                <div className="col-md-4 mb-2"><b>City:</b> {viewData.CityName}</div>
+                                <div className="col-md-4 mb-2"><b>State:</b> {viewData.State}</div>
+                                <div className="col-md-4 mb-2"><b>Pincode:</b> {viewData.Pincode}</div>
+                                <div className="col-md-6 mb-2"><b>Landmark:</b> {viewData.Landmark}</div>
+                                <div className="col-md-6 mb-2"><b>Contact:</b> {viewData.ContactNumber}</div>
+                            </div>
+
+                            {/* LOCATION */}
+                            <h6 className="mt-3 mb-2">Location</h6>
+                            <div className="row">
+                                <div className="col-md-6 mb-2"><b>Latitude:</b> {viewData.Latitude}</div>
+                                <div className="col-md-6 mb-2"><b>Longitude:</b> {viewData.Longitude}</div>
+                            </div>
+
+                            {/* OPERATIONAL */}
+                            <h6 className="mt-3 mb-2">Operational Details</h6>
+                            <div className="row">
+                                <div className="col-md-6 mb-2"><b>Shift Hours:</b> {viewData.ShiftHours}</div>
+                                <div className="col-md-6 mb-2"><b>Total Working Days:</b> {viewData.TotalWorkingDays}</div>
+                            </div>
+
+                            {/* PAYROLL (NEW FIELDS) */}
+                            <h6 className="mt-3 mb-2">Payroll Settings</h6>
+                            <div className="row">
+                                <div className="col-md-6 mb-2"><b>Salary Cycle From:</b> {viewData.SalaryCycleDayFrom}</div>
+                                <div className="col-md-6 mb-2"><b>Salary Cycle To:</b> {viewData.SalaryCycleDayTo}</div>
+                                <div className="col-md-6 mb-2"><b>Exclude Sundays:</b> {viewData.ExcludeSunday ? "Yes" : "No"}</div>
+                                <div className="col-md-6 mb-2"><b>Monthly Sundays:</b> {viewData.MonthSundays}</div>
+                            </div>
+
+                            {/* CLIENT & SERVICES */}
+                            <h6 className="mt-3 mb-2">Client & Services</h6>
                             <div className="mb-2">
                                 <b>Client:</b> {clients.find(c => c.value === viewData.ClientID)?.label}
                             </div>
 
                             <div className="mb-2">
                                 <b>Services:</b>{" "}
-                                {viewData.ServiceIds.length === 0
+                                {viewData.ServiceIds?.length === 0
                                     ? "—"
                                     : viewData.ServiceIds
                                         .map(id => services.find(s => s.value === id)?.label)
                                         .join(", ")}
                             </div>
+
                         </div>
                     )}
                 </Dialog>
-
             </div>
         </div>
     );
