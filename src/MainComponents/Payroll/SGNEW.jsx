@@ -32,7 +32,18 @@ export default function SGNEW() {
   const [excludeEmployees, setExcludeEmployees] = useState(false);
   const [employees, setEmployees] = useState([]);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
-  const [employeeDesignations, setEmployeeDesignations] = useState([]);
+  const [designations, setDesignations] = useState([]);
+  const [excludedEmployeeIds, setExcludedEmployeeIds] = useState([]);
+  const [designationTouched, setDesignationTouched] = useState(false);
+  const [pfLimit, setPfLimit] = useState("");
+  const [esiLimit, setEsiLimit] = useState("");
+  const [perDayOD, setPerDayOD] = useState({});
+  const [activeStatutory, setActiveStatutory] = useState({
+    PF: false,
+    ESI: false,
+  });
+  const esiPreviewLock = React.useRef(false);
+  const [otBaseType, setOtBaseType] = useState("Base");
 
   const [form, setForm] = useState({
     salaryGroupName: "",
@@ -338,10 +349,7 @@ export default function SGNEW() {
   ]);
 
   useEffect(() => {
-    if (!excludeEmployees || !propertyId) {
-      setEmployees([]);
-      return;
-    }
+    if (!propertyId) return;
 
     const fetchEmployees = async () => {
       try {
@@ -349,16 +357,14 @@ export default function SGNEW() {
         const res = await getEmployeesByOffice(propertyId);
         setEmployees(res || []);
 
-        // 🔥 EXTRACT UNIQUE DESIGNATIONS (STRING)
-        const uniqueDesignations = new Set();
+        // extract unique designations
+        const uniqueDesignations = [
+          ...new Set(
+            (res || []).map((e) => e.EmployeeList?.Designation).filter(Boolean)
+          ),
+        ];
 
-        (res || []).forEach((emp) => {
-          const des =
-            emp.EmployeeList?.Designation || emp.EmployeeList?.Designation;
-          if (des) uniqueDesignations.add(des.trim());
-        });
-
-        setEmployeeDesignations([...uniqueDesignations]);
+        setDesignations(uniqueDesignations);
       } catch (err) {
         console.log("Failed to load employees", err);
       } finally {
@@ -368,6 +374,136 @@ export default function SGNEW() {
 
     fetchEmployees();
   }, [propertyId]);
+
+  useEffect(() => {
+    const base = Number(form.baseSalary) || 0;
+    if (!base) return;
+
+    let newDeductions = {};
+    let newFormulas = {};
+
+    deductions.concat(otherDeductions).forEach((d) => {
+      const name = d.Name;
+
+      /* ================= PF LIMIT LOGIC (SAFE INSERT) ================= */
+      const gross =
+        base +
+        Object.keys(allowanceAmounts)
+          .filter((key) => Number(allowanceAmounts[key]) > 0)
+          .reduce((sum, key) => sum + Number(allowanceAmounts[key]), 0);
+      const pfCap = Number(pfLimit) || 0;
+
+      if (
+        name === "PF" &&
+        adValueType[name] === "PERCENT" &&
+        pfCap > 0 &&
+        gross >= pfCap
+      ) {
+        const percentage =
+          Number(editablePercentages[name]) ||
+          getEffectivePercentage(name)?.Percentage ||
+          0;
+
+        newDeductions[name] = Math.round((pfCap * percentage) / 100);
+
+        // ❌ NO FORMULA when PF limit is applied
+        newFormulas[name] = null;
+
+        return; // 🚨 stop PF from falling into normal logic
+      }
+      /* ================================================================ */
+
+      /* ================= ESI LIMIT LOGIC ================= */
+      const esiCap = Number(esiLimit) || 0;
+
+      if (
+        name === "ESI" &&
+        adValueType[name] === "PERCENT" &&
+        esiCap > 0 &&
+        gross >= esiCap
+      ) {
+        const percentage =
+          Number(editablePercentages[name]) ||
+          getEffectivePercentage(name)?.Percentage ||
+          0;
+
+        newDeductions[name] = Math.round((esiCap * percentage) / 100);
+
+        // ❌ NO FORMULA when ESI limit is applied
+        newFormulas[name] = null;
+
+        return; // 🚨 stop ESI from falling into normal logic
+      }
+      /* ================================================== */
+
+      // ❌ Fixed deductions never recalc
+      if (adValueType[name] === "FIXED") return;
+
+      // 🔥 CASE 1: API FORMULA EXISTS (e.g. ESI)
+      if (adFormula[name] && !allowanceSelected) {
+        let total = base;
+
+        // add allowance dependencies if any
+        const usedAllowances = deductionAllowanceMap[name] || {};
+        Object.keys(usedAllowances).forEach((a) => {
+          if (usedAllowances[a]) {
+            total += Number(allowanceAmounts[a]) || 0;
+          }
+        });
+
+        const match = adFormula[name].match(/([\d.]+)$/);
+        if (!match) return;
+
+        const multiplier = Number(match[1]);
+        newDeductions[name] = Math.round(total * multiplier);
+        return;
+      }
+
+      // 🔹 CASE 2: SIMPLE % DEDUCTION (Base only)
+      // ❌ DO NOT override PF / ESI when active & allowance-based
+      // 🔥 NEVER override PF / ESI base+allowance calculation
+      if (["PF", "ESI"].includes(name)) {
+        return;
+      }
+
+      const percentObj = getEffectivePercentage(name);
+      if (!percentObj) return;
+
+      const percentage = percentObj.Percentage;
+      newDeductions[name] = Math.round(base * (percentage / 100));
+      newFormulas[name] = `Base * ${percentage / 100}`;
+
+      // ensure dropdown shows %
+      if (!adValueType[name]) {
+        setAdValueType((prev) => ({
+          ...prev,
+          [name]: "PERCENT",
+        }));
+      }
+    });
+
+    setDeductionAmounts((prev) => {
+      const merged = { ...prev };
+
+      Object.keys(newDeductions).forEach((key) => {
+        // 🔥 DO NOT overwrite preview deductions
+        if (calculatedAD[key] === false) return;
+
+        merged[key] = newDeductions[key];
+      });
+
+      return merged;
+    });
+    setAdFormula((prev) => ({ ...prev, ...newFormulas }));
+  }, [
+    form.baseSalary,
+    allowanceAmounts,
+    deductionAllowanceMap,
+    adValueType,
+    adPercentages,
+    pfLimit,
+    esiLimit,
+  ]);
 
   const getEffectivePercentage = (adName) => {
     if (!adPercentages.length || !propertyId) return null;
@@ -732,11 +868,6 @@ export default function SGNEW() {
       const isUpdate = salaryGroups.some(
         (sg) => sg.SalaryGroup === form.salaryGroupName
       );
-      const normalizedDesignations = Array.isArray(designation)
-        ? designation
-        : designation
-          ? [designation]
-          : [];
 
       const model = {
         SalaryGroup_ID: isUpdate
@@ -1219,8 +1350,7 @@ export default function SGNEW() {
             }}
           >
             <option value="">-- Select Designation --</option>
-
-            {employeeDesignations.map((d) => (
+            {designations.map((d) => (
               <option key={d} value={d}>
                 {d}
               </option>
@@ -2834,7 +2964,6 @@ export default function SGNEW() {
           Save
         </button>
       </div>
-
     </div>
   );
 }
