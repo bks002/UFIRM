@@ -541,7 +541,6 @@ export default function SGNEW() {
 
       let fixed = 0;
       let calculated = 0;
-      const mode = adModeMap[name] || "percentage";
 
       // ✅ ALLOWANCES & OA (FIXED OR PERCENT)
       if (item.Type === "A" || item.Type === "OA") {
@@ -603,7 +602,6 @@ export default function SGNEW() {
         }
       }
 
-      // FINAL PUSH
       list.push({
         AD_Id: item.ID,
         Name: name,
