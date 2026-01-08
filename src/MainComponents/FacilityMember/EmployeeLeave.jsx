@@ -184,7 +184,7 @@ const EmployeeLeave = () => {
   };
 
   const validate = () => {
-    if (!selectedEmployee || !selectedLeaveType || !leaveCount || !leaveBalance || !financialYear) {
+    if (!selectedEmployee || !selectedLeaveType ||  !leaveBalance || !financialYear) {
       toast.current.show({
         severity: "warn",
         summary: "Validation",

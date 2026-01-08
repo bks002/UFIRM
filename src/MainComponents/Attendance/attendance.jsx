@@ -4,15 +4,13 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
 import { Dropdown } from 'primereact/dropdown';
-import { Calendar } from 'primereact/calendar';
 import { Button } from 'primereact/button';
-import { FileUpload } from 'primereact/fileupload';
 import { getAttendance, getFacilityMembers, getAllLocations, saveManualAttendance, getManualAttendanceByProperty, processManualAttendance, rejectprocessManualAttendance } from "../../Services/AttendanceService";
 import * as XLSX from "xlsx";
+import { getAllClients } from "../../Services/ClientService";
 import { useSelector } from 'react-redux';
 
 export default function AttendanceMaster() {
-    const formPayload = new FormData();
     const [rejectionDialog, setRejectionDialog] = useState(false);
     const [rejectionRemark, setRejectionRemark] = useState("");
     const [selectedAttendanceId, setSelectedAttendanceId] = useState(null);
@@ -24,31 +22,35 @@ export default function AttendanceMaster() {
     const [selectedDay, setSelectedDay] = useState(null);
     const propertyId = useSelector((state) => state.Commonreducer.puidn);
     const userId = useSelector((state) => state.Commonreducer.userId);
-    const [previewImage, setPreviewImage] = useState(null);
     const [submittedData, setSubmittedData] = useState([]);
-    
+
     // ✅ New States for Pending and Approved/Rejected dialogs
     const [pendingDialog, setPendingDialog] = useState(false);
     const [approvedRejectedDialog, setApprovedRejectedDialog] = useState(false);
     const [pendingData, setPendingData] = useState([]);
     const [approvedRejectedData, setApprovedRejectedData] = useState([]);
-    
-    const [createDialog, setCreateDialog] = useState(false);
+    const [selectedClient, setSelectedClient] = useState(null);
+    const [ClientID, setClientId] = useState(null);
+    const [clientList, setClientList] = useState([]);
+    // used ONLY for getAttendance
+    const attendanceEntityId =
+        selectedClient === "CLIENT" ? ClientID : propertyId;
+    const attendanceType = selectedClient === "CLIENT" ? "CLIENT" : "PROPERTY";
     const [locations, setLocations] = useState([]);
     const [employeeList, setEmployeeList] = useState([]);
-    const [formData, setFormData] = useState({
-        Id: 0,
-        employee: null,
-        mobile: "",
-        punchDate: null,
-        checkIn: null,
-        checkOut: null,
-        gateNo: "",
-        image: "",
-        location: "",
-        reason: ""
-    });
 
+    useEffect(() => {
+        // Fetch client list for dropdown
+        const fetchClients = async () => {
+            try {
+                const response = await getAllClients();
+                setClientList(response);
+            } catch (error) {
+                console.error("Failed to load clients:", error);
+            }
+        };
+        fetchClients();
+    }, []);
     // ✅ Employee fetch API call
     useEffect(() => {
         const fetchEmployees = async () => {
@@ -70,12 +72,12 @@ export default function AttendanceMaster() {
     }, [propertyId]);
 
     const employeeMap = React.useMemo(() => {
-    const map = {};
-    employeeList.forEach(emp => {
-        map[emp.FacilityMemberId] = emp.Name;
-    });
-    return map;
-}, [employeeList]);
+        const map = {};
+        employeeList.forEach(emp => {
+            map[emp.FacilityMemberId] = emp.Name;
+        });
+        return map;
+    }, [employeeList]);
 
 
     // ✅ Location fetch API call
@@ -100,14 +102,14 @@ export default function AttendanceMaster() {
         if (!propertyId) return;
         try {
             const savedData = await getManualAttendanceByProperty(propertyId);
-            
+
             const formattedData = savedData.map(item => ({
-              
+
                 Id: item.Id,
                 EmployeeId: item.EmployeeId,
                 EmployeeName: item.EmployeeName ||
-    employeeMap[item.EmployeeId] ||
-    `ID-${item.EmployeeId}`,
+                    employeeMap[item.EmployeeId] ||
+                    `ID-${item.EmployeeId}`,
                 employee: { Name: item.EmployeeName || `ID-${item.EmployeeId}` },
                 mobile: item.MobileNo,
                 PunchTime: item.PunchTime ? new Date(item.PunchTime) : null,
@@ -152,7 +154,7 @@ export default function AttendanceMaster() {
                 approve: true,
                 actionBy: userId
             });
-            
+
             alert("Attendance approved ✅");
             fetchManualAttendance(); // Refresh data
         } catch (error) {
@@ -181,98 +183,13 @@ export default function AttendanceMaster() {
                 actionBy: userId,
                 rejectionRemark
             });
-            
+
             alert("Attendance rejected ❌");
             setRejectionDialog(false);
             fetchManualAttendance(); // Refresh data
         } catch (error) {
             console.error(error);
             alert("Failed to reject ❌");
-        }
-    };
-
-    // ✅ On employee select
-    const handleEmployeeChange = (e) => {
-        const emp = e.value;
-        setFormData({
-            ...formData,
-            employee: emp,
-            mobile: emp && emp.MobileNumber ? emp.MobileNumber : ""
-        });
-    };
-
-    const onImageUpload = async (event) => {
-        const file = event.files[0];
-        if (!file) return;
-
-        const toBase64 = (file) =>
-            new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result.split(",")[1]);
-                reader.onerror = (error) => reject(error);
-            });
-
-        try {
-            const base64Image = await toBase64(file);
-            setFormData({ ...formData, image: base64Image });
-            setPreviewImage(URL.createObjectURL(file));
-        } catch (error) {
-            console.error("Error converting image to base64:", error);
-        }
-    };
-
-    // ✅ Submit & Save to API
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            if (!formData.employee || !formData.punchDate || !formData.checkIn) {
-                alert("Please fill required fields (Employee, Punch Date, Check In).");
-                return;
-            }
-
-            const payload = {
-                Id: '',
-                EmployeeId: formData.employee.FacilityMemberId,
-                PunchTime: formData.checkIn ? new Date(formData.checkIn).toISOString() : null,
-                PunchType: formData.checkOut ? "Both" : "CheckIn",
-                CreatedOn: new Date().toISOString(),
-                GateNo: formData.gateNo || "0",
-                CreatedBy: userId || 0,
-                MobileNo: formData.mobile || "",
-                EmpId: formData.employee.FacilityMemberId.toString(),
-                Status: "Pending",
-                ImageFileName: formData.image || "",
-                IsApproved: false,
-                IsRejected: false,
-                RejectionRemark: "",
-                PropertyId: propertyId || 0,
-                LocationName: formData.location || "",
-                Reason: formData.reason || ""
-            };
-
-            await saveManualAttendance(payload);
-            alert("Manual attendance submitted successfully ✅");
-            setCreateDialog(false);
-            fetchManualAttendance(); // Refresh data
-            
-            // Reset form
-            setFormData({
-                Id: 0,
-                employee: null,
-                mobile: "",
-                punchDate: null,
-                checkIn: null,
-                checkOut: null,
-                gateNo: "",
-                image: "",
-                location: "",
-                reason: ""
-            });
-            setPreviewImage(null);
-        } catch (error) {
-            console.error("Error saving attendance:", error);
-            alert("Error saving attendance ❌");
         }
     };
 
@@ -311,23 +228,25 @@ export default function AttendanceMaster() {
     };
 
     useEffect(() => {
-        const fetchData = async () => {
-            if (!propertyId) return;
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-            const fromDate = new Date(year, month, 1);
-            const toDate = new Date(year, month + 1, 0);
-            const formatDate = (date) => date.toLocaleDateString('en-CA');
+        if (
+            (attendanceType === "PROPERTY" && !propertyId) ||
+            (attendanceType === "CLIENT" && !ClientID)
+        ) return;
 
-            try {
-                const data = await getAttendance(propertyId, formatDate(fromDate), formatDate(toDate));
-                setAttendanceData(data);
-            } catch (error) {
-                console.error("Failed to fetch attendance:", error);
-            }
-        };
-        fetchData();
-    }, [propertyId, currentDate]);
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+
+        const fromDate = new Date(year, month, 1).toLocaleDateString('en-CA');
+        const toDate = new Date(year, month + 1, 0).toLocaleDateString('en-CA');
+
+        const entityId =
+            attendanceType === "CLIENT" ? ClientID : propertyId;
+
+        getAttendance(entityId, fromDate, toDate, attendanceType)
+            .then(setAttendanceData)
+            .catch(console.error);
+
+    }, [propertyId, ClientID, selectedClient, currentDate]);
 
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -550,19 +469,19 @@ export default function AttendanceMaster() {
         </div>
     );
     const startYear = 2025;
-const endYear = new Date().getFullYear() + 2; // optional future years
-const yearOptions = Array.from(
-    { length: endYear - startYear + 1 },
-    (_, i) => startYear + i
-);
-const handleYearChange = (e) => {
-    const newYear = parseInt(e.target.value, 10);
-    setCurrentDate(new Date(newYear, currentDate.getMonth(), 1));
-};
+    const endYear = new Date().getFullYear() + 2; // optional future years
+    const yearOptions = Array.from(
+        { length: endYear - startYear + 1 },
+        (_, i) => startYear + i
+    );
+    const handleYearChange = (e) => {
+        const newYear = parseInt(e.target.value, 10);
+        setCurrentDate(new Date(newYear, currentDate.getMonth(), 1));
+    };
 
 
     return (
-        <div style={{ padding: '20px',paddingLeft: '80px',  fontFamily: 'Arial, sans-serif' }}>
+        <div style={{ padding: '20px', paddingLeft: '80px', fontFamily: 'Arial, sans-serif' }}>
             {/* Header */}
             <div style={{
                 display: 'grid',
@@ -573,44 +492,72 @@ const handleYearChange = (e) => {
             }}>
                 <div></div>
 
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center' }}>
-    
-    {/* Month Dropdown */}
-    <select
-        value={currentDate.getMonth()}
-        onChange={handleMonthChange}
-        style={{ padding: '8px', fontSize: '14px', borderRadius: '4px', border: '1px solid #ccc' }}
-    >
-        {monthNames.map((name, idx) => (
-            <option key={idx} value={idx}>{name}</option>
-        ))}
-    </select>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center' }}>
+                    <Dropdown
+                        value={selectedClient}
+                        options={[
+                            { label: "Property", value: "PROPERTY" },
+                            { label: "Client", value: "CLIENT" }
+                        ]}
+                        onChange={(e) => {
+                            setSelectedClient(e.value);
+                            setClientId(null);
+                            setAttendanceData([]); // 🔥 important
+                        }}
+                        placeholder="Select Type"
+                        style={{ width: '160px' }}
+                    />
 
-    {/* Year Dropdown */}
-    <select
-        value={currentDate.getFullYear()}
-        onChange={handleYearChange}
-        style={{ padding: '8px', fontSize: '14px', borderRadius: '4px', border: '1px solid #ccc' }}
-    >
-        {yearOptions.map(year => (
-            <option key={year} value={year}>{year}</option>
-        ))}
-    </select>
+                    {selectedClient === "CLIENT" && (
+                        <Dropdown
+                            value={ClientID}
+                            options={clientList}
+                            optionLabel="ClientName"
+                            optionValue="ClientID"
+                            onChange={(e) => {
+                                setClientId(e.value); // 🔥 this triggers useEffect
+                            }}
+                            placeholder="Select Client"
+                            style={{ width: '200px' }}
+                        />
+                    )}
 
-    {/* Export Button */}
-    <Button
-        label="Export to CSV"
-        icon="pi pi-file-excel"
-        className="p-button-success"
-        onClick={() => {
-            if (propertyId == 27) {
-                exportMonthToCSV(attendanceData, currentDate);
-            } else {
-                exportMonthToCSV_Horizontal(attendanceData, currentDate);
-            }
-        }}
-    />
-</div>
+                    {/* Month Dropdown */}
+                    <select
+                        value={currentDate.getMonth()}
+                        onChange={handleMonthChange}
+                        style={{ padding: '8px', fontSize: '14px', borderRadius: '4px', border: '1px solid #ccc' }}
+                    >
+                        {monthNames.map((name, idx) => (
+                            <option key={idx} value={idx}>{name}</option>
+                        ))}
+                    </select>
+
+                    {/* Year Dropdown */}
+                    <select
+                        value={currentDate.getFullYear()}
+                        onChange={handleYearChange}
+                        style={{ padding: '8px', fontSize: '14px', borderRadius: '4px', border: '1px solid #ccc' }}
+                    >
+                        {yearOptions.map(year => (
+                            <option key={year} value={year}>{year}</option>
+                        ))}
+                    </select>
+
+                    {/* Export Button */}
+                    <Button
+                        label="Export to CSV"
+                        icon="pi pi-file-excel"
+                        className="p-button-success"
+                        onClick={() => {
+                            if (propertyId == 27) {
+                                exportMonthToCSV(attendanceData, currentDate);
+                            } else {
+                                exportMonthToCSV_Horizontal(attendanceData, currentDate);
+                            }
+                        }}
+                    />
+                </div>
 
 
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
@@ -655,7 +602,7 @@ const handleYearChange = (e) => {
                     Array.from({ length: 7 }, (_, dayIndex) => {
                         const dayNumber = calendarDays[weekIndex * 7 + dayIndex];
                         const dateForDay = dayNumber ? new Date(currentDate.getFullYear(), currentDate.getMonth(), dayNumber) : null;
-                        
+
                         const dayAttendance = dateForDay ? getAttendanceForDate(dateForDay) : [];
                         const presentCount = dayAttendance.filter(record => record.Status === 'Present').length;
                         const leaveCount = dayAttendance.filter(record => record.Status === 'Leave').length;
@@ -672,11 +619,11 @@ const handleYearChange = (e) => {
                                     backgroundColor: dayNumber ? '#fff' : 'transparent',
                                     border: dayNumber ? '1px solid #dee2e6' : 'none',
                                     borderRadius: '4px',
-                                    cursor: dayNumber  ? 'pointer' : 'default',
+                                    cursor: dayNumber ? 'pointer' : 'default',
                                     transition: 'all 0.2s',
                                 }}
                                 onMouseEnter={(e) => {
-                                    if (dayNumber ) e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                                    if (dayNumber) e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
                                 }}
                                 onMouseLeave={(e) => {
                                     if (dayNumber) e.currentTarget.style.boxShadow = 'none';
@@ -741,7 +688,7 @@ const handleYearChange = (e) => {
                 </DataTable>
             </Dialog>
 
-            
+
             {/* ✅ Manual Attendance Pending Dialog */}
             <Dialog
                 visible={pendingDialog}
@@ -753,10 +700,10 @@ const handleYearChange = (e) => {
                 {pendingData.length > 0 ? (
                     <DataTable value={pendingData} paginator rows={10} globalFilter={globalFilter}>
                         <Column field="Id" header="ID" sortable style={{ width: '80px' }} />
-                        <Column 
-                            field="EmployeeName" 
-                            header="Employee Name" 
-                            sortable 
+                        <Column
+                            field="EmployeeName"
+                            header="Employee Name"
+                            sortable
                         />
                         {/* <Column 
                             field="mobile" 
@@ -769,21 +716,21 @@ const handleYearChange = (e) => {
                             sortable
                             body={(rowData) => rowData.PunchTime ? new Date(rowData.PunchTime).toLocaleString() : ""}
                         />
-                        <Column 
-                            field="PunchType" 
-                            header="Punch Type" 
-                            sortable 
+                        <Column
+                            field="PunchType"
+                            header="Punch Type"
+                            sortable
                         />
-                     
-                        <Column 
-                            field="LocationName" 
-                            header="Location" 
-                            sortable 
+
+                        <Column
+                            field="LocationName"
+                            header="Location"
+                            sortable
                         />
-                        <Column 
-                            field="Reason" 
-                            header="Reason" 
-                            sortable 
+                        <Column
+                            field="Reason"
+                            header="Reason"
+                            sortable
                         />
                         <Column
                             field="Status"
@@ -839,10 +786,10 @@ const handleYearChange = (e) => {
                 {approvedRejectedData.length > 0 ? (
                     <DataTable value={approvedRejectedData} paginator rows={10} globalFilter={globalFilter}>
                         <Column field="Id" header="ID" sortable style={{ width: '80px' }} />
-                        <Column 
-                            field="EmployeeName" 
-                            header="Employee Name" 
-                            sortable 
+                        <Column
+                            field="EmployeeName"
+                            header="Employee Name"
+                            sortable
                         />
                         {/* <Column 
                             field="mobile" 
@@ -855,23 +802,23 @@ const handleYearChange = (e) => {
                             sortable
                             body={(rowData) => rowData.PunchTime ? new Date(rowData.PunchTime).toLocaleString() : ""}
                         />
-                        <Column 
-                            field="PunchType" 
-                            header="Punch Type" 
-                            sortable 
+                        <Column
+                            field="PunchType"
+                            header="Punch Type"
+                            sortable
                         />
-                        
-                        <Column 
-                            field="LocationName" 
-                            header="Location" 
-                            sortable 
+
+                        <Column
+                            field="LocationName"
+                            header="Location"
+                            sortable
                         />
-                        <Column 
-                            field="Reason" 
-                            header="Reason" 
-                            sortable 
+                        <Column
+                            field="Reason"
+                            header="Reason"
+                            sortable
                         />
-                       
+
                         <Column
                             field="ApprovedOn"
                             header="Processed On"
