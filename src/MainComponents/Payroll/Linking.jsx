@@ -36,6 +36,12 @@ export default function DesignationLinking() {
     a.CalculatedAmount > 0 ? a.CalculatedAmount : a.FixedAmount;
 
   /*------------------------------------------------------
+    DEDUCTION AMOUNT CALCULATOR
+  ------------------------------------------------------*/
+  const getDeductionAmount = (d) =>
+    d.CalculatedAmount > 0 ? d.CalculatedAmount : d.FixedAmount;
+
+  /*------------------------------------------------------
     FILTERED EMPLOYEE LIST
   ------------------------------------------------------*/
   const filteredEmployees = employeeList.filter(
@@ -66,9 +72,7 @@ export default function DesignationLinking() {
 
       const uniqueDesignations = [
         ...new Set(
-          employees
-            .map((emp) => (emp.Designation || "").trim())
-            .filter(Boolean)
+          employees.map((emp) => (emp.Designation || "").trim()).filter(Boolean)
         ),
       ];
       setDesignations(uniqueDesignations);
@@ -173,7 +177,10 @@ export default function DesignationLinking() {
     RENDER UI
   ======================================================*/
   return (
-    <div className="content-wrapper" style={{ minHeight: "100vh", padding: 30 }}>
+    <div
+      className="content-wrapper"
+      style={{ minHeight: "100vh", padding: 30 }}
+    >
       <div
         className="card"
         style={{
@@ -241,7 +248,7 @@ export default function DesignationLinking() {
 
                 {/* FIXED SALARY ONLY CASE */}
                 {selectedGroupData.AllowancesDeductions.length === 0 &&
-                  selectedGroupData.FixedSalary > 0 ? (
+                selectedGroupData.FixedSalary > 0 ? (
                   <table style={{ width: "100%" }}>
                     <tbody>
                       <tr>
@@ -261,9 +268,9 @@ export default function DesignationLinking() {
                   </table>
                 ) : (
                   /* NORMAL ALLOWANCE + DEDUCTION VIEW */
-                  /* NORMAL ALLOWANCE + DEDUCTION VIEW */
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-
+                  <div
+                    style={{ display: "flex", justifyContent: "space-between" }}
+                  >
                     {/* Allowance Box */}
                     <div
                       style={{
@@ -272,7 +279,7 @@ export default function DesignationLinking() {
                         background: "#E8FBE8",
                         borderRadius: 12,
                         padding: "0 0 10px 0",
-                        boxShadow: "0 2px 6px rgba(0,0,0,0.08)"
+                        boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
                       }}
                     >
                       <div
@@ -282,23 +289,29 @@ export default function DesignationLinking() {
                           textAlign: "center",
                           fontWeight: 700,
                           borderTopLeftRadius: 12,
-                          borderTopRightRadius: 12
+                          borderTopRightRadius: 12,
                         }}
                       >
                         Allowance
                       </div>
 
-                      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <table
+                        style={{ width: "100%", borderCollapse: "collapse" }}
+                      >
                         <thead>
                           <tr>
-                            <th style={{ padding: 8, textAlign: "left" }}>Name</th>
-                            <th style={{ padding: 8, textAlign: "right" }}>Amount</th>
+                            <th style={{ padding: 8, textAlign: "left" }}>
+                              Name
+                            </th>
+                            <th style={{ padding: 8, textAlign: "right" }}>
+                              Amount
+                            </th>
                           </tr>
                         </thead>
 
                         <tbody>
                           {/* Base Salary */}
-                          {selectedGroupData.BaseSalary > 0 && (
+                          {selectedGroupData?.BaseSalary > 0 && (
                             <tr>
                               <td style={{ padding: 8 }}>Base Salary</td>
                               <td style={{ padding: 8, textAlign: "right" }}>
@@ -308,8 +321,8 @@ export default function DesignationLinking() {
                           )}
 
                           {/* Allowances */}
-                          {selectedGroupData.AllowancesDeductions.filter((a) =>
-                            isAllowance(a.Type)
+                          {selectedGroupData?.AllowancesDeductions?.filter(
+                            (a) => isAllowance(a.Type)
                           ).map((a) => (
                             <tr key={a.AD_Id}>
                               <td style={{ padding: 8 }}>{a.Name}</td>
@@ -321,14 +334,25 @@ export default function DesignationLinking() {
 
                           {/* Total */}
                           <tr style={{ borderTop: "2px solid #999" }}>
-                            <td style={{ padding: 8, fontWeight: 700 }}>Total Allowance:</td>
-                            <td style={{ padding: 8, textAlign: "right", fontWeight: 700 }}>
+                            <td style={{ padding: 8, fontWeight: 700 }}>
+                              Total Allowance:
+                            </td>
+                            <td
+                              style={{
+                                padding: 8,
+                                textAlign: "right",
+                                fontWeight: 700,
+                              }}
+                            >
                               ₹
                               {(
-                                (selectedGroupData.BaseSalary || 0) +
-                                selectedGroupData.AllowancesDeductions.filter((a) =>
-                                  isAllowance(a.Type)
-                                ).reduce((sum, a) => sum + getAllowanceAmount(a), 0)
+                                (selectedGroupData?.BaseSalary || 0) +
+                                (selectedGroupData?.AllowancesDeductions || [])
+                                  .filter((a) => isAllowance(a.Type))
+                                  .reduce(
+                                    (sum, a) => sum + getAllowanceAmount(a),
+                                    0
+                                  )
                               ).toLocaleString()}
                             </td>
                           </tr>
@@ -343,7 +367,7 @@ export default function DesignationLinking() {
                         background: "#FFECEC",
                         borderRadius: 12,
                         padding: "0 0 10px 0",
-                        boxShadow: "0 2px 6px rgba(0,0,0,0.08)"
+                        boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
                       }}
                     >
                       <div
@@ -353,41 +377,58 @@ export default function DesignationLinking() {
                           textAlign: "center",
                           fontWeight: 700,
                           borderTopLeftRadius: 12,
-                          borderTopRightRadius: 12
+                          borderTopRightRadius: 12,
                         }}
                       >
                         Deduction
                       </div>
 
-                      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <table
+                        style={{ width: "100%", borderCollapse: "collapse" }}
+                      >
                         <thead>
                           <tr>
-                            <th style={{ padding: 8, textAlign: "left" }}>Name</th>
-                            <th style={{ padding: 8, textAlign: "right" }}>Amount</th>
+                            <th style={{ padding: 8, textAlign: "left" }}>
+                              Name
+                            </th>
+                            <th style={{ padding: 8, textAlign: "right" }}>
+                              Amount
+                            </th>
                           </tr>
                         </thead>
 
                         <tbody>
                           {/* Deductions */}
-                          {selectedGroupData.AllowancesDeductions.filter((d) =>
-                            isDeduction(d.Type)
+                          {selectedGroupData?.AllowancesDeductions?.filter(
+                            (d) => isDeduction(d.Type)
                           ).map((d) => (
                             <tr key={d.AD_Id}>
                               <td style={{ padding: 8 }}>{d.Name}</td>
                               <td style={{ padding: 8, textAlign: "right" }}>
-                                ₹{d.CalculatedAmount}
+                                ₹{getDeductionAmount(d)}
                               </td>
                             </tr>
                           ))}
 
                           {/* Total Deduction */}
                           <tr style={{ borderTop: "2px solid #999" }}>
-                            <td style={{ padding: 8, fontWeight: 700 }}>Total Deduction:</td>
-                            <td style={{ padding: 8, textAlign: "right", fontWeight: 700 }}>
+                            <td style={{ padding: 8, fontWeight: 700 }}>
+                              Total Deduction:
+                            </td>
+                            <td
+                              style={{
+                                padding: 8,
+                                textAlign: "right",
+                                fontWeight: 700,
+                              }}
+                            >
                               ₹
-                              {selectedGroupData.AllowancesDeductions.filter((d) =>
-                                isDeduction(d.Type)
-                              ).reduce((sum, d) => sum + d.CalculatedAmount, 0)}
+                              {(selectedGroupData?.AllowancesDeductions || [])
+                                .filter((d) => isDeduction(d.Type))
+                                .reduce(
+                                  (sum, d) => sum + getDeductionAmount(d),
+                                  0
+                                )}
                             </td>
                           </tr>
                         </tbody>
@@ -458,8 +499,9 @@ export default function DesignationLinking() {
                               type="checkbox"
                               value={emp.FacilityMemberId}
                               checked={
-                                selectedEmployees.includes(emp.FacilityMemberId) ||
-                                isAssignedToCurrent
+                                selectedEmployees.includes(
+                                  emp.FacilityMemberId
+                                ) || isAssignedToCurrent
                               }
                               disabled={isAssignedToCurrent}
                               onChange={() =>
@@ -553,7 +595,7 @@ export default function DesignationLinking() {
 
             {/* FIXED SALARY ONLY VIEW */}
             {popupGroup.FixedSalary > 0 &&
-              popupGroup.AllowancesDeductions.length === 0 ? (
+            popupGroup.AllowancesDeductions.length === 0 ? (
               <table style={{ width: "100%" }}>
                 <tbody>
                   <tr>
@@ -563,7 +605,9 @@ export default function DesignationLinking() {
                     </td>
                   </tr>
                   <tr>
-                    <td><b>Total Allowance:</b></td>
+                    <td>
+                      <b>Total Allowance:</b>
+                    </td>
                     <td style={{ textAlign: "right" }}>
                       <b>₹{popupGroup.FixedSalary}</b>
                     </td>
@@ -573,7 +617,6 @@ export default function DesignationLinking() {
             ) : (
               /* NORMAL ALLOWANCE + DEDUCTION VIEW */
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-
                 {/* Allowance Box */}
                 <div
                   style={{
@@ -582,7 +625,7 @@ export default function DesignationLinking() {
                     background: "#E8FBE8",
                     borderRadius: 12,
                     padding: "0 0 10px 0",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.08)"
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
                   }}
                 >
                   <div
@@ -592,7 +635,7 @@ export default function DesignationLinking() {
                       textAlign: "center",
                       fontWeight: 700,
                       borderTopLeftRadius: 12,
-                      borderTopRightRadius: 12
+                      borderTopRightRadius: 12,
                     }}
                   >
                     Allowance
@@ -602,23 +645,25 @@ export default function DesignationLinking() {
                     <thead>
                       <tr>
                         <th style={{ padding: 8, textAlign: "left" }}>Name</th>
-                        <th style={{ padding: 8, textAlign: "right" }}>Amount</th>
+                        <th style={{ padding: 8, textAlign: "right" }}>
+                          Amount
+                        </th>
                       </tr>
                     </thead>
 
                     <tbody>
                       {/* Base Salary */}
-                      {selectedGroupData.BaseSalary > 0 && (
+                      {popupGroup.BaseSalary > 0 && (
                         <tr>
                           <td style={{ padding: 8 }}>Base Salary</td>
                           <td style={{ padding: 8, textAlign: "right" }}>
-                            ₹{selectedGroupData.BaseSalary}
+                            ₹{popupGroup.BaseSalary}
                           </td>
                         </tr>
                       )}
 
                       {/* Allowances */}
-                      {selectedGroupData.AllowancesDeductions.filter((a) =>
+                      {popupGroup.AllowancesDeductions.filter((a) =>
                         isAllowance(a.Type)
                       ).map((a) => (
                         <tr key={a.AD_Id}>
@@ -631,12 +676,20 @@ export default function DesignationLinking() {
 
                       {/* Total */}
                       <tr style={{ borderTop: "2px solid #999" }}>
-                        <td style={{ padding: 8, fontWeight: 700 }}>Total Allowance:</td>
-                        <td style={{ padding: 8, textAlign: "right", fontWeight: 700 }}>
+                        <td style={{ padding: 8, fontWeight: 700 }}>
+                          Total Allowance:
+                        </td>
+                        <td
+                          style={{
+                            padding: 8,
+                            textAlign: "right",
+                            fontWeight: 700,
+                          }}
+                        >
                           ₹
                           {(
-                            (selectedGroupData.BaseSalary || 0) +
-                            selectedGroupData.AllowancesDeductions.filter((a) =>
+                            (popupGroup.BaseSalary || 0) +
+                            popupGroup.AllowancesDeductions.filter((a) =>
                               isAllowance(a.Type)
                             ).reduce((sum, a) => sum + getAllowanceAmount(a), 0)
                           ).toLocaleString()}
@@ -653,7 +706,7 @@ export default function DesignationLinking() {
                     background: "#FFECEC",
                     borderRadius: 12,
                     padding: "0 0 10px 0",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.08)"
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
                   }}
                 >
                   <div
@@ -663,7 +716,7 @@ export default function DesignationLinking() {
                       textAlign: "center",
                       fontWeight: 700,
                       borderTopLeftRadius: 12,
-                      borderTopRightRadius: 12
+                      borderTopRightRadius: 12,
                     }}
                   >
                     Deduction
@@ -673,31 +726,41 @@ export default function DesignationLinking() {
                     <thead>
                       <tr>
                         <th style={{ padding: 8, textAlign: "left" }}>Name</th>
-                        <th style={{ padding: 8, textAlign: "right" }}>Amount</th>
+                        <th style={{ padding: 8, textAlign: "right" }}>
+                          Amount
+                        </th>
                       </tr>
                     </thead>
 
                     <tbody>
                       {/* Deductions */}
-                      {selectedGroupData.AllowancesDeductions.filter((d) =>
+                      {popupGroup.AllowancesDeductions.filter((d) =>
                         isDeduction(d.Type)
                       ).map((d) => (
                         <tr key={d.AD_Id}>
                           <td style={{ padding: 8 }}>{d.Name}</td>
                           <td style={{ padding: 8, textAlign: "right" }}>
-                            ₹{d.CalculatedAmount}
+                            ₹{getDeductionAmount(d)}
                           </td>
                         </tr>
                       ))}
 
                       {/* Total Deduction */}
                       <tr style={{ borderTop: "2px solid #999" }}>
-                        <td style={{ padding: 8, fontWeight: 700 }}>Total Deduction:</td>
-                        <td style={{ padding: 8, textAlign: "right", fontWeight: 700 }}>
+                        <td style={{ padding: 8, fontWeight: 700 }}>
+                          Total Deduction:
+                        </td>
+                        <td
+                          style={{
+                            padding: 8,
+                            textAlign: "right",
+                            fontWeight: 700,
+                          }}
+                        >
                           ₹
-                          {selectedGroupData.AllowancesDeductions.filter((d) =>
+                          {popupGroup.AllowancesDeductions.filter((d) =>
                             isDeduction(d.Type)
-                          ).reduce((sum, d) => sum + d.CalculatedAmount, 0)}
+                          ).reduce((sum, d) => sum + getDeductionAmount(d), 0)}
                         </td>
                       </tr>
                     </tbody>

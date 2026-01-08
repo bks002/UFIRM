@@ -44,6 +44,8 @@ export default function SGNEW() {
   });
   const esiPreviewLock = React.useRef(false);
   const [otBaseType, setOtBaseType] = useState("Base");
+  const [previewSG, setPreviewSG] = useState(null);
+  const isLoadingSG = React.useRef(false);
 
   const [form, setForm] = useState({
     salaryGroupName: "",
@@ -90,12 +92,16 @@ export default function SGNEW() {
     setAdPercentages([]);
 
     // 🔥 RESET FORM
-    setForm({
+    setForm((prev) => ({
       salaryGroupName: "",
       baseSalary: "",
-      totalWorkingDays: "",
-      shiftHours: "",
-    });
+      totalWorkingDays: prev.totalWorkingDays,
+      shiftHours: prev.shiftHours,
+      salaryCycleFrom: prev.salaryCycleFrom,
+      salaryCycleTo: prev.salaryCycleTo,
+      excludeSunday: prev.excludeSunday,
+      monthlySundays: prev.monthlySundays,
+    }));
   }, [propertyId]);
 
   useEffect(() => {
@@ -128,9 +134,10 @@ export default function SGNEW() {
   }, [allowanceAmounts, deductionAllowanceMap, activeStatutory, calculatedAD]);
 
   useEffect(() => {
+    if (!selectedSG) return;
     if (!salaryGroups.length || !adList.length) return;
 
-    const sg = salaryGroups.find((s) => s.SalaryGroup === form.salaryGroupName);
+    const sg = salaryGroups.find((s) => s.SalaryGroup_ID == selectedSG);
     if (!sg) return;
 
     let newDeductions = {};
@@ -144,21 +151,11 @@ export default function SGNEW() {
       }
     });
 
-    setDeductionAmounts((prev) => {
-      const merged = { ...prev };
-
-      Object.keys(newDeductions).forEach((key) => {
-        // ❌ DO NOT overwrite preview deductions
-        if (calculatedAD[key] === false) return;
-
-        merged[key] = newDeductions[key];
-      });
-
-      return merged;
-    });
-  }, [adList]);
+    setDeductionAmounts(newDeductions);
+  }, [adList, selectedSG]);
 
   useEffect(() => {
+    if (isLoadingSG.current) return;
     const base = Number(form.baseSalary) || 0;
     if (!base) return;
 
@@ -180,11 +177,17 @@ export default function SGNEW() {
       newFormulas[name] = `Base * ${percentage / 100}`;
     });
 
-    setAllowanceAmounts((prev) => ({ ...prev, ...newAllowanceAmounts }));
+    if (isLoadingSG.current) {
+      setAllowanceAmounts(newAllowanceAmounts);
+    } else {
+      setAllowanceAmounts((prev) => ({ ...prev, ...newAllowanceAmounts }));
+    }
+
     setAdFormula((prev) => ({ ...prev, ...newFormulas }));
   }, [form.baseSalary, adValueType, adPercentages, propertyId]);
 
   useEffect(() => {
+    if (isLoadingSG.current) return;
     if (esiPreviewLock.current) return;
     const base = Number(form.baseSalary) || 0;
     if (!base) return;
@@ -203,6 +206,17 @@ export default function SGNEW() {
     let newAllowanceAmounts = {};
     let newDeductionAmounts = {};
     let newFormulas = {};
+
+    if (!isLoadingSG.current) {
+      ["PF", "ESI"].forEach((d) => {
+        if (!adValueType[d]) {
+          setAdValueType((prev) => ({
+            ...prev,
+            [d]: "PERCENT",
+          }));
+        }
+      });
+    }
 
     /* ===============================
      🔹 ALLOWANCES (percentage based)
@@ -304,6 +318,7 @@ export default function SGNEW() {
   ]);
 
   useEffect(() => {
+    if (isLoadingSG.current) return;
     if (!activeStatutory.PF) return;
 
     const base = Number(form.baseSalary) || 0;
@@ -376,6 +391,7 @@ export default function SGNEW() {
   }, [propertyId]);
 
   useEffect(() => {
+    if (isLoadingSG.current) return;
     const base = Number(form.baseSalary) || 0;
     if (!base) return;
 
@@ -541,7 +557,6 @@ export default function SGNEW() {
 
       let fixed = 0;
       let calculated = 0;
-      const mode = adModeMap[name] || "percentage";
 
       // ✅ ALLOWANCES & OA (FIXED OR PERCENT)
       if (item.Type === "A" || item.Type === "OA") {
@@ -675,6 +690,10 @@ export default function SGNEW() {
       setPropertyDefaults({
         totalWorkingDays: twd,
         shiftHours: sh,
+        salaryCycleFrom: res.Salarycycledayfrom ?? "",
+        salaryCycleTo: res.Salarycycledayto ?? "",
+        excludeSunday: !!res.Excludesunday,
+        monthlySundays: res.MonthSunday ?? "",
       });
 
       // update form initially
@@ -694,6 +713,23 @@ export default function SGNEW() {
 
   const handleDropdownSelect = (sg) => {
     if (!sg) return;
+    isLoadingSG.current = true;
+
+    // 🔥 HARD RESET — REQUIRED WHEN SWITCHING SG
+    setAllowanceAmounts({});
+    setDeductionAmounts({});
+    setAdValueType({});
+    setEditablePercentages({});
+    setCalculatedAD({});
+    setAdFormula({});
+    setAllowanceSelected({});
+    setDeductionAllowanceMap({});
+    setActiveStatutory({ PF: false, ESI: false });
+    setActiveDeduction(null);
+    setOdDoubleFlags({});
+    setMultiplyValues({});
+    setPerDayOD({});
+    setOtBaseType("Base");
 
     // 🔥 Store SG-based exclusions & designations
     setExcludedEmployeeIds(sg.ExcludedEmployeeIds || []);
@@ -857,6 +893,9 @@ export default function SGNEW() {
 
     setPfLimit(sg.PFLimit ?? "");
     setEsiLimit(sg.ESILimit ?? "");
+    setTimeout(() => {
+      isLoadingSG.current = false; // 🔓 UNLOCK after state settles
+    }, 0);
   };
 
   const handleChange = (e) => {
@@ -927,10 +966,10 @@ export default function SGNEW() {
   const totalDeduction = Object.keys(deductionAmounts).reduce((sum, key) => {
     const val = Number(deductionAmounts[key]) || 0;
 
-    const isReal = calculatedAD[key];
+    const isReal = calculatedAD[key] === true;
     const isFixed = adValueType[key] === "FIXED";
 
-    if (isReal || isFixed || adValueType[key] === "PERCENT") {
+    if (isReal || isFixed) {
       return sum + val;
     }
 
@@ -991,10 +1030,10 @@ export default function SGNEW() {
       baseSalary: "",
       totalWorkingDays: propertyDefaults.totalWorkingDays,
       shiftHours: propertyDefaults.shiftHours,
-      salaryCycleFrom: "",
-      salaryCycleTo: "",
-      excludeSunday: false,
-      monthlySundays: "",
+      salaryCycleFrom: propertyDefaults.salaryCycleFrom ?? "",
+      salaryCycleTo: propertyDefaults.salaryCycleTo ?? "",
+      excludeSunday: propertyDefaults.excludeSunday ?? false,
+      monthlySundays: propertyDefaults.monthlySundays ?? "",
     });
 
     setAdValueType({});
@@ -1104,26 +1143,23 @@ export default function SGNEW() {
 
   return (
     <div
-      className="content-wrapper"
       style={{
+        width: "100%",
         minHeight: "100vh",
-        padding: 30,
-        width: "94%",
-        maxWidth: "100%",
-        margin: 0,
-        display: "block",
+        padding: "16px 24px",
+        paddingLeft: 90,
+        background: "#f8fafc", // app background
+        boxSizing: "border-box",
       }}
     >
+      {/* ===== SECTION: BASIC SALARY GROUP DETAILS ===== */}
       <div
-        className="card"
         style={{
-          width: "100%",
-          padding: "20px",
-          borderRadius: 10,
-          boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
-          background: "#fff",
-          marginBottom: 5,
-          marginTop: -15,
+          background: "#ffffff",
+          borderRadius: 12,
+          padding: "16px 18px",
+          marginBottom: 16,
+          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
         }}
       >
         {/* ROW 1: TITLE + SG NAME + SELECT SG */}
@@ -1406,10 +1442,10 @@ export default function SGNEW() {
               >
                 <div
                   style={{
-                    fontWeight: 600,
+                    fontWeight: 800,
                     fontSize: 14,
                     marginBottom: 8,
-                    color: "#1e293b",
+                    color: "#040d1aff",
                   }}
                 >
                   Exclude Employees
@@ -1424,7 +1460,7 @@ export default function SGNEW() {
                 ) : (
                   <div style={{ maxHeight: 180, overflowY: "auto" }}>
                     {filteredEmployees.map((emp, idx) => (
-                      <label
+                      <div
                         key={idx}
                         style={{
                           display: "flex",
@@ -1434,6 +1470,7 @@ export default function SGNEW() {
                           marginBottom: 6,
                         }}
                       >
+                        {/* CHECKBOX */}
                         <input
                           type="checkbox"
                           checked={excludedEmployeeIds.includes(
@@ -1457,13 +1494,49 @@ export default function SGNEW() {
                             );
                           }}
                         />
-                        <span>
-                          {emp.Profile?.EmployeeName}{" "}
-                          <span style={{ color: "#0f766e", fontWeight: 500 }}>
-                            ({getEmployeeSalaryGroupName(emp)})
-                          </span>
+                        {/* EMPLOYEE NAME → TOGGLES CHECKBOX */}
+                        <span
+                          style={{ cursor: "pointer", fontWeight: 600 }}
+                          onClick={() => {
+                            const empId = emp.FacilityMember?.FacilityMemberId;
+
+                            if (!designationTouched) {
+                              setExcludedEmployeeIds([]);
+                            }
+
+                            setDesignationTouched(true);
+
+                            setExcludedEmployeeIds((prev) =>
+                              prev.includes(empId)
+                                ? prev.filter((id) => id !== empId)
+                                : [...prev, empId]
+                            );
+                          }}
+                        >
+                          {emp.Profile?.EmployeeName}
                         </span>
-                      </label>
+
+                        {/* SG NAME → POPUP ONLY */}
+                        <span
+                          style={{
+                            cursor: "pointer",
+                            color: "#0f766e",
+                            fontWeight: 500,
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation(); // 🔥 critical
+
+                            const sgId = emp.FacilityMember?.SG_Link_ID;
+                            const sg = salaryGroups.find(
+                              (s) => Number(s.SalaryGroup_ID) === Number(sgId)
+                            );
+
+                            if (sg) setPreviewSG(sg);
+                          }}
+                        >
+                          ({getEmployeeSalaryGroupName(emp)})
+                        </span>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -1565,240 +1638,605 @@ export default function SGNEW() {
             marginTop: -5,
           }}
         />
-        {/* MAIN BODY GRID */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 20,
-            alignItems: "start",
-          }}
-        >
-          {/* ALLOWANCES */}
-          <div>
+      </div>
+      {/* MAIN BODY GRID */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(520px, 1fr) minmax(520px, 1fr)",
+          gap: 20,
+          alignItems: "start",
+        }}
+      >
+        {/* ALLOWANCES */}
+        <div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 80px 80px",
+              alignItems: "center",
+              marginBottom: 10,
+            }}
+          >
+            <h4 style={{ color: "#2a4365", margin: 0 }}>Allowances</h4>
+
+            <div
+              style={{
+                textAlign: "center",
+                fontWeight: 600,
+                marginLeft: -81,
+              }}
+            >
+              PF
+            </div>
+
+            <div
+              style={{
+                textAlign: "center",
+                fontWeight: 600,
+                marginLeft: -148,
+              }}
+            >
+              ESI
+            </div>
+          </div>
+          <div
+            style={{
+              border: "1px solid #ddd",
+              borderRadius: 8,
+              padding: 10,
+              maxHeight: 420,
+              overflowY: "auto",
+            }}
+          >
+            {/* BASE SALARY (MOVED HERE) */}
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 80px 80px",
+                gridTemplateColumns: "30px 1fr 40px 110px 40px 40px 60px",
                 alignItems: "center",
-                marginBottom: 10,
+                columnGap: 8,
+                marginBottom: 8,
               }}
             >
-              <h4 style={{ color: "#2a4365", margin: 0 }}>Allowances</h4>
+              {/* Checkbox placeholder (no checkbox for Base Salary selection) */}
+              <div />
 
-              <div
-                style={{
-                  textAlign: "center",
-                  fontWeight: 600,
-                  marginLeft: -81,
-                }}
-              >
-                PF
-              </div>
+              {/* Label */}
+              <span>Base Salary</span>
 
-              <div
+              {/* Fixed # box (aligned above others) */}
+              <input
+                value="#"
+                disabled
                 style={{
+                  width: 32,
+                  height: 28,
+                  fontSize: 12,
                   textAlign: "center",
-                  fontWeight: 600,
-                  marginLeft: -148,
+                  marginLeft: -95,
+                  backgroundColor: "#f1f5f9",
+                  border: "1px solid #e5e7eb",
+                  cursor: "not-allowed",
                 }}
-              >
-                ESI
-              </div>
+              />
+
+              {/* Amount input (aligned above other amounts) */}
+              <input
+                name="baseSalary"
+                value={form.baseSalary}
+                onChange={allowOnlyNumbers}
+                className="form-control"
+                style={{
+                  width: 110,
+                  height: 28,
+                  fontSize: 13,
+                  marginLeft: -107,
+                }}
+              />
+
+              {/* PF checkbox */}
+              <input
+                type="checkbox"
+                checked={!!deductionAllowanceMap.PF?.BaseSalary}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+
+                  setActiveStatutory((prev) => ({ ...prev, PF: checked }));
+
+                  setDeductionAllowanceMap((prev) => ({
+                    ...prev,
+                    PF: { BaseSalary: checked },
+                  }));
+
+                  setCalculatedAD((prev) => ({
+                    ...prev,
+                    PF: checked,
+                  }));
+
+                  if (checked) {
+                    activateDeductionWithBase("PF");
+                    setDeductionAmounts((prev) => ({ ...prev }));
+                  }
+                }}
+                style={{ transform: "scale(1.1)", justifySelf: "center" }}
+              />
+
+              {/* ESI checkbox */}
+              <input
+                type="checkbox"
+                checked={!!deductionAllowanceMap.ESI?.BaseSalary}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+
+                  // ✅ ONLY control allowance dependency
+                  setDeductionAllowanceMap((prev) => ({
+                    ...prev,
+                    ESI: { BaseSalary: checked },
+                  }));
+
+                  if (!checked) {
+                    // 🔒 LOCK preview so effects cannot revert it
+                    esiPreviewLock.current = true;
+
+                    setActiveStatutory((prev) => ({ ...prev, ESI: false }));
+                    setCalculatedAD((prev) => ({ ...prev, ESI: false }));
+
+                    setAdValueType((prev) => ({
+                      ...prev,
+                      ESI: "PERCENT",
+                    }));
+
+                    const percentObj = getEffectivePercentage("ESI");
+                    const percentage =
+                      editablePercentages.ESI !== undefined &&
+                      editablePercentages.ESI !== null &&
+                      editablePercentages.ESI !== ""
+                        ? Number(editablePercentages.ESI)
+                        : Number(percentObj?.Percentage || 0);
+
+                    const base = Number(form.baseSalary) || 0;
+
+                    setDeductionAmounts((prev) => ({
+                      ...prev,
+                      ESI: Math.round(base * (percentage / 100)),
+                    }));
+
+                    setAdFormula((prev) => ({
+                      ...prev,
+                      ESI: `Base * ${percentage / 100}`,
+                    }));
+
+                    return;
+                  }
+
+                  activateDeductionWithBase("ESI");
+                  esiPreviewLock.current = false; // 🔓 allow auto logic again
+                }}
+                style={{ transform: "scale(1.1)", justifySelf: "center" }}
+              />
+
+              {/* Empty FX placeholder to keep alignment */}
+              <div />
             </div>
-            <div
-              style={{
-                border: "1px solid #ddd",
-                borderRadius: 8,
-                padding: 10,
-                maxHeight: 420,
-                overflowY: "auto",
-              }}
-            >
-              {/* BASE SALARY (MOVED HERE) */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "30px 1fr 40px 110px 40px 40px 60px",
-                  alignItems: "center",
-                  columnGap: 8,
-                  marginBottom: 8,
-                }}
-              >
-                {/* Checkbox placeholder (no checkbox for Base Salary selection) */}
-                <div />
+            {allowances.map((a) => {
+              const isPreviewPercent =
+                !adValueType[a.Name] && hasApiPercent(a.Name);
 
-                {/* Label */}
-                <span>Base Salary</span>
+              const isPercentMode = adValueType[a.Name] === "PERCENT";
 
-                {/* Fixed # box (aligned above others) */}
-                <input
-                  value="#"
-                  disabled
+              const disableAmount = isPreviewPercent || isPercentMode;
+
+              return (
+                <div
+                  key={a.ID}
                   style={{
-                    width: 32,
-                    height: 28,
-                    fontSize: 12,
-                    textAlign: "center",
-                    marginLeft: -95,
-                    backgroundColor: "#f1f5f9",
-                    border: "1px solid #e5e7eb",
-                    cursor: "not-allowed",
+                    display: "grid",
+                    gridTemplateColumns: "30px 1fr 40px 40px 60px",
+                    alignItems: "center",
+                    marginBottom: 8,
+                    columnGap: 8,
                   }}
-                />
+                >
+                  {/* Checkbox */}
+                  <input
+                    type="checkbox"
+                    checked={!!allowanceSelected[a.Name]}
+                    onChange={(e) => {
+                      if (!activeDeduction) {
+                        alert("Please select a deduction first!");
+                        return;
+                      }
 
-                {/* Amount input (aligned above other amounts) */}
-                <input
-                  name="baseSalary"
-                  value={form.baseSalary}
-                  onChange={allowOnlyNumbers}
-                  className="form-control"
-                  style={{
-                    width: 110,
-                    height: 28,
-                    fontSize: 13,
-                    marginLeft: -107,
-                  }}
-                />
+                      const checked = e.target.checked;
 
-                {/* PF checkbox */}
-                <input
-                  type="checkbox"
-                  checked={!!deductionAllowanceMap.PF?.BaseSalary}
-                  onChange={(e) => {
-                    const checked = e.target.checked;
-
-                    setActiveStatutory((prev) => ({ ...prev, PF: checked }));
-
-                    setDeductionAllowanceMap((prev) => ({
-                      ...prev,
-                      PF: { BaseSalary: checked },
-                    }));
-
-                    setCalculatedAD((prev) => ({
-                      ...prev,
-                      PF: checked,
-                    }));
-
-                    if (checked) {
-                      activateDeductionWithBase("PF");
-                      setDeductionAmounts((prev) => ({ ...prev }));
-                    }
-                  }}
-                  style={{ transform: "scale(1.1)", justifySelf: "center" }}
-                />
-
-                {/* ESI checkbox */}
-                <input
-                  type="checkbox"
-                  checked={!!deductionAllowanceMap.ESI?.BaseSalary}
-                  onChange={(e) => {
-                    const checked = e.target.checked;
-
-                    // ✅ ONLY control allowance dependency
-                    setDeductionAllowanceMap((prev) => ({
-                      ...prev,
-                      ESI: { BaseSalary: checked },
-                    }));
-
-                    if (!checked) {
-                      // 🔒 LOCK preview so effects cannot revert it
-                      esiPreviewLock.current = true;
-
-                      setActiveStatutory((prev) => ({ ...prev, ESI: false }));
-                      setCalculatedAD((prev) => ({ ...prev, ESI: false }));
-
-                      setAdValueType((prev) => ({
+                      setDeductionAllowanceMap((prev) => ({
                         ...prev,
-                        ESI: "PERCENT",
-                      }));
-
-                      const percentObj = getEffectivePercentage("ESI");
-                      const percentage =
-                        editablePercentages.ESI !== undefined &&
-                        editablePercentages.ESI !== null &&
-                        editablePercentages.ESI !== ""
-                          ? Number(editablePercentages.ESI)
-                          : Number(percentObj?.Percentage || 0);
-
-                      const base = Number(form.baseSalary) || 0;
-
-                      setDeductionAmounts((prev) => ({
-                        ...prev,
-                        ESI: Math.round(base * (percentage / 100)),
-                      }));
-
-                      setAdFormula((prev) => ({
-                        ...prev,
-                        ESI: `Base * ${percentage / 100}`,
-                      }));
-
-                      return;
-                    }
-
-                    activateDeductionWithBase("ESI");
-                    esiPreviewLock.current = false; // 🔓 allow auto logic again
-                  }}
-                  style={{ transform: "scale(1.1)", justifySelf: "center" }}
-                />
-
-                {/* Empty FX placeholder to keep alignment */}
-                <div />
-              </div>
-              {allowances.map((a) => {
-                const isPreviewPercent =
-                  !adValueType[a.Name] && hasApiPercent(a.Name);
-
-                const isPercentMode = adValueType[a.Name] === "PERCENT";
-
-                const disableAmount = isPreviewPercent || isPercentMode;
-
-                return (
-                  <div
-                    key={a.ID}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "30px 1fr 40px 40px 60px",
-                      alignItems: "center",
-                      marginBottom: 8,
-                      columnGap: 8,
-                    }}
-                  >
-                    {/* Checkbox */}
-                    <input
-                      type="checkbox"
-                      checked={!!allowanceSelected[a.Name]}
-                      onChange={(e) => {
-                        if (!activeDeduction) {
-                          alert("Please select a deduction first!");
-                          return;
-                        }
-
-                        const checked = e.target.checked;
-
-                        setDeductionAllowanceMap((prev) => ({
-                          ...prev,
-                          [activeDeduction]: {
-                            ...(prev[activeDeduction] || {}),
-                            [a.Name]: checked,
-                          },
-                        }));
-
-                        // Update visible selected allowances
-                        setAllowanceSelected((prev) => ({
-                          ...prev,
+                        [activeDeduction]: {
+                          ...(prev[activeDeduction] || {}),
                           [a.Name]: checked,
-                        }));
-                      }}
-                      style={{ transform: "scale(1.1)" }}
-                    />
+                        },
+                      }));
 
-                    {/* Name + Amount */}
+                      // Update visible selected allowances
+                      setAllowanceSelected((prev) => ({
+                        ...prev,
+                        [a.Name]: checked,
+                      }));
+                    }}
+                    style={{ transform: "scale(1.1)" }}
+                  />
+
+                  {/* Name + Amount */}
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 6 }}
+                  >
+                    <span style={{ width: 70 }}>{a.Name}</span>
+                    {/* % / # Dropdown control */}
+                    <select
+                      value={adValueType[a.Name] || ""}
+                      onChange={(e) => {
+                        const type = e.target.value;
+
+                        setAdValueType((prev) => ({
+                          ...prev,
+                          [a.Name]: type,
+                        }));
+
+                        if (type === "PERCENT") {
+                          const percentObj = getEffectivePercentage(a.Name);
+                          setEditablePercentages((prev) => ({
+                            ...prev,
+                            [a.Name]: percentObj?.Percentage || 0,
+                          }));
+                        }
+                        if (type === "FIXED") {
+                          setEditablePercentages((prev) => ({
+                            ...prev,
+                            [a.Name]: "",
+                          }));
+                          setAdFormula((prev) => ({ ...prev, [a.Name]: "" }));
+                        }
+                      }}
+                      style={{
+                        width: 32,
+                        height: 28,
+                        fontSize: 12,
+                        color:
+                          !adValueType[a.Name] && hasApiPercent(a.Name)
+                            ? "#94a3b8" // 🔥 light preview %
+                            : "#000",
+                      }}
+                    >
+                      {/* PREVIEW PLACEHOLDER (NOT A REAL OPTION) */}
+                      {!adValueType[a.Name] && hasApiPercent(a.Name) && (
+                        <option value="" hidden>
+                          %
+                        </option>
+                      )}
+
+                      <option value="FIXED">#</option>
+                      <option value="PERCENT">%</option>
+                    </select>
+                    {adValueType[a.Name] === "PERCENT" && (
+                      <input
+                        type="number"
+                        style={{
+                          width: 55,
+                          height: 28,
+                          fontSize: 12,
+                        }}
+                        value={editablePercentages[a.Name] || ""}
+                        onChange={(e) => {
+                          const val = Number(e.target.value) || 0;
+
+                          setEditablePercentages((prev) => ({
+                            ...prev,
+                            [a.Name]: val,
+                          }));
+                        }}
+                      />
+                    )}
+
+                    <input
+                      type="number"
+                      className="form-control"
+                      disabled={disableAmount}
+                      style={{
+                        width: 110,
+                        height: "28px",
+                        fontSize: "13px",
+                        padding: "2px 6px",
+
+                        backgroundColor: disableAmount ? "#f1f5f9" : "#fff",
+                        cursor: disableAmount ? "not-allowed" : "text",
+                        border: "1px solid #e5e7eb",
+
+                        color: disableAmount ? "rgba(0,0,0,0.4)" : "#000",
+                      }}
+                      value={allowanceAmounts[a.Name] || ""}
+                      onChange={(e) =>
+                        handleAllowanceAmount(a.Name, e.target.value)
+                      }
+                    />
+                    <span
+                      style={{
+                        fontSize: 12,
+                        color: "#555",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {adValueType[a.Name] === "PERCENT" && adFormula[a.Name]
+                        ? `= ${adFormula[a.Name]}`
+                        : ""}
+                    </span>
+                  </div>
+                  {/* PF Checkbox */}
+                  <input
+                    type="checkbox"
+                    checked={!!deductionAllowanceMap.PF?.[a.Name]}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+
+                      if (checked) {
+                        activateDeductionWithBase("PF");
+                      }
+
+                      setDeductionAllowanceMap((prev) => ({
+                        ...prev,
+                        PF: {
+                          ...(prev.PF || {}),
+                          [a.Name]: checked,
+                        },
+                      }));
+
+                      // 🔥 ALWAYS sync allowanceSelected when editing PF
+                      setAllowanceSelected((prev) => ({
+                        ...prev,
+                        [a.Name]: checked,
+                      }));
+
+                      // 🔥 ENSURE fixed allowance value is present
+                      if (checked && adValueType[a.Name] === "FIXED") {
+                        setAllowanceAmounts((prev) => ({
+                          ...prev,
+                          [a.Name]: prev[a.Name] || Number(a.FixedAmount) || 0,
+                        }));
+                      }
+                    }}
+                  />
+
+                  {/* ESI Checkbox */}
+                  <input
+                    type="checkbox"
+                    checked={!!deductionAllowanceMap.ESI?.[a.Name]}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+
+                      if (checked) {
+                        activateDeductionWithBase("ESI");
+                      }
+
+                      setDeductionAllowanceMap((prev) => ({
+                        ...prev,
+                        ESI: {
+                          ...(prev.ESI || {}),
+                          [a.Name]: checked,
+                        },
+                      }));
+
+                      // 🔥 ALWAYS sync allowanceSelected for ESI (same as PF)
+                      setAllowanceSelected((prev) => ({
+                        ...prev,
+                        [a.Name]: checked,
+                      }));
+
+                      // 🔥 ENSURE fixed allowance value is present for ESI
+                      if (checked && adValueType[a.Name] === "FIXED") {
+                        setAllowanceAmounts((prev) => ({
+                          ...prev,
+                          [a.Name]: prev[a.Name] || Number(a.FixedAmount) || 0,
+                        }));
+                      }
+                    }}
+                  />
+
+                  {/* FX */}
+                  <button
+                    className="btn btn-sm btn-secondary"
+                    style={{ width: "100%", padding: "4px 0", fontSize: 12 }}
+                  >
+                    FX
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* OTHER ALLOWANCES */}
+          <h4
+            style={{
+              color: "#2a4365",
+              margin: "20px 0 10px",
+              maxHeight: "20px",
+            }}
+          >
+            Other Allowances
+          </h4>
+          <div
+            style={{
+              border: "1px solid #ddd",
+              borderRadius: 8,
+              padding: 10,
+              maxHeight: 260,
+              overflowY: "auto",
+            }}
+          >
+            {otherAllowances.map((a) => {
+              const isPreviewPercent =
+                !adValueType[a.Name] && hasApiPercent(a.Name);
+
+              const isPercentMode = adValueType[a.Name] === "PERCENT";
+
+              const disableAmount = isPreviewPercent || isPercentMode;
+
+              return (
+                <div
+                  key={a.ID}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "30px 1fr 40px 40px 60px",
+                    alignItems: "center",
+                    marginBottom: 8,
+                    columnGap: 8,
+                  }}
+                >
+                  {/* MAIN checkbox (select OTAmount allowance) */}
+                  <input
+                    type="checkbox"
+                    checked={!!allowanceSelected[a.Name]}
+                    onChange={(e) => {
+                      if (!activeDeduction) {
+                        alert("Please select a deduction first!");
+                        return;
+                      }
+
+                      const checked = e.target.checked;
+
+                      setDeductionAllowanceMap((prev) => ({
+                        ...prev,
+                        [activeDeduction]: {
+                          ...(prev[activeDeduction] || {}),
+                          [a.Name]: checked,
+                        },
+                      }));
+
+                      // Update visible selected allowances
+                      setAllowanceSelected((prev) => ({
+                        ...prev,
+                        [a.Name]: checked,
+                      }));
+                    }}
+                    style={{ transform: "scale(1.1)" }}
+                  />
+
+                  {/* UI BLOCK (special for OTAmount) */}
+                  {a.Name === "OTAmount" ? (
                     <div
-                      style={{ display: "flex", alignItems: "center", gap: 6 }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 14, // more spacing
+                        marginTop: 3,
+                      }}
+                    >
+                      {/* Label */}
+                      <span style={{ width: 120, marginTop: -4 }}>
+                        {a.Name}
+                      </span>
+
+                      {/* To Multiply Checkbox */}
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          marginLeft: -20,
+                          opacity: allowanceSelected[a.Name] ? 1 : 0.4,
+                          cursor: allowanceSelected[a.Name]
+                            ? "pointer"
+                            : "not-allowed",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          disabled={!allowanceSelected[a.Name]} // disable until first checkbox selected
+                          checked={odDoubleFlags[a.Name] || false}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+
+                            setOdDoubleFlags((prev) => ({
+                              ...prev,
+                              [a.Name]: checked,
+                            }));
+
+                            if (!checked) {
+                              setMultiplyValues((prev) => ({
+                                ...prev,
+                                [a.Name]: null,
+                              }));
+                            }
+                          }}
+                        />
+                        <span style={{ fontSize: 12 }}>To Multiply</span>
+                      </label>
+
+                      {/* Dropdown (shows only when 2nd checkbox is checked) */}
+                      {odDoubleFlags[a.Name] && (
+                        <select
+                          style={{
+                            width: 65,
+                            height: 26,
+                            fontSize: 12,
+                            marginLeft: -7, // add spacing between label and dropdown
+                            marginTop: 0, // slight downward shift
+                          }}
+                          value={multiplyValues[a.Name] || ""}
+                          onChange={(e) =>
+                            setMultiplyValues((prev) => ({
+                              ...prev,
+                              [a.Name]: e.target.value,
+                            }))
+                          }
+                        >
+                          <option value="">--</option>
+                          {[1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map((v) => (
+                            <option key={v} value={v}>
+                              {v}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      {/* ✅ ALWAYS-CHECKED BASE CHECKBOX */}
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                          marginTop: 3,
+                          marginLeft: 25,
+                          pointerEvents: "none", // 🔥 cannot be changed
+                        }}
+                      >
+                        <input type="checkbox" checked />
+                      </label>
+
+                      {/* ✅ BASE / GROSS DROPDOWN */}
+                      <select
+                        value={otBaseType}
+                        onChange={(e) => setOtBaseType(e.target.value)}
+                        style={{
+                          width: 70,
+                          height: 26,
+                          fontSize: 12,
+                          marginLeft: -6,
+                        }}
+                      >
+                        <option value="Base">Base</option>
+                        <option value="Gross">Gross</option>
+                      </select>
+                    </div>
+                  ) : (
+                    /* NORMAL Allowances */
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
                     >
                       <span style={{ width: 70 }}>{a.Name}</span>
-                      {/* % / # Dropdown control */}
+                      {/* % / # Dropdown */}
                       <select
                         value={adValueType[a.Name] || ""}
                         onChange={(e) => {
@@ -1821,7 +2259,10 @@ export default function SGNEW() {
                               ...prev,
                               [a.Name]: "",
                             }));
-                            setAdFormula((prev) => ({ ...prev, [a.Name]: "" }));
+                            setAdFormula((prev) => ({
+                              ...prev,
+                              [a.Name]: "",
+                            }));
                           }
                         }}
                         style={{
@@ -1872,794 +2313,439 @@ export default function SGNEW() {
                           width: 110,
                           height: "28px",
                           fontSize: "13px",
+                          padding: "2px 6px",
+
                           backgroundColor: disableAmount ? "#f1f5f9" : "#fff",
                           cursor: disableAmount ? "not-allowed" : "text",
-                          opacity: isPreviewPercent ? 0.6 : 1,
+                          border: "1px solid #e5e7eb",
+
+                          color: disableAmount ? "rgba(0,0,0,0.4)" : "#000",
                         }}
                         value={allowanceAmounts[a.Name] || ""}
                         onChange={(e) =>
                           handleAllowanceAmount(a.Name, e.target.value)
                         }
                       />
-                      <span
-                        style={{
-                          fontSize: 12,
-                          color: "#555",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {adValueType[a.Name] === "PERCENT" && adFormula[a.Name]
-                          ? `= ${adFormula[a.Name]}`
-                          : ""}
-                      </span>
                     </div>
-                    {/* PF Checkbox */}
-                    <input
-                      type="checkbox"
-                      checked={!!deductionAllowanceMap.PF?.[a.Name]}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
+                  )}
 
-                        if (checked) {
-                          activateDeductionWithBase("PF");
-                        }
+                  <input
+                    type="checkbox"
+                    checked={!!deductionAllowanceMap.PF?.[a.Name]}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
 
-                        setDeductionAllowanceMap((prev) => ({
-                          ...prev,
-                          PF: {
-                            ...(prev.PF || {}),
-                            [a.Name]: checked,
-                          },
-                        }));
+                      if (checked) {
+                        activateDeductionWithBase("PF");
+                      }
 
-                        // 🔥 ALWAYS sync allowanceSelected when editing PF
-                        setAllowanceSelected((prev) => ({
-                          ...prev,
+                      setDeductionAllowanceMap((prev) => ({
+                        ...prev,
+                        PF: {
+                          ...(prev.PF || {}),
                           [a.Name]: checked,
-                        }));
+                        },
+                      }));
 
-                        // 🔥 ENSURE fixed allowance value is present
-                        if (checked && adValueType[a.Name] === "FIXED") {
-                          setAllowanceAmounts((prev) => ({
-                            ...prev,
-                            [a.Name]:
-                              prev[a.Name] || Number(a.FixedAmount) || 0,
-                          }));
-                        }
-                      }}
-                    />
+                      // 🔥 ALWAYS sync allowanceSelected when editing PF
+                      setAllowanceSelected((prev) => ({
+                        ...prev,
+                        [a.Name]: checked,
+                      }));
 
-                    {/* ESI Checkbox */}
-                    <input
-                      type="checkbox"
-                      checked={!!deductionAllowanceMap.ESI?.[a.Name]}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-
-                        if (checked) {
-                          activateDeductionWithBase("ESI");
-                        }
-
-                        setDeductionAllowanceMap((prev) => ({
+                      // 🔥 ENSURE fixed allowance value is present
+                      if (checked && adValueType[a.Name] === "FIXED") {
+                        setAllowanceAmounts((prev) => ({
                           ...prev,
-                          ESI: {
-                            ...(prev.ESI || {}),
-                            [a.Name]: checked,
-                          },
+                          [a.Name]: prev[a.Name] || Number(a.FixedAmount) || 0,
                         }));
-
-                        // 🔥 ALWAYS sync allowanceSelected for ESI (same as PF)
-                        setAllowanceSelected((prev) => ({
-                          ...prev,
-                          [a.Name]: checked,
-                        }));
-
-                        // 🔥 ENSURE fixed allowance value is present for ESI
-                        if (checked && adValueType[a.Name] === "FIXED") {
-                          setAllowanceAmounts((prev) => ({
-                            ...prev,
-                            [a.Name]:
-                              prev[a.Name] || Number(a.FixedAmount) || 0,
-                          }));
-                        }
-                      }}
-                    />
-
-                    {/* FX */}
-                    <button
-                      className="btn btn-sm btn-secondary"
-                      style={{ width: "100%", padding: "4px 0", fontSize: 12 }}
-                    >
-                      FX
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* OTHER ALLOWANCES */}
-            <h4
-              style={{
-                color: "#2a4365",
-                margin: "20px 0 10px",
-                maxHeight: "20px",
-              }}
-            >
-              Other Allowances
-            </h4>
-            <div
-              style={{
-                border: "1px solid #ddd",
-                borderRadius: 8,
-                padding: 10,
-                maxHeight: 260,
-                overflowY: "auto",
-              }}
-            >
-              {otherAllowances.map((a) => {
-                const isPreviewPercent =
-                  !adValueType[a.Name] && hasApiPercent(a.Name);
-
-                const isPercentMode = adValueType[a.Name] === "PERCENT";
-
-                const disableAmount = isPreviewPercent || isPercentMode;
-
-                return (
-                  <div
-                    key={a.ID}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "30px 1fr 40px 40px 60px",
-                      alignItems: "center",
-                      marginBottom: 8,
-                      columnGap: 8,
+                      }
                     }}
+                    style={{ transform: "scale(1.1)", justifySelf: "center" }}
+                  />
+
+                  <input
+                    type="checkbox"
+                    checked={!!deductionAllowanceMap.ESI?.[a.Name]}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+
+                      if (checked) {
+                        activateDeductionWithBase("ESI");
+                      }
+
+                      setDeductionAllowanceMap((prev) => ({
+                        ...prev,
+                        ESI: {
+                          ...(prev.ESI || {}),
+                          [a.Name]: checked,
+                        },
+                      }));
+
+                      // 🔥 ALWAYS sync allowanceSelected for ESI (same as PF)
+                      setAllowanceSelected((prev) => ({
+                        ...prev,
+                        [a.Name]: checked,
+                      }));
+
+                      // 🔥 ENSURE fixed allowance value is present for ESI
+                      if (checked && adValueType[a.Name] === "FIXED") {
+                        setAllowanceAmounts((prev) => ({
+                          ...prev,
+                          [a.Name]: prev[a.Name] || Number(a.FixedAmount) || 0,
+                        }));
+                      }
+                    }}
+                    style={{ transform: "scale(1.1)", justifySelf: "center" }}
+                  />
+
+                  {/* FX BUTTON */}
+                  <button
+                    className="btn btn-sm btn-secondary"
+                    style={{ width: "100%", padding: "4px 0", fontSize: 12 }}
                   >
-                    {/* MAIN checkbox (select OTAmount allowance) */}
-                    <input
-                      type="checkbox"
-                      checked={!!allowanceSelected[a.Name]}
-                      onChange={(e) => {
-                        if (!activeDeduction) {
-                          alert("Please select a deduction first!");
-                          return;
-                        }
-
-                        const checked = e.target.checked;
-
-                        setDeductionAllowanceMap((prev) => ({
-                          ...prev,
-                          [activeDeduction]: {
-                            ...(prev[activeDeduction] || {}),
-                            [a.Name]: checked,
-                          },
-                        }));
-
-                        // Update visible selected allowances
-                        setAllowanceSelected((prev) => ({
-                          ...prev,
-                          [a.Name]: checked,
-                        }));
-                      }}
-                      style={{ transform: "scale(1.1)" }}
-                    />
-
-                    {/* UI BLOCK (special for OTAmount) */}
-                    {a.Name === "OTAmount" ? (
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 14, // more spacing
-                          marginTop: 3,
-                        }}
-                      >
-                        {/* Label */}
-                        <span style={{ width: 120, marginTop: -4 }}>
-                          {a.Name}
-                        </span>
-
-                        {/* To Multiply Checkbox */}
-                        <label
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                            marginLeft: -20,
-                            opacity: allowanceSelected[a.Name] ? 1 : 0.4,
-                            cursor: allowanceSelected[a.Name]
-                              ? "pointer"
-                              : "not-allowed",
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            disabled={!allowanceSelected[a.Name]} // disable until first checkbox selected
-                            checked={odDoubleFlags[a.Name] || false}
-                            onChange={(e) => {
-                              const checked = e.target.checked;
-
-                              setOdDoubleFlags((prev) => ({
-                                ...prev,
-                                [a.Name]: checked,
-                              }));
-
-                              if (!checked) {
-                                setMultiplyValues((prev) => ({
-                                  ...prev,
-                                  [a.Name]: null,
-                                }));
-                              }
-                            }}
-                          />
-                          <span style={{ fontSize: 12 }}>To Multiply</span>
-                        </label>
-
-                        {/* Dropdown (shows only when 2nd checkbox is checked) */}
-                        {odDoubleFlags[a.Name] && (
-                          <select
-                            style={{
-                              width: 65,
-                              height: 26,
-                              fontSize: 12,
-                              marginLeft: -7, // add spacing between label and dropdown
-                              marginTop: 0, // slight downward shift
-                            }}
-                            value={multiplyValues[a.Name] || ""}
-                            onChange={(e) =>
-                              setMultiplyValues((prev) => ({
-                                ...prev,
-                                [a.Name]: e.target.value,
-                              }))
-                            }
-                          >
-                            <option value="">--</option>
-                            {[1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map((v) => (
-                              <option key={v} value={v}>
-                                {v}
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                        {/* ✅ ALWAYS-CHECKED BASE CHECKBOX */}
-                        <label
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                            marginTop: 3,
-                            marginLeft: 25,
-                            pointerEvents: "none", // 🔥 cannot be changed
-                          }}
-                        >
-                          <input type="checkbox" checked />
-                        </label>
-
-                        {/* ✅ BASE / GROSS DROPDOWN */}
-                        <select
-                          value={otBaseType}
-                          onChange={(e) => setOtBaseType(e.target.value)}
-                          style={{
-                            width: 70,
-                            height: 26,
-                            fontSize: 12,
-                            marginLeft: -6,
-                          }}
-                        >
-                          <option value="Base">Base</option>
-                          <option value="Gross">Gross</option>
-                        </select>
-                      </div>
-                    ) : (
-                      /* NORMAL Allowances */
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        <span style={{ width: 70 }}>{a.Name}</span>
-                        {/* % / # Dropdown */}
-                        <select
-                          value={adValueType[a.Name] || ""}
-                          onChange={(e) => {
-                            const type = e.target.value;
-
-                            setAdValueType((prev) => ({
-                              ...prev,
-                              [a.Name]: type,
-                            }));
-
-                            if (type === "PERCENT") {
-                              const percentObj = getEffectivePercentage(a.Name);
-                              setEditablePercentages((prev) => ({
-                                ...prev,
-                                [a.Name]: percentObj?.Percentage || 0,
-                              }));
-                            }
-                            if (type === "FIXED") {
-                              setEditablePercentages((prev) => ({
-                                ...prev,
-                                [a.Name]: "",
-                              }));
-                              setAdFormula((prev) => ({
-                                ...prev,
-                                [a.Name]: "",
-                              }));
-                            }
-                          }}
-                          style={{
-                            width: 32,
-                            height: 28,
-                            fontSize: 12,
-                            color:
-                              !adValueType[a.Name] && hasApiPercent(a.Name)
-                                ? "#94a3b8" // 🔥 light preview %
-                                : "#000",
-                          }}
-                        >
-                          {/* PREVIEW PLACEHOLDER (NOT A REAL OPTION) */}
-                          {!adValueType[a.Name] && hasApiPercent(a.Name) && (
-                            <option value="" hidden>
-                              %
-                            </option>
-                          )}
-
-                          <option value="FIXED">#</option>
-                          <option value="PERCENT">%</option>
-                        </select>
-                        {adValueType[a.Name] === "PERCENT" && (
-                          <input
-                            type="number"
-                            style={{
-                              width: 55,
-                              height: 28,
-                              fontSize: 12,
-                            }}
-                            value={editablePercentages[a.Name] || ""}
-                            onChange={(e) => {
-                              const val = Number(e.target.value) || 0;
-
-                              setEditablePercentages((prev) => ({
-                                ...prev,
-                                [a.Name]: val,
-                              }));
-                            }}
-                          />
-                        )}
-
-                        <input
-                          type="number"
-                          className="form-control"
-                          disabled={disableAmount}
-                          style={{
-                            width: 110,
-                            height: "28px",
-                            fontSize: "13px",
-                            backgroundColor: disableAmount ? "#f1f5f9" : "#fff",
-                            cursor: disableAmount ? "not-allowed" : "text",
-                            opacity: isPreviewPercent ? 0.6 : 1,
-                          }}
-                          value={allowanceAmounts[a.Name] || ""}
-                          onChange={(e) =>
-                            handleAllowanceAmount(a.Name, e.target.value)
-                          }
-                        />
-                      </div>
-                    )}
-
-                    <input
-                      type="checkbox"
-                      checked={!!deductionAllowanceMap.PF?.[a.Name]}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-
-                        if (checked) {
-                          activateDeductionWithBase("PF");
-                        }
-
-                        setDeductionAllowanceMap((prev) => ({
-                          ...prev,
-                          PF: {
-                            ...(prev.PF || {}),
-                            [a.Name]: checked,
-                          },
-                        }));
-
-                        // 🔥 ALWAYS sync allowanceSelected when editing PF
-                        setAllowanceSelected((prev) => ({
-                          ...prev,
-                          [a.Name]: checked,
-                        }));
-
-                        // 🔥 ENSURE fixed allowance value is present
-                        if (checked && adValueType[a.Name] === "FIXED") {
-                          setAllowanceAmounts((prev) => ({
-                            ...prev,
-                            [a.Name]:
-                              prev[a.Name] || Number(a.FixedAmount) || 0,
-                          }));
-                        }
-                      }}
-                      style={{ transform: "scale(1.1)", justifySelf: "center" }}
-                    />
-
-                    <input
-                      type="checkbox"
-                      checked={!!deductionAllowanceMap.ESI?.[a.Name]}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-
-                        if (checked) {
-                          activateDeductionWithBase("ESI");
-                        }
-
-                        setDeductionAllowanceMap((prev) => ({
-                          ...prev,
-                          ESI: {
-                            ...(prev.ESI || {}),
-                            [a.Name]: checked,
-                          },
-                        }));
-
-                        // 🔥 ALWAYS sync allowanceSelected for ESI (same as PF)
-                        setAllowanceSelected((prev) => ({
-                          ...prev,
-                          [a.Name]: checked,
-                        }));
-
-                        // 🔥 ENSURE fixed allowance value is present for ESI
-                        if (checked && adValueType[a.Name] === "FIXED") {
-                          setAllowanceAmounts((prev) => ({
-                            ...prev,
-                            [a.Name]:
-                              prev[a.Name] || Number(a.FixedAmount) || 0,
-                          }));
-                        }
-                      }}
-                      style={{ transform: "scale(1.1)", justifySelf: "center" }}
-                    />
-
-                    {/* FX BUTTON */}
-                    <button
-                      className="btn btn-sm btn-secondary"
-                      style={{ width: "100%", padding: "4px 0", fontSize: 12 }}
-                    >
-                      FX
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+                    FX
+                  </button>
+                </div>
+              );
+            })}
           </div>
+        </div>
 
-          {/* RIGHT SIDE: DEDUCTIONS + SUMMARY */}
-          <div>
-            {/* MAIN DEDUCTIONS */}
+        {/* RIGHT SIDE: DEDUCTIONS + SUMMARY */}
+        <div>
+          {/* MAIN DEDUCTIONS */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 6,
+              gap: 12,
+            }}
+          >
+            {/* LEFT: DEDUCTIONS + LIMITS */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: 6,
-                gap: 12,
+                gap: 16,
               }}
             >
-              {/* LEFT: DEDUCTIONS + LIMITS */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 16,
-                }}
-              >
-                <h4 style={{ color: "#2a4365", margin: 0 }}>Deductions</h4>
+              <h4 style={{ color: "#2a4365", margin: 0 }}>Deductions</h4>
 
-                {/* PF LIMIT */}
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span
-                    style={{ fontSize: 13, fontWeight: 600, marginLeft: 22 }}
-                  >
-                    PF Limit
-                  </span>
-                  <input
-                    type="text"
-                    value={pfLimit}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (/^\d*\.?\d*$/.test(val)) setPfLimit(val);
-                    }}
-                    className="form-control"
-                    style={{
-                      width: 90,
-                      height: 26,
-                      fontSize: 13,
-                      padding: "2px 6px",
-                    }}
-                    placeholder="0.00"
-                  />
-                </div>
-
-                {/* ESI LIMIT */}
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>
-                    ESI Limit
-                  </span>
-                  <input
-                    type="text"
-                    value={esiLimit}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (/^\d*\.?\d*$/.test(val)) setEsiLimit(val);
-                    }}
-                    className="form-control"
-                    style={{
-                      width: 90,
-                      height: 26,
-                      fontSize: 13,
-                      padding: "2px 6px",
-                    }}
-                    placeholder="0.00"
-                  />
-                </div>
+              {/* PF LIMIT */}
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, marginLeft: 22 }}>
+                  PF Limit
+                </span>
+                <input
+                  type="text"
+                  value={pfLimit}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (/^\d*\.?\d*$/.test(val)) setPfLimit(val);
+                  }}
+                  className="form-control"
+                  style={{
+                    width: 90,
+                    height: 26,
+                    fontSize: 13,
+                    padding: "2px 6px",
+                  }}
+                  placeholder="0.00"
+                />
               </div>
 
-              {/* RIGHT: REFRESH BUTTON */}
-              <button
-                className="btn btn-sm btn-outline-primary"
-                style={{
-                  padding: "2px 10px",
-                  fontSize: 12,
-                  fontWeight: 600,
-                }}
-                onClick={handleRefreshSelections}
-              >
-                Refresh
-              </button>
+              {/* ESI LIMIT */}
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>ESI Limit</span>
+                <input
+                  type="text"
+                  value={esiLimit}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (/^\d*\.?\d*$/.test(val)) setEsiLimit(val);
+                  }}
+                  className="form-control"
+                  style={{
+                    width: 90,
+                    height: 26,
+                    fontSize: 13,
+                    padding: "2px 6px",
+                  }}
+                  placeholder="0.00"
+                />
+              </div>
             </div>
-            <div
+
+            {/* RIGHT: REFRESH BUTTON */}
+            <button
+              className="btn btn-sm btn-outline-primary"
               style={{
-                border: "1px solid #ddd",
-                borderRadius: 8,
-                padding: 10,
+                padding: "2px 10px",
+                fontSize: 12,
+                fontWeight: 600,
               }}
+              onClick={handleRefreshSelections}
             >
-              {deductions.map((d) => {
-                // compute REAL vs PREVIEW for this deduction
-                const isReal = !!calculatedAD[d.Name];
-                const valueType =
-                  adValueType[d.Name] ||
-                  (getEffectivePercentage(d.Name) ? "PERCENT" : "FIXED");
+              Refresh
+            </button>
+          </div>
+          <div
+            style={{
+              border: "1px solid #ddd",
+              borderRadius: 8,
+              padding: 10,
+            }}
+          >
+            {deductions.map((d) => {
+              // compute REAL vs PREVIEW for this deduction
+              const isReal = !!calculatedAD[d.Name];
+              const valueType =
+                adValueType[d.Name] ||
+                (getEffectivePercentage(d.Name) ? "PERCENT" : "FIXED");
 
-                const isPercentage = valueType === "PERCENT";
+              const isPercentage = valueType === "PERCENT";
 
-                return (
+              return (
+                <div
+                  key={d.ID}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "30px 1fr 60px",
+                    alignItems: "center",
+                    marginBottom: 8,
+                    columnGap: 8,
+                  }}
+                >
+                  {/* PF / ESI = STATUTORY RADIOS | Others = NORMAL RADIO GROUP */}
+                  {d.Name === "PF" || d.Name === "ESI" ? (
+                    <input
+                      type="radio"
+                      /* ❌ NO name attribute → no mutual exclusion */
+                      checked={
+                        d.Name === "PF" || d.Name === "ESI"
+                          ? !!deductionAllowanceMap[d.Name]?.BaseSalary
+                          : activeDeduction === d.Name
+                      }
+                      onChange={() => {
+                        // 🔥 PF / ESI are always ON once selected
+                        setActiveStatutory((prev) => ({
+                          ...prev,
+                          [d.Name]: true,
+                        }));
+
+                        // 🔥 DO NOT set activeDeduction here
+                        activateDeductionWithBase(d.Name);
+
+                        // 🔥 Ensure % exists (API or previous)
+                        const percentObj = getEffectivePercentage(d.Name);
+                        setEditablePercentages((prev) => ({
+                          ...prev,
+                          [d.Name]: prev[d.Name] ?? percentObj?.Percentage ?? 0,
+                        }));
+
+                        setAdValueType((prev) => ({
+                          ...prev,
+                          [d.Name]: "PERCENT",
+                        }));
+
+                        setCalculatedAD((prev) => ({
+                          ...prev,
+                          [d.Name]: true,
+                        }));
+
+                        // 🔥 Trigger recalculation safely
+                        setDeductionAmounts((prev) => ({
+                          ...prev,
+                          [d.Name]: prev[d.Name] || 0,
+                        }));
+                      }}
+                      style={{ transform: "scale(1.1)" }}
+                    />
+                  ) : (
+                    <input
+                      type="radio"
+                      name="deductionMain"
+                      value={d.Name}
+                      checked={activeDeduction === d.Name}
+                      onChange={(e) => {
+                        const name = e.target.value;
+
+                        // ✅ ONLY other deductions control activeDeduction
+                        setActiveDeduction(name);
+
+                        const percentObj = getEffectivePercentage(name);
+
+                        setEditablePercentages((prev) => ({
+                          ...prev,
+                          [name]: prev[name] ?? percentObj?.Percentage ?? 0,
+                        }));
+
+                        setAdValueType((prev) => ({
+                          ...prev,
+                          [name]: "PERCENT",
+                        }));
+
+                        setCalculatedAD((prev) => ({
+                          ...prev,
+                          [name]: true,
+                        }));
+
+                        setDeductionAmounts((prev) => ({
+                          ...prev,
+                          [name]: prev[name] || 0,
+                        }));
+                      }}
+                      style={{ transform: "scale(1.1)" }}
+                    />
+                  )}
+
+                  {/* Name + Amount */}
                   <div
-                    key={d.ID}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "30px 1fr 60px",
-                      alignItems: "center",
-                      marginBottom: 8,
-                      columnGap: 8,
-                    }}
+                    style={{ display: "flex", alignItems: "center", gap: 8 }}
                   >
-                    {/* PF / ESI = STATUTORY RADIOS | Others = NORMAL RADIO GROUP */}
-                    {d.Name === "PF" || d.Name === "ESI" ? (
-                      <input
-                        type="radio"
-                        /* ❌ NO name attribute → no mutual exclusion */
-                        checked={
-                          d.Name === "PF" || d.Name === "ESI"
-                            ? !!deductionAllowanceMap[d.Name]?.BaseSalary
-                            : activeDeduction === d.Name
+                    <span style={{ width: 120 }}>{d.Name}</span>
+                    <select
+                      value={
+                        adValueType[d.Name] ||
+                        (getEffectivePercentage(d.Name) ? "PERCENT" : "FIXED")
+                      }
+                      onChange={(e) => {
+                        const type = e.target.value;
+
+                        setAdValueType((prev) => ({
+                          ...prev,
+                          [d.Name]: type,
+                        }));
+
+                        if (type === "FIXED") {
+                          setCalculatedAD((prev) => ({
+                            ...prev,
+                            [d.Name]: false,
+                          }));
+
+                          setEditablePercentages((prev) => ({
+                            ...prev,
+                            [d.Name]: "",
+                          }));
+
+                          setAdFormula((prev) => ({
+                            ...prev,
+                            [d.Name]: null,
+                          }));
                         }
-                        onChange={() => {
-                          // 🔥 PF / ESI are always ON once selected
-                          setActiveStatutory((prev) => ({
-                            ...prev,
-                            [d.Name]: true,
-                          }));
-
-                          // 🔥 DO NOT set activeDeduction here
-                          activateDeductionWithBase(d.Name);
-
-                          // 🔥 Ensure % exists (API or previous)
-                          const percentObj = getEffectivePercentage(d.Name);
-                          setEditablePercentages((prev) => ({
-                            ...prev,
-                            [d.Name]:
-                              prev[d.Name] ?? percentObj?.Percentage ?? 0,
-                          }));
-
-                          setAdValueType((prev) => ({
-                            ...prev,
-                            [d.Name]: "PERCENT",
-                          }));
-
-                          setCalculatedAD((prev) => ({
-                            ...prev,
-                            [d.Name]: true,
-                          }));
-
-                          // 🔥 Trigger recalculation safely
-                          setDeductionAmounts((prev) => ({
-                            ...prev,
-                            [d.Name]: prev[d.Name] || 0,
-                          }));
-                        }}
-                        style={{ transform: "scale(1.1)" }}
-                      />
-                    ) : (
+                      }}
+                      style={{
+                        width: 32,
+                        height: 28,
+                        fontSize: 12,
+                      }}
+                    >
+                      <option value="PERCENT">%</option>
+                      <option value="FIXED">#</option>
+                    </select>
+                    {(d.Name === "PF"
+                      ? !!deductionAllowanceMap.PF?.BaseSalary &&
+                        adValueType.PF === "PERCENT"
+                      : d.Name === "ESI"
+                      ? !!deductionAllowanceMap.ESI?.BaseSalary &&
+                        adValueType.ESI === "PERCENT"
+                      : activeDeduction === d.Name &&
+                        adValueType[d.Name] === "PERCENT") && (
                       <input
-                        type="radio"
-                        name="deductionMain"
-                        value={d.Name}
-                        checked={activeDeduction === d.Name}
+                        type="number"
+                        style={{ width: 55, height: 28, fontSize: 12 }}
+                        value={editablePercentages[d.Name] || ""}
                         onChange={(e) => {
-                          const name = e.target.value;
-
-                          // ✅ ONLY other deductions control activeDeduction
-                          setActiveDeduction(name);
-
-                          const percentObj = getEffectivePercentage(name);
-
+                          const val = Number(e.target.value) || 0;
                           setEditablePercentages((prev) => ({
                             ...prev,
-                            [name]: prev[name] ?? percentObj?.Percentage ?? 0,
-                          }));
-
-                          setAdValueType((prev) => ({
-                            ...prev,
-                            [name]: "PERCENT",
-                          }));
-
-                          setCalculatedAD((prev) => ({
-                            ...prev,
-                            [name]: true,
-                          }));
-
-                          setDeductionAmounts((prev) => ({
-                            ...prev,
-                            [name]: prev[name] || 0,
+                            [d.Name]: val,
                           }));
                         }}
-                        style={{ transform: "scale(1.1)" }}
                       />
                     )}
 
-                    {/* Name + Amount */}
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    <input
+                      type="number"
+                      className="form-control"
+                      disabled={isPercentage} // ⭐ THIS IS THE KEY LINE
+                      style={{
+                        width: 120,
+                        height: "28px",
+                        padding: "2px 6px",
+                        fontSize: "13px",
+
+                        backgroundColor: isPercentage ? "#f1f5f9" : "#fff",
+                        cursor: isPercentage ? "not-allowed" : "text",
+                        border: "1px solid #e5e7eb",
+
+                        color:
+                          isReal || adValueType[d.Name] === "FIXED"
+                            ? "#000"
+                            : "rgba(0,0,0,0.3)",
+                      }}
+                      value={deductionAmounts[d.Name] ?? ""}
+                      onChange={(e) =>
+                        setDeductionAmounts((prev) => ({
+                          ...prev,
+                          [d.Name]: Number(e.target.value),
+                        }))
+                      }
+                    />
+
+                    {/* FORMULA TEXT */}
+                    <span
+                      style={{
+                        fontSize: 12,
+                        color: "#555",
+                        whiteSpace: "nowrap",
+                      }}
                     >
-                      <span style={{ width: 120 }}>{d.Name}</span>
-                      <select
-                        value={
-                          adValueType[d.Name] ||
-                          (getEffectivePercentage(d.Name) ? "PERCENT" : "FIXED")
-                        }
-                        onChange={(e) => {
-                          const type = e.target.value;
-
-                          setAdValueType((prev) => ({
-                            ...prev,
-                            [d.Name]: type,
-                          }));
-
-                          if (type === "FIXED") {
-                            setCalculatedAD((prev) => ({
-                              ...prev,
-                              [d.Name]: false,
-                            }));
-
-                            setEditablePercentages((prev) => ({
-                              ...prev,
-                              [d.Name]: "",
-                            }));
-
-                            setAdFormula((prev) => ({
-                              ...prev,
-                              [d.Name]: null,
-                            }));
-                          }
-                        }}
-                        style={{
-                          width: 32,
-                          height: 28,
-                          fontSize: 12,
-                        }}
-                      >
-                        <option value="PERCENT">%</option>
-                        <option value="FIXED">#</option>
-                      </select>
-                      {(d.Name === "PF"
-                        ? !!deductionAllowanceMap.PF?.BaseSalary &&
-                          adValueType.PF === "PERCENT"
-                        : d.Name === "ESI"
-                        ? !!deductionAllowanceMap.ESI?.BaseSalary &&
-                          adValueType.ESI === "PERCENT"
-                        : activeDeduction === d.Name &&
-                          adValueType[d.Name] === "PERCENT") && (
-                        <input
-                          type="number"
-                          style={{ width: 55, height: 28, fontSize: 12 }}
-                          value={editablePercentages[d.Name] || ""}
-                          onChange={(e) => {
-                            const val = Number(e.target.value) || 0;
-                            setEditablePercentages((prev) => ({
-                              ...prev,
-                              [d.Name]: val,
-                            }));
-                          }}
-                        />
-                      )}
-
-                      <input
-                        type="number"
-                        className="form-control"
-                        disabled={isPercentage} // ⭐ THIS IS THE KEY LINE
-                        style={{
-                          width: 120,
-                          height: "28px",
-                          padding: "2px 6px",
-                          fontSize: "13px",
-
-                          backgroundColor: isPercentage ? "#f1f5f9" : "#fff",
-                          cursor: isPercentage ? "not-allowed" : "text",
-                          border: "1px solid #e5e7eb",
-
-                          color:
-                            isReal || adValueType[d.Name] === "FIXED"
-                              ? "#000"
-                              : "rgba(0,0,0,0.3)",
-                        }}
-                        value={deductionAmounts[d.Name] ?? ""}
-                        onChange={(e) =>
-                          setDeductionAmounts((prev) => ({
-                            ...prev,
-                            [d.Name]: Number(e.target.value),
-                          }))
-                        }
-                      />
-
-                      {/* FORMULA TEXT */}
-                      <span
-                        style={{
-                          fontSize: 12,
-                          color: "#555",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {adValueType[d.Name] === "PERCENT" && adFormula[d.Name]
-                          ? `= ${adFormula[d.Name]}`
-                          : ""}
-                      </span>
-                    </div>
-
-                    {/* FX BUTTON */}
-                    <button
-                      className="btn btn-sm btn-secondary"
-                      style={{ width: "100%", padding: "4px 0", fontSize: 12 }}
-                    >
-                      FX
-                    </button>
+                      {adValueType[d.Name] === "PERCENT" && adFormula[d.Name]
+                        ? `= ${adFormula[d.Name]}`
+                        : ""}
+                    </span>
                   </div>
-                );
-              })}
-            </div>
 
-            {/* SALARY SUMMARY */}
-            <h4 style={{ color: "#2a4365", margin: "15px 0 8px" }}>
+                  {/* FX BUTTON */}
+                  <button
+                    className="btn btn-sm btn-secondary"
+                    style={{ width: "100%", padding: "4px 0", fontSize: 12 }}
+                  >
+                    FX
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* SALARY SUMMARY */}
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: 12,
+              padding: "12px 14px",
+              marginTop: 15,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+            }}
+          >
+            <h4
+              style={{
+                color: "#2a4365",
+                margin: "0 0 10px",
+              }}
+            >
               Salary Summary
             </h4>
 
             <div
               style={{
-                border: "1px solid #ddd",
+                border: "1px solid #e5e7eb",
                 borderRadius: 8,
-                padding: "10px 12px", // reduced padding
-                boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
+                padding: "10px 12px",
               }}
             >
               <div
@@ -2701,271 +2787,471 @@ export default function SGNEW() {
                 <span>₹ {netPay.toFixed(2)}</span>
               </div>
             </div>
+          </div>
 
-            {/* OTHER DEDUCTIONS HEADER */}
+          {/* OTHER DEDUCTIONS HEADER */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "30px 1fr 40px 60px",
+              alignItems: "center",
+              margin: "20px 0 10px",
+            }}
+          >
+            {/* Empty radio column */}
+            <div />
+
+            {/* Heading */}
+            <h4 style={{ color: "#2a4365", margin: 0, marginLeft: -30 }}>
+              Other Deductions
+            </h4>
+
+            {/* Per Day heading — NOW aligned with checkbox column */}
             <div
               style={{
-                display: "grid",
-                gridTemplateColumns: "30px 1fr 40px 60px",
-                alignItems: "center",
-                margin: "20px 0 10px",
+                textAlign: "center",
+                fontWeight: 600,
+                fontSize: 13,
+                color: "#1e293b",
+                marginLeft: -30,
               }}
             >
-              {/* Empty radio column */}
-              <div />
-
-              {/* Heading */}
-              <h4 style={{ color: "#2a4365", margin: 0, marginLeft: -30 }}>
-                Other Deductions
-              </h4>
-
-              {/* Per Day heading — NOW aligned with checkbox column */}
-              <div
-                style={{
-                  textAlign: "center",
-                  fontWeight: 600,
-                  fontSize: 13,
-                  color: "#1e293b",
-                  marginLeft: -30,
-                }}
-              >
-                Per Day
-              </div>
-
-              {/* Empty FX column */}
-              <div />
+              Per Day
             </div>
 
-            <div
-              style={{
-                border: "1px solid #ddd",
-                borderRadius: 8,
-                padding: 10,
-              }}
-            >
-              {otherDeductions.map((d) => {
-                const isReal = !!calculatedAD[d.Name];
-                const valueType =
-                  adValueType[d.Name] ||
-                  (getEffectivePercentage(d.Name) ? "PERCENT" : "FIXED");
+            {/* Empty FX column */}
+            <div />
+          </div>
 
-                const isPercentage = valueType === "PERCENT";
-                const showPerDay =
-                  d.Name === "Food" ||
-                  d.Name === "Accommodation" ||
-                  d.Name === "Uniform";
+          <div
+            style={{
+              border: "1px solid #ddd",
+              borderRadius: 8,
+              padding: 10,
+            }}
+          >
+            {otherDeductions.map((d) => {
+              const isReal = !!calculatedAD[d.Name];
+              const valueType =
+                adValueType[d.Name] ||
+                (getEffectivePercentage(d.Name) ? "PERCENT" : "FIXED");
 
-                return (
-                  <div
-                    key={d.ID}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "30px 1fr 40px 60px",
-                      alignItems: "center",
-                      marginBottom: 8,
-                      columnGap: 8,
+              const isPercentage = valueType === "PERCENT";
+              const showPerDay =
+                d.Name === "Food" ||
+                d.Name === "Accommodation" ||
+                d.Name === "Uniform";
+
+              return (
+                <div
+                  key={d.ID}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "30px 1fr 40px 60px",
+                    alignItems: "center",
+                    marginBottom: 8,
+                    columnGap: 8,
+                  }}
+                >
+                  {/* Radio */}
+                  <input
+                    type="radio"
+                    name="deductionOther"
+                    value={d.Name}
+                    checked={activeDeduction === d.Name}
+                    onChange={(e) => {
+                      const name = e.target.value;
+
+                      setActiveDeduction(name);
+
+                      // 🔥 SAME SAFETY NET AS MAIN DEDUCTIONS
+                      const percentObj = getEffectivePercentage(name);
+
+                      setEditablePercentages((prev) => ({
+                        ...prev,
+                        [name]: prev[name] ?? percentObj?.Percentage ?? 0,
+                      }));
+
+                      setAdValueType((prev) => ({
+                        ...prev,
+                        [name]: "PERCENT",
+                      }));
+
+                      setCalculatedAD((prev) => ({
+                        ...prev,
+                        [name]: true,
+                      }));
                     }}
+                    style={{ transform: "scale(1.1)" }}
+                  />
+
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 8 }}
                   >
-                    {/* Radio */}
-                    <input
-                      type="radio"
-                      name="deductionOther"
-                      value={d.Name}
-                      checked={activeDeduction === d.Name}
+                    <span style={{ width: 120 }}>{d.Name}</span>
+                    <select
+                      value={
+                        adValueType[d.Name] ||
+                        (getEffectivePercentage(d.Name) ? "PERCENT" : "FIXED")
+                      }
                       onChange={(e) => {
-                        const name = e.target.value;
-
-                        setActiveDeduction(name);
-
-                        // 🔥 SAME SAFETY NET AS MAIN DEDUCTIONS
-                        const percentObj = getEffectivePercentage(name);
-
-                        setEditablePercentages((prev) => ({
-                          ...prev,
-                          [name]: prev[name] ?? percentObj?.Percentage ?? 0,
-                        }));
+                        const type = e.target.value;
 
                         setAdValueType((prev) => ({
                           ...prev,
-                          [name]: "PERCENT",
+                          [d.Name]: type,
                         }));
 
-                        setCalculatedAD((prev) => ({
-                          ...prev,
-                          [name]: true,
-                        }));
-                      }}
-                      style={{ transform: "scale(1.1)" }}
-                    />
-
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
-                      <span style={{ width: 120 }}>{d.Name}</span>
-                      <select
-                        value={
-                          adValueType[d.Name] ||
-                          (getEffectivePercentage(d.Name) ? "PERCENT" : "FIXED")
-                        }
-                        onChange={(e) => {
-                          const type = e.target.value;
-
-                          setAdValueType((prev) => ({
-                            ...prev,
-                            [d.Name]: type,
-                          }));
-
-                          if (type === "FIXED") {
-                            setCalculatedAD((prev) => ({
-                              ...prev,
-                              [d.Name]: false,
-                            }));
-
-                            setEditablePercentages((prev) => ({
-                              ...prev,
-                              [d.Name]: "",
-                            }));
-
-                            setAdFormula((prev) => ({
-                              ...prev,
-                              [d.Name]: null,
-                            }));
-                          }
-                        }}
-                        style={{
-                          width: 32,
-                          height: 28,
-                          fontSize: 12,
-                        }}
-                      >
-                        <option value="PERCENT">%</option>
-                        <option value="FIXED">#</option>
-                      </select>
-                      {activeDeduction === d.Name &&
-                        adValueType[d.Name] === "PERCENT" && (
-                          <input
-                            type="number"
-                            style={{ width: 55, height: 28, fontSize: 12 }}
-                            value={editablePercentages[d.Name] || ""}
-                            onChange={(e) => {
-                              const val = Number(e.target.value) || 0;
-
-                              setEditablePercentages((prev) => ({
-                                ...prev,
-                                [d.Name]: val,
-                              }));
-                            }}
-                          />
-                        )}
-                      <input
-                        type="number"
-                        className="form-control"
-                        disabled={isPercentage} // ⭐ THIS IS THE KEY LINE
-                        style={{
-                          width: 120,
-                          height: "28px",
-                          padding: "2px 6px",
-                          fontSize: "13px",
-
-                          backgroundColor: isPercentage ? "#f1f5f9" : "#fff",
-                          cursor: isPercentage ? "not-allowed" : "text",
-                          border: "1px solid #e5e7eb",
-
-                          color:
-                            isReal || adValueType[d.Name] === "FIXED"
-                              ? "#000"
-                              : "rgba(0,0,0,0.3)",
-                        }}
-                        value={deductionAmounts[d.Name] ?? ""}
-                        onChange={(e) => {
-                          const val = Number(e.target.value) || 0;
-
-                          // 1️⃣ store amount
-                          setDeductionAmounts((prev) => ({
-                            ...prev,
-                            [d.Name]: val,
-                          }));
-
-                          // 2️⃣ FORCE FIXED mode
-                          setAdValueType((prev) => ({
-                            ...prev,
-                            [d.Name]: "FIXED",
-                          }));
-
-                          // 3️⃣ MARK AS REAL (not preview)
+                        if (type === "FIXED") {
                           setCalculatedAD((prev) => ({
                             ...prev,
-                            [d.Name]: true,
+                            [d.Name]: false,
                           }));
 
-                          // 4️⃣ REMOVE formula (fixed has none)
+                          setEditablePercentages((prev) => ({
+                            ...prev,
+                            [d.Name]: "",
+                          }));
+
                           setAdFormula((prev) => ({
                             ...prev,
                             [d.Name]: null,
                           }));
-                        }}
-                      />
-
-                      {/* FORMULA TEXT */}
-                      <span
-                        style={{
-                          fontSize: 12,
-                          color: "#555",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {adValueType[d.Name] === "PERCENT" && adFormula[d.Name]
-                          ? `= ${adFormula[d.Name]}`
-                          : ""}
-                      </span>
-                    </div>
-
-                    {/* PER DAY checkbox (only for selected items) */}
-                    {showPerDay ? (
-                      <input
-                        type="checkbox"
-                        checked={!!perDayOD[d.Name]}
-                        onChange={(e) =>
-                          setPerDayOD((prev) => ({
-                            ...prev,
-                            [d.Name]: e.target.checked,
-                          }))
                         }
-                        style={{
-                          transform: "scale(1.1)",
-                          justifySelf: "center",
-                        }}
-                      />
-                    ) : (
-                      <div /> // placeholder to keep alignment
-                    )}
-
-                    {/* FX */}
-                    <button
-                      className="btn btn-sm btn-secondary"
-                      style={{ width: "100%", padding: "4px 0", fontSize: 12 }}
+                      }}
+                      style={{
+                        width: 32,
+                        height: 28,
+                        fontSize: 12,
+                      }}
                     >
-                      FX
-                    </button>
+                      <option value="PERCENT">%</option>
+                      <option value="FIXED">#</option>
+                    </select>
+                    {activeDeduction === d.Name &&
+                      adValueType[d.Name] === "PERCENT" && (
+                        <input
+                          type="number"
+                          style={{ width: 55, height: 28, fontSize: 12 }}
+                          value={editablePercentages[d.Name] || ""}
+                          onChange={(e) => {
+                            const val = Number(e.target.value) || 0;
+
+                            setEditablePercentages((prev) => ({
+                              ...prev,
+                              [d.Name]: val,
+                            }));
+                          }}
+                        />
+                      )}
+                    <input
+                      type="number"
+                      className="form-control"
+                      disabled={isPercentage} // ⭐ THIS IS THE KEY LINE
+                      style={{
+                        width: 120,
+                        height: "28px",
+                        padding: "2px 6px",
+                        fontSize: "13px",
+
+                        backgroundColor: isPercentage ? "#f1f5f9" : "#fff",
+                        cursor: isPercentage ? "not-allowed" : "text",
+                        border: "1px solid #e5e7eb",
+
+                        color:
+                          isReal || adValueType[d.Name] === "FIXED"
+                            ? "#000"
+                            : "rgba(0,0,0,0.3)",
+                      }}
+                      value={deductionAmounts[d.Name] ?? ""}
+                      onChange={(e) => {
+                        const val = Number(e.target.value) || 0;
+
+                        // 1️⃣ store amount
+                        setDeductionAmounts((prev) => ({
+                          ...prev,
+                          [d.Name]: val,
+                        }));
+
+                        // 2️⃣ FORCE FIXED mode
+                        setAdValueType((prev) => ({
+                          ...prev,
+                          [d.Name]: "FIXED",
+                        }));
+
+                        // 3️⃣ MARK AS REAL (not preview)
+                        setCalculatedAD((prev) => ({
+                          ...prev,
+                          [d.Name]: true,
+                        }));
+
+                        // 4️⃣ REMOVE formula (fixed has none)
+                        setAdFormula((prev) => ({
+                          ...prev,
+                          [d.Name]: null,
+                        }));
+                      }}
+                    />
+
+                    {/* FORMULA TEXT */}
+                    <span
+                      style={{
+                        fontSize: 12,
+                        color: "#555",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {adValueType[d.Name] === "PERCENT" && adFormula[d.Name]
+                        ? `= ${adFormula[d.Name]}`
+                        : ""}
+                    </span>
                   </div>
-                );
-              })}
-            </div>
+
+                  {/* PER DAY checkbox (only for selected items) */}
+                  {showPerDay ? (
+                    <input
+                      type="checkbox"
+                      checked={!!perDayOD[d.Name]}
+                      onChange={(e) =>
+                        setPerDayOD((prev) => ({
+                          ...prev,
+                          [d.Name]: e.target.checked,
+                        }))
+                      }
+                      style={{
+                        transform: "scale(1.1)",
+                        justifySelf: "center",
+                      }}
+                    />
+                  ) : (
+                    <div /> // placeholder to keep alignment
+                  )}
+
+                  {/* FX */}
+                  <button
+                    className="btn btn-sm btn-secondary"
+                    style={{ width: "100%", padding: "4px 0", fontSize: 12 }}
+                  >
+                    FX
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
+      </div>
+      <div
+        style={{
+          background: "#ffffff",
+          borderRadius: 12,
+          padding: "16px 18px",
+          marginBottom: 16,
+          marginTop: 24,
+          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+        }}
+      >
         {/* SALARY SUMMARY BOX */}
         <div style={{ marginTop: 2 }}>
           <SalarySummaryBox />
         </div>
         {/* SAVE BUTTON */}
-        <button
-          className="btn btn-primary mt-4"
-          style={{ padding: "10px 25px", fontSize: 16 }}
-          onClick={handleSave}
-        >
-          Save
-        </button>
+        <div className="d-flex justify-content-center mt-4">
+          <button
+            className="btn btn-primary"
+            style={{ padding: "10px 150px", fontSize: 16 }}
+            onClick={handleSave}
+          >
+            Save
+          </button>
+        </div>
       </div>
+      {previewSG && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 3000,
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: 12,
+              padding: 24,
+              width: 720,
+              maxHeight: "85vh",
+            }}
+          >
+            {/* TITLE */}
+            <h2 style={{ marginBottom: 20 }}>
+              Salary Group → {previewSG.SalaryGroup}
+            </h2>
+
+            {/* TWO COLUMN LAYOUT */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 20,
+              }}
+            >
+              {/* ALLOWANCES */}
+              <div
+                style={{
+                  background: "#eafff1",
+                  borderRadius: 10,
+                  padding: 16,
+                }}
+              >
+                <div
+                  style={{
+                    fontWeight: 700,
+                    marginBottom: 10,
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <span>Allowance</span>
+                  <span>Amount</span>
+                </div>
+
+                {/* BASE SALARY */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: 6,
+                  }}
+                >
+                  <span>Base Salary</span>
+                  <span>₹ {Number(previewSG.BaseSalary).toFixed(2)}</span>
+                </div>
+
+                {/* OTHER ALLOWANCES */}
+                {previewSG.AllowancesDeductions.filter(
+                  (a) => a.Type === "A" || a.Type === "OA"
+                ).map((a) => (
+                  <div
+                    key={a.AD_Id}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: 6,
+                    }}
+                  >
+                    <span>{a.Name}</span>
+                    <span>
+                      ₹ {(a.FixedAmount || a.CalculatedAmount).toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+
+                {/* TOTAL ALLOWANCE */}
+                <hr />
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontWeight: 700,
+                  }}
+                >
+                  <span>Total Allowance:</span>
+                  <span>
+                    ₹{" "}
+                    {(
+                      Number(previewSG.BaseSalary) +
+                      previewSG.AllowancesDeductions.filter(
+                        (a) => a.Type === "A" || a.Type === "OA"
+                      ).reduce(
+                        (sum, a) =>
+                          sum + (a.FixedAmount || a.CalculatedAmount || 0),
+                        0
+                      )
+                    ).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              {/* DEDUCTIONS */}
+              <div
+                style={{
+                  background: "#ffeaea",
+                  borderRadius: 10,
+                  padding: 16,
+                }}
+              >
+                <div
+                  style={{
+                    fontWeight: 700,
+                    marginBottom: 10,
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <span>Deduction</span>
+                  <span>Amount</span>
+                </div>
+
+                {previewSG.AllowancesDeductions.filter(
+                  (a) => a.Type === "D" || a.Type === "OD"
+                ).map((a) => (
+                  <div
+                    key={a.AD_Id}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: 6,
+                    }}
+                  >
+                    <span>{a.Name}</span>
+                    <span>
+                      ₹ {(a.FixedAmount || a.CalculatedAmount).toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+
+                {/* TOTAL DEDUCTION */}
+                <hr />
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontWeight: 700,
+                  }}
+                >
+                  <span>Total Deduction:</span>
+                  <span>
+                    ₹{" "}
+                    {previewSG.AllowancesDeductions.filter(
+                      (a) => a.Type === "D" || a.Type === "OD"
+                    )
+                      .reduce(
+                        (sum, a) =>
+                          sum + (a.FixedAmount || a.CalculatedAmount || 0),
+                        0
+                      )
+                      .toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* CLOSE BUTTON */}
+            <div style={{ textAlign: "right", marginTop: 20 }}>
+              <button
+                className="btn btn-primary"
+                onClick={() => setPreviewSG(null)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
