@@ -94,7 +94,7 @@ import SalaryGroups from "../MainComponents/Payroll/SalaryGroups.jsx";
 import ExpenseMaster from "../MainComponents/Expense/ExpenseMaster.jsx";
 import ExpenseTypeMaster from "../MainComponents/Expense/ExpenseTypeMaster.jsx";
 import ExpenseReport from "../MainComponents/Expense/ExpenseReport.jsx";
-import Formula from "../MainComponents/FacilityMember/Formula.jsx";
+// import Formula from "../MainComponents/FacilityMember/Formula.jsx";
 import GenerateSalary from "../MainComponents/Payroll/GenerateSalary.jsx";
 import ProfessionalTax from "../MainComponents/Payroll/ProfessionalTax.jsx";
 import LabourFund from "../MainComponents/Payroll/LabourFund.jsx";
@@ -902,12 +902,12 @@ class MainNav extends React.Component {
                           </Link>
                         </li>
 
-                        <li className="nav-item">
+                        {/* <li className="nav-item">
                           <Link to="/Account/App/Formula" className="nav-link">
                             <i className="fas fa-caret-right nav-icon"></i>
                             <p>Formula</p>
                           </Link>
-                        </li>
+                        </li> */}
 
                         {/* <li className="nav-item">
                           <Link
@@ -1607,7 +1607,7 @@ class MainNav extends React.Component {
               path="/Account/App/AllowanceDeduction"
               component={AllowanceDeduction}
             />
-            <Route path="/Account/App/Formula" component={Formula} />
+            {/* <Route path="/Account/App/Formula" component={Formula} /> */}
             <Route
               path="/Account/App/SpotVisitCalendar"
               component={SpotVisitCalendar}
