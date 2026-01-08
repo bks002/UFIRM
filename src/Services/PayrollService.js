@@ -654,7 +654,6 @@ export async function updateOTHours(propertyId, dataArray) {
 
     return await response.json();
   } catch (error) {
-    console.error("Update OT Hours Error:", error);
     return null;
   }
 }
