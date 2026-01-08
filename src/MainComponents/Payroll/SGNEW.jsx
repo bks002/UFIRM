@@ -618,7 +618,6 @@ export default function SGNEW() {
         }
       }
 
-      // FINAL PUSH
       list.push({
         AD_Id: item.ID,
         Name: name,
