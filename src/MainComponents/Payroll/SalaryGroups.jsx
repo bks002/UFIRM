@@ -7,7 +7,7 @@ import {
   deleteSalaryAllowance,
   updateSalaryAllowance,
   createSalaryAllowance,
-  getAllowanceDeductionsByProperty,
+  getAllowancesDeductions,
   getADPercentages,
 } from "../../Services/PayrollService";
 import { FacilityMemberService } from "../../Services/FacilityService.js";
@@ -209,7 +209,7 @@ const [excludedEmployeeIds, setExcludedEmployeeIds] = useState([]);
         );
 
         // 2. master list
-        const alDtData = await getAllowanceDeductionsByProperty(propertyId);
+        const alDtData = await getAllowancesDeductions(propertyId);
 
         // 2.a sort properly: allowances (A, OA) first then deductions (D, OD)
         const sorted = [...alDtData].sort((a, b) => {

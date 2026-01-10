@@ -2,13 +2,15 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import {
   getSalaryAllowancesByProperty,
-  getAllowanceDeductionsByProperty,
+  getSalaryAllowancesByClient,
+  getAllowancesDeductions,
   createSalaryAllowance,
   updateSalaryAllowance,
   getADPercentages,
 } from "../../Services/PayrollService";
 import { getPropertyById } from "../../Services/PropertyService";
 import { getEmployeesByOffice } from "../../Services/PayrollService";
+import { getAllClients } from "../../Services/ClientService";
 
 export default function SGNEW() {
   const propertyId = useSelector((state) => state.Commonreducer.puidn);
@@ -46,6 +48,9 @@ export default function SGNEW() {
   const [otBaseType, setOtBaseType] = useState("Base");
   const [previewSG, setPreviewSG] = useState(null);
   const isLoadingSG = React.useRef(false);
+  const [sgScope, setSgScope] = useState("");
+  const [clientList, setClientList] = useState([]);
+  const [selectedClientId, setSelectedClientId] = useState(null);
 
   const [form, setForm] = useState({
     salaryGroupName: "",
@@ -64,11 +69,53 @@ export default function SGNEW() {
   });
 
   useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const res = await getAllClients();
+        setClientList(res || []);
+      } catch (err) {
+        console.log("Failed to load clients", err);
+      }
+    };
+
+    fetchClients();
+  }, []);
+
+  useEffect(() => {
+    if (sgScope === "CLIENT" && selectedClientId) {
+      loadSG();
+
+      // 🔥 HARD RESET when switching client
+      setSelectedSG("");
+      resetSalaryGroupForm();
+    }
+  }, [selectedClientId, sgScope]);
+
+  useEffect(() => {
+    // IMPORTANT: treat 0 / "0" as NO property
+    if (propertyId && Number(propertyId) > 0) {
+      setSgScope("PROPERTY");
+      return;
+    }
+
+    // 🔥 PROPERTY CLEARED — REAL RESET
+    setSgScope("");
+    setSelectedClientId(null);
+    setSalaryGroups([]);
+    setSelectedSG("");
+
+    resetFormCompletely(); // ✅ NOT resetSalaryGroupForm
+  }, [propertyId]);
+
+  useEffect(() => {
     if (!propertyId) return;
     loadPropertyInfo();
     loadSG();
-    loadAD();
   }, [propertyId]);
+
+  useEffect(() => {
+    loadAD(); // GLOBAL – always load
+  }, []);
 
   useEffect(() => {
     if (!propertyId) return;
@@ -522,7 +569,7 @@ export default function SGNEW() {
   ]);
 
   const getEffectivePercentage = (adName) => {
-    if (!adPercentages.length || !propertyId) return null;
+    if (!adPercentages.length) return null;
 
     const pid = Number(propertyId); // 🔥 FORCE NUMBER
 
@@ -656,7 +703,7 @@ export default function SGNEW() {
 
   const loadAD = async () => {
     try {
-      const res = await getAllowanceDeductionsByProperty();
+      const res = await getAllowancesDeductions();
       setAdList(res);
     } catch (err) {
       console.log("Failed to fetch AD:", err);
@@ -671,8 +718,17 @@ export default function SGNEW() {
 
   const loadSG = async () => {
     try {
-      const res = await getSalaryAllowancesByProperty(propertyId);
-      setSalaryGroups(res);
+      let res = [];
+
+      if (sgScope === "PROPERTY" && propertyId) {
+        res = await getSalaryAllowancesByProperty(propertyId);
+      }
+
+      if (sgScope === "CLIENT" && selectedClientId) {
+        res = await getSalaryAllowancesByClient(selectedClientId);
+      }
+
+      setSalaryGroups(res || []);
     } catch (err) {
       console.log("Failed to fetch SG:", err);
     }
@@ -902,6 +958,11 @@ export default function SGNEW() {
   };
 
   const handleSave = async () => {
+    // ✅ VALIDATION FIRST
+    if (sgScope === "CLIENT" && !selectedClientId) {
+      alert("Please select a client");
+      return;
+    }
     try {
       const adModel = buildADModel();
 
@@ -917,7 +978,8 @@ export default function SGNEW() {
 
         SalaryGroup: form.salaryGroupName,
         BaseSalary: Number(form.baseSalary),
-        Property_ID: propertyId,
+        ...(sgScope === "PROPERTY" && { Property_ID: propertyId }),
+        ...(sgScope === "CLIENT" && { ClientId: selectedClientId }),
         PFLimit: pfLimit ? Number(pfLimit) : null,
         ESILimit: esiLimit ? Number(esiLimit) : null,
         TotalWorkingDays: Number(form.totalWorkingDays),
@@ -1061,6 +1123,28 @@ export default function SGNEW() {
     setOtBaseType("Base");
   };
 
+  const resetFormCompletely = () => {
+    setForm({
+      salaryGroupName: "",
+      baseSalary: "",
+      totalWorkingDays: "",
+      shiftHours: "",
+      salaryCycleFrom: "",
+      salaryCycleTo: "",
+      excludeSunday: false,
+      monthlySundays: "",
+    });
+
+    setPropertyDefaults({
+      totalWorkingDays: "",
+      shiftHours: "",
+      salaryCycleFrom: "",
+      salaryCycleTo: "",
+      excludeSunday: false,
+      monthlySundays: "",
+    });
+  };
+
   const allowOnlyNumbers = (e) => {
     const value = e.target.value;
 
@@ -1156,11 +1240,114 @@ export default function SGNEW() {
         style={{
           background: "#ffffff",
           borderRadius: 12,
-          padding: "16px 18px",
+          padding: "10px 18px",
           marginBottom: 16,
           boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
         }}
       >
+        {/* ===== SG SCOPE SELECTION ===== */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 24,
+            padding: "1px 14px",
+            marginBottom: 17,
+            background: "#f9fafb",
+            borderRadius: 8,
+            border: "1px solid #e5e7eb",
+          }}
+        >
+          {/* Accent bar */}
+          <div
+            style={{
+              width: 3,
+              height: 20,
+              borderRadius: 3,
+              background: "#2563eb",
+            }}
+          />
+
+          {/* Select Type */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <label
+              style={{
+                fontSize: 15,
+                fontWeight: 600,
+                color: "#334155",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Select Type :
+            </label>
+
+            <select
+              className="form-control"
+              value={sgScope}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSgScope(value);
+
+                if (value === "PROPERTY") {
+                  setSelectedClientId(null);
+                }
+              }}
+              style={{
+                width: 160,
+                height: 30,
+                fontSize: 14,
+                padding: "2px 8px",
+                borderRadius: 6,
+                border: "1px solid #cbd5f5",
+              }}
+            >
+              <option value="" disabled>
+                -- Select Type --
+              </option>
+
+              {propertyId && <option value="PROPERTY">Property</option>}
+              <option value="CLIENT">Client</option>
+            </select>
+          </div>
+
+          {/* Select Client */}
+          {sgScope === "CLIENT" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <label
+                style={{
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: "#334155",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Select Client :
+              </label>
+
+              <select
+                className="form-control"
+                value={selectedClientId || ""}
+                onChange={(e) => setSelectedClientId(e.target.value)}
+                style={{
+                  width: 260,
+                  height: 30,
+                  fontSize: 14,
+                  padding: "2px 8px",
+                  borderRadius: 6,
+                  border: "1px solid #cbd5f5",
+                }}
+              >
+                <option value="">-- Select Client --</option>
+                {clientList.map((c) => (
+                  <option key={c.ClientID} value={c.ClientID}>
+                    {c.ClientName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+
         {/* ROW 1: TITLE + SG NAME + SELECT SG */}
         <div
           style={{
@@ -3043,9 +3230,9 @@ export default function SGNEW() {
         style={{
           background: "#ffffff",
           borderRadius: 12,
-          padding: "16px 18px",
-          marginBottom: 16,
-          marginTop: 24,
+          padding: "10px 18px",
+          marginBottom: 10,
+          marginTop: 10,
           boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
         }}
       >
