@@ -3,7 +3,7 @@ import axios from "axios";
 
 const API_BASE_URL = "https://api.urest.in:8096/api/allowancedeductions";
 
-export async function getAllowanceDeductionsByProperty() {
+export async function getAllowancesDeductions() {
   try {
     const response = await fetch(`${API_BASE_URL}/getall`, {
       method: "GET",
@@ -88,6 +88,16 @@ export async function getSalaryAllowancesByProperty(propertyId) {
     console.error("Error fetching salary allowances:", error);
     throw error;
   }
+}
+
+// CLIENT ✅ NEW
+export async function getSalaryAllowancesByClient(clientId) {
+  const response = await fetch(
+    `${SALARY_API_BASE_URL}/byClient/${clientId}`,
+    { headers: { Accept: "application/json" } }
+  );
+  if (!response.ok) throw new Error("Failed to fetch SG by client");
+  return response.json();
 }
 
 export async function deleteSalaryAllowance(salaryGroupId) {

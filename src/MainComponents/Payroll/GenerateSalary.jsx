@@ -9,7 +9,7 @@ import {
   getFacilityMemberSalaryDetails,
   deleteGeneratedSalary,
   regenerateEmployeeSalary,
-  getAllowanceDeductionsByProperty,
+  getAllowancesDeductions,
 } from "../../Services/PayrollService";
 
 const monthNames = [
@@ -201,7 +201,7 @@ export default function GenerateSalary() {
   useEffect(() => {
     async function loadMaster() {
       try {
-        const list = await getAllowanceDeductionsByProperty(); // expects [{ ID, Type, Name, ...}, ...]
+        const list = await getAllowancesDeductions(); // expects [{ ID, Type, Name, ...}, ...]
         const arr = list || [];
         setMasterList(arr);
 

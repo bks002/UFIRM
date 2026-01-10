@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Dialog } from "primereact/dialog";
 import {
-  getAllowanceDeductionsByProperty,
+  getAllowancesDeductions,
   createAllowanceDeduction,
   updateAllowanceDeduction,
   deleteAllowanceDeduction,
@@ -24,7 +24,7 @@ export default function AllowanceDeduction() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const allowanceData = await getAllowanceDeductionsByProperty();
+      const allowanceData = await getAllowancesDeductions();
       setData(allowanceData);
     } catch (error) {
       alert("Failed to load data.");
