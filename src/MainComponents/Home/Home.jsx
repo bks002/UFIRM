@@ -180,7 +180,7 @@ const Home = ({ PropertyId }) => {
 
     const getAttendanceData = useCallback(async (model, initialDate, finalDate) => {
         try {
-            const data = await getAttendance(model, initialDate, finalDate); // not 'resp'
+            const data = await getAttendance(model[0].PropertyId, initialDate, finalDate); // not 'resp'
             if (!Array.isArray(data)) {
                 throw new Error("Attendance data is not an array");
             }
@@ -346,28 +346,29 @@ const Home = ({ PropertyId }) => {
                                     <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
                                         <h5 className="text-center">Priority Tasks</h5>
                                         <div style={{ overflowX: "auto", maxHeight: "220px" }}>
-                                            <table className="table table-bordered table-striped">
+                                            <table
+                                                className="table table-bordered table-striped"
+                                                style={{ fontSize: "12px" }}
+                                            >
+
                                                 <thead>
                                                     <tr>
-                                                        <th>#</th>
-                                                        <th>Title</th>
-                                                        <th>Value</th>
+                                                        <th style={{ padding: "6px" }}>#</th>
+                                                        <th style={{ padding: "6px" }}>Title</th>
+                                                        <th style={{ padding: "6px" }}>Value</th>
                                                     </tr>
-
                                                 </thead>
 
                                                 <tbody>
                                                     {taskPriority.map((p, index) => (
                                                         <tr key={index}>
-                                                            <td>{index + 1}</td>
-                                                            <td>{p.Title}</td>
-                                                            <td>{p.Value}</td>
+                                                            <td style={{ padding: "6px" }}>{index + 1}</td>
+                                                            <td style={{ padding: "6px" }}>{p.Title}</td>
+                                                            <td style={{ padding: "6px" }}>{p.Value}</td>
                                                         </tr>
-
-                                                    ))
-
-                                                    }
+                                                    ))}
                                                 </tbody>
+
 
                                             </table>
 
@@ -450,18 +451,18 @@ const Home = ({ PropertyId }) => {
                         {/* ===== Second Row: 3 Cards ===== */}
                         <div className="row mt-3">
 
-                            {/* 1. Attendance Bar Chart */}
+                            {/* 1. Attendance Donut Chart */}
                             <div className="col-md-3">
                                 <Link to="/Account/App/Attendance" style={{ textDecoration: 'none', color: 'inherit' }}>
                                     <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
                                         <h5 className="text-center">Attendance</h5>
+
                                         <Chart
-                                            type="bar"
+                                            type="doughnut"
                                             data={{
-                                                labels: attendance.map(a => a.Title),
+                                                labels: attendance.map(a => `${a.Title} (${a.Value})`),
                                                 datasets: [
                                                     {
-                                                        label: 'Employees',
                                                         data: attendance.map(a => a.Value),
                                                         backgroundColor: ['#42A5F5', '#EF5350', '#FFCA28']
                                                     }
@@ -470,8 +471,11 @@ const Home = ({ PropertyId }) => {
                                             options={{
                                                 responsive: true,
                                                 maintainAspectRatio: false,
-                                                plugins: { legend: { display: false } }
-
+                                                plugins: {
+                                                    legend: {
+                                                        position: 'bottom'
+                                                    }
+                                                }
                                             }}
                                             style={{ width: "100%", height: "220px" }}
                                         />
@@ -479,36 +483,89 @@ const Home = ({ PropertyId }) => {
                                 </Link>
                             </div>
 
-                            {/* 2. Expense Pie Chart */}
+
+                            {/* 2. Expense Bar Chart – Improved UI */}
                             <div className="col-md-3">
                                 <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
                                     <h5 className="text-center">Expenses</h5>
+
                                     <Chart
-                                        type="pie"
+                                        type="bar"
                                         data={{
-                                            labels: expenses.map(e => e.ExpenseSubType),   // SubType ko label banaya
+                                            labels: expenses.map(e =>
+                                                e.ExpenseSubType.length > 20
+                                                    ? e.ExpenseSubType.match(/.{1,20}/g)
+                                                    : e.ExpenseSubType
+                                            ),
                                             datasets: [
                                                 {
-                                                    data: expenses.map(e => e.TotalAmount),   // TotalAmount ko value banaya
-                                                    backgroundColor: ["#42A5F5", "#66BB6A", "#FFA726", "#AB47BC"],
-                                                    borderWidth: 1,
+                                                    label: "Amount",
+                                                    data: expenses.map(e => e.TotalAmount),
+                                                    backgroundColor: "#42A5F5",
+                                                    borderRadius: 6,
+                                                    barThickness: 18,
                                                 },
                                             ],
                                         }}
                                         options={{
+                                            indexAxis: "y",
                                             responsive: true,
                                             maintainAspectRatio: false,
+
+                                            layout: {
+                                                padding: {
+                                                    left: 10, // 👈 space for long labels
+                                                    right: 10,
+                                                    top: 10,
+                                                    bottom: 10,
+                                                },
+                                            },
+
                                             plugins: {
-                                                legend: { position: "bottom" },
+                                                legend: { display: false },
+                                                tooltip: {
+                                                    callbacks: {
+                                                        label: (ctx) => {
+                                                            const val = ctx.raw;
+                                                            if (val >= 1e7) return `₹ ${(val / 1e7).toFixed(2)} Cr`;
+                                                            if (val >= 1e5) return `₹ ${(val / 1e5).toFixed(2)} L`;
+                                                            if (val >= 1e3) return `₹ ${(val / 1e3).toFixed(2)} K`;
+                                                            return `₹ ${val}`;
+                                                        },
+                                                    },
+                                                },
+                                            },
+
+                                            scales: {
+                                                x: {
+                                                    beginAtZero: true,
+                                                    ticks: {
+                                                        callback: (value) => {
+                                                            if (value >= 1e7) return `${value / 1e7} Cr`;
+                                                            if (value >= 1e5) return `${value / 1e5} L`;
+                                                            if (value >= 1e3) return `${value / 1e3} K`;
+                                                            return value;
+                                                        },
+                                                    },
+                                                    grid: { color: "#eee" },
+                                                },
+                                                y: {
+                                                    ticks: {
+                                                        font: { size: 10 },
+                                                        padding: 4,
+                                                    },
+                                                    grid: { display: false },
+                                                },
                                             },
                                         }}
-                                        style={{ width: "100%", height: "220px" }}
+                                        style={{
+                                            width: "100%",
+                                            height: Math.max(220, expenses.length * 35),
+                                        }}
                                     />
-
-
-
                                 </div>
                             </div>
+
 
                             <div className="col-md-3">
                                 <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>

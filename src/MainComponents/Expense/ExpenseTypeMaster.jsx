@@ -16,7 +16,7 @@ import "primereact/resources/primereact.min.css";
 
 const ExpenseTypePage = () => {
   const [expenses, setExpenses] = useState([]);
-    const [viewVisible, setViewVisible] = useState(false); // ✅ View dialog state
+  const [viewVisible, setViewVisible] = useState(false); // ✅ View dialog state
   const [viewRow, setViewRow] = useState(null); // ✅ View row state
 
   const [visible, setVisible] = useState(false);
@@ -32,6 +32,7 @@ const ExpenseTypePage = () => {
 
   const toast = useRef(null);
   const propertyId = useSelector((state) => state.Commonreducer.puidn);
+  const [isApplicable, setIsApplicable] = useState(false);
 
   // GET data
   const fetchExpenses = async (propertyId) => {
@@ -61,6 +62,7 @@ const ExpenseTypePage = () => {
       ExpenseId: editingRow ? editingRow.ExpenseId : 0,
       ExpenseTypeName: expenseTypeName,
       ExpenseSubtype: expenseSubType,
+      includeEmployee: isApplicable,
       CreatedBy: 1,
       UpdatedBy: 1,
       CreatedAt: new Date().toISOString(),
@@ -89,8 +91,8 @@ const ExpenseTypePage = () => {
       setEditingRow(null);
       setExpenseTypeName("");
       setExpenseSubType("");
-     
-       fetchExpenses(propertyId);
+
+      fetchExpenses(propertyId);
     } catch {
       toast.current.show({
         severity: "error",
@@ -134,18 +136,19 @@ const ExpenseTypePage = () => {
       <Button
         icon="fa fa-pencil"
         className="p-button-warning p-button-sm rounded"
-         style={{ backgroundColor: "#00CFFF", border: "none", color: "#000", marginRight: "4px" }}
+        style={{ backgroundColor: "#00CFFF", border: "none", color: "#000", marginRight: "4px" }}
         onClick={() => {
           setEditingRow(rowData);
           setExpenseTypeName(rowData.ExpenseTypeName);
           setExpenseSubType(rowData.ExpenseSubtype);
           setVisible(true);
+          setIsApplicable(rowData.includeEmployee ?? false);
         }}
       />
       <Button
         icon="fa fa-trash"
         className="p-button-danger p-button-sm rounded"
-         style={{ backgroundColor: "#FF4D4D", border: "none", color: "#fff", marginRight: "4px" }}
+        style={{ backgroundColor: "#FF4D4D", border: "none", color: "#fff", marginRight: "4px" }}
         onClick={() => deleteExpense(rowData)}
       />
     </div>
@@ -181,6 +184,7 @@ const ExpenseTypePage = () => {
             setEditingRow(null);
             setExpenseTypeName("");
             setExpenseSubType("");
+            setIsApplicable(false);
             setVisible(true);
           }}
         />
@@ -251,13 +255,29 @@ const ExpenseTypePage = () => {
             />
           </div>
 
+          <div className="flex align-items-center mt-2">
+            <input
+              type="checkbox"
+              id="isApplicable"
+              checked={isApplicable}
+              onChange={(e) => setIsApplicable(e.target.checked)}
+              style={{ cursor: "pointer", marginRight: "10px" }}
+            />
+            <label
+              htmlFor="isApplicable"
+              style={{ cursor: "pointer" }}
+            >
+              Employee Linking
+            </label>
+          </div>
+
           <div className="flex justify-end">
             <Button label="Save" icon="pi pi-check" onClick={saveExpense} />
           </div>
         </div>
       </Dialog>
 
-       {/* ✅ View Dialog */}
+      {/* ✅ View Dialog */}
       <Dialog
         header="View Expense"
         visible={viewVisible}
@@ -275,6 +295,15 @@ const ExpenseTypePage = () => {
             <div>
               <label className="block mb-1">Expense Sub Type</label>
               <InputText value={viewRow.ExpenseSubtype} className="w-full" readOnly />
+            </div>
+            <div className="flex align-items-center mt-2">
+              <input
+                type="checkbox"
+                checked={viewRow.includeEmployee}
+                readOnly
+                style={{ marginRight: "10px" }}
+              />
+              <label>Employee Linking</label>
             </div>
           </div>
         )}
