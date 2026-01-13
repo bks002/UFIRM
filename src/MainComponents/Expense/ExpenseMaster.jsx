@@ -5,7 +5,6 @@ import { InputText } from "primereact/inputtext";
 import { InputTextarea } from "primereact/inputtextarea";
 import { Calendar } from "primereact/calendar";
 import { InputNumber } from "primereact/inputnumber";
-//import { FileUpload } from "primereact/fileupload";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { ExpenseMasterService } from "../../Services/ExpenseMasterService";
@@ -18,7 +17,6 @@ const ExpenseMaster = () => {
   const [viewing, setViewing] = useState(false);
   const [expenseTypes, setExpenseTypes] = useState([]);
   const [expenseSubtypes, setExpenseSubtypes] = useState([]);
-  const [file, setFile] = useState(null);
 
   const propertyId = useSelector((state) => state.Commonreducer.puidn);
   const [employees, setEmployees] = useState([]);
@@ -27,6 +25,7 @@ const ExpenseMaster = () => {
   const [expenses, setExpenses] = useState([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     Id: 0,
     ExpenseType: "",
@@ -66,50 +65,25 @@ const ExpenseMaster = () => {
     const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   };
-  // ✅ Convert file -> base64
-  const toBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result.split(",")[1]); // remove prefix
-      reader.onerror = (error) => reject(error);
-    });
-  };
-  const handleFileUpload = async (e) => {
-    const file = e.files[0];
-    if (file) {
-      const base64 = await toBase64(file);
-      setForm((prev) => ({ ...prev, BillImage: base64 }));
-    }
-  };
 
   // ✅ Fetch data
   const fetchExpenses = async (propertyId) => {
     try {
       const data = await ExpenseMasterService.getExpensesByOffice(propertyId);
 
-      // 🔥 unwrap new API structure
-      const normalizedExpenses = data
-        .map((item) => ({
-          ...item.Expense,
-          Documents: item.Documents ?? [],
-          BillPDFs: item.Documents ?? [], // keep UI safe
-        }))
-        .filter((exp) => exp.IsActive);
-
-      setExpenses(normalizedExpenses);
+      setExpenses(
+        data
+          .map((item) => ({
+            ...item.Expense,
+            Documents: item.Documents ?? [],
+            BillPDFs: item.Documents ?? [],
+          }))
+          .filter((exp) => exp.IsActive)
+      );
     } catch (err) {
       console.error("Error loading expenses:", err);
     }
   };
-
-  useEffect(() => {
-    if (propertyId) {
-      ExpenseMasterService.getExpenseTypesByOffice(propertyId)
-        .then(setExpenseTypes)
-        .catch(console.error);
-    }
-  }, [propertyId]);
 
   useEffect(() => {
     if (propertyId) {
@@ -167,56 +141,66 @@ const ExpenseMaster = () => {
 
   // ✅ Save / Update
   const handleSave = async () => {
-    if (!form.BillPDFs || form.BillPDFs.length === 0) {
-      alert("Please upload at least one bill PDF.");
+    // 🚫 prevent double click / duplicate submit
+    if (saving) return;
+
+    // 🚫 validate required dates
+    if (!form.DateFrom || !form.DateTo) {
+      toast.current.show({
+        severity: "warn",
+        summary: "Missing dates",
+        detail: "Please select Date From and Date To",
+        life: 3000,
+      });
       return;
     }
 
+    setSaving(true);
     try {
       const formData = new FormData();
-      const existingPdfUrls = form.BillPDFs.filter(
-        (f) => typeof f === "string"
-      );
-      existingPdfUrls.forEach((url) => {
-        formData.append("existing_files", url);
-      });
 
+      // text fields
       formData.append("expense_type", form.ExpenseType);
-      formData.append("expense_subtype", form.ExpenseSubtype || "");
-      if (showEmployee && form.Employee) {
-        formData.append("employee_id", form.Employee); // 👈 sends FacilityMemberId
-      }
-      formData.append("date_from", formatDate(form.DateFrom));
-      formData.append("date_to", formatDate(form.DateTo));
-      formData.append("amount", form.Amount);
-      formData.append("description", form.Description || "");
       formData.append("office_id", propertyId);
       formData.append("created_by", 1);
+      formData.append("amount", String(form.Amount));
+      formData.append("description", form.Description || "");
+      formData.append("date_from", formatDate(form.DateFrom));
+      formData.append("date_to", formatDate(form.DateTo));
 
-      // ✅ multiple PDFs, same key
-      form.BillPDFs.forEach((file) => {
-        if (file instanceof File) {
-          formData.append("files", file); // ✅ only NEW PDFs
-        }
-      });
+      if (form.ExpenseSubtype) {
+        formData.append("expense_subtype", form.ExpenseSubtype);
+      }
+
+      if (form.Employee) {
+        formData.append("employee_id", form.Employee);
+      }
+
+      // one PDF max
+      const pdf = form.BillPDFs.find((f) => f instanceof File);
+      if (pdf) {
+        formData.append("files", pdf);
+      }
+
+      // edit-only existing files
+      if (editing) {
+        form.BillPDFs.filter((f) => typeof f === "string").forEach((url) =>
+          formData.append("existing_files", url)
+        );
+      }
 
       if (editing) {
         await ExpenseMasterService.updateExpense(form.Id, formData);
-        toast.current.show({
-          severity: "success",
-          summary: "Updated",
-          detail: "Expense updated successfully",
-          life: 3000,
-        });
       } else {
         await ExpenseMasterService.createExpense(formData);
-        toast.current.show({
-          severity: "success",
-          summary: "Saved",
-          detail: "Expense created successfully",
-          life: 3000,
-        });
       }
+
+      toast.current.show({
+        severity: "success",
+        summary: editing ? "Updated" : "Saved",
+        detail: `Expense ${editing ? "updated" : "created"} successfully`,
+        life: 3000,
+      });
 
       setOpen(false);
       setEditing(false);
@@ -224,6 +208,8 @@ const ExpenseMaster = () => {
       resetForm();
     } catch (err) {
       console.error("Error saving expense:", err);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -247,7 +233,6 @@ const ExpenseMaster = () => {
       UpdatedOn: new Date().toISOString(),
     });
     setShowEmployee(false);
-    setFile(null);
   };
 
   const handleEdit = (row) => {
@@ -588,9 +573,10 @@ const ExpenseMaster = () => {
               onClick={() => setOpen(false)}
             />
             <Button
-              label={editing ? "Update" : "Save"}
+              label={saving ? "Saving..." : editing ? "Update" : "Save"}
               icon="pi pi-check"
               onClick={handleSave}
+              disabled={saving}
             />
           </div>
         </Dialog>

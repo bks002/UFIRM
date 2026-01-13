@@ -5,7 +5,9 @@ const API_EXPENSE_TYPE = "https://api.urest.in:8096/api/expenses/types";
 const API_EMPLOYEE = "https://api.urest.in:8096/api/employee";
 
 export const ExpenseMasterService = {
-  // GET all expenses by officeId
+  // =========================
+  // GET all expenses by office
+  // =========================
   getExpensesByOffice: async (officeId) => {
     try {
       const res = await axios.get(`${API_BASE}/byOffice/${officeId}`, {
@@ -18,7 +20,9 @@ export const ExpenseMasterService = {
     }
   },
 
-  // GET Employees by Office
+  // =========================
+  // GET employees by office
+  // =========================
   getEmployeesByOffice: async (officeId) => {
     try {
       const res = await axios.get(`${API_EMPLOYEE}/getByOffice/${officeId}`, {
@@ -31,7 +35,10 @@ export const ExpenseMasterService = {
     }
   },
 
-  // POST - create new expense (multipart/form-data)
+  // =========================
+  // POST - create new expense
+  // multipart/form-data
+  // =========================
   createExpense: async (formData) => {
     try {
       const res = await axios.post(API_BASE, formData, {
@@ -44,7 +51,10 @@ export const ExpenseMasterService = {
     }
   },
 
-  // PUT - update expense (multipart/form-data)
+  // =========================
+  // PUT - update expense
+  // multipart/form-data
+  // =========================
   updateExpense: async (id, formData) => {
     try {
       const res = await axios.put(`${API_BASE}/${id}`, formData, {
@@ -57,7 +67,9 @@ export const ExpenseMasterService = {
     }
   },
 
-  // DELETE - delete expense
+  // =========================
+  // DELETE expense
+  // =========================
   deleteExpense: async (id) => {
     try {
       const res = await axios.delete(`${API_BASE}/${id}`, {
@@ -70,7 +82,9 @@ export const ExpenseMasterService = {
     }
   },
 
-  // GET Expense Types by Office
+  // =========================
+  // GET expense types by office
+  // =========================
   getExpenseTypesByOffice: async (officeId) => {
     try {
       const res = await axios.get(
@@ -84,7 +98,9 @@ export const ExpenseMasterService = {
     }
   },
 
-  // GET Expense Subtypes by Type
+  // =========================
+  // GET expense subtypes by type
+  // =========================
   getExpenseSubtypesByType: async (expenseTypeName) => {
     try {
       const res = await axios.get(

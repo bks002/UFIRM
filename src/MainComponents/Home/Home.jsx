@@ -291,6 +291,18 @@ const Home = ({ PropertyId }) => {
         loadOnPropertyChange();
     }, [PropertyId]); // 🔥 PROPERTY CHANGE TRIGGER
 
+    const hasData = (arr = []) => arr.some(i => i.Value > 0);
+    const NoData = ({ label }) => (
+        <div className="d-flex align-items-center justify-content-center text-muted"
+            style={{ height: "220px", fontSize: "14px" }}>
+            No data available for {label}
+        </div>
+    );
+    const hasSubCatData = (id) =>
+        subCategoryTaskData[id] &&
+        Object.values(subCategoryTaskData[id]).some(v => v > 0);
+
+
     return (
         <>
             {isLoading && <DashboardLoader />}
@@ -306,36 +318,40 @@ const Home = ({ PropertyId }) => {
 
                                 <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}  >
                                     <h5 className="text-center">Tasks</h5>
-                                    <Chart
-                                        type="pie"
-                                        data={{
-                                            labels: taskStatus.map(t => `${t.Title} (${t.Value})`),
-                                            // Link: `/Account/App/PlannerTask?status=${taskStatus.map(t => t.Title)}`,
-                                            datasets: [
-                                                {
-                                                    data: taskStatus.map(t => t.Value),
-                                                    backgroundColor: ['#42A5F5', '#66BB6A', '#EF5350']
+                                    {hasData(taskStatus) ? (
+                                        <Chart
+                                            type="pie"
+                                            data={{
+                                                labels: taskStatus.map(t => `${t.Title} (${t.Value})`),
+                                                // Link: `/Account/App/PlannerTask?status=${taskStatus.map(t => t.Title)}`,
+                                                datasets: [
+                                                    {
+                                                        data: taskStatus.map(t => t.Value),
+                                                        backgroundColor: ['#42A5F5', '#66BB6A', '#EF5350']
+                                                    }
+                                                ]
+                                            }}
+                                            options={{
+                                                responsive: true,
+                                                maintainAspectRatio: false,
+                                                plugins: { legend: { position: 'bottom' } },
+                                                onClick: (e, elements) => {
+                                                    if (elements.length > 0) {
+                                                        const chart = elements[0].element.$context.chart;
+                                                        const index = elements[0].index;
+                                                        const label = chart.data.labels[index].split(' ')[0]; // Extract status from label
+                                                        // Navigate to the desired URL
+                                                        history.push(`/Account/App/PlannerTask?status=${label}&fromDate=${initialDate}&toDate=${finalDate}`);
+                                                    }
                                                 }
-                                            ]
-                                        }}
-                                        options={{
-                                            responsive: true,
-                                            maintainAspectRatio: false,
-                                            plugins: { legend: { position: 'bottom' } },
-                                            onClick: (e, elements) => {
-                                                if (elements.length > 0) {
-                                                    const chart = elements[0].element.$context.chart;
-                                                    const index = elements[0].index;
-                                                    const label = chart.data.labels[index].split(' ')[0]; // Extract status from label
-                                                    // Navigate to the desired URL
-                                                    history.push(`/Account/App/PlannerTask?status=${label}&fromDate=${initialDate}&toDate=${finalDate}`);
-                                                }
-                                            }
 
-                                        }}
-                                        style={{ width: "100%", height: "220px" }}
+                                            }}
+                                            style={{ width: "100%", height: "220px" }}
 
-                                    />
+                                        />
+                                    ) : (
+                                        <NoData label="this period" />
+                                    )}
 
                                 </div>
                             </div>
@@ -382,27 +398,31 @@ const Home = ({ PropertyId }) => {
                                 <Link to="/Account/App/ServiceRecords" style={{ textDecoration: 'none', color: 'inherit' }}>
                                     <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
                                         <h5 className="text-center">Total Assets</h5>
-                                        <Chart
-                                            type="bar"
-                                            data={{
-                                                labels: assetCount.map(a => a.Title),
-                                                datasets: [
-                                                    {
-                                                        label: 'Assets',
-                                                        data: assetCount.map(a => a.Value),
-                                                        backgroundColor: ['#42A5F5', '#66BB6A', '#FFA726', '#AB47BC']
-                                                    }
-                                                ]
-                                            }}
-                                            options={{
-                                                responsive: true,
-                                                maintainAspectRatio: false,
-                                                plugins: { legend: { display: false } }
+                                        {hasData(assetCount) ? (
+                                            <Chart
+                                                type="bar"
+                                                data={{
+                                                    labels: assetCount.map(a => a.Title),
+                                                    datasets: [
+                                                        {
+                                                            label: 'Assets',
+                                                            data: assetCount.map(a => a.Value),
+                                                            backgroundColor: ['#42A5F5', '#66BB6A', '#FFA726', '#AB47BC']
+                                                        }
+                                                    ]
+                                                }}
+                                                options={{
+                                                    responsive: true,
+                                                    maintainAspectRatio: false,
+                                                    plugins: { legend: { display: false } }
 
 
-                                            }}
-                                            style={{ width: "100%", height: "220px" }}
-                                        />
+                                                }}
+                                                style={{ width: "100%", height: "220px" }}
+                                            />
+                                        ) : (
+                                            <NoData label="this period" />
+                                        )}
                                     </div>
                                 </Link>
                             </div>
@@ -412,29 +432,33 @@ const Home = ({ PropertyId }) => {
                                 <Link to="/Account/App/TicketComplains" style={{ textDecoration: 'none', color: 'inherit' }}>
                                     <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
                                         <h5 className="text-center">Complains</h5>
-                                        <Chart
-                                            type="doughnut"
-                                            data={{
-                                                labels: complains.map(c => `${c.Title} (${c.Value})`),
-                                                datasets: [
-                                                    {
-                                                        data: complains.map(c => c.Value),
-                                                        backgroundColor: ['#42A5F5', '#66BB6A', '#FFA726', '#AB47BC']
+                                        {hasData(complains) ? (
+                                            <Chart
+                                                type="doughnut"
+                                                data={{
+                                                    labels: complains.map(c => `${c.Title} (${c.Value})`),
+                                                    datasets: [
+                                                        {
+                                                            data: complains.map(c => c.Value),
+                                                            backgroundColor: ['#42A5F5', '#66BB6A', '#FFA726', '#AB47BC']
+                                                        }
+                                                    ]
+                                                }}
+                                                options={{
+                                                    responsive: true,
+                                                    maintainAspectRatio: false,
+                                                    plugins: {
+                                                        legend: {
+                                                            position: 'bottom'
+                                                        }
                                                     }
-                                                ]
-                                            }}
-                                            options={{
-                                                responsive: true,
-                                                maintainAspectRatio: false,
-                                                plugins: {
-                                                    legend: {
-                                                        position: 'bottom'
-                                                    }
-                                                }
 
-                                            }}
-                                            style={{ width: "100%", height: "220px" }}
-                                        />
+                                                }}
+                                                style={{ width: "100%", height: "220px" }}
+                                            />
+                                        ) : (
+                                            <NoData label="this period" />
+                                        )}
                                     </div>
                                 </Link>
                             </div>
@@ -456,29 +480,32 @@ const Home = ({ PropertyId }) => {
                                 <Link to="/Account/App/Attendance" style={{ textDecoration: 'none', color: 'inherit' }}>
                                     <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
                                         <h5 className="text-center">Attendance</h5>
-
-                                        <Chart
-                                            type="doughnut"
-                                            data={{
-                                                labels: attendance.map(a => `${a.Title} (${a.Value})`),
-                                                datasets: [
-                                                    {
-                                                        data: attendance.map(a => a.Value),
-                                                        backgroundColor: ['#42A5F5', '#EF5350', '#FFCA28']
+                                        {hasData(attendance) ? (
+                                            <Chart
+                                                type="doughnut"
+                                                data={{
+                                                    labels: attendance.map(a => `${a.Title} (${a.Value})`),
+                                                    datasets: [
+                                                        {
+                                                            data: attendance.map(a => a.Value),
+                                                            backgroundColor: ['#42A5F5', '#EF5350', '#FFCA28']
+                                                        }
+                                                    ]
+                                                }}
+                                                options={{
+                                                    responsive: true,
+                                                    maintainAspectRatio: false,
+                                                    plugins: {
+                                                        legend: {
+                                                            position: 'bottom'
+                                                        }
                                                     }
-                                                ]
-                                            }}
-                                            options={{
-                                                responsive: true,
-                                                maintainAspectRatio: false,
-                                                plugins: {
-                                                    legend: {
-                                                        position: 'bottom'
-                                                    }
-                                                }
-                                            }}
-                                            style={{ width: "100%", height: "220px" }}
-                                        />
+                                                }}
+                                                style={{ width: "100%", height: "220px" }}
+                                            />
+                                        ) : (
+                                            <NoData label="this period" />
+                                        )}
                                     </div>
                                 </Link>
                             </div>
@@ -488,81 +515,90 @@ const Home = ({ PropertyId }) => {
                             <div className="col-md-3">
                                 <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
                                     <h5 className="text-center">Expenses</h5>
+                                    {expenses.length > 0 ? (
+                                        <Chart
+                                            type="bar"
+                                            data={{
+                                                labels: expenses.map(e =>
+                                                    e.ExpenseSubType.length > 20
+                                                        ? e.ExpenseSubType.match(/.{1,20}/g)
+                                                        : e.ExpenseSubType
+                                                ),
+                                                datasets: [
+                                                    {
+                                                        label: "Amount",
+                                                        data: expenses.map(e => e.TotalAmount),
+                                                        backgroundColor: ["#42A5F5",
+                                                            "#66BB6A",
+                                                            "#FFA726",
+                                                            "#EF5350",
+                                                            "#AB47BC",
+                                                            "#26C6DA",
+                                                            "#8D6E63",],
+                                                        borderRadius: 6,
+                                                        barThickness: 18,
+                                                    },
+                                                ],
+                                            }}
+                                            options={{
+                                                indexAxis: "y",
+                                                responsive: true,
+                                                maintainAspectRatio: false,
 
-                                    <Chart
-                                        type="bar"
-                                        data={{
-                                            labels: expenses.map(e =>
-                                                e.ExpenseSubType.length > 20
-                                                    ? e.ExpenseSubType.match(/.{1,20}/g)
-                                                    : e.ExpenseSubType
-                                            ),
-                                            datasets: [
-                                                {
-                                                    label: "Amount",
-                                                    data: expenses.map(e => e.TotalAmount),
-                                                    backgroundColor: "#42A5F5",
-                                                    borderRadius: 6,
-                                                    barThickness: 18,
+                                                layout: {
+                                                    padding: {
+                                                        left: 10, // 👈 space for long labels
+                                                        right: 10,
+                                                        top: 10,
+                                                        bottom: 10,
+                                                    },
                                                 },
-                                            ],
-                                        }}
-                                        options={{
-                                            indexAxis: "y",
-                                            responsive: true,
-                                            maintainAspectRatio: false,
 
-                                            layout: {
-                                                padding: {
-                                                    left: 10, // 👈 space for long labels
-                                                    right: 10,
-                                                    top: 10,
-                                                    bottom: 10,
-                                                },
-                                            },
-
-                                            plugins: {
-                                                legend: { display: false },
-                                                tooltip: {
-                                                    callbacks: {
-                                                        label: (ctx) => {
-                                                            const val = ctx.raw;
-                                                            if (val >= 1e7) return `₹ ${(val / 1e7).toFixed(2)} Cr`;
-                                                            if (val >= 1e5) return `₹ ${(val / 1e5).toFixed(2)} L`;
-                                                            if (val >= 1e3) return `₹ ${(val / 1e3).toFixed(2)} K`;
-                                                            return `₹ ${val}`;
+                                                plugins: {
+                                                    legend: { display: false },
+                                                    tooltip: {
+                                                        callbacks: {
+                                                            label: (ctx) => {
+                                                                const val = ctx.raw;
+                                                                if (val >= 1e7) return `₹ ${(val / 1e7).toFixed(2)} Cr`;
+                                                                if (val >= 1e5) return `₹ ${(val / 1e5).toFixed(2)} L`;
+                                                                if (val >= 1e3) return `₹ ${(val / 1e3).toFixed(2)} K`;
+                                                                return `₹ ${val}`;
+                                                            },
                                                         },
                                                     },
                                                 },
-                                            },
 
-                                            scales: {
-                                                x: {
-                                                    beginAtZero: true,
-                                                    ticks: {
-                                                        callback: (value) => {
-                                                            if (value >= 1e7) return `${value / 1e7} Cr`;
-                                                            if (value >= 1e5) return `${value / 1e5} L`;
-                                                            if (value >= 1e3) return `${value / 1e3} K`;
-                                                            return value;
+                                                scales: {
+                                                    x: {
+                                                        beginAtZero: true,
+                                                        ticks: {
+                                                            callback: (value) => {
+                                                                if (value >= 1e7) return `${value / 1e7} Cr`;
+                                                                if (value >= 1e5) return `${value / 1e5} L`;
+                                                                if (value >= 1e3) return `${value / 1e3} K`;
+                                                                return value;
+                                                            },
                                                         },
+                                                        grid: { color: "#eee" },
                                                     },
-                                                    grid: { color: "#eee" },
-                                                },
-                                                y: {
-                                                    ticks: {
-                                                        font: { size: 10 },
-                                                        padding: 4,
+                                                    y: {
+                                                        ticks: {
+                                                            font: { size: 10 },
+                                                            padding: 4,
+                                                        },
+                                                        grid: { display: false },
                                                     },
-                                                    grid: { display: false },
                                                 },
-                                            },
-                                        }}
-                                        style={{
-                                            width: "100%",
-                                            height: Math.max(220, expenses.length * 35),
-                                        }}
-                                    />
+                                            }}
+                                            style={{
+                                                width: "100%",
+                                                height: Math.max(220, expenses.length * 35),
+                                            }}
+                                        />
+                                    ) : (
+                                        <NoData label="this period" />
+                                    )}
                                 </div>
                             </div>
 
@@ -571,33 +607,37 @@ const Home = ({ PropertyId }) => {
                                 <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
                                     <h5 className="text-center">Lift</h5>
                                     <Link to="/Account/App/PlannerTask" style={{ textDecoration: "none" }}>
-                                        <Chart
-                                            type="line"
-                                            data={{
-                                                labels: ["Actionable", "Completed", "Pending"],
-                                                datasets: [
-                                                    {
-                                                        label: "Lift Tasks",
-                                                        data: [
-                                                            subCategoryTaskData[4] ? subCategoryTaskData[4].Actionable || 0 : 0,
-                                                            subCategoryTaskData[4] ? subCategoryTaskData[4].Completed || 0 : 0,
-                                                            subCategoryTaskData[4] ? subCategoryTaskData[4].Pending || 0 : 0
-                                                        ],
-                                                        fill: false,
-                                                        borderColor: "#42A5F5",
-                                                        tension: 0.4
-                                                    }
-                                                ]
-                                            }}
-                                            options={{
-                                                responsive: true,
-                                                maintainAspectRatio: false,
-                                                plugins: { legend: { display: false } },
-                                                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-                                            }}
-                                            style={{ width: "100%", height: "220px" }}
+                                        {hasSubCatData(4) ? (
+                                            <Chart
+                                                type="line"
+                                                data={{
+                                                    labels: ["Actionable", "Completed", "Pending"],
+                                                    datasets: [
+                                                        {
+                                                            label: "Lift Tasks",
+                                                            data: [
+                                                                subCategoryTaskData[4] ? subCategoryTaskData[4].Actionable || 0 : 0,
+                                                                subCategoryTaskData[4] ? subCategoryTaskData[4].Completed || 0 : 0,
+                                                                subCategoryTaskData[4] ? subCategoryTaskData[4].Pending || 0 : 0
+                                                            ],
+                                                            fill: false,
+                                                            borderColor: "#42A5F5",
+                                                            tension: 0.4
+                                                        }
+                                                    ]
+                                                }}
+                                                options={{
+                                                    responsive: true,
+                                                    maintainAspectRatio: false,
+                                                    plugins: { legend: { display: false } },
+                                                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                                                }}
+                                                style={{ width: "100%", height: "220px" }}
 
-                                        />
+                                            />
+                                        ) : (
+                                            <NoData label="this period" />
+                                        )}
                                     </Link>
                                 </div>
                             </div>
@@ -607,33 +647,37 @@ const Home = ({ PropertyId }) => {
                                 <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
                                     <h5 className="text-center">DG</h5>
                                     <Link to="/Account/App/PlannerTask" style={{ textDecoration: "none" }}>
-                                        <Chart
-                                            type="line"
-                                            data={{
-                                                labels: ["Actionable", "Completed", "Pending"],
-                                                datasets: [
-                                                    {
-                                                        label: "DG Tasks",
-                                                        data: [
-                                                            subCategoryTaskData[69] ? subCategoryTaskData[69].Actionable || 0 : 0,
-                                                            subCategoryTaskData[69] ? subCategoryTaskData[69].Completed || 0 : 0,
-                                                            subCategoryTaskData[69] ? subCategoryTaskData[69].Pending || 0 : 0
-                                                        ],
-                                                        fill: false,
-                                                        borderColor: "#EF5350",
-                                                        tension: 0.4
-                                                    }
-                                                ]
-                                            }}
-                                            options={{
-                                                responsive: true,
-                                                maintainAspectRatio: false,
-                                                plugins: { legend: { display: false } },
-                                                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-                                            }}
-                                            style={{ width: "100%", height: "220px" }}
+                                        {hasSubCatData(69) ? (
+                                            <Chart
+                                                type="line"
+                                                data={{
+                                                    labels: ["Actionable", "Completed", "Pending"],
+                                                    datasets: [
+                                                        {
+                                                            label: "DG Tasks",
+                                                            data: [
+                                                                subCategoryTaskData[69] ? subCategoryTaskData[69].Actionable || 0 : 0,
+                                                                subCategoryTaskData[69] ? subCategoryTaskData[69].Completed || 0 : 0,
+                                                                subCategoryTaskData[69] ? subCategoryTaskData[69].Pending || 0 : 0
+                                                            ],
+                                                            fill: false,
+                                                            borderColor: "#EF5350",
+                                                            tension: 0.4
+                                                        }
+                                                    ]
+                                                }}
+                                                options={{
+                                                    responsive: true,
+                                                    maintainAspectRatio: false,
+                                                    plugins: { legend: { display: false } },
+                                                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                                                }}
+                                                style={{ width: "100%", height: "220px" }}
 
-                                        />
+                                            />
+                                        ) : (
+                                            <NoData label="this period" />
+                                        )}
                                     </Link>
                                 </div>
                             </div>

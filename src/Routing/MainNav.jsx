@@ -1670,7 +1670,7 @@ class MainNav extends React.Component {
           >
             <div>
               <strong>
-                © 2025-2026 <a href="https://www.ufirm.in">Ufirm.in</a>
+                © 2025-2026 <a href="https://firmity.in/">Firmity.in</a>
               </strong>
             </div>
             <div>
