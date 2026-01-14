@@ -27,7 +27,7 @@ import "primereact/resources/primereact.min.css";
 export default function ItemAssignedPage() {
   const [grouped, setGrouped] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-const [selectedRows, setSelectedRows] = useState([]);
+  const [selectedRows, setSelectedRows] = useState([]);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [specifications, setSpecifications] = useState([]);
@@ -116,17 +116,17 @@ const [selectedRows, setSelectedRows] = useState([]);
 
   // ... existing helper functions
 
-   const renderApprovedStatus = (row) => {
+  const renderApprovedStatus = (row) => {
     const isApproved = !!row.IsFMApproved; // Converts to boolean
 
-     // Display a green checkmark icon if approved
+    // Display a green checkmark icon if approved
     if (isApproved) {
-     return (
-       <div className="text-center">
-         <i
-           className="pi pi-check-circle" // Green checkmark icon
-             style={{ color: "green", fontSize: "1.2rem" }}
-           />
+      return (
+        <div className="text-center">
+          <i
+            className="pi pi-check-circle" // Green checkmark icon
+            style={{ color: "green", fontSize: "1.2rem" }}
+          />
         </div>
       );
     }
@@ -136,13 +136,13 @@ const [selectedRows, setSelectedRows] = useState([]);
       <div className="text-center">
         <i
           className="pi pi-times-circle" // Red cross icon
-            style={{ color: "red", fontSize: "1.2rem" }}
-          />
-        </div>
+          style={{ color: "red", fontSize: "1.2rem" }}
+        />
+      </div>
     );
   };
 
-// ... remaining component logic
+  // ... remaining component logic
 
   // ✅ Clear table when propertyId changes (prevent stale data)
   useEffect(() => {
@@ -204,49 +204,49 @@ const [selectedRows, setSelectedRows] = useState([]);
   };
 
   // ---------- form handlers ----------
-const handleItemSelect = async (value) => {
-  setFormData((prev) => ({
-    ...prev,
-    itemId: value?.id ?? null,
-    item_Name: value?.name ?? "",
-  }));
+  const handleItemSelect = async (value) => {
+    setFormData((prev) => ({
+      ...prev,
+      itemId: value?.id ?? null,
+      item_Name: value?.name ?? "",
+    }));
 
-  if (!value || !value.id) {
-    setSpecifications([]);
-    return;
-  }
-
-  // ✅ Fetch specifications by itemId - no filtering, use API response as-is
-  try {
-    const res = await getItemSpecificationsByItemId(value.id);
-    if (!res || res.length === 0) {
-      toast.current?.show({
-        severity: "info",
-        summary: "No Specifications",
-        detail: "No specifications available for this item.",
-      });
+    if (!value || !value.id) {
       setSpecifications([]);
       return;
     }
 
-    // ✅ Map API response directly to editable format (no filtering)
-    setSpecifications(
-      res.map((s) => ({
-        Id: s.Id || 0,
-        Specification: s.Specification,
-        Specification_Value: "", // ✅ User fills this in
-      }))
-    );
-  } catch (err) {
-    console.error("[FETCH_SPECS_ERROR]", err);
-    toast.current?.show({
-      severity: "error",
-      summary: "Error",
-      detail: "Failed to load specifications",
-    });
-    setSpecifications([]);
-  }
-};
+    // ✅ Fetch specifications by itemId - no filtering, use API response as-is
+    try {
+      const res = await getItemSpecificationsByItemId(value.id);
+      if (!res || res.length === 0) {
+        toast.current?.show({
+          severity: "info",
+          summary: "No Specifications",
+          detail: "No specifications available for this item.",
+        });
+        setSpecifications([]);
+        return;
+      }
+
+      // ✅ Map API response directly to editable format (no filtering)
+      setSpecifications(
+        res.map((s) => ({
+          Id: s.Id || 0,
+          Specification: s.Specification,
+          Specification_Value: "", // ✅ User fills this in
+        }))
+      );
+    } catch (err) {
+      console.error("[FETCH_SPECS_ERROR]", err);
+      toast.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Failed to load specifications",
+      });
+      setSpecifications([]);
+    }
+  };
 
   const handleSpecValueChange = (index, value) => {
     setSpecifications((prev) =>
@@ -309,31 +309,7 @@ const handleItemSelect = async (value) => {
     return true;
   };
 
-  // **New Handler for Approval**
-const handleApprove = () => {
-  if (!selectedRow) {
-    toast.current?.show({
-      severity: "warn",
-      summary: "Selection Required",
-      detail: "Please select an item to approve.",
-    });
-    return;
-  }
 
-  // **PLACEHOLDER: Implement your actual API call here**
-  // Example: await approveItemAssigned(selectedRow.Id);
-
-  toast.current?.show({
-    severity: "info",
-    summary: "Approval Placeholder",
-    detail: `Approving item: ${selectedRow.Item_Name} (ID: ${selectedRow.Id})`,
-  });
-
-  // Clear selection after simulated approval
-  setSelectedRow(null); 
-  // Fetch data to update the table status (if status changes on approval)
-  // fetchGrouped(); 
-};
 
   const handleSave = async () => {
     if (!validateForm()) return;
@@ -450,37 +426,37 @@ const handleApprove = () => {
       });
     }
   };
-const handleApprove = async () => {
-  if (selectedRows.length === 0) {
-    toast.current?.show({
-      severity: "warn",
-      summary: "No Selection",
-      detail: "Please select at least one item to approve.",
-    });
-    return;
-  }
+  const handleApprove = async () => {
+    if (selectedRows.length === 0) {
+      toast.current?.show({
+        severity: "warn",
+        summary: "No Selection",
+        detail: "Please select at least one item to approve.",
+      });
+      return;
+    }
 
-  try {
-    // Call your API here (example function name)
-    await ApproveItemAssigned(selectedRows); 
+    try {
+      // Call your API here (example function name)
+      await ApproveItemAssigned(selectedRows);
 
-    toast.current?.show({
-      severity: "success",
-      summary: "Approved",
-      detail: "Selected items approved successfully.",
-    });
+      toast.current?.show({
+        severity: "success",
+        summary: "Approved",
+        detail: "Selected items approved successfully.",
+      });
 
-    setSelectedRows([]);
-    fetchGrouped(); // refresh table
-  } catch (err) {
-    console.error("APPROVE_ERROR", err);
-    toast.current?.show({
-      severity: "error",
-      summary: "Error",
-      detail: err.message || "Failed to approve items.",
-    });
-  }
-};
+      setSelectedRows([]);
+      fetchGrouped(); // refresh table
+    } catch (err) {
+      console.error("APPROVE_ERROR", err);
+      toast.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: err.message || "Failed to approve items.",
+      });
+    }
+  };
 
   // ---------- filtering ----------
   const filtered = grouped.filter((row) => {
@@ -493,16 +469,16 @@ const handleApprove = async () => {
     const typeText = row.IsRequisition
       ? "requisition"
       : row.IsHandover
-      ? "handover"
-      : "";
+        ? "handover"
+        : "";
 
     const specsText = Array.isArray(row.Details)
       ? row.Details.map(
-          (d) =>
-            `${d.Specification_Name ?? ""}: ${d.Specification_Value ?? ""}`
-        )
-          .join(" ")
-          .toLowerCase()
+        (d) =>
+          `${d.Specification_Name ?? ""}: ${d.Specification_Value ?? ""}`
+      )
+        .join(" ")
+        .toLowerCase()
       : "";
 
     return (
@@ -536,68 +512,68 @@ const handleApprove = async () => {
 
           <div className="ml-auto d-flex align-items-center" style={{ gap: "12px" }}>
 
-  {/* ✅ Search bar - matches Add Item button size */}
-      {/* <span className="search-icon-wrapper">
+            {/* ✅ Search bar - matches Add Item button size */}
+            {/* <span className="search-icon-wrapper">
       <i className="fa fa-search" style={{ color: "#6b7280" }} />
     </span> */}
-  <InputText
-    value={searchTerm}
-    onChange={(e) => setSearchTerm(e.target.value)}
-    placeholder="Search..."
-    style={{
-      height: "38px",
-      width: "200px",
-      borderRadius: "8px",
-      border: "1px solid #d1d5db",
-      paddingLeft: "12px",
-    }}
-  />
-<Button
-  label="Approve"
-  icon="pi pi-check"
-  className="p-button-info"
-  disabled={selectedRows.length === 0}
-  onClick={handleApprove}
-  style={{
-    padding: "8px 16px",
-    fontSize: "13px",
-    height: "38px",
-    borderRadius: "8px",
-    whiteSpace: "nowrap",
-  }}
-/>
+            <InputText
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search..."
+              style={{
+                height: "38px",
+                width: "200px",
+                borderRadius: "8px",
+                border: "1px solid #d1d5db",
+                paddingLeft: "12px",
+              }}
+            />
+            <Button
+              label="Approve"
+              icon="pi pi-check"
+              className="p-button-info"
+              disabled={selectedRows.length === 0}
+              onClick={handleApprove}
+              style={{
+                padding: "8px 16px",
+                fontSize: "13px",
+                height: "38px",
+                borderRadius: "8px",
+                whiteSpace: "nowrap",
+              }}
+            />
 
-  {/* **NEW** Approve button - Green for success/approval */}
-<Button
-  label="Approve"
-  icon="pi pi-check"
-  className="p-button-success" // Uses success style
-  style={{
-    padding: "8px 16px",
-    fontSize: "13px",
-    height: "38px",
-    borderRadius: "8px",
-    whiteSpace: "nowrap",
-  }}
-  onClick={handleApprove}
-  disabled={!selectedRow} // Disabled if no row is selected
-/>
+            {/* **NEW** Approve button - Green for success/approval */}
+            <Button
+              label="Approve"
+              icon="pi pi-check"
+              className="p-button-success" // Uses success style
+              style={{
+                padding: "8px 16px",
+                fontSize: "13px",
+                height: "38px",
+                borderRadius: "8px",
+                whiteSpace: "nowrap",
+              }}
+              onClick={handleApprove}
+              disabled={!selectedRow} // Disabled if no row is selected
+            />
 
-  {/* ✅ Add button - rounded */}
-  <Button
-    label="Add Item"
-    icon="pi pi-plus"
-    className="p-button-primary" // Changed from success to primary
-    style={{
-      padding: "8px 16px",
-      fontSize: "13px",
-      height: "38px",
-      borderRadius: "8px",
-      whiteSpace: "nowrap",
-    }}
-    onClick={openAddDialog}
-  />
-</div>
+            {/* ✅ Add button - rounded */}
+            <Button
+              label="Add Item"
+              icon="pi pi-plus"
+              className="p-button-primary" // Changed from success to primary
+              style={{
+                padding: "8px 16px",
+                fontSize: "13px",
+                height: "38px",
+                borderRadius: "8px",
+                whiteSpace: "nowrap",
+              }}
+              onClick={openAddDialog}
+            />
+          </div>
         </div>
 
         <div className="card-body p-3">
@@ -608,23 +584,19 @@ const handleApprove = async () => {
             >
               <thead className="thead-light">
                 <tr>
-<<<<<<< HEAD
-                  <th style={{ width: "60px" }}>Select</th>
-=======
                   <th style={{ width: "40px" }}>
-  <input
-    type="checkbox"
-    checked={filtered.length > 0 && selectedRows.length === filtered.length}
-    onChange={(e) => {
-      if (e.target.checked) {
-        setSelectedRows(filtered.map((x) => x.Id));
-      } else {
-        setSelectedRows([]);
-      }
-    }}
-  />
-</th>
->>>>>>> 029aa7298d8996602c0696bea662095705bf3ea1
+                    <input
+                      type="checkbox"
+                      checked={filtered.length > 0 && selectedRows.length === filtered.length}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedRows(filtered.map((x) => x.Id));
+                        } else {
+                          setSelectedRows([]);
+                        }
+                      }}
+                    />
+                  </th>
                   <th style={{ width: "80px" }}>S. No</th>
 
                   <th>Item Name</th>
@@ -651,31 +623,19 @@ const handleApprove = async () => {
 
                 {filtered.map((row, index) => (
                   <tr key={row.Id ?? index}>
-<<<<<<< HEAD
-                    <td className="text-center">
-  <input
-    type="checkbox"
-    checked={selectedRow?.Id === row.Id}
-    onChange={() => {
-      if (selectedRow?.Id === row.Id) {
-        setSelectedRow(null); // unselect
-      } else {
-        setSelectedRow(row); // select
-=======
                     <td>
-  <input
-    type="checkbox"
-    checked={selectedRows.includes(row.Id)}
-    onChange={(e) => {
-      if (e.target.checked) {
-        setSelectedRows([...selectedRows, row.Id]);
-      } else {
-        setSelectedRows(selectedRows.filter((id) => id !== row.Id));
->>>>>>> 029aa7298d8996602c0696bea662095705bf3ea1
-      }
-    }}
-  />
-</td>
+                      <input
+                        type="checkbox"
+                        checked={selectedRows.includes(row.Id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedRows([...selectedRows, row.Id]);
+                          } else {
+                            setSelectedRows(selectedRows.filter((id) => id !== row.Id));
+                          }
+                        }}
+                      />
+                    </td>
                     <td>{index + 1}</td>
                     <td>{row.Item_Name}</td>
                     <td>{row.Gender}</td>
@@ -683,8 +643,8 @@ const handleApprove = async () => {
                     <td>
                       {(!Array.isArray(row.Details) ||
                         row.Details.length === 0) && (
-                        <span className="text-muted">No Specifications</span>
-                      )}
+                          <span className="text-muted">No Specifications</span>
+                        )}
 
                       {Array.isArray(row.Details) &&
                         row.Details.map((d, i) => (
@@ -710,26 +670,26 @@ const handleApprove = async () => {
                     <td>{formatDate(row.Created_On)}</td>
                     <td>{formatTime12(row.Created_On)}</td>
                     <td className="text-center">
-  {row.IsFMApproved ? (
-    <i className="pi pi-check" style={{ color: "green", fontSize: "1.2rem" }}></i>
-  ) : (
-    <i className="pi pi-times" style={{ color: "red", fontSize: "1.2rem" }}></i>
-  )}
-</td>
+                      {row.IsFMApproved ? (
+                        <i className="pi pi-check" style={{ color: "green", fontSize: "1.2rem" }}></i>
+                      ) : (
+                        <i className="pi pi-times" style={{ color: "red", fontSize: "1.2rem" }}></i>
+                      )}
+                    </td>
 
                     <td className="text-center">
                       <Button
-  icon="pi pi-pencil"
-  className="p-button-rounded p-button-warning p-button-sm mr-2"
-  style={{
-    width: "30px",
-    height: "30px",
-    padding: "0",
-    fontSize: "0.65rem",
-  }}
-  //disabled={selectedRow?.Id !== row.Id}   // 🟡 only selected record editable
-  onClick={() => openEditDialog(row)}
-/>
+                        icon="pi pi-pencil"
+                        className="p-button-rounded p-button-warning p-button-sm mr-2"
+                        style={{
+                          width: "30px",
+                          height: "30px",
+                          padding: "0",
+                          fontSize: "0.65rem",
+                        }}
+                        //disabled={selectedRow?.Id !== row.Id}   // 🟡 only selected record editable
+                        onClick={() => openEditDialog(row)}
+                      />
 
                       <Button
                         icon="pi pi-trash"
@@ -744,7 +704,7 @@ const handleApprove = async () => {
                       />
                     </td>
                     <td className="text-center">
-                      {renderApprovedStatus(row)} 
+                      {renderApprovedStatus(row)}
                     </td>
                   </tr>
                 ))}
