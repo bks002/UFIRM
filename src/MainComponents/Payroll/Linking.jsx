@@ -8,24 +8,49 @@ import { useSelector } from "react-redux";
 
 export default function DesignationLinking() {
   const propertyId = useSelector((state) => state.Commonreducer.puidn);
+
   const [salaryGroups, setSalaryGroups] = useState([]);
   const [salaryGroup, setSalaryGroup] = useState(null);
   const [employeeList, setEmployeeList] = useState([]);
   const [designations, setDesignations] = useState([]);
   const [designation, setDesignation] = useState("");
+
   const [selectedGroupData, setSelectedGroupData] = useState(null);
   const [salaryGroupsData, setSalaryGroupsData] = useState([]);
-  const [selectedEmployees, setSelectedEmployees] = useState([]); // multiple employee ids
+
+  const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [popupVisible, setPopupVisible] = useState(false);
   const [popupGroup, setPopupGroup] = useState(null);
-  const [isSaving, setIsSaving] = useState(false); // 👈 Add this state at top with others
+  const [isSaving, setIsSaving] = useState(false);
 
-  // Filter employees by selected designation
+  /*------------------------------------------------------
+    TYPE CHECKERS
+  ------------------------------------------------------*/
+  const isAllowance = (t) => t === "A" || t === "OA";
+  const isDeduction = (t) => t === "D" || t === "OD";
+
+  /*------------------------------------------------------
+    ALLOWANCE AMOUNT CALCULATOR
+  ------------------------------------------------------*/
+  const getAllowanceAmount = (a) =>
+    a.CalculatedAmount > 0 ? a.CalculatedAmount : a.FixedAmount;
+
+  /*------------------------------------------------------
+    DEDUCTION AMOUNT CALCULATOR
+  ------------------------------------------------------*/
+  const getDeductionAmount = (d) =>
+    d.CalculatedAmount > 0 ? d.CalculatedAmount : d.FixedAmount;
+
+  /*------------------------------------------------------
+    FILTERED EMPLOYEE LIST
+  ------------------------------------------------------*/
   const filteredEmployees = employeeList.filter(
     (emp) => emp.Designation === designation
   );
 
-  // ✅ Move these functions OUTSIDE of useEffect
+  /*------------------------------------------------------
+    FETCH EMPLOYEES
+  ------------------------------------------------------*/
   async function fetchEmployees() {
     if (!propertyId) return;
     try {
@@ -37,7 +62,7 @@ export default function DesignationLinking() {
           FacilityMemberId: item.FacilityMember?.FacilityMemberId,
           SG_Link_ID: item.FacilityMember?.SG_Link_ID
             ? parseInt(item.FacilityMember.SG_Link_ID)
-            : null, // ensure it's a number
+            : null,
           Designation: item.EmployeeList?.Designation || "",
           EmployeeName: item.Profile?.EmployeeName || "",
         }))
@@ -45,7 +70,6 @@ export default function DesignationLinking() {
 
       setEmployeeList(employees);
 
-      // Extract unique designations, trimming and ignoring nulls
       const uniqueDesignations = [
         ...new Set(
           employees.map((emp) => (emp.Designation || "").trim()).filter(Boolean)
@@ -58,29 +82,28 @@ export default function DesignationLinking() {
     }
   }
 
+  /*------------------------------------------------------
+    FETCH SALARY GROUPS
+  ------------------------------------------------------*/
   async function fetchSalaryGroups() {
     if (!propertyId) return;
     try {
       const response = await getSalaryAllowancesByProperty(propertyId);
+
       if (Array.isArray(response)) {
-        setSalaryGroupsData(response); // store full data for lookup
+        setSalaryGroupsData(response);
         setSalaryGroups(
           response.map((item) => ({
             id: item.SalaryGroup_ID,
             name: item.SalaryGroup,
           }))
         );
-      } else if (response && response.SalaryGroup) {
-        setSalaryGroups([
-          { id: response.SalaryGroup_ID, name: response.SalaryGroup },
-        ]);
       }
     } catch {
       setSalaryGroups([]);
     }
   }
 
-  // ✅ Use effects now just trigger them
   useEffect(() => {
     fetchEmployees();
   }, [propertyId]);
@@ -89,6 +112,9 @@ export default function DesignationLinking() {
     fetchSalaryGroups();
   }, [propertyId]);
 
+  /*------------------------------------------------------
+    EMPLOYEE SELECT HANDLER
+  ------------------------------------------------------*/
   const toggleEmployee = (facilityId) => {
     setSelectedEmployees((prev) =>
       prev.includes(facilityId)
@@ -97,40 +123,38 @@ export default function DesignationLinking() {
     );
   };
 
+  /*------------------------------------------------------
+    SAVE LOGIC
+  ------------------------------------------------------*/
   const handleSave = async () => {
     if (!salaryGroup || selectedEmployees.length === 0) {
       alert("Please select Salary Group and at least one employee.");
       return;
     }
 
-    const FacilityMemberIds = selectedEmployees.join(",");
     const payload = {
-      FacilityMemberIds,
+      FacilityMemberIds: selectedEmployees.join(","),
       SalaryGroup_ID: parseInt(salaryGroup),
     };
 
     try {
-      setIsSaving(true); // 👈 start loader
-
+      setIsSaving(true);
       await assignSalaryGroupToFacilityMember(payload);
-
-      // Refresh employees to reflect updated links
       await fetchEmployees();
-
       alert("Salary group assigned successfully.");
-
-      // ✅ Keep the current selections open
-      setSelectedEmployees([]); // clear only selected checkboxes
-    } catch (error) {
-      console.error("Error while assigning salary group:", error);
+      setSelectedEmployees([]);
+    } catch {
       alert("Operation failed.");
     } finally {
-      setIsSaving(false); // 👈 stop loader
+      setIsSaving(false);
     }
   };
 
+  /*------------------------------------------------------
+    HELPER FOR GROUP NAME
+  ------------------------------------------------------*/
   const getGroupNameById = (id) => {
-    if (!id || !salaryGroupsData.length) return null;
+    if (!id) return null;
     const group = salaryGroupsData.find(
       (g) => parseInt(g.SalaryGroup_ID) === parseInt(id)
     );
@@ -149,6 +173,9 @@ export default function DesignationLinking() {
 
   const hasSelectedEmps = selectedEmployees.length > 0;
 
+  /*======================================================
+    RENDER UI
+  ======================================================*/
   return (
     <div
       className="content-wrapper"
@@ -177,9 +204,11 @@ export default function DesignationLinking() {
             alignItems: "start",
           }}
         >
-          {/* LEFT COLUMN - Salary Group */}
+          {/* ===========================================
+              LEFT COLUMN — SALARY GROUP VIEW
+          ============================================ */}
           <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
-            <label style={{ fontWeight: "600" }}>Salary Group</label>
+            <label style={{ fontWeight: 600 }}>Salary Group</label>
             <select
               value={salaryGroup}
               onChange={(e) => {
@@ -190,12 +219,7 @@ export default function DesignationLinking() {
                 );
                 setSelectedGroupData(groupData || null);
               }}
-              style={{
-                padding: 8,
-                borderRadius: 4,
-                border: "1px solid #ccc",
-                background: "#fff",
-              }}
+              style={{ padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
             >
               <option value="">-- Select Salary Group --</option>
               {salaryGroups.map((group) => (
@@ -205,170 +229,130 @@ export default function DesignationLinking() {
               ))}
             </select>
 
+            {/* --------------------------------------------------
+                SELECTED SALARY GROUP DETAILS VIEW
+            -------------------------------------------------- */}
             {selectedGroupData && (
               <div
                 style={{
                   background: "#fff",
                   borderRadius: 10,
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                   padding: 20,
                   height: 350,
                   overflowY: "auto",
                 }}
               >
-                <h4
-                  style={{
-                    fontWeight: "600",
-                    color: "#2a4365",
-                    marginBottom: 20,
-                    fontSize: "18px",
-                  }}
-                >
+                <h4 style={{ marginBottom: 20, color: "#2a4365" }}>
                   Salary Group → {selectedGroupData.SalaryGroup}
                 </h4>
 
+                {/* FIXED SALARY ONLY CASE */}
                 {selectedGroupData.AllowancesDeductions.length === 0 &&
                 selectedGroupData.FixedSalary > 0 ? (
-                  // Fixed Salary Only
-                  <table
-                    style={{
-                      width: "100%",
-                      borderCollapse: "collapse",
-                      background: "#f0fff4",
-                      borderRadius: 8,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <thead>
-                      <tr>
-                        <th
-                          colSpan={2}
-                          style={{
-                            background: "#c6f6d5",
-                            padding: 8,
-                            textAlign: "center",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          Allowance
-                        </th>
-                      </tr>
-                      <tr>
-                        <th style={{ textAlign: "left", padding: 6 }}>Name</th>
-                        <th style={{ textAlign: "right", padding: 6 }}>
-                          Amount
-                        </th>
-                      </tr>
-                    </thead>
+                  <table style={{ width: "100%" }}>
                     <tbody>
                       <tr>
-                        <td style={{ padding: 6 }}>Fixed Salary</td>
-                        <td style={{ textAlign: "right", padding: 6 }}>
+                        <td>Fixed Salary</td>
+                        <td style={{ textAlign: "right" }}>
                           ₹{selectedGroupData.FixedSalary}
                         </td>
                       </tr>
-                      <tr style={{ borderTop: "2px solid #999" }}>
-                        <td style={{ fontWeight: "bold", padding: 6 }}>
-                          Total Allowance:
-                        </td>
-                        <td
-                          style={{
-                            textAlign: "right",
-                            fontWeight: "bold",
-                            padding: 6,
-                          }}
-                        >
+
+                      <tr>
+                        <td style={{ fontWeight: "bold" }}>Total Allowance:</td>
+                        <td style={{ textAlign: "right", fontWeight: "bold" }}>
                           ₹{selectedGroupData.FixedSalary}
                         </td>
                       </tr>
                     </tbody>
                   </table>
                 ) : (
-                  // Allowances & Deductions Display
+                  /* NORMAL ALLOWANCE + DEDUCTION VIEW */
                   <div
                     style={{ display: "flex", justifyContent: "space-between" }}
                   >
-                    {/* Allowance Table */}
-                    <div style={{ flex: 1, marginRight: 20 }}>
-                      <table
+                    {/* Allowance Box */}
+                    <div
+                      style={{
+                        flex: 1,
+                        marginRight: 20,
+                        background: "#E8FBE8",
+                        borderRadius: 12,
+                        padding: "0 0 10px 0",
+                        boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+                      }}
+                    >
+                      <div
                         style={{
-                          width: "100%",
-                          borderCollapse: "collapse",
-                          background: "#f0fff4",
-                          borderRadius: 8,
-                          overflow: "hidden",
+                          background: "#C6F6D5",
+                          padding: "10px 0",
+                          textAlign: "center",
+                          fontWeight: 700,
+                          borderTopLeftRadius: 12,
+                          borderTopRightRadius: 12,
                         }}
+                      >
+                        Allowance
+                      </div>
+
+                      <table
+                        style={{ width: "100%", borderCollapse: "collapse" }}
                       >
                         <thead>
                           <tr>
-                            <th
-                              colSpan={2}
-                              style={{
-                                background: "#c6f6d5",
-                                padding: 8,
-                                textAlign: "center",
-                                fontWeight: "bold",
-                              }}
-                            >
-                              Allowance
-                            </th>
-                          </tr>
-                          <tr>
-                            <th style={{ textAlign: "left", padding: 6 }}>
+                            <th style={{ padding: 8, textAlign: "left" }}>
                               Name
                             </th>
-                            <th style={{ textAlign: "right", padding: 6 }}>
+                            <th style={{ padding: 8, textAlign: "right" }}>
                               Amount
                             </th>
                           </tr>
                         </thead>
+
                         <tbody>
-                          {/* Base Salary Row - only when FixedSalary = 0 and BaseSalary > 0 */}
-                          {selectedGroupData.FixedSalary === 0 &&
-                            selectedGroupData.BaseSalary > 0 && (
-                              <tr>
-                                <td style={{ padding: 6, fontWeight: 500 }}>
-                                  Base Salary
-                                </td>
-                                <td style={{ textAlign: "right", padding: 6 }}>
-                                  ₹{selectedGroupData.BaseSalary}
-                                </td>
-                              </tr>
-                            )}
+                          {/* Base Salary */}
+                          {selectedGroupData?.BaseSalary > 0 && (
+                            <tr>
+                              <td style={{ padding: 8 }}>Base Salary</td>
+                              <td style={{ padding: 8, textAlign: "right" }}>
+                                ₹{selectedGroupData.BaseSalary}
+                              </td>
+                            </tr>
+                          )}
 
                           {/* Allowances */}
-                          {selectedGroupData.AllowancesDeductions.filter(
-                            (a) => a.Type === "Allowance"
+                          {selectedGroupData?.AllowancesDeductions?.filter(
+                            (a) => isAllowance(a.Type)
                           ).map((a) => (
                             <tr key={a.AD_Id}>
-                              <td style={{ padding: 6 }}>{a.Name}</td>
-                              <td style={{ textAlign: "right", padding: 6 }}>
-                                ₹{a.CalculatedAmount}
+                              <td style={{ padding: 8 }}>{a.Name}</td>
+                              <td style={{ padding: 8, textAlign: "right" }}>
+                                ₹{getAllowanceAmount(a)}
                               </td>
                             </tr>
                           ))}
 
-                          {/* Total Allowance Row */}
+                          {/* Total */}
                           <tr style={{ borderTop: "2px solid #999" }}>
-                            <td style={{ fontWeight: "bold", padding: 6 }}>
+                            <td style={{ padding: 8, fontWeight: 700 }}>
                               Total Allowance:
                             </td>
                             <td
                               style={{
+                                padding: 8,
                                 textAlign: "right",
-                                fontWeight: "bold",
-                                padding: 6,
+                                fontWeight: 700,
                               }}
                             >
                               ₹
                               {(
-                                (selectedGroupData.BaseSalary || 0) +
-                                selectedGroupData.AllowancesDeductions.filter(
-                                  (a) => a.Type === "Allowance"
-                                ).reduce(
-                                  (sum, a) => sum + a.CalculatedAmount,
-                                  0
-                                )
+                                (selectedGroupData?.BaseSalary || 0) +
+                                (selectedGroupData?.AllowancesDeductions || [])
+                                  .filter((a) => isAllowance(a.Type))
+                                  .reduce(
+                                    (sum, a) => sum + getAllowanceAmount(a),
+                                    0
+                                  )
                               ).toLocaleString()}
                             </td>
                           </tr>
@@ -376,66 +360,75 @@ export default function DesignationLinking() {
                       </table>
                     </div>
 
-                    {/* Deduction Table */}
-                    <div style={{ flex: 1 }}>
-                      <table
+                    {/* Deduction Box */}
+                    <div
+                      style={{
+                        flex: 1,
+                        background: "#FFECEC",
+                        borderRadius: 12,
+                        padding: "0 0 10px 0",
+                        boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+                      }}
+                    >
+                      <div
                         style={{
-                          width: "100%",
-                          borderCollapse: "collapse",
-                          background: "#fff5f5",
-                          borderRadius: 8,
-                          overflow: "hidden",
+                          background: "#FED7D7",
+                          padding: "10px 0",
+                          textAlign: "center",
+                          fontWeight: 700,
+                          borderTopLeftRadius: 12,
+                          borderTopRightRadius: 12,
                         }}
+                      >
+                        Deduction
+                      </div>
+
+                      <table
+                        style={{ width: "100%", borderCollapse: "collapse" }}
                       >
                         <thead>
                           <tr>
-                            <th
-                              colSpan={2}
-                              style={{
-                                background: "#fed7d7",
-                                padding: 8,
-                                textAlign: "center",
-                                fontWeight: "bold",
-                              }}
-                            >
-                              Deduction
-                            </th>
-                          </tr>
-                          <tr>
-                            <th style={{ textAlign: "left", padding: 6 }}>
+                            <th style={{ padding: 8, textAlign: "left" }}>
                               Name
                             </th>
-                            <th style={{ textAlign: "right", padding: 6 }}>
+                            <th style={{ padding: 8, textAlign: "right" }}>
                               Amount
                             </th>
                           </tr>
                         </thead>
+
                         <tbody>
-                          {selectedGroupData.AllowancesDeductions.filter(
-                            (a) => a.Type === "Deduction"
+                          {/* Deductions */}
+                          {selectedGroupData?.AllowancesDeductions?.filter(
+                            (d) => isDeduction(d.Type)
                           ).map((d) => (
                             <tr key={d.AD_Id}>
-                              <td style={{ padding: 6 }}>{d.Name}</td>
-                              <td style={{ textAlign: "right", padding: 6 }}>
-                                ₹{d.CalculatedAmount}
+                              <td style={{ padding: 8 }}>{d.Name}</td>
+                              <td style={{ padding: 8, textAlign: "right" }}>
+                                ₹{getDeductionAmount(d)}
                               </td>
                             </tr>
                           ))}
+
+                          {/* Total Deduction */}
                           <tr style={{ borderTop: "2px solid #999" }}>
-                            <td style={{ fontWeight: "bold", padding: 6 }}>
+                            <td style={{ padding: 8, fontWeight: 700 }}>
                               Total Deduction:
                             </td>
                             <td
                               style={{
+                                padding: 8,
                                 textAlign: "right",
-                                fontWeight: "bold",
-                                padding: 6,
+                                fontWeight: 700,
                               }}
                             >
                               ₹
-                              {selectedGroupData.AllowancesDeductions.filter(
-                                (a) => a.Type === "Deduction"
-                              ).reduce((sum, a) => sum + a.CalculatedAmount, 0)}
+                              {(selectedGroupData?.AllowancesDeductions || [])
+                                .filter((d) => isDeduction(d.Type))
+                                .reduce(
+                                  (sum, d) => sum + getDeductionAmount(d),
+                                  0
+                                )}
                             </td>
                           </tr>
                         </tbody>
@@ -447,21 +440,18 @@ export default function DesignationLinking() {
             )}
           </div>
 
-          {/* RIGHT COLUMN - Designation & Employees */}
+          {/* ===========================================
+              RIGHT COLUMN — EMPLOYEES LIST
+          ============================================ */}
           <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
-            <label style={{ fontWeight: "600" }}>Designation</label>
+            <label style={{ fontWeight: 600 }}>Designation</label>
             <select
               value={designation}
               onChange={(e) => {
                 setDesignation(e.target.value);
                 setSelectedEmployees([]);
               }}
-              style={{
-                padding: 8,
-                borderRadius: 4,
-                border: "1px solid #ccc",
-                background: "#fff",
-              }}
+              style={{ padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
             >
               <option value="">-- Select Designation --</option>
               {designations.map((desig) => (
@@ -478,122 +468,62 @@ export default function DesignationLinking() {
                   style={{
                     background: "#fff",
                     borderRadius: 10,
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                     padding: 20,
                     height: 350,
                     overflowY: "auto",
                   }}
                 >
-                  <h4
-                    style={{
-                      fontWeight: "600",
-                      color: "#2a4365",
-                      marginBottom: 20,
-                      fontSize: "18px",
-                    }}
-                  >
-                    Employees
-                  </h4>
+                  <h4 style={{ marginBottom: 20 }}>Employees</h4>
 
-                  <div
-                    style={{
-                      border: "1px solid #ccc",
-                      borderRadius: 4,
-                      padding: 10,
-                      background: "#fff",
-                      marginTop: 8,
-                    }}
-                  >
+                  <div style={{ padding: 10 }}>
                     {filteredEmployees.map((emp) => {
-                      const alreadyAssignedGroup = getGroupNameById(
-                        emp.SG_Link_ID
-                      );
-                      const isAssignedToCurrentSG =
+                      const assignedGroup = getGroupNameById(emp.SG_Link_ID);
+                      const isAssignedToCurrent =
                         emp.SG_Link_ID &&
                         parseInt(emp.SG_Link_ID) === parseInt(salaryGroup);
-                      const isDifferentSG =
-                        emp.SG_Link_ID &&
-                        parseInt(emp.SG_Link_ID) !== parseInt(salaryGroup);
 
                       return (
                         <div
-                          key={emp.Id || emp.EmployeeId}
+                          key={emp.FacilityMemberId}
                           style={{
                             marginBottom: 8,
-                            opacity: isAssignedToCurrentSG ? 0.9 : 1,
-                            backgroundColor: isAssignedToCurrentSG
+                            backgroundColor: isAssignedToCurrent
                               ? "#e6fffa"
                               : "transparent",
+                            padding: "5px 8px",
                             borderRadius: 6,
-                            padding: "4px 8px",
-                            transition: "background 0.3s ease", // 👈 this line
                           }}
                         >
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 4,
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            <label
+                          <label>
+                            <input
+                              type="checkbox"
+                              value={emp.FacilityMemberId}
+                              checked={
+                                selectedEmployees.includes(
+                                  emp.FacilityMemberId
+                                ) || isAssignedToCurrent
+                              }
+                              disabled={isAssignedToCurrent}
+                              onChange={() =>
+                                toggleEmployee(emp.FacilityMemberId)
+                              }
+                              style={{ marginRight: 6 }}
+                            />
+                            {emp.EmployeeName}
+                          </label>
+
+                          {emp.SG_Link_ID && (
+                            <span
+                              onClick={() => handleGroupClick(emp.SG_Link_ID)}
                               style={{
-                                display: "flex",
-                                alignItems: "center",
-                                cursor: isAssignedToCurrentSG
-                                  ? "not-allowed"
-                                  : "pointer",
+                                marginLeft: 8,
+                                color: "#0f766e",
+                                cursor: "pointer",
                               }}
                             >
-                              <input
-                                type="checkbox"
-                                value={emp.FacilityMemberId}
-                                checked={
-                                  selectedEmployees.includes(
-                                    emp.FacilityMemberId
-                                  ) || isAssignedToCurrentSG
-                                }
-                                disabled={isAssignedToCurrentSG}
-                                onChange={() =>
-                                  toggleEmployee(emp.FacilityMemberId)
-                                }
-                                style={{
-                                  marginRight: 8,
-                                  cursor: isAssignedToCurrentSG
-                                    ? "not-allowed"
-                                    : "pointer",
-                                }}
-                              />
-                              {emp.EmployeeName}
-                            </label>
-
-                            {emp.SG_Link_ID && (
-                              <span
-                                onClick={() => handleGroupClick(emp.SG_Link_ID)}
-                                style={{
-                                  color: "#0f766e",
-                                  fontWeight: 600,
-                                  cursor: "pointer",
-                                  marginTop: -7,
-                                  marginLeft: 4,
-                                  position: "relative",
-                                  transition: "all 0.25s ease-in-out",
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.target.style.color = "#0d9488";
-                                  e.target.style.textDecoration = "underline";
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.target.style.color = "#0f766e";
-                                  e.target.style.textDecoration = "none";
-                                }}
-                                title="Click to view Salary Group details"
-                              >
-                                ({alreadyAssignedGroup})
-                              </span>
-                            )}
-                          </div>
+                              ({assignedGroup})
+                            </span>
+                          )}
                         </div>
                       );
                     })}
@@ -603,7 +533,7 @@ export default function DesignationLinking() {
           </div>
         </div>
 
-        {/* Save Button */}
+        {/* SAVE BUTTON */}
         <div style={{ textAlign: "center", marginTop: 30 }}>
           <button
             onClick={handleSave}
@@ -620,22 +550,17 @@ export default function DesignationLinking() {
               border: "none",
               borderRadius: 8,
               fontSize: 16,
-              fontWeight: 600,
-              cursor:
-                isSaving || !salaryGroup || !designation || !hasSelectedEmps
-                  ? "not-allowed"
-                  : "pointer",
-              transition: "all 0.3s ease",
-              boxShadow:
-                isSaving || !salaryGroup || !designation || !hasSelectedEmps
-                  ? "none"
-                  : "0 3px 8px rgba(66,153,225,0.3)",
+              cursor: "pointer",
             }}
           >
             {isSaving ? "Saving..." : "Save"}
           </button>
         </div>
       </div>
+
+      {/* ======================================================
+          POPUP VIEW (SALARY GROUP DETAILS)
+      ====================================================== */}
       {popupVisible && popupGroup && (
         <div
           style={{
@@ -662,179 +587,111 @@ export default function DesignationLinking() {
               width: "92%",
               maxHeight: "85vh",
               overflowY: "auto",
-              boxShadow: "0 8px 25px rgba(0,0,0,0.2)",
             }}
           >
-            <h2 style={{ marginBottom: 15, color: "#1e3a8a", fontWeight: 700 }}>
+            <h2 style={{ marginBottom: 15 }}>
               Salary Group → {popupGroup.SalaryGroup}
             </h2>
 
             {/* FIXED SALARY ONLY VIEW */}
             {popupGroup.FixedSalary > 0 &&
             popupGroup.AllowancesDeductions.length === 0 ? (
-              <div>
-                <table
+              <table style={{ width: "100%" }}>
+                <tbody>
+                  <tr>
+                    <td>Fixed Salary</td>
+                    <td style={{ textAlign: "right" }}>
+                      ₹{popupGroup.FixedSalary}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <b>Total Allowance:</b>
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      <b>₹{popupGroup.FixedSalary}</b>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            ) : (
+              /* NORMAL ALLOWANCE + DEDUCTION VIEW */
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                {/* Allowance Box */}
+                <div
                   style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    marginBottom: 20,
+                    flex: 1,
+                    marginRight: 20,
+                    background: "#E8FBE8",
+                    borderRadius: 12,
+                    padding: "0 0 10px 0",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
                   }}
                 >
-                  <thead>
-                    <tr>
-                      <th
-                        colSpan={2}
-                        style={{
-                          background: "#d1fae5",
-                          padding: 10,
-                          textAlign: "center",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        Allowance
-                      </th>
-                    </tr>
-                    <tr>
-                      <th style={{ textAlign: "left", padding: 8 }}>Name</th>
-                      <th style={{ textAlign: "right", padding: 8 }}>Amount</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    <tr>
-                      <td style={{ padding: 8 }}>Fixed Salary</td>
-                      <td style={{ textAlign: "right", padding: 8 }}>
-                        ₹{popupGroup.FixedSalary}
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <td
-                        colSpan={2}
-                        style={{
-                          borderBottom: "2px solid #1e3a8a",
-                          paddingTop: 15,
-                        }}
-                      ></td>
-                    </tr>
-
-                    <tr>
-                      <td
-                        style={{
-                          fontWeight: "bold",
-                          padding: 8,
-                          textAlign: "left",
-                          color: "#1e3a8a",
-                        }}
-                      >
-                        Total Allowance:
-                      </td>
-                      <td
-                        style={{
-                          fontWeight: "bold",
-                          padding: 8,
-                          textAlign: "right",
-                          color: "#1e3a8a",
-                        }}
-                      >
-                        ₹{popupGroup.FixedSalary}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              /* BASE SALARY + NORMAL SG VIEW */
-              <div style={{ display: "flex", gap: 20 }}>
-                {/* ALLOWANCE TABLE */}
-                <div style={{ flex: 1 }}>
-                  <table
+                  <div
                     style={{
-                      width: "100%",
-                      borderCollapse: "collapse",
-                      marginBottom: 20,
+                      background: "#C6F6D5",
+                      padding: "10px 0",
+                      textAlign: "center",
+                      fontWeight: 700,
+                      borderTopLeftRadius: 12,
+                      borderTopRightRadius: 12,
                     }}
                   >
+                    Allowance
+                  </div>
+
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
                       <tr>
-                        <th
-                          colSpan={2}
-                          style={{
-                            background: "#d1fae5",
-                            padding: 10,
-                            textAlign: "center",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          Allowance
-                        </th>
-                      </tr>
-                      <tr>
-                        <th style={{ textAlign: "left", padding: 8 }}>Name</th>
-                        <th style={{ textAlign: "right", padding: 8 }}>
+                        <th style={{ padding: 8, textAlign: "left" }}>Name</th>
+                        <th style={{ padding: 8, textAlign: "right" }}>
                           Amount
                         </th>
                       </tr>
                     </thead>
 
                     <tbody>
-                      {/* BASE SALARY */}
+                      {/* Base Salary */}
                       {popupGroup.BaseSalary > 0 && (
                         <tr>
                           <td style={{ padding: 8 }}>Base Salary</td>
-                          <td style={{ textAlign: "right", padding: 8 }}>
+                          <td style={{ padding: 8, textAlign: "right" }}>
                             ₹{popupGroup.BaseSalary}
                           </td>
                         </tr>
                       )}
 
-                      {/* NORMAL ALLOWANCES */}
-                      {popupGroup.AllowancesDeductions.filter(
-                        (a) => a.Type === "Allowance"
+                      {/* Allowances */}
+                      {popupGroup.AllowancesDeductions.filter((a) =>
+                        isAllowance(a.Type)
                       ).map((a) => (
                         <tr key={a.AD_Id}>
                           <td style={{ padding: 8 }}>{a.Name}</td>
-                          <td style={{ textAlign: "right", padding: 8 }}>
-                            ₹{a.CalculatedAmount}
+                          <td style={{ padding: 8, textAlign: "right" }}>
+                            ₹{getAllowanceAmount(a)}
                           </td>
                         </tr>
                       ))}
 
-                      <tr>
-                        <td
-                          colSpan={2}
-                          style={{
-                            borderBottom: "2px solid #1e3a8a",
-                            paddingTop: 15,
-                          }}
-                        ></td>
-                      </tr>
-
-                      {/* TOTAL ALLOWANCE */}
-                      <tr>
-                        <td
-                          style={{
-                            fontWeight: "bold",
-                            padding: 8,
-                            color: "#1e3a8a",
-                          }}
-                        >
+                      {/* Total */}
+                      <tr style={{ borderTop: "2px solid #999" }}>
+                        <td style={{ padding: 8, fontWeight: 700 }}>
                           Total Allowance:
                         </td>
                         <td
                           style={{
-                            fontWeight: "bold",
                             padding: 8,
                             textAlign: "right",
-                            color: "#1e3a8a",
+                            fontWeight: 700,
                           }}
                         >
                           ₹
                           {(
                             (popupGroup.BaseSalary || 0) +
-                            popupGroup.AllowancesDeductions.filter(
-                              (a) => a.Type === "Allowance"
-                            ).reduce((sum, a) => sum + a.CalculatedAmount, 0)
+                            popupGroup.AllowancesDeductions.filter((a) =>
+                              isAllowance(a.Type)
+                            ).reduce((sum, a) => sum + getAllowanceAmount(a), 0)
                           ).toLocaleString()}
                         </td>
                       </tr>
@@ -842,83 +699,68 @@ export default function DesignationLinking() {
                   </table>
                 </div>
 
-                {/* DEDUCTION TABLE */}
-                <div style={{ flex: 1 }}>
-                  <table
+                {/* Deduction Box */}
+                <div
+                  style={{
+                    flex: 1,
+                    background: "#FFECEC",
+                    borderRadius: 12,
+                    padding: "0 0 10px 0",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+                  }}
+                >
+                  <div
                     style={{
-                      width: "100%",
-                      borderCollapse: "collapse",
-                      marginBottom: 20,
+                      background: "#FED7D7",
+                      padding: "10px 0",
+                      textAlign: "center",
+                      fontWeight: 700,
+                      borderTopLeftRadius: 12,
+                      borderTopRightRadius: 12,
                     }}
                   >
+                    Deduction
+                  </div>
+
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
                       <tr>
-                        <th
-                          colSpan={2}
-                          style={{
-                            background: "#fee2e2",
-                            padding: 10,
-                            textAlign: "center",
-                            fontWeight: "bold",
-                            color: "#b91c1c",
-                          }}
-                        >
-                          Deduction
-                        </th>
-                      </tr>
-                      <tr>
-                        <th style={{ textAlign: "left", padding: 8 }}>Name</th>
-                        <th style={{ textAlign: "right", padding: 8 }}>
+                        <th style={{ padding: 8, textAlign: "left" }}>Name</th>
+                        <th style={{ padding: 8, textAlign: "right" }}>
                           Amount
                         </th>
                       </tr>
                     </thead>
 
                     <tbody>
-                      {popupGroup.AllowancesDeductions.filter(
-                        (a) => a.Type === "Deduction"
+                      {/* Deductions */}
+                      {popupGroup.AllowancesDeductions.filter((d) =>
+                        isDeduction(d.Type)
                       ).map((d) => (
                         <tr key={d.AD_Id}>
                           <td style={{ padding: 8 }}>{d.Name}</td>
-                          <td style={{ textAlign: "right", padding: 8 }}>
-                            ₹{d.CalculatedAmount}
+                          <td style={{ padding: 8, textAlign: "right" }}>
+                            ₹{getDeductionAmount(d)}
                           </td>
                         </tr>
                       ))}
 
-                      <tr>
-                        <td
-                          colSpan={2}
-                          style={{
-                            borderBottom: "2px solid #b91c1c",
-                            paddingTop: 15,
-                          }}
-                        ></td>
-                      </tr>
-
-                      {/* TOTAL DEDUCTION */}
-                      <tr>
-                        <td
-                          style={{
-                            fontWeight: "bold",
-                            padding: 8,
-                            color: "#b91c1c",
-                          }}
-                        >
+                      {/* Total Deduction */}
+                      <tr style={{ borderTop: "2px solid #999" }}>
+                        <td style={{ padding: 8, fontWeight: 700 }}>
                           Total Deduction:
                         </td>
                         <td
                           style={{
-                            fontWeight: "bold",
                             padding: 8,
                             textAlign: "right",
-                            color: "#b91c1c",
+                            fontWeight: 700,
                           }}
                         >
                           ₹
-                          {popupGroup.AllowancesDeductions.filter(
-                            (a) => a.Type === "Deduction"
-                          ).reduce((sum, d) => sum + d.CalculatedAmount, 0)}
+                          {popupGroup.AllowancesDeductions.filter((d) =>
+                            isDeduction(d.Type)
+                          ).reduce((sum, d) => sum + getDeductionAmount(d), 0)}
                         </td>
                       </tr>
                     </tbody>
@@ -931,13 +773,11 @@ export default function DesignationLinking() {
               <button
                 onClick={() => setPopupVisible(false)}
                 style={{
+                  padding: "10px 22px",
                   background: "#2563eb",
                   color: "#fff",
-                  padding: "10px 22px",
                   borderRadius: 8,
-                  border: "none",
                   cursor: "pointer",
-                  fontWeight: 600,
                 }}
               >
                 Close

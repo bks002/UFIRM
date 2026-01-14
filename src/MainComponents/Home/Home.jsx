@@ -8,14 +8,16 @@ import { fetchSubCatTaskCounts } from "../../Services/DashboardServices";
 import { getAttendance } from '../../Services/AttendanceService';
 import { getTaskPriorityCountDash } from "../../Services/TaskPriorityService";
 import { getAllExpenses } from "../../Services/ExpenseReportService";
-import { Link, useHistory} from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
+import DashboardLoader from './Dashboardloader';
 
 import { Chart } from 'primereact/chart';
 
 const Home = ({ PropertyId }) => {
     const [complains, setComplains] = useState([]);
     const [complainsCnt, setComplainsCnt] = useState(0);
-const history = useHistory();
+    const history = useHistory();
+    const [isLoading, setIsLoading] = useState(false);
 
     const [totalFlats, setTotalFlats] = useState([]);
     const [totalFlatsCnt, setTotalFlatsCnt] = useState(0);
@@ -178,7 +180,7 @@ const history = useHistory();
 
     const getAttendanceData = useCallback(async (model, initialDate, finalDate) => {
         try {
-            const data = await getAttendance(model, initialDate, finalDate); // not 'resp'
+            const data = await getAttendance(model[0].PropertyId, initialDate, finalDate); // not 'resp'
             if (!Array.isArray(data)) {
                 throw new Error("Attendance data is not an array");
             }
@@ -214,20 +216,28 @@ const history = useHistory();
     };
 
     const getDates = async (initialDate, finalDate) => {
-    setInitialDate(initialDate);
-    setFinalDate(finalDate);
+        setInitialDate(initialDate);
+        setFinalDate(finalDate);
 
-    const model = getModel();
+        const model = getModel();
 
-    await Promise.all([
-        loadSubCatData(model[0].PropertyId, initialDate, finalDate),
-        taskStatusCount(model, initialDate, finalDate),
-        taskPriorityCount(model, initialDate, finalDate),
-        getAssetCount(model, initialDate, finalDate),
-        getAttendanceData(model, initialDate, finalDate),
-        getExpenseData(model, initialDate, finalDate)
-    ]);
-};
+        setIsLoading(true); // 🔥 START LOADER
+
+        try {
+            await Promise.all([
+                loadSubCatData(model[0].PropertyId, initialDate, finalDate),
+                taskStatusCount(model, initialDate, finalDate),
+                taskPriorityCount(model, initialDate, finalDate),
+                getAssetCount(model, initialDate, finalDate),
+                getAttendanceData(model, initialDate, finalDate),
+                getExpenseData(model, initialDate, finalDate)
+            ]);
+        } catch (error) {
+            console.error("Dashboard refresh error:", error);
+        } finally {
+            setIsLoading(false); // ✅ STOP LOADER
+        }
+    };
 
     const manageDashboardCnt = useCallback(async (model) => {
         const resp = await apiProvider.manageDashboardCnt(model, 'R');
@@ -253,304 +263,429 @@ const history = useHistory();
     }, []);
 
     useEffect(() => {
-        const model = getModel();
-        manageDashboardCnt(model);
-    }, []);
+        if (!PropertyId) return;
+
+        const loadOnPropertyChange = async () => {
+            const model = getModel();
+            setIsLoading(true);
+
+            try {
+                await Promise.all([
+                    manageDashboardCnt(model),
+
+                    // reload rest dashboard data also
+                    taskStatusCount(model, initialDate, finalDate),
+                    taskPriorityCount(model, initialDate, finalDate),
+                    getAssetCount(model, initialDate, finalDate),
+                    getAttendanceData(model, initialDate, finalDate),
+                    getExpenseData(model, initialDate, finalDate),
+                    loadSubCatData(model[0].PropertyId, initialDate, finalDate)
+                ]);
+            } catch (error) {
+                console.error("Error on property change:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadOnPropertyChange();
+    }, [PropertyId]); // 🔥 PROPERTY CHANGE TRIGGER
+
+    const hasData = (arr = []) => arr.some(i => i.Value > 0);
+    const NoData = ({ label }) => (
+        <div className="d-flex align-items-center justify-content-center text-muted"
+            style={{ height: "220px", fontSize: "14px" }}>
+            No data available for {label}
+        </div>
+    );
+    const hasSubCatData = (id) =>
+        subCategoryTaskData[id] &&
+        Object.values(subCategoryTaskData[id]).some(v => v > 0);
+
 
     return (
-        <div className="content-wrapper mt-2">
-            <section className="content px-2">
-                <div className="container-fluid">
+        <>
+            {isLoading && <DashboardLoader />}
+            <div className="content-wrapper mt-2">
+                <section className="content px-2">
+                    <div className="container-fluid">
 
-                    {/* ===== First Row: 4 Cards ===== */}
-                    <div className="row mt-3">
+                        {/* ===== First Row: 4 Cards ===== */}
+                        <div className="row mt-3">
 
-            {/* 1. Tasks Pie Chart */}
-            <div className="col-md-3">
-                
-                <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}  >
-                    <h5 className="text-center">Tasks</h5>
-                    <Chart
-                        type="pie"
-                        data={{
-                            labels: taskStatus.map(t => `${t.Title} (${t.Value})`),
-                            // Link: `/Account/App/PlannerTask?status=${taskStatus.map(t => t.Title)}`,
-                            datasets: [
-                                {
-                                    data: taskStatus.map(t => t.Value),
-                                    backgroundColor: ['#42A5F5', '#66BB6A', '#EF5350']
-                                }
-                            ]
-                        }}
-                        options={{
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: { legend: { position: 'bottom' } },
-                            onClick: (e, elements) => {
-                                if (elements.length > 0) {
-                                    const chart = elements[0].element.$context.chart;
-                                    const index = elements[0].index;
-                                    const label = chart.data.labels[index].split(' ')[0]; // Extract status from label
-                                    // Navigate to the desired URL
-                                    history.push(`/Account/App/PlannerTask?status=${label}&fromDate=${initialDate}&toDate=${finalDate}`);
-                                }
-                            }
+                            {/* 1. Tasks Pie Chart */}
+                            <div className="col-md-3">
 
-                                    }}
-                                    style={{ width: "100%", height: "220px" }}
+                                <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}  >
+                                    <h5 className="text-center">Tasks</h5>
+                                    {hasData(taskStatus) ? (
+                                        <Chart
+                                            type="pie"
+                                            data={{
+                                                labels: taskStatus.map(t => `${t.Title} (${t.Value})`),
+                                                // Link: `/Account/App/PlannerTask?status=${taskStatus.map(t => t.Title)}`,
+                                                datasets: [
+                                                    {
+                                                        data: taskStatus.map(t => t.Value),
+                                                        backgroundColor: ['#42A5F5', '#66BB6A', '#EF5350']
+                                                    }
+                                                ]
+                                            }}
+                                            options={{
+                                                responsive: true,
+                                                maintainAspectRatio: false,
+                                                plugins: { legend: { position: 'bottom' } },
+                                                onClick: (e, elements) => {
+                                                    if (elements.length > 0) {
+                                                        const chart = elements[0].element.$context.chart;
+                                                        const index = elements[0].index;
+                                                        const label = chart.data.labels[index].split(' ')[0]; // Extract status from label
+                                                        // Navigate to the desired URL
+                                                        history.push(`/Account/App/PlannerTask?status=${label}&fromDate=${initialDate}&toDate=${finalDate}`);
+                                                    }
+                                                }
 
-                                />
+                                            }}
+                                            style={{ width: "100%", height: "220px" }}
 
+                                        />
+                                    ) : (
+                                        <NoData label="this period" />
+                                    )}
+
+                                </div>
                             </div>
-                        </div>
 
-                        {/* 2. Priority Tasks Table */}
-                        <div className="col-md-3">
-                            <Link to="/Account/App/PlannerTask" style={{ textDecoration: 'none', color: 'inherit' }}>
-                                <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
-                                    <h5 className="text-center">Priority Tasks</h5>
-                                    <div style={{ overflowX: "auto", maxHeight: "220px" }}>
-                                        <table className="table table-bordered table-striped">
-                                            <thead>
-                                                <tr>
-                                                    <th>#</th>
-                                                    <th>Title</th>
-                                                    <th>Value</th>
-                                                </tr>
+                            {/* 2. Priority Tasks Table */}
+                            <div className="col-md-3">
+                                <Link to="/Account/App/PlannerTask" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
+                                        <h5 className="text-center">Priority Tasks</h5>
+                                        <div style={{ overflowX: "auto", maxHeight: "220px" }}>
+                                            <table
+                                                className="table table-bordered table-striped"
+                                                style={{ fontSize: "12px" }}
+                                            >
 
-                                            </thead>
-
-                                            <tbody>
-                                                {taskPriority.map((p, index) => (
-                                                    <tr key={index}>
-                                                        <td>{index + 1}</td>
-                                                        <td>{p.Title}</td>
-                                                        <td>{p.Value}</td>
+                                                <thead>
+                                                    <tr>
+                                                        <th style={{ padding: "6px" }}>#</th>
+                                                        <th style={{ padding: "6px" }}>Title</th>
+                                                        <th style={{ padding: "6px" }}>Value</th>
                                                     </tr>
+                                                </thead>
 
-                                                ))
+                                                <tbody>
+                                                    {taskPriority.map((p, index) => (
+                                                        <tr key={index}>
+                                                            <td style={{ padding: "6px" }}>{index + 1}</td>
+                                                            <td style={{ padding: "6px" }}>{p.Title}</td>
+                                                            <td style={{ padding: "6px" }}>{p.Value}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
 
-                                                }
-                                            </tbody>
 
-                                        </table>
+                                            </table>
 
+                                        </div>
                                     </div>
-                                </div>
-                            </Link>
-                        </div>
-
-                        {/* 3. Total Assets Bar Chart */}
-                        <div className="col-md-3">
-                            <Link to="/Account/App/ServiceRecords" style={{ textDecoration: 'none', color: 'inherit' }}>
-                                <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
-                                    <h5 className="text-center">Total Assets</h5>
-                                    <Chart
-                                        type="bar"
-                                        data={{
-                                            labels: assetCount.map(a => a.Title),
-                                            datasets: [
-                                                {
-                                                    label: 'Assets',
-                                                    data: assetCount.map(a => a.Value),
-                                                    backgroundColor: ['#42A5F5', '#66BB6A', '#FFA726', '#AB47BC']
-                                                }
-                                            ]
-                                        }}
-                                        options={{
-                                            responsive: true,
-                                            maintainAspectRatio: false,
-                                            plugins: { legend: { display: false } }
-
-
-                                        }}
-                                        style={{ width: "100%", height: "220px" }}
-                                    />
-                                </div>
-                            </Link>
-                        </div>
-
-                        {/* 4. Complains Donut Chart */}
-                        <div className="col-md-3">
-                            <Link to="/Account/App/TicketComplains" style={{ textDecoration: 'none', color: 'inherit' }}>
-                                <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
-                                    <h5 className="text-center">Complains</h5>
-                                    <Chart
-                                        type="doughnut"
-                                        data={{
-                                            labels: complains.map(c => `${c.Title} (${c.Value})`),
-                                            datasets: [
-                                                {
-                                                    data: complains.map(c => c.Value),
-                                                    backgroundColor: ['#42A5F5', '#66BB6A', '#FFA726', '#AB47BC']
-                                                }
-                                            ]
-                                        }}
-                                        options={{
-                                            responsive: true,
-                                            maintainAspectRatio: false,
-                                            plugins: {
-                                                legend: {
-                                                    position: 'bottom'
-                                                }
-                                            }
-
-                                        }}
-                                        style={{ width: "100%", height: "220px" }}
-                                    />
-                                </div>
-                            </Link>
-                        </div>
-
-                    </div>
-
-                    {/* ===== Chart Navigator ===== */}
-                    <section className="content px-2">
-                        <div className="container-fluid card p-2 shadow-sm">
-                            <ChartNavigator onPeriodChange={getDates} />
-                        </div>
-                    </section>
-
-                    {/* ===== Second Row: 3 Cards ===== */}
-                    <div className="row mt-3">
-
-                        {/* 1. Attendance Bar Chart */}
-                        <div className="col-md-3">
-                            <Link to="/Account/App/Attendance" style={{ textDecoration: 'none', color: 'inherit' }}>
-                                <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
-                                    <h5 className="text-center">Attendance</h5>
-                                    <Chart
-                                        type="bar"
-                                        data={{
-                                            labels: attendance.map(a => a.Title),
-                                            datasets: [
-                                                {
-                                                    label: 'Employees',
-                                                    data: attendance.map(a => a.Value),
-                                                    backgroundColor: ['#42A5F5', '#EF5350', '#FFCA28']
-                                                }
-                                            ]
-                                        }}
-                                        options={{
-                                            responsive: true,
-                                            maintainAspectRatio: false,
-                                            plugins: { legend: { display: false } }
-
-                                        }}
-                                        style={{ width: "100%", height: "220px" }}
-                                    />
-                                </div>
-                            </Link>
-                        </div>
-
-                        {/* 2. Expense Pie Chart */}
-                        <div className="col-md-3">
-                            <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
-                                <h5 className="text-center">Expenses</h5>
-                                <Chart
-                                    type="pie"
-                                    data={{
-                                        labels: expenses.map(e => e.ExpenseSubType),   // SubType ko label banaya
-                                        datasets: [
-                                            {
-                                                data: expenses.map(e => e.TotalAmount),   // TotalAmount ko value banaya
-                                                backgroundColor: ["#42A5F5", "#66BB6A", "#FFA726", "#AB47BC"],
-                                                borderWidth: 1,
-                                            },
-                                        ],
-                                    }}
-                                    options={{
-                                        responsive: true,
-                                        maintainAspectRatio: false,
-                                        plugins: {
-                                            legend: { position: "bottom" },
-                                        },
-                                    }}
-                                    style={{ width: "100%", height: "220px" }}
-                                />
-
-
-
-                            </div>
-                        </div>
-
-                        <div className="col-md-3">
-                            <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
-                                <h5 className="text-center">Lift</h5>
-                                <Link to="/Account/App/PlannerTask" style={{ textDecoration: "none" }}>
-                                    <Chart
-                                        type="line"
-                                        data={{
-                                            labels: ["Actionable", "Completed", "Pending"],
-                                            datasets: [
-                                                {
-                                                    label: "Lift Tasks",
-                                                    data: [
-                                                        subCategoryTaskData[4] ? subCategoryTaskData[4].Actionable || 0 : 0,
-                                                        subCategoryTaskData[4] ? subCategoryTaskData[4].Completed || 0 : 0,
-                                                        subCategoryTaskData[4] ? subCategoryTaskData[4].Pending || 0 : 0
-                                                    ],
-                                                    fill: false,
-                                                    borderColor: "#42A5F5",
-                                                    tension: 0.4
-                                                }
-                                            ]
-                                        }}
-                                        options={{
-                                            responsive: true,
-                                            maintainAspectRatio: false,
-                                            plugins: { legend: { display: false } },
-                                            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-                                        }}
-                                        style={{ width: "100%", height: "220px" }}
-
-                                    />
                                 </Link>
                             </div>
-                        </div>
 
-                        {/* 3. DG Line Chart */}
-                        <div className="col-md-3">
-                            <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
-                                <h5 className="text-center">DG</h5>
-                                <Link to="/Account/App/PlannerTask" style={{ textDecoration: "none" }}>
-                                    <Chart
-                                        type="line"
-                                        data={{
-                                            labels: ["Actionable", "Completed", "Pending"],
-                                            datasets: [
-                                                {
-                                                    label: "DG Tasks",
-                                                    data: [
-                                                        subCategoryTaskData[69] ? subCategoryTaskData[69].Actionable || 0 : 0,
-                                                        subCategoryTaskData[69] ? subCategoryTaskData[69].Completed || 0 : 0,
-                                                        subCategoryTaskData[69] ? subCategoryTaskData[69].Pending || 0 : 0
-                                                    ],
-                                                    fill: false,
-                                                    borderColor: "#EF5350",
-                                                    tension: 0.4
-                                                }
-                                            ]
-                                        }}
-                                        options={{
-                                            responsive: true,
-                                            maintainAspectRatio: false,
-                                            plugins: { legend: { display: false } },
-                                            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-                                        }}
-                                        style={{ width: "100%", height: "220px" }}
+                            {/* 3. Total Assets Bar Chart */}
+                            <div className="col-md-3">
+                                <Link to="/Account/App/ServiceRecords" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
+                                        <h5 className="text-center">Total Assets</h5>
+                                        {hasData(assetCount) ? (
+                                            <Chart
+                                                type="bar"
+                                                data={{
+                                                    labels: assetCount.map(a => a.Title),
+                                                    datasets: [
+                                                        {
+                                                            label: 'Assets',
+                                                            data: assetCount.map(a => a.Value),
+                                                            backgroundColor: ['#42A5F5', '#66BB6A', '#FFA726', '#AB47BC']
+                                                        }
+                                                    ]
+                                                }}
+                                                options={{
+                                                    responsive: true,
+                                                    maintainAspectRatio: false,
+                                                    plugins: { legend: { display: false } }
 
-                                    />
+
+                                                }}
+                                                style={{ width: "100%", height: "220px" }}
+                                            />
+                                        ) : (
+                                            <NoData label="this period" />
+                                        )}
+                                    </div>
                                 </Link>
                             </div>
+
+                            {/* 4. Complains Donut Chart */}
+                            <div className="col-md-3">
+                                <Link to="/Account/App/TicketComplains" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
+                                        <h5 className="text-center">Complains</h5>
+                                        {hasData(complains) ? (
+                                            <Chart
+                                                type="doughnut"
+                                                data={{
+                                                    labels: complains.map(c => `${c.Title} (${c.Value})`),
+                                                    datasets: [
+                                                        {
+                                                            data: complains.map(c => c.Value),
+                                                            backgroundColor: ['#42A5F5', '#66BB6A', '#FFA726', '#AB47BC']
+                                                        }
+                                                    ]
+                                                }}
+                                                options={{
+                                                    responsive: true,
+                                                    maintainAspectRatio: false,
+                                                    plugins: {
+                                                        legend: {
+                                                            position: 'bottom'
+                                                        }
+                                                    }
+
+                                                }}
+                                                style={{ width: "100%", height: "220px" }}
+                                            />
+                                        ) : (
+                                            <NoData label="this period" />
+                                        )}
+                                    </div>
+                                </Link>
+                            </div>
+
                         </div>
 
+                        {/* ===== Chart Navigator ===== */}
+                        <section className="content px-2">
+                            <div className="container-fluid card p-2 shadow-sm">
+                                <ChartNavigator onPeriodChange={getDates} />
+                            </div>
+                        </section>
+
+                        {/* ===== Second Row: 3 Cards ===== */}
+                        <div className="row mt-3">
+
+                            {/* 1. Attendance Donut Chart */}
+                            <div className="col-md-3">
+                                <Link to="/Account/App/Attendance" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
+                                        <h5 className="text-center">Attendance</h5>
+                                        {hasData(attendance) ? (
+                                            <Chart
+                                                type="doughnut"
+                                                data={{
+                                                    labels: attendance.map(a => `${a.Title} (${a.Value})`),
+                                                    datasets: [
+                                                        {
+                                                            data: attendance.map(a => a.Value),
+                                                            backgroundColor: ['#42A5F5', '#EF5350', '#FFCA28']
+                                                        }
+                                                    ]
+                                                }}
+                                                options={{
+                                                    responsive: true,
+                                                    maintainAspectRatio: false,
+                                                    plugins: {
+                                                        legend: {
+                                                            position: 'bottom'
+                                                        }
+                                                    }
+                                                }}
+                                                style={{ width: "100%", height: "220px" }}
+                                            />
+                                        ) : (
+                                            <NoData label="this period" />
+                                        )}
+                                    </div>
+                                </Link>
+                            </div>
 
 
+                            {/* 2. Expense Bar Chart – Improved UI */}
+                            <div className="col-md-3">
+                                <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
+                                    <h5 className="text-center">Expenses</h5>
+                                    {expenses.length > 0 ? (
+                                        <Chart
+                                            type="bar"
+                                            data={{
+                                                labels: expenses.map(e =>
+                                                    e.ExpenseSubType.length > 20
+                                                        ? e.ExpenseSubType.match(/.{1,20}/g)
+                                                        : e.ExpenseSubType
+                                                ),
+                                                datasets: [
+                                                    {
+                                                        label: "Amount",
+                                                        data: expenses.map(e => e.TotalAmount),
+                                                        backgroundColor: ["#42A5F5",
+                                                            "#66BB6A",
+                                                            "#FFA726",
+                                                            "#EF5350",
+                                                            "#AB47BC",
+                                                            "#26C6DA",
+                                                            "#8D6E63",],
+                                                        borderRadius: 6,
+                                                        barThickness: 18,
+                                                    },
+                                                ],
+                                            }}
+                                            options={{
+                                                indexAxis: "y",
+                                                responsive: true,
+                                                maintainAspectRatio: false,
+
+                                                layout: {
+                                                    padding: {
+                                                        left: 10, // 👈 space for long labels
+                                                        right: 10,
+                                                        top: 10,
+                                                        bottom: 10,
+                                                    },
+                                                },
+
+                                                plugins: {
+                                                    legend: { display: false },
+                                                    tooltip: {
+                                                        callbacks: {
+                                                            label: (ctx) => {
+                                                                const val = ctx.raw;
+                                                                if (val >= 1e7) return `₹ ${(val / 1e7).toFixed(2)} Cr`;
+                                                                if (val >= 1e5) return `₹ ${(val / 1e5).toFixed(2)} L`;
+                                                                if (val >= 1e3) return `₹ ${(val / 1e3).toFixed(2)} K`;
+                                                                return `₹ ${val}`;
+                                                            },
+                                                        },
+                                                    },
+                                                },
+
+                                                scales: {
+                                                    x: {
+                                                        beginAtZero: true,
+                                                        ticks: {
+                                                            callback: (value) => {
+                                                                if (value >= 1e7) return `${value / 1e7} Cr`;
+                                                                if (value >= 1e5) return `${value / 1e5} L`;
+                                                                if (value >= 1e3) return `${value / 1e3} K`;
+                                                                return value;
+                                                            },
+                                                        },
+                                                        grid: { color: "#eee" },
+                                                    },
+                                                    y: {
+                                                        ticks: {
+                                                            font: { size: 10 },
+                                                            padding: 4,
+                                                        },
+                                                        grid: { display: false },
+                                                    },
+                                                },
+                                            }}
+                                            style={{
+                                                width: "100%",
+                                                height: Math.max(220, expenses.length * 35),
+                                            }}
+                                        />
+                                    ) : (
+                                        <NoData label="this period" />
+                                    )}
+                                </div>
+                            </div>
+
+
+                            <div className="col-md-3">
+                                <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
+                                    <h5 className="text-center">Lift</h5>
+                                    <Link to="/Account/App/PlannerTask" style={{ textDecoration: "none" }}>
+                                        {hasSubCatData(4) ? (
+                                            <Chart
+                                                type="line"
+                                                data={{
+                                                    labels: ["Actionable", "Completed", "Pending"],
+                                                    datasets: [
+                                                        {
+                                                            label: "Lift Tasks",
+                                                            data: [
+                                                                subCategoryTaskData[4] ? subCategoryTaskData[4].Actionable || 0 : 0,
+                                                                subCategoryTaskData[4] ? subCategoryTaskData[4].Completed || 0 : 0,
+                                                                subCategoryTaskData[4] ? subCategoryTaskData[4].Pending || 0 : 0
+                                                            ],
+                                                            fill: false,
+                                                            borderColor: "#42A5F5",
+                                                            tension: 0.4
+                                                        }
+                                                    ]
+                                                }}
+                                                options={{
+                                                    responsive: true,
+                                                    maintainAspectRatio: false,
+                                                    plugins: { legend: { display: false } },
+                                                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                                                }}
+                                                style={{ width: "100%", height: "220px" }}
+
+                                            />
+                                        ) : (
+                                            <NoData label="this period" />
+                                        )}
+                                    </Link>
+                                </div>
+                            </div>
+
+                            {/* 3. DG Line Chart */}
+                            <div className="col-md-3">
+                                <div className="card shadow-sm p-3" style={{ minHeight: "300px" }}>
+                                    <h5 className="text-center">DG</h5>
+                                    <Link to="/Account/App/PlannerTask" style={{ textDecoration: "none" }}>
+                                        {hasSubCatData(69) ? (
+                                            <Chart
+                                                type="line"
+                                                data={{
+                                                    labels: ["Actionable", "Completed", "Pending"],
+                                                    datasets: [
+                                                        {
+                                                            label: "DG Tasks",
+                                                            data: [
+                                                                subCategoryTaskData[69] ? subCategoryTaskData[69].Actionable || 0 : 0,
+                                                                subCategoryTaskData[69] ? subCategoryTaskData[69].Completed || 0 : 0,
+                                                                subCategoryTaskData[69] ? subCategoryTaskData[69].Pending || 0 : 0
+                                                            ],
+                                                            fill: false,
+                                                            borderColor: "#EF5350",
+                                                            tension: 0.4
+                                                        }
+                                                    ]
+                                                }}
+                                                options={{
+                                                    responsive: true,
+                                                    maintainAspectRatio: false,
+                                                    plugins: { legend: { display: false } },
+                                                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                                                }}
+                                                style={{ width: "100%", height: "220px" }}
+
+                                            />
+                                        ) : (
+                                            <NoData label="this period" />
+                                        )}
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </section>
-        </div>
+                </section>
+            </div>
+        </>
     );
 };
 

@@ -17,6 +17,20 @@ export default function SalaryGroupView({
   const [finalAddedGroups, setFinalAddedGroups] = useState([]);
   const [facilityMemberSalaryData, setFacilityMemberSalaryData] = useState([]);
 
+  /* -------------------------
+     Type helpers
+     A  => Allowance
+     OA => Other Allowance
+     D  => Deduction
+     OD => Other Deduction
+     ------------------------- */
+  const isAllowance = (t) => t === "A" || t === "OA";
+  const isDeduction = (t) => t === "D" || t === "OD";
+
+  // amount for allowances: prefer CalculatedAmount, fallback to FixedAmount
+  const getAllowanceAmount = (a) =>
+    Number(a?.CalculatedAmount) > 0 ? Number(a.CalculatedAmount) : Number(a?.FixedAmount || 0);
+
   useEffect(() => {
     if (propertyId) {
       getSalaryAllowancesByProperty(propertyId)
@@ -28,10 +42,8 @@ export default function SalaryGroupView({
   useEffect(() => {
     async function fetchData() {
       try {
-        const data = await getSalaryAllowancesByFacilityMember(
-          facilityMemberId
-        );
-        setFacilityMemberSalaryData(data.SalaryGroups || []);
+        const data = await getSalaryAllowancesByFacilityMember(facilityMemberId);
+        setFacilityMemberSalaryData(data?.SalaryGroups || []);
       } catch {
         setFacilityMemberSalaryData([]);
       }
@@ -42,16 +54,14 @@ export default function SalaryGroupView({
   // Auto-select already assigned salary group for the employee
   useEffect(() => {
     if (facilityMemberSalaryData.length > 0 && salaryGroups.length > 0) {
-      const assignedGroup = facilityMemberSalaryData[0]; // assuming one active group per employee
+      const assignedGroup = facilityMemberSalaryData[0]; // assume one active group per employee
       setSelectedGroupId(assignedGroup.SalaryGroup_ID);
     }
   }, [facilityMemberSalaryData, salaryGroups]);
 
   useEffect(() => {
     if (selectedGroupId) {
-      const group = salaryGroups.find(
-        (g) => g.SalaryGroup_ID === selectedGroupId
-      );
+      const group = salaryGroups.find((g) => g.SalaryGroup_ID === selectedGroupId);
       setSelectedGroupData(group || null);
     } else {
       setSelectedGroupData(null);
@@ -68,121 +78,121 @@ export default function SalaryGroupView({
       : [];
 
   const handleAdd = async () => {
-  if (!selectedGroupData) return;
+    if (!selectedGroupData) return;
 
-  if (
-    finalAddedGroups.some(
-      (g) => g.SalaryGroup_ID === selectedGroupData.SalaryGroup_ID
-    ) ||
-    safeArray(facilityMemberSalaryData).some(
-      (g) => g.SalaryGroup_ID === selectedGroupData.SalaryGroup_ID
-    )
-  ) {
-    alert("This salary group is already assigned.");
-    return;
-  }
+    if (
+      finalAddedGroups.some((g) => g.SalaryGroup_ID === selectedGroupData.SalaryGroup_ID) ||
+      safeArray(facilityMemberSalaryData).some((g) => g.SalaryGroup_ID === selectedGroupData.SalaryGroup_ID)
+    ) {
+      alert("This salary group is already assigned.");
+      return;
+    }
 
-  try {
-    await assignSalaryGroupToFacilityMember({
-      FacilityMemberIds: facilityMemberId,
-      SalaryGroup_ID: selectedGroupData.SalaryGroup_ID,
-    });
+    try {
+      await assignSalaryGroupToFacilityMember({
+        FacilityMemberIds: facilityMemberId,
+        SalaryGroup_ID: selectedGroupData.SalaryGroup_ID,
+      });
 
-    alert(
-      facilityMemberSalaryData.length > 0
-        ? "Salary Group modified successfully!"
-        : "Salary Group assigned successfully!"
-    );
+      alert(
+        facilityMemberSalaryData.length > 0
+          ? "Salary Group modified successfully!"
+          : "Salary Group assigned successfully!"
+      );
 
-    // FIX: update both final and facility SG
-    setFinalAddedGroups([{ ...selectedGroupData }]);
-    setFacilityMemberSalaryData([{ ...selectedGroupData }]); 
-    setSelectedGroupId(selectedGroupData.SalaryGroup_ID); 
-  } catch {
-    alert("Failed to add salary group. Please try again.");
-  }
-};
+      // update local state so UI shows the newly assigned group
+      setFinalAddedGroups([{ ...selectedGroupData }]);
+      setFacilityMemberSalaryData([{ ...selectedGroupData }]);
+      setSelectedGroupId(selectedGroupData.SalaryGroup_ID);
+    } catch {
+      alert("Failed to add salary group. Please try again.");
+    }
+  };
 
-  function getTotals(items, salaryValue = 0) {
+  /* ------------------------------------------------
+     Totals: use isAllowance/isDeduction mappings
+     salaryValue is FixedSalary if >0 else BaseSalary
+     ------------------------------------------------ */
+  function getTotals(items = [], salaryValue = 0) {
     const totalAllowance =
-      salaryValue +
+      (Number(salaryValue) || 0) +
       items
-        .filter((a) => a.Type === "Allowance")
-        .reduce((sum, a) => sum + (Number(a.CalculatedAmount) || 0), 0);
+        .filter((a) => isAllowance(a.Type))
+        .reduce((sum, a) => sum + (Number(a.CalculatedAmount) || Number(a.FixedAmount) || 0), 0);
+
     const totalDeduction = items
-      .filter((d) => d.Type === "Deduction")
+      .filter((d) => isDeduction(d.Type))
       .reduce((sum, d) => sum + (Number(d.CalculatedAmount) || 0), 0);
+
     return { totalAllowance, totalDeduction };
   }
 
-  function getTotalSalary(salaryGroup, items) {
+  function getTotalSalary(salaryGroup = {}, items = []) {
     const salaryValue =
-      Number(salaryGroup.FixedSalary) > 0
-        ? Number(salaryGroup.FixedSalary)
-        : Number(salaryGroup.BaseSalary);
+      Number(salaryGroup.FixedSalary) > 0 ? Number(salaryGroup.FixedSalary) : Number(salaryGroup.BaseSalary || 0);
     const { totalAllowance, totalDeduction } = getTotals(items, salaryValue);
     return totalAllowance - totalDeduction;
   }
 
   const selectedTotals = selectedGroupData
     ? getTotals(
-        selectedGroupData.AllowancesDeductions,
-        Number(selectedGroupData.FixedSalary) > 0
-          ? Number(selectedGroupData.FixedSalary)
-          : Number(selectedGroupData.BaseSalary)
+        selectedGroupData.AllowancesDeductions || [],
+        Number(selectedGroupData.FixedSalary) > 0 ? Number(selectedGroupData.FixedSalary) : Number(selectedGroupData.BaseSalary || 0)
       )
     : { totalAllowance: 0, totalDeduction: 0 };
 
   const selectedTotalSalary = selectedGroupData
-    ? getTotalSalary(selectedGroupData, selectedGroupData.AllowancesDeductions)
+    ? getTotalSalary(selectedGroupData, selectedGroupData.AllowancesDeductions || [])
     : 0;
 
-  const isSelectedFixed = selectedGroupData
-    ? Number(selectedGroupData.FixedSalary) > 0
-    : false;
+  const isSelectedFixed = selectedGroupData ? Number(selectedGroupData.FixedSalary) > 0 : false;
 
-  const renderAllowanceDeductionRows = (items, salaryGroup) => {
-    const allowances = items.filter((a) => a.Type === "Allowance");
-    const deductions = items.filter((d) => d.Type === "Deduction");
+  /* ------------------------------------------------
+     Render rows: include Base/Fixed salary as first allowance row
+     Use isAllowance/isDeduction filters and getAllowanceAmount for display
+     ------------------------------------------------ */
+  const renderAllowanceDeductionRows = (items = [], salaryGroup = {}) => {
+    // allowances: A + OA
+    const allowances = (items || []).filter((a) => isAllowance(a.Type));
+    // deductions: D + OD
+    const deductions = (items || []).filter((d) => isDeduction(d.Type));
     const isFixedSalary = salaryGroup && Number(salaryGroup.FixedSalary) > 0;
+
+    // salary row into allowances (Fixed Salary or Base Salary)
     let salaryAllowanceRow = null;
     if (isFixedSalary) {
       salaryAllowanceRow = {
         ID: "fixed",
         Name: "Fixed Salary",
         CalculatedAmount: salaryGroup.FixedSalary,
+        FixedAmount: salaryGroup.FixedSalary,
       };
     } else if (Number(salaryGroup.BaseSalary) > 0) {
       salaryAllowanceRow = {
         ID: "base",
         Name: "Base Salary",
         CalculatedAmount: salaryGroup.BaseSalary,
+        FixedAmount: salaryGroup.BaseSalary,
       };
     }
-    const allAllowances = salaryAllowanceRow
-      ? [salaryAllowanceRow, ...allowances]
-      : allowances;
-    const maxDeductionRows = isFixedSalary ? 0 : deductions.length;
-    const maxRows = Math.max(allAllowances.length, maxDeductionRows);
+
+    const allAllowances = salaryAllowanceRow ? [salaryAllowanceRow, ...allowances] : allowances;
+    const maxRows = Math.max(allAllowances.length, deductions.length);
+
     return Array.from({ length: maxRows }).map((_, i) => (
       <tr key={i} style={i % 2 === 0 ? styles.stripedRow : undefined}>
-        <td style={styles.cell}>
-          {allAllowances[i] ? allAllowances[i].Name : ""}
-        </td>
+        <td style={styles.cell}>{allAllowances[i] ? allAllowances[i].Name : ""}</td>
         <td style={styles.cellCenter}>
-          {allAllowances[i] && allAllowances[i].CalculatedAmount != null
-            ? `₹${allAllowances[i].CalculatedAmount}`
+          {allAllowances[i]
+            ? `₹${Number(allAllowances[i].CalculatedAmount || allAllowances[i].FixedAmount || 0)}`
             : ""}
         </td>
+
         {!isFixedSalary && (
           <>
-            <td style={styles.cell}>
-              {deductions[i] ? deductions[i].Name : ""}
-            </td>
+            <td style={styles.cell}>{deductions[i] ? deductions[i].Name : ""}</td>
             <td style={styles.cellCenter}>
-              {deductions[i] && deductions[i].CalculatedAmount != null
-                ? `₹${deductions[i].CalculatedAmount}`
-                : ""}
+              {deductions[i] ? `₹${Number(deductions[i].CalculatedAmount || 0)}` : ""}
             </td>
           </>
         )}
@@ -195,25 +205,18 @@ export default function SalaryGroupView({
       <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
         <header style={styles.header}>
           <h3 style={styles.title}>View Salary Group</h3>
-          <button
-            onClick={onClose}
-            style={styles.closeBtn}
-            aria-label="Close dialog"
-          >
+          <button onClick={onClose} style={styles.closeBtn} aria-label="Close dialog">
             ×
           </button>
         </header>
+
         <div style={styles.formGroup}>
           <label style={styles.label}>
             Employee Name
-            <input
-              type="text"
-              value={employeeName || ""}
-              disabled
-              style={styles.input}
-            />
+            <input type="text" value={employeeName || ""} disabled style={styles.input} />
           </label>
         </div>
+
         <div style={styles.formGroup}>
           <label style={styles.label}>
             Salary Group Name
@@ -234,30 +237,16 @@ export default function SalaryGroupView({
 
         {/* Show preview for any selected group EXCEPT the one already assigned */}
         {selectedGroupData &&
-          !facilityMemberSalaryData.some(
-            (g) => g.SalaryGroup_ID === selectedGroupData.SalaryGroup_ID
-          ) && (
+          !facilityMemberSalaryData.some((g) => g.SalaryGroup_ID === selectedGroupData.SalaryGroup_ID) && (
             <>
               <table style={styles.table} cellSpacing={0}>
                 <thead>
                   <tr>
-                    <th
-                      colSpan={2}
-                      style={{
-                        ...styles.tableHeader,
-                        ...styles.allowanceHeader,
-                      }}
-                    >
+                    <th colSpan={2} style={{ ...styles.tableHeader, ...styles.allowanceHeader }}>
                       Allowance
                     </th>
                     {!isSelectedFixed && (
-                      <th
-                        colSpan={2}
-                        style={{
-                          ...styles.tableHeader,
-                          ...styles.deductionHeader,
-                        }}
-                      >
+                      <th colSpan={2} style={{ ...styles.tableHeader, ...styles.deductionHeader }}>
                         Deduction
                       </th>
                     )}
@@ -274,10 +263,7 @@ export default function SalaryGroupView({
                   </tr>
                 </thead>
                 <tbody>
-                  {renderAllowanceDeductionRows(
-                    selectedGroupData.AllowancesDeductions,
-                    selectedGroupData
-                  )}
+                  {renderAllowanceDeductionRows(selectedGroupData.AllowancesDeductions || [], selectedGroupData)}
                   <tr>
                     <td />
                     <td
@@ -325,17 +311,12 @@ export default function SalaryGroupView({
           onClick={handleAdd}
           disabled={
             !selectedGroupData ||
-            // disable modify if selected group is the same as assigned
-            facilityMemberSalaryData.some(
-              (g) => g.SalaryGroup_ID === selectedGroupData.SalaryGroup_ID
-            )
+            facilityMemberSalaryData.some((g) => g.SalaryGroup_ID === selectedGroupData.SalaryGroup_ID)
           }
           style={{
             ...styles.button,
             ...(!selectedGroupData ||
-            facilityMemberSalaryData.some(
-              (g) => g.SalaryGroup_ID === selectedGroupData.SalaryGroup_ID
-            )
+            facilityMemberSalaryData.some((g) => g.SalaryGroup_ID === selectedGroupData.SalaryGroup_ID)
               ? styles.buttonDisabled
               : {}),
           }}
@@ -347,44 +328,22 @@ export default function SalaryGroupView({
           <section style={styles.addedSection}>
             {combinedSalaryGroups.map((group) => {
               const isFixed = Number(group.FixedSalary) > 0;
-              const groupTotals = getTotals(
-                group.AllowancesDeductions,
-                isFixed ? Number(group.FixedSalary) : Number(group.BaseSalary)
-              );
-              const groupTotalSalary = getTotalSalary(
-                group,
-                group.AllowancesDeductions
-              );
+              const groupTotals = getTotals(group.AllowancesDeductions || [], isFixed ? Number(group.FixedSalary) : Number(group.BaseSalary || 0));
+              const groupTotalSalary = getTotalSalary(group, group.AllowancesDeductions || []);
               return (
-                <div
-                  key={group.SalaryGroup_ID}
-                  style={{ ...styles.finalGroupCard, position: "relative" }}
-                >
+                <div key={group.SalaryGroup_ID} style={{ ...styles.finalGroupCard, position: "relative" }}>
                   <div style={styles.groupHeader}>
-                    <span style={styles.groupName}>
-                      Salary Group → {group.SalaryGroup}
-                    </span>
+                    <span style={styles.groupName}>Salary Group → {group.SalaryGroup}</span>
                   </div>
+
                   <table style={styles.table} cellSpacing={0}>
                     <thead>
                       <tr>
-                        <th
-                          colSpan={2}
-                          style={{
-                            ...styles.tableHeader,
-                            ...styles.allowanceHeader,
-                          }}
-                        >
+                        <th colSpan={2} style={{ ...styles.tableHeader, ...styles.allowanceHeader }}>
                           Allowance
                         </th>
                         {!isFixed && (
-                          <th
-                            colSpan={2}
-                            style={{
-                              ...styles.tableHeader,
-                              ...styles.deductionHeader,
-                            }}
-                          >
+                          <th colSpan={2} style={{ ...styles.tableHeader, ...styles.deductionHeader }}>
                             Deduction
                           </th>
                         )}
@@ -401,10 +360,7 @@ export default function SalaryGroupView({
                       </tr>
                     </thead>
                     <tbody>
-                      {renderAllowanceDeductionRows(
-                        group.AllowancesDeductions,
-                        group
-                      )}
+                      {renderAllowanceDeductionRows(group.AllowancesDeductions || [], group)}
                       <tr>
                         <td />
                         <td
@@ -433,6 +389,7 @@ export default function SalaryGroupView({
                       </tr>
                     </tbody>
                   </table>
+
                   <div
                     style={{
                       fontWeight: "800",

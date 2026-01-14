@@ -1,3 +1,4 @@
+// -------------------- SECTION 1 --------------------
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { Dialog } from "primereact/dialog";
@@ -6,8 +7,10 @@ import {
   deleteSalaryAllowance,
   updateSalaryAllowance,
   createSalaryAllowance,
-  getAllowanceDeductionsByProperty,
+  getAllowancesDeductions,
+  getADPercentages,
 } from "../../Services/PayrollService";
+import { FacilityMemberService } from "../../Services/FacilityService.js";
 import Formulaone from "../../ReactComponents/DataGrid/Formula1stdialogbox.jsx";
 import CustomFormulaDialog from "../../ReactComponents/DataGrid/CustomFormulaDialog";
 import { getPropertyById } from "../../Services/PropertyService";
@@ -20,8 +23,13 @@ export default function SalaryGroups() {
   const [loading, setLoading] = useState(false);
   const [alDtOptions, setAlDtOptions] = useState([]);
   const [selectedType, setSelectedType] = useState("Allowance");
-  const [selectedAllowancesDeductions, setSelectedAllowancesDeductions] =
-    useState([]);
+  const [selectedAllowancesDeductions, setSelectedAllowancesDeductions] =useState([]);
+// designation & employee handling
+const [designation, setDesignation] = useState("");
+const [excludeEmployees, setExcludeEmployees] = useState(false);
+const [employees, setEmployees] = useState([]);
+const [excludedEmployeeIds, setExcludedEmployeeIds] = useState([]);
+
   const [dialogVisible, setDialogVisible] = useState(false);
   const [fxAvailableItems, setFxAvailableItems] = useState([]);
   const [customFormulaVisible, setCustomFormulaVisible] = useState(false);
@@ -38,7 +46,7 @@ export default function SalaryGroups() {
     UpdatedOn: "",
     UpdatedBy: 0,
     IsActive: true,
-    TaxAmount: 0, // you can remove if not needed
+    TaxAmount: 0,
     StartDate: "",
     EndDate: "",
     TotalWorkingDays: 0,
@@ -50,8 +58,68 @@ export default function SalaryGroups() {
   const [isViewMode, setIsViewMode] = useState(false);
   const [fxVisible, setFxVisible] = useState(false);
   const [fxTitle, setFxTitle] = useState("");
-  const [fxTargetItem, setFxTargetItem] = useState(null); // the allowance/deduction row clicked
+  const [fxTargetItem, setFxTargetItem] = useState(null);
 
+  // percentage rules state
+  const [percentageRules, setPercentageRules] = useState({
+    property: [],
+    global: [],
+  });
+
+  function normalizeFormula(f) {
+    if (!f) return "";
+    if (typeof f === "string") return f.trim();
+    if (typeof f === "object" && f.Formula) return f.Formula.trim();
+    return "";
+  }
+  // ---------------- NEW FUNCTION ----------------
+  // Extract dependency names referenced in a formula by matching against master item names
+  function extractDependencies(formula, allItems) {
+    if (!formula) return [];
+
+    // normalize item names and check word boundaries
+    const found = [];
+    for (const m of allItems) {
+      const name = (m.Name || "").toString().trim();
+      if (!name) continue;
+      const regex = new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
+      if (regex.test(formula)) {
+        // avoid duplicates
+        if (!found.includes(name)) found.push(name);
+      }
+    }
+    return found;
+  }
+
+  useEffect(() => {
+  if (!propertyId) return;
+
+  (async () => {
+    try {
+      const empData = await FacilityMemberService.getFacilityMembers(propertyId);
+      setEmployees(empData || []);
+    } catch (err) {
+      console.error("Failed to load employees", err);
+    }
+  })();
+}, [propertyId]);
+
+  // ---------------- END NEW FUNCTION ----------------
+
+  function countDependencies(formula, items) {
+    if (!formula) return 0;
+    const names = items.map((i) => i.Name);
+    let count = 0;
+
+    for (const name of names) {
+      const regex = new RegExp(`\\b${name}\\b`, "i");
+      if (regex.test(formula)) count++;
+    }
+
+    return count;
+  }
+
+  // open fx dialog helper
   const openFxFor = (row) => {
     const available = [
       {
@@ -68,7 +136,6 @@ export default function SalaryGroups() {
       })),
     ];
 
-    // REMOVE the current row from available list (common sense)
     const filtered = available.filter((a) => a.ID !== row.ID);
 
     setFxTargetItem(row);
@@ -78,38 +145,34 @@ export default function SalaryGroups() {
   };
 
   const openCustomFormula = (item) => {
-    setFxVisible(false); // close current Fx dialog
-    setCustomFormulaTarget(item); // which item is being edited
-    setCustomFormulaVisible(true); // open big dialog
+    setFxVisible(false);
+    setCustomFormulaTarget(item);
+    setCustomFormulaVisible(true);
   };
   window.openCustomFormula = () => openCustomFormula(fxTargetItem);
-  // Derived state for functional logic
+
+  // derived
   const baseSalaryNum = Number(formData.BaseSalary);
   const isBaseActive = baseSalaryNum > 0;
   const canCreate = isBaseActive;
 
-  // Amount calculation utility
+  // calculation helper
   const calculateAmount = (item, baseSalary, knownValues = {}) => {
     let formulaStrRaw = "";
 
-    // NEW API → Formula is a string
     if (typeof item.Formula === "string") {
       formulaStrRaw = item.Formula.trim();
-    }
-    // OLD API fallback
-    else if (item.Formula?.Formula) {
+    } else if (item.Formula?.Formula) {
       formulaStrRaw = item.Formula.Formula.trim();
     }
 
     if (!formulaStrRaw) return 0;
 
-    // Replace Base/Basic with numeric value
     let formulaStr = formulaStrRaw.replace(
       /\bBase\b|\bBasic\b/gi,
       baseSalary || 0
     );
 
-    // Replace dependent values
     Object.entries(knownValues).forEach(([key, val]) => {
       const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const regex = new RegExp(escapedKey, "gi");
@@ -124,61 +187,14 @@ export default function SalaryGroups() {
     }
   };
 
-  function countDependencies(formula, items) {
-    if (!formula) return 0;
-    const names = items.map((x) => x.Name);
-    let count = 0;
-
-    names.forEach((name) => {
-      const regex = new RegExp(`\\b${name}\\b`, "i");
-      if (regex.test(formula)) count++;
-    });
-
-    return count;
-  }
-
-  const recalculateAmounts = (items, _, baseSalary) => {
-    // 1) Always compute in correct dependency order
-    const sorted = [...items].sort((a, b) => {
-      const aRefs = a.Formula ? countDependencies(a.Formula, items) : 0;
-      const bRefs = b.Formula ? countDependencies(b.Formula, items) : 0;
-
-      return aRefs - bRefs; // fewer dependencies first
-    });
-
-    const knownValues = {};
-
-    const result = sorted.map((item) => {
-      let amount = 0;
-
-      if (item.isFx && item.Formula) {
-        // Complex formula
-        amount = calculateAmount(item, baseSalary, knownValues);
-      } else if (item.Mode === "#") {
-        amount = Number(item.Value || 0);
-      } else if (item.Mode === "%") {
-        const val = Number(item.Value || 0);
-        amount = (val / 100) * baseSalary;
-      }
-
-      knownValues[item.Name] = amount;
-
-      return { ...item, CalculatedAmount: amount };
-    });
-
-    return result;
-  };
-
-  // Data loading utilities
+  // ---------- Data loading (useEffect) ----------
   useEffect(() => {
     (async () => {
       if (!propertyId) return;
-
       setLoading(true);
       try {
-        // 1. GET Salary Groups
+        // 1. salary groups
         const salaryData = await getSalaryAllowancesByProperty(propertyId);
-
         setData(
           salaryData.map((group) => ({
             ...group,
@@ -192,15 +208,48 @@ export default function SalaryGroups() {
           }))
         );
 
-        // 2. GET Allowance + Deduction master list
-        const alDtData = await getAllowanceDeductionsByProperty(propertyId);
-        setAlDtOptions(
-          [...alDtData].sort((a, b) =>
-            a.Type === b.Type ? 0 : a.Type === "Allowance" ? -1 : 1
-          )
+        // 2. master list
+        const alDtData = await getAllowancesDeductions(propertyId);
+
+        // 2.a sort properly: allowances (A, OA) first then deductions (D, OD)
+        const sorted = [...alDtData].sort((a, b) => {
+          const aIsAllow = a.Type === "A" || a.Type === "OA";
+          const bIsAllow = b.Type === "A" || b.Type === "OA";
+          if (aIsAllow && !bIsAllow) return -1;
+          if (!aIsAllow && bIsAllow) return 1;
+          return 0;
+        });
+
+        setAlDtOptions(sorted);
+
+        // 3. percentage rules
+        let percentages = [];
+        try {
+          percentages = await getADPercentages(propertyId);
+        } catch (pe) {
+          try {
+            percentages = await getADPercentages();
+          } catch (err) {
+            percentages = [];
+          }
+        }
+
+        const propPercentages = (percentages || []).filter(
+          (p) =>
+            p.PropertyId != null &&
+            Number(p.PropertyId) === Number(propertyId) &&
+            (p.IsGlobal === 0 || !p.IsGlobal)
+        );
+        const globalPercentages = (percentages || []).filter(
+          (p) => p.IsGlobal === 1 || p.PropertyId == null || p.PropertyId === 0
         );
 
-        // 3. GET Property values (Shift hours + Working days)
+        setPercentageRules({
+          property: propPercentages,
+          global: globalPercentages,
+        });
+
+        // 4. property meta
         const propertyData = await getPropertyById(propertyId);
         setFormData((prev) => ({
           ...prev,
@@ -216,7 +265,66 @@ export default function SalaryGroups() {
     })();
   }, [propertyId]);
 
-  // Edit, View, Create dialog handlers
+  // -------------------- SECTION 2 --------------------
+  // helper: normalize names
+  const normalize = (s) => (s || "").toString().trim().toLowerCase();
+
+  // get percentage for an item: property -> global -> fallback to item.Value
+  const getPercentageForItem = (item) => {
+    if (!item) return 0;
+    const name = normalize(item.Name);
+
+    // 1) property-level match
+    const prop = percentageRules.property.find(
+      (p) => normalize(p.AD_Name) === name
+    );
+    if (prop && prop.Percentage != null) return Number(prop.Percentage);
+
+    // 2) global
+    const glob = percentageRules.global.find(
+      (p) => normalize(p.AD_Name) === name
+    );
+    if (glob && glob.Percentage != null) return Number(glob.Percentage);
+
+    // 3) fallback to user-entered value
+    const val = Number(item.Value || item.defaultValue || 0);
+    return isNaN(val) ? 0 : val;
+  };
+
+  // recalc amounts honoring Fx, #, and %
+  const recalculateAmounts = (items, _, baseSalary) => {
+    if (!items || items.length === 0) return [];
+
+    const sorted = [...items].sort((a, b) => {
+      const aRefs = a.Formula ? countDependencies(a.Formula, items) : 0;
+      const bRefs = b.Formula ? countDependencies(b.Formula, items) : 0;
+      return aRefs - bRefs;
+    });
+
+    const knownValues = {};
+    const output = [];
+
+    for (const item of sorted) {
+      let amount = 0;
+
+      if (item.isFx && item.Formula) {
+        amount = calculateAmount(item, baseSalary, knownValues);
+      } else if (item.Mode === "%") {
+        const pct = getPercentageForItem(item);
+        amount = (pct / 100) * baseSalary;
+      } else if (item.Mode === "#") {
+        amount = Number(item.Value || 0);
+      }
+
+      knownValues[item.Name] = amount;
+
+      output.push({ ...item, CalculatedAmount: amount });
+    }
+
+    return output;
+  };
+
+  // -------------------- SECTION 3 --------------------
   const openCreateDialog = () => {
     setFormData({
       ...formData,
@@ -235,33 +343,36 @@ export default function SalaryGroups() {
 
   const openEditDialog = (item) => {
     const initialAllowances = (item.AllowancesDeductions || []).map((ad) => {
+      const rawFormula = normalizeFormula(ad.Formula);
+
       let mode = "%";
       let value = "";
+      let isFx = false;
 
-      // Normalize formula
-      const rawFormula =
-        typeof ad.Formula === "string" ? ad.Formula : ad.Formula?.Formula || "";
+      if (rawFormula) {
+        // Detect if formula is simple percent: "Base * x"
+        const simpleMatch = rawFormula.match(/^Base\s*\*\s*(\d+(\.\d+)?)$/i);
 
-      const isFxFormula = rawFormula !== "" && !rawFormula.startsWith("Base *");
-
-      // ⭐ CASE 1: Fx or Custom formula
-      if (isFxFormula) {
-        mode = "Fx";
-        value = ""; // no manual value in Fx mode
-      }
-
-      // ⭐ CASE 2: % manual (only when NOT Fx)
-      else if (rawFormula !== "") {
-        const match = rawFormula.match(/\*\s*(\d+(\.\d+)?)/);
-        const decimal = match ? parseFloat(match[1]) : 0;
-        value = (decimal * 100).toString(); // convert 0.10 → 10
-        mode = "%";
-      }
-
-      // ⭐ CASE 3: # fixed amount (only when NOT Fx)
-      else if (ad.FixedAmount > 0) {
+        if (simpleMatch) {
+          // This is a simple percent formula
+          const decimal = parseFloat(simpleMatch[1]);
+          value = (decimal * 100).toString();
+          mode = "%";
+        } else {
+          // This is a real FX formula
+          isFx = true;
+          mode = "Fx";
+          value = rawFormula;
+        }
+      } else if (ad.FixedAmount > 0) {
+        // Fixed Amount Mode
         mode = "#";
         value = ad.FixedAmount.toString();
+      } else {
+        // NO formula, fallback to percentage rules
+        const percent = getPercentageForItem(ad);
+        value = percent ? percent.toString() : "";
+        mode = "%";
       }
 
       return {
@@ -270,45 +381,93 @@ export default function SalaryGroups() {
         Mode: mode,
         Value: value,
         Formula: rawFormula,
-        FormulaId: ad.FormulaId || 0,
+        isFx: isFx,
         CalculatedAmount: ad.CalculatedAmount || 0,
-        isFx: isFxFormula, // true only for Fx/Custom formulas
       };
     });
+
     setFormData({
       ...item,
-      BaseSalary: item.BaseSalary ? item.BaseSalary.toString() : "",
+      BaseSalary: item.BaseSalary?.toString() || "",
       TotalWorkingDays: item.TotalWorkingDays || 0,
       ShiftHours: item.ShiftHours || 0,
     });
-    setSelectedAllowancesDeductions(
-      recalculateAmounts(initialAllowances, 0, Number(item.BaseSalary))
-    );
+
+    // ---------------- PATCHED: Auto-select dependencies for Fx items ----------------
+    // We'll add dependency items (like HRA) into selectedAllowancesDeductions so they become checked.
+    (async () => {
+      try {
+        const masterList = alDtOptions || []; // master AD list from state
+        let finalList = [...initialAllowances];
+
+        // For each Fx item in initial list, find referenced AD names and ensure those ADs are added
+        initialAllowances.forEach((adItem) => {
+          if (adItem.isFx && adItem.Formula) {
+            const deps = extractDependencies(adItem.Formula, masterList);
+
+            deps.forEach((depName) => {
+              // ignore 'Base' as it's base salary, not an AD entry
+              if (/^base$/i.test(depName)) return;
+
+              const depItem = masterList.find((m) => m.Name === depName);
+              const depFormula = normalizeFormula(depItem.Formula);
+              if (depItem && !finalList.some((x) => x.ID === depItem.ID)) {
+                finalList.push({
+                  ...depItem,
+                  ID: depItem.AD_Id || depItem.ID,
+                  Mode: "%", // default to percentage (user can change)
+                  Value: getPercentageForItem(depItem)?.toString() || "",
+                  Formula: depFormula,
+                  isFx: !!depFormula, // if master has its own formula
+                  CalculatedAmount: depItem.CalculatedAmount || 0,
+                });
+              }
+            });
+          }
+        });
+
+        // Recalculate amounts with form BaseSalary
+        const newBase = Number(item.BaseSalary || 0);
+        const recalced = recalculateAmounts(finalList, 0, newBase);
+
+        setSelectedAllowancesDeductions(recalced);
+      } catch (e) {
+        console.error("Error auto-selecting dependencies:", e);
+        setSelectedAllowancesDeductions(initialAllowances);
+      }
+    })();
+    // ---------------- END PATCH ----------------
+
     setEditId(item.SalaryGroup_ID);
     setIsViewMode(false);
-    setSelectedType("Allowance");
     setDialogVisible(true);
   };
 
   const openViewDialog = (item) => {
     const initialAllowances = (item.AllowancesDeductions || []).map((ad) => {
+      const rawFormula = normalizeFormula(ad.Formula);
+
       let mode = "%";
       let value = "";
+      let isFx = false;
 
-      // CASE 1: Percentage mode
-      // FIX: Normalize Formula
-      const rawFormula =
-        typeof ad.Formula === "string" ? ad.Formula : ad.Formula?.Formula || "";
-
-      // Determine mode + value
-      if (rawFormula !== "") {
-        const match = rawFormula.match(/\*\s*(\d+(\.\d+)?)/);
-        const decimal = match ? parseFloat(match[1]) : 0;
-        value = (decimal * 100).toString();
-        mode = "%";
+      if (rawFormula) {
+        const simpleMatch = rawFormula.match(/^Base\s*\*\s*(\d+(\.\d+)?)$/i);
+        if (simpleMatch) {
+          const decimal = parseFloat(simpleMatch[1]);
+          value = (decimal * 100).toString();
+          mode = "%";
+        } else {
+          isFx = true;
+          mode = "Fx";
+          value = "";
+        }
       } else if (ad.FixedAmount > 0) {
         mode = "#";
         value = ad.FixedAmount.toString();
+      } else {
+        const percent = getPercentageForItem(ad);
+        value = percent ? percent.toString() : "";
       }
 
       return {
@@ -317,11 +476,49 @@ export default function SalaryGroups() {
         Mode: mode,
         Value: value,
         Formula: rawFormula,
-        FormulaId: ad.FormulaId || 0,
+        isFx,
         CalculatedAmount: ad.CalculatedAmount || 0,
-        isFx: rawFormula !== "" && !rawFormula.startsWith("Base *"),
       };
     });
+
+    // ---------------- PATCHED: Auto-select dependencies for Fx items in view mode as well ----------------
+    (async () => {
+      try {
+        const masterList = alDtOptions || [];
+        let finalList = [...initialAllowances];
+
+        initialAllowances.forEach((adItem) => {
+          if (adItem.isFx && adItem.Formula) {
+            const deps = extractDependencies(adItem.Formula, masterList);
+
+            deps.forEach((depName) => {
+              if (/^base$/i.test(depName)) return;
+              const depItem = masterList.find((m) => m.Name === depName);
+              if (depItem && !finalList.some((x) => x.ID === depItem.ID)) {
+                finalList.push({
+                  ...depItem,
+                  ID: depItem.AD_Id || depItem.ID,
+                  Mode: "%",
+                  Value: getPercentageForItem(depItem)?.toString() || "",
+                  Formula: depItem.Formula || "",
+                  isFx: !!depItem.Formula,
+                  CalculatedAmount: depItem.CalculatedAmount || 0,
+                });
+              }
+            });
+          }
+        });
+
+        const newBase = Number(item.BaseSalary || 0);
+        const recalced = recalculateAmounts(finalList, 0, newBase);
+
+        setSelectedAllowancesDeductions(recalced);
+      } catch (e) {
+        console.error("Error auto-selecting dependencies in view:", e);
+        setSelectedAllowancesDeductions(initialAllowances);
+      }
+    })();
+    // ---------------- END PATCH ----------------
 
     setFormData({
       ...item,
@@ -330,13 +527,11 @@ export default function SalaryGroups() {
       ShiftHours: item.ShiftHours || 0,
     });
 
-    // ✅ Use backend values directly
-    setSelectedAllowancesDeductions(initialAllowances);
     setIsViewMode(true);
     setDialogVisible(true);
   };
 
-  // Form and dialog logic
+  // handle form change
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -360,104 +555,68 @@ export default function SalaryGroups() {
   const handleSave = async () => {
     const baseSalaryNum = Number(formData.BaseSalary);
 
-    if (!formData.SalaryGroup.trim())
-      return alert("Salary Group Name is required");
-
-    // must have base salary
-    if (
-      formData.BaseSalary === "" ||
-      isNaN(baseSalaryNum) ||
-      baseSalaryNum < 0
-    ) {
-      return alert("Please enter Base Salary.");
-    }
-
-    const nowIso = new Date().toISOString();
-
     const model = {
       SalaryGroup_ID: editId || 0,
       SalaryGroup: formData.SalaryGroup.trim(),
-      BaseSalary: Number(formData.BaseSalary),
+      BaseSalary: baseSalaryNum,
       Property_ID: Number(propertyId),
-      CreatedBy: formData.CreatedBy || 1,
+      CreatedBy: 1,
       UpdatedBy: 1,
-      CreatedOn: formData.CreatedOn || nowIso,
-      UpdatedOn: nowIso,
-      IsActive: true,
-      TaxAmount: 0,
-      StartDate: nowIso,
-      EndDate: nowIso,
-      TotalWorkingDays: Number(formData.TotalWorkingDays || 0),
-      ShiftHours: Number(formData.ShiftHours || 0),
+      TotalWorkingDays: Number(formData.TotalWorkingDays),
+      ShiftHours: Number(formData.ShiftHours),
 
       AllowancesDeductions: selectedAllowancesDeductions.map((item) => {
+        let Formula = item.Formula || "";
         let FixedAmount = 0;
-        let Formula = item.Formula || ""; // 🔥 KEEP existing formula
-        let CalculatedAmount = item.CalculatedAmount || 0; // 🔥 KEEP existing amount
+        let CalculatedAmount = item.CalculatedAmount || 0;
 
-        // ✔ Case 1: Fx-based item (formula created using Fx/custom builder)
         if (item.isFx && item.Formula) {
+          // Keep exact formula
           Formula = item.Formula;
-          CalculatedAmount = Number(item.CalculatedAmount || 0);
-        }
-
-        // ✔ Case 2: Normal % item
-        else if (item.Mode === "%") {
-          const val = Number(item.Value || 0);
-          const decimal = (val / 100).toFixed(2);
-
-          // ⚠️ If user manually replaced formula via custom-builder earlier, KEEP IT
-          if (!item.Formula) {
-            Formula = `Base * ${decimal}`;
-          }
-
-          // Keep recalculated amount OR use existing if available
-          CalculatedAmount =
-            item.CalculatedAmount || (val / 100) * Number(formData.BaseSalary);
-        }
-
-        // ✔ Case 3: Normal # (fixed) amount
-        else if (item.Mode === "#") {
-          const val = Number(item.Value || 0);
-          FixedAmount = val;
-
-          // Do NOT wipe formulas (they may exist from earlier)
-          Formula = item.Formula || "";
-          // Keep Fx-calculated amount if present
-          CalculatedAmount = item.CalculatedAmount || val;
+        } else if (item.Mode === "%") {
+          const finalPercent = getPercentageForItem(item);
+          const decimal = (finalPercent / 100).toFixed(2);
+          Formula = `Base * ${decimal}`;
+          CalculatedAmount = Number(
+            ((finalPercent / 100) * baseSalaryNum).toFixed(2)
+          );
+        } else if (item.Mode === "#") {
+          FixedAmount = Number(item.Value || 0);
+          CalculatedAmount = FixedAmount;
+          Formula = "";
         }
 
         return {
           AD_Id: item.ID,
-          Type: item.Type,
           Name: item.Name.trim(),
-          FixedAmount: Number(FixedAmount),
-          Formula: Formula,
+          Type: item.Type,
+          Formula,
+          FixedAmount,
+          CalculatedAmount,
           FormulaId: item.FormulaId || 0,
-          CalculatedAmount: Number(CalculatedAmount),
         };
       }),
     };
 
     try {
-      if (editId !== null) await updateSalaryAllowance(editId, model);
+      if (editId) await updateSalaryAllowance(editId, model);
       else await createSalaryAllowance(model);
 
-      alert(
-        editId !== null ? "Updated successfully!" : "Created successfully!"
-      );
+      alert("Saved successfully!");
       setDialogVisible(false);
+
       await getSalaryAllowancesByProperty(propertyId).then(setData);
-    } catch (error) {
-      alert("Failed to save salary group.");
+    } catch (err) {
+      alert("Failed to save salary group");
     }
   };
 
+  // renderRow
   const allowances = selectedAllowancesDeductions.filter(
-    (item) => item.Type === "Allowance"
+    (item) => item.Type === "A" || item.Type === "OA"
   );
   const deductions = selectedAllowancesDeductions.filter(
-    (item) => item.Type === "Deduction"
+    (item) => item.Type === "D"
   );
   const maxRows = Math.max(allowances.length, deductions.length);
   const filteredData = data.filter(
@@ -465,6 +624,7 @@ export default function SalaryGroups() {
       item.SalaryGroup &&
       item.SalaryGroup.toLowerCase().includes(searchText.toLowerCase())
   );
+
   const handleDelete = async (salaryGroupId) => {
     if (window.confirm("Are you sure you want to delete this salary group?")) {
       try {
@@ -478,228 +638,193 @@ export default function SalaryGroups() {
   };
 
   const renderRow = (opt) => {
-    const isChecked = selectedAllowancesDeductions.some(
-      (item) => item.ID === opt.ID
-    );
-
     const row = selectedAllowancesDeductions.find((x) => x.ID === opt.ID);
+    const isChecked = !!row;
     const mode = row?.Mode || "%";
-    const val = Number(row?.Value || 0);
+    const val = row?.Value || "";
 
     let calc = "";
 
-    if (row?.Formula) {
-      // When Fx is used → use calculatedAmount from state
+    if (normalizeFormula(row?.Formula) && row?.isFx) {
       calc = Number(row.CalculatedAmount || 0).toFixed(2);
     } else if (mode === "%") {
-      // Normal % mode
-      calc = ((val / 100) * Number(formData.BaseSalary || 0)).toFixed(2);
-    } else {
-      // Fixed mode
+      const pct = getPercentageForItem(row || opt);
+      calc = ((pct / 100) * Number(formData.BaseSalary || 0)).toFixed(2);
+    } else if (mode === "#") {
       calc = val;
     }
 
     return (
-      <div
-        key={opt.ID}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "18px",
-          padding: "12px 12px",
-          paddingLeft: "18px",
-          borderBottom: "1px solid #efefef",
-        }}
-      >
-        {/* Checkbox */}
+      <div key={opt.ID} className="ad-row">
+        {/* CHECKBOX */}
         <input
           type="checkbox"
-          className="form-check-input"
-          style={{ marginTop: 3 }}
           checked={isChecked}
+          disabled={isViewMode}
+          onClick={(e) => {
+            // If already checked and has a formula, prevent unchecking
+            if (isChecked && row?.isFx) {
+              e.preventDefault();
+              console.log('Prevented uncheck of Fx item:', opt.Name);
+              return;
+            }
+          }}
           onChange={(e) => {
-            if (e.target.checked) {
-              const base = Number(formData.BaseSalary || 0);
+            const willBeChecked = e.target.checked;
 
+            console.log('Checkbox onChange:', {
+              name: opt.Name,
+              willBeChecked,
+              isChecked,
+              rowExists: !!row,
+              rowData: row
+            });
+
+            if (willBeChecked) {
+              // If already checked, do nothing
+              if (isChecked) {
+                console.log('Already checked, ignoring');
+                return;
+              }
+
+              console.log('Adding new item:', opt.Name);
+
+              // New Item being selected
+              const rawFormula = normalizeFormula(opt.Formula);
               const newItem = {
                 ...opt,
-                Formula: "",
-                UseFixedValue: false,
-                Mode: "%",
-                Value: "",
-                CalculatedAmount: null, // 🔥 FIXED
+                Mode: rawFormula ? "Fx" : "%",
+                Formula: rawFormula,
+                Value: rawFormula ? "" : getPercentageForItem(opt).toString(),
+                isFx: !!rawFormula,
+                CalculatedAmount: opt.CalculatedAmount || 0,
               };
-              setSelectedAllowancesDeductions((prev) =>
-                recalculateAmounts(
-                  [...prev, newItem],
-                  0,
-                  Number(formData.BaseSalary)
-                )
-              );
+
+              // ---------------- PATCH: auto-select dependencies when selecting an Fx item ----------------
+              setSelectedAllowancesDeductions((prev) => {
+                // clone prev to mutate safely
+                const next = [...prev];
+
+                // Add the item itself if not present
+                if (!next.some(x => x.ID === newItem.ID)) {
+                  next.push(newItem);
+                }
+
+                // If it's an Fx item, find dependencies and add them
+                if (newItem.isFx && newItem.Formula) {
+                  const deps = extractDependencies(newItem.Formula, alDtOptions);
+
+                  deps.forEach((depName) => {
+                    // ignore base placeholder
+                    if (/^base$/i.test(depName)) return;
+
+                    const depItem = alDtOptions.find((m) => m.Name === depName);
+                    if (depItem && !next.some((x) => x.ID === depItem.ID)) {
+                      next.push({
+                        ...depItem,
+                        ID: depItem.AD_Id || depItem.ID,
+                        Mode: "%", // default to %
+                        Value: getPercentageForItem(depItem)?.toString() || "",
+                        Formula: depItem.Formula || "",
+                        isFx: !!depItem.Formula,
+                        CalculatedAmount: depItem.CalculatedAmount || 0,
+                      });
+                    }
+                  });
+                }
+
+                // Recalculate with current base salary
+                return recalculateAmounts(next, 0, Number(formData.BaseSalary));
+              });
+              // ---------------- END PATCH ----------------
             } else {
+              console.log('Unchecking item:', opt.Name);
+              // Unchecking - remove from list
               handleDeleteAlDtItem(opt.ID);
             }
           }}
         />
+        {/* NAME */}
+        <div className="ad-name">{opt.Name}</div>
 
-        {/* Name */}
-        <div style={{ width: "200px", fontWeight: 500 }}>{opt.Name}</div>
-
-        {/* Mode */}
-        <div
-          style={{
-            position: "relative",
-            width: "70px",
-          }}
-        >
-          {/* If Fx formula → show FX badge instead of dropdown */}
+        {/* MODE SELECT */}
+        <div className="ad-mode">
           {row?.isFx ? (
-            <div
-              style={{
-                width: "70px",
-                height: "38px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "#e5f0ff",
-                border: "1px solid #b5d0ff",
-                borderRadius: "6px",
-                fontWeight: "600",
-                color: "#0057ff",
-              }}
-            >
-              Fx
-            </div>
+            <div className="fx-mode-box">Fx</div>
           ) : (
             <select
               disabled={!isChecked}
-              className="form-control"
               value={mode}
               onChange={(e) => {
                 const newMode = e.target.value;
-                setSelectedAllowancesDeductions((prev) =>
-                  prev.map((item) =>
-                    item.ID === opt.ID
-                      ? { ...item, Mode: newMode, Value: "" }
-                      : item
-                  )
-                );
+
+                setSelectedAllowancesDeductions((prev) => {
+                  const updated = prev.map((item) => {
+                    if (item.ID !== opt.ID) return item;
+
+                    if (item.isFx) {
+                      return { ...item, Mode: "Fx" }; // Lock if Fx
+                    }
+
+                    return {
+                      ...item,
+                      Mode: newMode,
+                      Formula: "", // Clear formula for mode change
+                      isFx: false,
+                      Value:
+                        newMode === "%"
+                          ? getPercentageForItem(item).toString()
+                          : "",
+                    };
+                  });
+
+                  return recalculateAmounts(updated, 0, Number(formData.BaseSalary));
+                });
               }}
             >
               <option value="%">%</option>
               <option value="#">#</option>
             </select>
           )}
-
-          {/* ▼ arrow ONLY when dropdown is shown */}
-          {!row?.isFx && (
-            <div
-              style={{
-                position: "absolute",
-                right: "8px",
-                top: "50%",
-                transform: "translateY(-50%)",
-                pointerEvents: "none",
-                fontSize: "10px",
-                color: "#333",
-              }}
-            >
-              ▼
-            </div>
-          )}
         </div>
 
-        {/* Value box with formula below */}
-        <div style={{ width: "120px" }}>
-          <input
-            type="number"
-            disabled={!isChecked || row?.isFx}
-            className="form-control"
-            value={row?.Value || ""}
-            onChange={(e) => {
-              let raw = e.target.value;
-
-              if (mode === "%" && (raw < 0 || raw > 100)) return;
-
-              const base = Number(formData.BaseSalary || 0);
-
-              setSelectedAllowancesDeductions((prev) => {
-                // 1. update ONLY this row first
-                const updated = prev.map((item) =>
-                  item.ID === opt.ID
-                    ? {
-                        ...item,
-                        Value: raw,
-                      }
-                    : item
-                );
-
-                // 2. RE-CALCULATE ALL rows (this fixes PF etc)
-                return recalculateAmounts(updated, 0, base);
-              });
-            }}
-          />
-
-          {/* Formula under box */}
-          {/* If Fx formula exists, show it. 
-    Else show normal Base * % formula */}
-          {isChecked && row?.Formula ? (
-            <div
-              style={{
-                fontSize: "10px",
-                color: "#7d7d7d",
-                marginTop: "3px",
-                marginLeft: "2px",
-              }}
-            >
-              {row.Formula}
-            </div>
-          ) : (
-            mode === "%" &&
-            isChecked && (
-              <div
-                style={{
-                  fontSize: "10px",
-                  color: "#7d7d7d",
-                  marginTop: "3px",
-                  marginLeft: "2px",
-                }}
-              >
-                Base * {(val / 100).toFixed(2)}
-              </div>
-            )
-          )}
-        </div>
-
-        {/* Calculated */}
+        {/* VALUE INPUT */}
         <input
-          className="form-control"
-          style={{
-            width: "120px",
-            background: "#f4f4f4",
-            textAlign: "right",
+          type="number"
+          disabled={!isChecked || row?.isFx}
+          value={val}
+          onChange={(e) => {
+            const raw = e.target.value;
+
+            setSelectedAllowancesDeductions((prev) => {
+              const updated = prev.map((item) =>
+                item.ID === opt.ID ? { ...item, Value: raw } : item
+              );
+              return recalculateAmounts(updated, 0, Number(formData.BaseSalary));
+            });
           }}
-          value={isChecked ? calc : ""}
-          readOnly
         />
 
-        {/* Fx */}
+        {/* CALCULATED */}
+        <input readOnly className="calc-box" value={isChecked ? calc : ""} />
+
+        {/* FX BUTTON */}
         <button
           type="button"
-          className={`btn ${
-            row?.isFx ? "btn-primary" : "btn-outline-secondary"
-          }`}
-          style={{ width: "55px", fontWeight: 600 }}
+          className={`btn ${row?.isFx ? "btn-primary" : "btn-outline-secondary"
+            }`}
           disabled={!isChecked}
-          onClick={() => openFxFor(row)}
+          onClick={() => openFxFor(row || opt)}
         >
-          Fx
+          FX
         </button>
       </div>
     );
   };
 
-  // Dialog footers
+  // -------------------- SECTION 4 --------------------
+
+  // dialog footers
   const viewFooter = (
     <button
       className="btn btn-secondary"
@@ -784,6 +909,7 @@ export default function SalaryGroups() {
             Create New
           </button>
         </div>
+
         <div className="table-responsive px-3 pb-4">
           {loading ? (
             <div style={{ textAlign: "center", padding: 20 }}>Loading...</div>
@@ -853,20 +979,17 @@ export default function SalaryGroups() {
           )}
         </div>
       </div>
+
       <Dialog
         header={
           isViewMode
             ? "View Salary Group"
             : editId
-            ? "Edit Salary Group"
-            : "Create Salary Group"
+              ? "Edit Salary Group"
+              : "Create Salary Group"
         }
         visible={dialogVisible}
-        style={{
-          width: "95vw",
-          height: "95vh",
-          maxWidth: "1500px",
-        }}
+        style={{ width: "95vw", height: "95vh", maxWidth: "1500px" }}
         modal
         onHide={() => setDialogVisible(false)}
         footer={isViewMode ? viewFooter : editFooter}
@@ -964,13 +1087,7 @@ export default function SalaryGroups() {
                           {allow ? (
                             <>
                               <div>{allow.Name}</div>
-                              {allow.Formula && (
-                                <div
-                                  style={{ fontSize: "12px", color: "#6c757d" }}
-                                >
-                                  ({allow.Formula})
-                                </div>
-                              )}
+                              {normalizeFormula(allow.Formula) && <div style={{ fontSize: "12px", color: "#6c757d" }}>({normalizeFormula(allow.Formula)})</div>}
                             </>
                           ) : (
                             ""
@@ -978,26 +1095,14 @@ export default function SalaryGroups() {
                         </td>
 
                         <td style={{ textAlign: "right" }}>
-                          {allow
-                            ? Number(
-                                allow.FixedAmount > 0
-                                  ? allow.FixedAmount
-                                  : allow.CalculatedAmount
-                              ).toFixed(2)
-                            : ""}
+                          {allow ? Number(allow.FixedAmount > 0 ? allow.FixedAmount : allow.CalculatedAmount).toFixed(2) : ""}
                         </td>
 
                         <td>
                           {deduct ? (
                             <>
                               <div>{deduct.Name}</div>
-                              {deduct.Formula && (
-                                <div
-                                  style={{ fontSize: "12px", color: "#6c757d" }}
-                                >
-                                  ({deduct.Formula})
-                                </div>
-                              )}
+                              {deduct.Formula && <div style={{ fontSize: "12px", color: "#6c757d" }}>({deduct.Formula})</div>}
                             </>
                           ) : (
                             ""
@@ -1005,13 +1110,7 @@ export default function SalaryGroups() {
                         </td>
 
                         <td style={{ textAlign: "right" }}>
-                          {deduct
-                            ? Number(
-                                deduct.FixedAmount > 0
-                                  ? deduct.FixedAmount
-                                  : deduct.CalculatedAmount
-                              ).toFixed(2)
-                            : ""}
+                          {deduct ? Number(deduct.FixedAmount > 0 ? deduct.FixedAmount : deduct.CalculatedAmount).toFixed(2) : ""}
                         </td>
                       </tr>
                     );
@@ -1027,61 +1126,41 @@ export default function SalaryGroups() {
               {/* ALLOWANCE LIST */}
               <div className="col-6">
                 <h5 style={{ fontWeight: 600 }}>Allowances</h5>
-                <div
-                  className="p-3"
-                  style={{
-                    border: "1px solid #ddd",
-                    borderRadius: "8px",
-                    maxHeight: "60vh",
-                    overflowY: "auto",
-                  }}
-                >
-                  {alDtOptions
-                    .filter((opt) => opt.Type === "Allowance")
-                    .map((opt) => renderRow(opt))}
+                <div className="p-3" style={{ border: "1px solid #ddd", borderRadius: "8px", maxHeight: "60vh", overflowY: "auto" }}>
+                  {alDtOptions.filter((opt) => opt.Type === "A" || opt.Type === "OA").map((opt) => renderRow(opt))}
                 </div>
               </div>
 
               {/* DEDUCTION LIST */}
               <div className="col-6">
                 <h5 style={{ fontWeight: 600 }}>Deductions</h5>
-                <div
-                  className="p-3"
-                  style={{
-                    border: "1px solid #ddd",
-                    borderRadius: "8px",
-                    maxHeight: "60vh",
-                    overflowY: "auto",
-                  }}
-                >
-                  {alDtOptions
-                    .filter((opt) => opt.Type === "Deduction")
-                    .map((opt) => renderRow(opt))}
+                <div className="p-3" style={{ border: "1px solid #ddd", borderRadius: "8px", maxHeight: "60vh", overflowY: "auto" }}>
+                  {alDtOptions.filter((opt) => opt.Type === "D").map((opt) => renderRow(opt))}
                 </div>
               </div>
             </div>
           )}
         </form>
+
         <Formulaone
           visible={fxVisible}
           onClose={() => setFxVisible(false)}
           title={fxTitle}
           baseSalary={Number(formData.BaseSalary || 0)}
-          items={fxAvailableItems} // we will define fxAvailable next
+          items={fxAvailableItems}
           onApply={(res) => {
-            // Update only the clicked row
             setSelectedAllowancesDeductions((prev) =>
               prev.map((it) =>
                 it.ID === fxTargetItem.ID
                   ? {
-                      ...it,
-                      Formula: res.formulaString,
-                      CalculatedAmount: res.calculatedAmount,
-                      Mode: "Fx", // ⭐ NEW
-                      Value: "", // empty always for Fx
-                      FixedAmount: 0,
-                      isFx: true, // NEW: mark row as “Fx applied”
-                    }
+                    ...it,
+                    Formula: res.formulaString,
+                    CalculatedAmount: res.calculatedAmount,
+                    Mode: "Fx",
+                    Value: "",
+                    FixedAmount: 0,
+                    isFx: true,
+                  }
                   : it
               )
             );
@@ -1089,28 +1168,21 @@ export default function SalaryGroups() {
           }}
         />
       </Dialog>
+
       <CustomFormulaDialog
         visible={customFormulaVisible}
         onHide={() => setCustomFormulaVisible(false)}
         targetItem={customFormulaTarget}
-        items={fxAvailableItems} // 🔥 FIX #1 (now items will load)
-        baseSalary={Number(formData.BaseSalary || 0)} // 🔥 FIX #2 (for evaluation)
+        items={fxAvailableItems}
+        baseSalary={Number(formData.BaseSalary || 0)}
         onSave={(newFormula, calculatedAmount) => {
           setSelectedAllowancesDeductions((prev) =>
             prev.map((it) =>
               it.ID === customFormulaTarget.ID
-                ? {
-                    ...it,
-                    Formula: newFormula,
-                    CalculatedAmount: calculatedAmount, // 🔥 FIX #3
-                    isFx: true,
-                    Mode: "Fx", // ⭐ NEW
-                    Value: "", // ← Make it blank
-                  }
+                ? { ...it, Formula: normalizeFormula(newFormula), CalculatedAmount: calculatedAmount, isFx: true, Mode: "Fx", Value: "" }
                 : it
             )
           );
-
           setCustomFormulaVisible(false);
         }}
       />

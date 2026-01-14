@@ -3,7 +3,7 @@ import axios from "axios";
 
 const API_BASE_URL = "https://api.urest.in:8096/api/allowancedeductions";
 
-export async function getAllowanceDeductionsByProperty() {
+export async function getAllowancesDeductions() {
   try {
     const response = await fetch(`${API_BASE_URL}/getall`, {
       method: "GET",
@@ -88,6 +88,16 @@ export async function getSalaryAllowancesByProperty(propertyId) {
     console.error("Error fetching salary allowances:", error);
     throw error;
   }
+}
+
+// CLIENT ✅ NEW
+export async function getSalaryAllowancesByClient(clientId) {
+  const response = await fetch(
+    `${SALARY_API_BASE_URL}/byClient/${clientId}`,
+    { headers: { Accept: "application/json" } }
+  );
+  if (!response.ok) throw new Error("Failed to fetch SG by client");
+  return response.json();
 }
 
 export async function deleteSalaryAllowance(salaryGroupId) {
@@ -654,7 +664,6 @@ export async function updateOTHours(propertyId, dataArray) {
 
     return await response.json();
   } catch (error) {
-    console.error("Update OT Hours Error:", error);
     return null;
   }
 }
@@ -684,22 +693,20 @@ export async function deleteOTHours(id) {
 const AD_PERCENTAGE_URL = "https://api.urest.in:8096/api/adpercentages";
 
 // GET all AD Percentages
-export async function getADPercentages() {
-  try {
-    const response = await fetch(`${AD_PERCENTAGE_URL}`, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
-    });
+export const getADPercentages = async (propertyId = null) => {
+  const url = propertyId
+    ? `${AD_PERCENTAGE_URL}?propertyId=${propertyId}`
+    : `${AD_PERCENTAGE_URL}`;
 
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    return await response.json();
-  } catch (error) {
-    console.error("Error fetching AD percentages:", error);
-    throw error;
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error("Failed to load AD Percentages");
   }
-}
+
+  return await response.json();
+};
+
 
 // CREATE AD Percentage
 export async function addADPercentage(model) {

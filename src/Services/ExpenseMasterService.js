@@ -2,22 +2,15 @@ import axios from "axios";
 
 const API_BASE = "https://api.urest.in:8096/api/expenses/master";
 const API_EXPENSE_TYPE = "https://api.urest.in:8096/api/expenses/types";
-
-// 🔹 Helper function to convert file → base64 string
-const toBase64 = (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result.split(",")[1]); // only base64 part
-    reader.onerror = (error) => reject(error);
-  });
-};
+const API_EMPLOYEE = "https://api.urest.in:8096/api/employee";
 
 export const ExpenseMasterService = {
-  // GET all expenses by officeId
-  getExpensesByOffice: async (propertyId) => {
+  // =========================
+  // GET all expenses by office
+  // =========================
+  getExpensesByOffice: async (officeId) => {
     try {
-      const res = await axios.get(`${API_BASE}/byOffice/${propertyId}`, {
+      const res = await axios.get(`${API_BASE}/byOffice/${officeId}`, {
         withCredentials: false,
       });
       return res.data;
@@ -27,15 +20,28 @@ export const ExpenseMasterService = {
     }
   },
 
-  // POST - create new expense
-  createExpense: async (payload, file) => {
+  // =========================
+  // GET employees by office
+  // =========================
+  getEmployeesByOffice: async (officeId) => {
     try {
-      if (file) {
-        const base64Image = await toBase64(file);
-        payload.BillImage = base64Image;
-      }
-      const res = await axios.post(API_BASE, payload, {
-        headers: { "Content-Type": "application/json" },
+      const res = await axios.get(`${API_EMPLOYEE}/getByOffice/${officeId}`, {
+        withCredentials: false,
+      });
+      return res.data;
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+      throw error;
+    }
+  },
+
+  // =========================
+  // POST - create new expense
+  // multipart/form-data
+  // =========================
+  createExpense: async (formData) => {
+    try {
+      const res = await axios.post(API_BASE, formData, {
         withCredentials: false,
       });
       return res.data;
@@ -45,15 +51,13 @@ export const ExpenseMasterService = {
     }
   },
 
+  // =========================
   // PUT - update expense
-  updateExpense: async (id, payload, file) => {
+  // multipart/form-data
+  // =========================
+  updateExpense: async (id, formData) => {
     try {
-      if (file) {
-        const base64Image = await toBase64(file);
-        payload.BillImage = base64Image;
-      }
-      const res = await axios.put(`${API_BASE}/${id}`, payload, {
-        headers: { "Content-Type": "application/json" },
+      const res = await axios.put(`${API_BASE}/${id}`, formData, {
         withCredentials: false,
       });
       return res.data;
@@ -63,7 +67,9 @@ export const ExpenseMasterService = {
     }
   },
 
-  // DELETE - delete expense
+  // =========================
+  // DELETE expense
+  // =========================
   deleteExpense: async (id) => {
     try {
       const res = await axios.delete(`${API_BASE}/${id}`, {
@@ -76,27 +82,35 @@ export const ExpenseMasterService = {
     }
   },
 
-  // GET Expense Types by Office
-  getExpenseTypesByOffice: async (propertyIdId) => {
+  // =========================
+  // GET expense types by office
+  // =========================
+  getExpenseTypesByOffice: async (officeId) => {
     try {
-      const res = await axios.get(`${API_EXPENSE_TYPE}/names/byOffice/${propertyIdId}`, {
-        withCredentials: false,
-      });
-      return res.data; // array of ExpenseType names
+      const res = await axios.get(
+        `${API_EXPENSE_TYPE}/names/byOffice/${officeId}`,
+        { withCredentials: false }
+      );
+      return res.data;
     } catch (error) {
       console.error("Error fetching expense types:", error);
       throw error;
     }
   },
 
-  // GET Expense Subtypes by Type
+  // =========================
+  // GET expense subtypes by type
+  // =========================
   getExpenseSubtypesByType: async (expenseTypeName) => {
     try {
-      const res = await axios.get(`${API_EXPENSE_TYPE}/subtypes/byType`, {
-        params: { expenseTypeName },
-        withCredentials: false,
-      });
-      return res.data; // array of subtypes
+      const res = await axios.get(
+        `${API_EXPENSE_TYPE}/subtypes/byType`,
+        {
+          params: { expenseTypeName },
+          withCredentials: false,
+        }
+      );
+      return res.data;
     } catch (error) {
       console.error("Error fetching expense subtypes:", error);
       throw error;
