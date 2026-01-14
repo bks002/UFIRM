@@ -12,6 +12,7 @@ import { useSelector } from "react-redux";
 import { Dropdown } from "primereact/dropdown";
 import { Toast } from "primereact/toast";
 import { useRef } from "react";
+import { RadioButton } from "primereact/radiobutton";
 
 const ExpenseMaster = () => {
   const [viewing, setViewing] = useState(false);
@@ -21,6 +22,8 @@ const ExpenseMaster = () => {
   const propertyId = useSelector((state) => state.Commonreducer.puidn);
   const [employees, setEmployees] = useState([]);
   const [showEmployee, setShowEmployee] = useState(false);
+  const [amountType, setAmountType] = useState("");
+  // values: "DEBIT" | "CREDIT" | "BOTH"
   const toast = useRef(null);
   const [expenses, setExpenses] = useState([]);
   const [open, setOpen] = useState(false);
@@ -34,6 +37,8 @@ const ExpenseMaster = () => {
     DateFrom: null,
     DateTo: null,
     Amount: null,
+    DebitAmount: null,
+    CreditAmount: null,
     Description: "",
     BillPDFs: [],
     OfficeId: propertyId,
@@ -154,6 +159,15 @@ const ExpenseMaster = () => {
       });
       return;
     }
+    if (!amountType) {
+      toast.current.show({
+        severity: "warn",
+        summary: "Missing Amount Type",
+        detail: "Please select Debit, Credit, or Both",
+        life: 3000,
+      });
+      return;
+    }
 
     setSaving(true);
     try {
@@ -233,6 +247,7 @@ const ExpenseMaster = () => {
       UpdatedOn: new Date().toISOString(),
     });
     setShowEmployee(false);
+    setAmountType("");
   };
 
   const handleEdit = (row) => {
@@ -246,6 +261,8 @@ const ExpenseMaster = () => {
       DateTo: formatForCalendar(row.DateTo),
       BillPDFs: row.Documents ?? [],
     });
+    // TEMP: until backend sends this field
+    setAmountType("DEBIT");
 
     // 👇 decide if employee dropdown should be shown
     if (row.EmployeeId) {
@@ -347,6 +364,41 @@ const ExpenseMaster = () => {
 
   return (
     <>
+      <style>{`
+  /* Amount label bold */
+  .amount-label {
+    font-weight: 500;
+    min-width: 90px;
+  }
+
+  /* Amount row layout */
+  .amount-header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 8px;
+  }
+
+  /* Radio group spacing */
+  .amount-radios {
+    display: flex;
+    gap: 16px;
+  }
+
+  /* Radio + text close together */
+  .amount-radio {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* OVERRIDE PrimeReact label spacing */
+  .amount-radio .p-radiobutton-label {
+    margin-left: 4px !important;
+    font-weight: 400;
+  }
+`}</style>
+
       {/* Table */}
       <div className="content-wrapper">
         <section className="content">
@@ -466,18 +518,112 @@ const ExpenseMaster = () => {
                 showIcon
               />
             </div>
-            <div className="flex flex-col">
-              <label>Amount</label>
-              <InputNumber
-                value={form.Amount}
-                onValueChange={(e) =>
-                  setForm((prev) => ({ ...prev, Amount: e.value }))
-                }
-                mode="currency"
-                currency="INR"
-                locale="en-IN"
-              />
+            {/* Amount */}
+            <div className="field col-12">
+              {/* Amount + radios closer to input */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "20px",
+                  marginBottom: "4px", // 👈 less space above input
+                  marginTop: "12px", // 👈 pushes it DOWN
+                }}
+              >
+                {/* Amount text bold */}
+                <span
+                  style={{
+                    fontWeight: 700, // bolder
+                    fontSize: "1.07rem", // slightly bigger, not screaming
+                  }}
+                >
+                  Amount
+                </span>
+
+                {/* Radios */}
+                {["DEBIT", "CREDIT", "BOTH"].map((type) => (
+                  <div
+                    key={type}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      transform: "scale(0.85)", // 👈 makes RADIO smaller
+                      transformOrigin: "left center",
+                    }}
+                  >
+                    <RadioButton
+                      inputId={`amount-${type}`}
+                      name="amountType"
+                      value={type}
+                      onChange={(e) => {
+                        setAmountType(e.value);
+                        setForm((prev) => ({
+                          ...prev,
+                          Amount: null,
+                          DebitAmount: null,
+                          CreditAmount: null,
+                        }));
+                      }}
+                      checked={amountType === type}
+                    />
+                    <label
+                      htmlFor={`amount-${type}`}
+                      style={{
+                        fontSize: "0.8rem", // 👈 makes TEXT smaller
+                        fontWeight: 500,
+                      }}
+                    >
+                      {type}
+                    </label>
+                  </div>
+                ))}
+              </div>
+
+              {/* Amount input(s) */}
+              {amountType !== "BOTH" && (
+                <InputNumber
+                  value={form.Amount}
+                  onValueChange={(e) =>
+                    setForm((prev) => ({ ...prev, Amount: e.value }))
+                  }
+                  mode="currency"
+                  currency="INR"
+                  locale="en-IN"
+                  placeholder="Enter amount"
+                  className="w-full"
+                />
+              )}
+
+              {amountType === "BOTH" && (
+                <div style={{ display: "flex", gap: "12px" }}>
+                  <InputNumber
+                    value={form.DebitAmount}
+                    onValueChange={(e) =>
+                      setForm((prev) => ({ ...prev, DebitAmount: e.value }))
+                    }
+                    mode="currency"
+                    currency="INR"
+                    locale="en-IN"
+                    placeholder="Debit amount"
+                    className="w-full"
+                  />
+
+                  <InputNumber
+                    value={form.CreditAmount}
+                    onValueChange={(e) =>
+                      setForm((prev) => ({ ...prev, CreditAmount: e.value }))
+                    }
+                    mode="currency"
+                    currency="INR"
+                    locale="en-IN"
+                    placeholder="Credit amount"
+                    className="w-full"
+                  />
+                </div>
+              )}
             </div>
+
             <div className="flex flex-col">
               <label>Description</label>
               <InputTextarea
