@@ -31,12 +31,14 @@ const ExpenseMaster = () => {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     Id: 0,
-    ExpenseType: "",
-    ExpenseSubtype: "",
+    ExpenseTypeId: null,
+    ExpenseTypeName: "",
+
+    ExpenseSubtype: null,
+
     Employee: null,
     DateFrom: null,
     DateTo: null,
-    Amount: null,
     DebitAmount: null,
     CreditAmount: null,
     Description: "",
@@ -53,11 +55,15 @@ const ExpenseMaster = () => {
     const formatForCalendar = (val) =>
       val ? new Date(new Date(val).toDateString()) : null;
 
-    setForm({
+    setForm((prev) => ({
+      ...prev,
       ...row,
+      ExpenseTypeName: row.ExpenseType,
+      Employee: row.EmployeeId ?? null, // 👈 THIS IS THE FIX
       DateFrom: formatForCalendar(row.DateFrom),
       DateTo: formatForCalendar(row.DateTo),
-    });
+    }));
+
     setViewing(true);
   };
 
@@ -118,7 +124,12 @@ const ExpenseMaster = () => {
     if (propertyId) {
       ExpenseMasterService.getExpenseTypesByOffice(propertyId)
         .then((types) =>
-          setExpenseTypes(types.map((t) => ({ label: t, value: t })))
+          setExpenseTypes(
+            types.map((t) => ({
+              label: t.ExpenseType,
+              value: t.ExpenseTypeId, // 👈 ID stored
+            }))
+          )
         )
         .catch(console.error);
     }
@@ -126,28 +137,45 @@ const ExpenseMaster = () => {
 
   // ✅ Fetch subtypes whenever ExpenseType changes
   useEffect(() => {
-    if (form.ExpenseType) {
-      ExpenseMasterService.getExpenseSubtypesByType(form.ExpenseType)
+    if (form.ExpenseTypeId) {
+      ExpenseMasterService.getExpenseSubtypesByType(form.ExpenseTypeId)
         .then((subtypes) => {
-          const mappedSubtypes = subtypes.map((s) => ({
-            label: s.ExpenseSubtype, // 👈 THIS is the display text
-            value: s.ExpenseSubtype, // 👈 THIS is what you store
-            includeEmployee: s.IncludeEmployee, // optional, future use
-          }));
-
-          setExpenseSubtypes(mappedSubtypes);
+          setExpenseSubtypes(
+            subtypes.map((s) => ({
+              label: s.ExpenseSubtype,
+              value: s.ExpenseSubtype,
+              includeEmployee: s.IncludeEmployee,
+            }))
+          );
         })
         .catch(console.error);
     } else {
       setExpenseSubtypes([]);
-      setForm((prev) => ({ ...prev, ExpenseSubtype: "" }));
     }
-  }, [form.ExpenseType]);
+  }, [form.ExpenseTypeId]);
 
   // ✅ Save / Update
   const handleSave = async () => {
     // 🚫 prevent double click / duplicate submit
     if (saving) return;
+
+    if (amountType === "DEBIT" && !form.DebitAmount) {
+      toast.current.show({
+        severity: "warn",
+        summary: "Missing amount",
+        detail: "Please enter Debit Amount",
+      });
+      return;
+    }
+
+    if (amountType === "CREDIT" && !form.CreditAmount) {
+      toast.current.show({
+        severity: "warn",
+        summary: "Missing amount",
+        detail: "Please enter Credit Amount",
+      });
+      return;
+    }
 
     // 🚫 validate required dates
     if (!form.DateFrom || !form.DateTo) {
@@ -174,10 +202,21 @@ const ExpenseMaster = () => {
       const formData = new FormData();
 
       // text fields
-      formData.append("expense_type", form.ExpenseType);
+      formData.append("expense_type", form.ExpenseTypeName);
       formData.append("office_id", propertyId);
       formData.append("created_by", 1);
-      formData.append("amount", String(form.Amount));
+      if (amountType === "DEBIT" || amountType === "BOTH") {
+        if (form.DebitAmount) {
+          formData.append("debit_amount", String(form.DebitAmount));
+        }
+      }
+
+      if (amountType === "CREDIT" || amountType === "BOTH") {
+        if (form.CreditAmount) {
+          formData.append("credit_amount", String(form.CreditAmount));
+        }
+      }
+
       formData.append("description", form.Description || "");
       formData.append("date_from", formatDate(form.DateFrom));
       formData.append("date_to", formatDate(form.DateTo));
@@ -190,17 +229,32 @@ const ExpenseMaster = () => {
         formData.append("employee_id", form.Employee);
       }
 
-      // one PDF max
-      const pdf = form.BillPDFs.find((f) => f instanceof File);
-      if (pdf) {
-        formData.append("files", pdf);
-      }
+      // 📌 FILE HANDLING — EDIT MODE FIX
+      const newFiles = form.BillPDFs.filter((f) => f instanceof File);
+      const existingUrls = form.BillPDFs.filter((f) => typeof f === "string");
 
-      // edit-only existing files
       if (editing) {
-        form.BillPDFs.filter((f) => typeof f === "string").forEach((url) =>
-          formData.append("existing_files", url)
-        );
+        if (newFiles.length > 0) {
+          // 🚨 Backend replaces everything if files are sent
+          newFiles.forEach((file) => {
+            formData.append("files", file);
+          });
+          // ❌ DO NOT send existing_files here
+        } else {
+          // No new uploads → preserve remaining old PDFs
+          if (existingUrls.length > 0) {
+            existingUrls.forEach((url) => {
+              formData.append("existing_files", url);
+            });
+          } else {
+            formData.append("existing_files", "[]");
+          }
+        }
+      } else {
+        // CREATE MODE
+        newFiles.forEach((file) => {
+          formData.append("files", file);
+        });
       }
 
       if (editing) {
@@ -231,12 +285,14 @@ const ExpenseMaster = () => {
     const now = new Date().toISOString();
     setForm({
       Id: 0,
-      ExpenseType: "",
-      ExpenseSubtype: "",
+      ExpenseTypeId: null,
+      ExpenseTypeName: "",
+      ExpenseSubtype: null,
       Employee: null,
       DateFrom: null,
       DateTo: null,
-      Amount: null,
+      DebitAmount: null,
+      CreditAmount: null,
       Description: "",
       BillPDFs: [],
       OfficeId: propertyId,
@@ -256,13 +312,23 @@ const ExpenseMaster = () => {
 
     setForm({
       ...row,
-      Employee: row.EmployeeId ?? null, // 👈 VERY IMPORTANT
+      ExpenseTypeId: expenseTypes.find((t) => t.label === row.ExpenseType)
+        ?.value,
+      ExpenseTypeName: row.ExpenseType,
+      Employee: row.EmployeeId ?? null,
       DateFrom: formatForCalendar(row.DateFrom),
       DateTo: formatForCalendar(row.DateTo),
       BillPDFs: row.Documents ?? [],
     });
+
     // TEMP: until backend sends this field
-    setAmountType("DEBIT");
+    if (row.DebitAmount && row.CreditAmount) {
+      setAmountType("BOTH");
+    } else if (row.DebitAmount) {
+      setAmountType("DEBIT");
+    } else if (row.CreditAmount) {
+      setAmountType("CREDIT");
+    }
 
     // 👇 decide if employee dropdown should be shown
     if (row.EmployeeId) {
@@ -319,7 +385,7 @@ const ExpenseMaster = () => {
           color: "#fff",
           marginRight: "4px",
         }}
-        onClick={() => handleDelete(rowData)}
+        onClick={() => handleDelete(rowData.Id)}
         tooltip="Delete"
       />
     </div>
@@ -429,7 +495,20 @@ const ExpenseMaster = () => {
                     header="Date To"
                     body={(row) => formatDate(row.DateTo)}
                   />
-                  <Column field="Amount" header="Amount" />
+                  <Column
+                    header="Debit Amount"
+                    body={(row) =>
+                      row.DebitAmount ? `₹ ${row.DebitAmount}` : "-"
+                    }
+                  />
+
+                  <Column
+                    header="Credit Amount"
+                    body={(row) =>
+                      row.CreditAmount ? `₹ ${row.CreditAmount}` : "-"
+                    }
+                  />
+
                   <Column field="Description" header="Description" />
                   <Column body={actionTemplate} header="Actions" />
                 </DataTable>
@@ -449,11 +528,20 @@ const ExpenseMaster = () => {
             <div className="flex flex-col">
               <label className="mb-1 font-medium">Expense Type</label>
               <Dropdown
-                value={form.ExpenseType}
+                value={form.ExpenseTypeId}
                 options={expenseTypes}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, ExpenseType: e.value }))
-                }
+                onChange={(e) => {
+                  const selected = expenseTypes.find(
+                    (t) => t.value === e.value
+                  );
+
+                  setForm((prev) => ({
+                    ...prev,
+                    ExpenseTypeId: e.value,
+                    ExpenseTypeName: selected?.label || "",
+                    ExpenseSubtype: null, // 👈 use null, NOT ""
+                  }));
+                }}
                 placeholder="Select Expense Type"
                 className="w-full"
               />{" "}
@@ -461,7 +549,7 @@ const ExpenseMaster = () => {
             <div className="flex flex-col">
               <label>Expense Subtype</label>
               <Dropdown
-                value={form.ExpenseSubtype}
+                value={form.ExpenseSubtype || null}
                 options={expenseSubtypes}
                 onChange={(e) => {
                   const selected = expenseSubtypes.find(
@@ -477,7 +565,7 @@ const ExpenseMaster = () => {
                   setShowEmployee(!!selected?.includeEmployee);
                 }}
                 placeholder="Select Expense Subtype"
-                disabled={!form.ExpenseType}
+                disabled={!form.ExpenseTypeId}
               />{" "}
             </div>
             {showEmployee && (
@@ -560,7 +648,6 @@ const ExpenseMaster = () => {
                         setAmountType(e.value);
                         setForm((prev) => ({
                           ...prev,
-                          Amount: null,
                           DebitAmount: null,
                           CreditAmount: null,
                         }));
@@ -581,16 +668,30 @@ const ExpenseMaster = () => {
               </div>
 
               {/* Amount input(s) */}
-              {amountType !== "BOTH" && (
+              {amountType === "DEBIT" && (
                 <InputNumber
-                  value={form.Amount}
+                  value={form.DebitAmount}
                   onValueChange={(e) =>
-                    setForm((prev) => ({ ...prev, Amount: e.value }))
+                    setForm((prev) => ({ ...prev, DebitAmount: e.value }))
                   }
                   mode="currency"
                   currency="INR"
                   locale="en-IN"
-                  placeholder="Enter amount"
+                  placeholder="Debit amount"
+                  className="w-full"
+                />
+              )}
+
+              {amountType === "CREDIT" && (
+                <InputNumber
+                  value={form.CreditAmount}
+                  onValueChange={(e) =>
+                    setForm((prev) => ({ ...prev, CreditAmount: e.value }))
+                  }
+                  mode="currency"
+                  currency="INR"
+                  locale="en-IN"
+                  placeholder="Credit amount"
                   className="w-full"
                 />
               )}
@@ -660,6 +761,27 @@ const ExpenseMaster = () => {
                   onClick={() => document.getElementById("pdfUpload").click()}
                 />
 
+                {editing && form.BillPDFs?.length > 0 && (
+                  <Button
+                    label="Remove all PDFs"
+                    icon="pi pi-trash"
+                    className="p-button-danger p-button-sm w-fit"
+                    style={{ marginTop: "6px" }}
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          "This will remove all existing PDFs. Continue?"
+                        )
+                      ) {
+                        setForm((prev) => ({
+                          ...prev,
+                          BillPDFs: [],
+                        }));
+                      }
+                    }}
+                  />
+                )}
+
                 {/* PDF names list */}
                 {form.BillPDFs?.length > 0 && (
                   <ul style={{ marginTop: "8px", paddingLeft: "16px" }}>
@@ -668,24 +790,11 @@ const ExpenseMaster = () => {
                       const fileName = isUrl
                         ? file.split("/").pop()
                         : file.name;
-                      const fileUrl = isUrl ? file : URL.createObjectURL(file);
 
                       return (
-                        <li
-                          key={index}
-                          style={{
-                            fontSize: "0.9rem",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                          }}
-                        >
+                        <li key={index} style={{ fontSize: "0.9rem" }}>
                           <a
-                            href={
-                              typeof file === "string"
-                                ? file
-                                : URL.createObjectURL(file)
-                            }
+                            href={isUrl ? file : URL.createObjectURL(file)}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
@@ -695,13 +804,6 @@ const ExpenseMaster = () => {
                           >
                             📄 {fileName}
                           </a>
-
-                          <Button
-                            icon="pi pi-times"
-                            className="p-button-text p-button-danger p-button-sm"
-                            onClick={() => handleRemovePDF(index)}
-                            tooltip="Remove PDF"
-                          />
                         </li>
                       );
                     })}
@@ -737,17 +839,17 @@ const ExpenseMaster = () => {
           <div className="p-fluid formgrid grid">
             <div className="flex flex-col">
               <label>Expense Type</label>
-              <InputText value={form.ExpenseType} readOnly />
+              <InputText value={form.ExpenseTypeName} readOnly />
             </div>
             <div className="flex flex-col">
               <label>Expense Subtype</label>
               <InputText value={form.ExpenseSubtype} readOnly />
             </div>
-            {form.EmployeeId && (
+            {form.Employee && (
               <div className="flex flex-col">
                 <label>Employee</label>
                 <InputText
-                  value={getEmployeeNameById(form.EmployeeId)}
+                  value={getEmployeeNameById(form.Employee)}
                   readOnly
                 />
               </div>
@@ -761,9 +863,21 @@ const ExpenseMaster = () => {
               <InputText value={formatDate(form.DateTo)} readOnly />
             </div>
             <div className="flex flex-col">
-              <label>Amount</label>
-              <InputText value={form.Amount} readOnly />
+              <label>Debit Amount</label>
+              <InputText
+                value={form.DebitAmount ? `₹ ${form.DebitAmount}` : "-"}
+                readOnly
+              />
             </div>
+
+            <div className="flex flex-col">
+              <label>Credit Amount</label>
+              <InputText
+                value={form.CreditAmount ? `₹ ${form.CreditAmount}` : "-"}
+                readOnly
+              />
+            </div>
+
             <div className="flex flex-col">
               <label>Description</label>
               <InputTextarea value={form.Description} rows={3} readOnly />
@@ -773,21 +887,30 @@ const ExpenseMaster = () => {
 
               {form.BillPDFs && form.BillPDFs.length > 0 ? (
                 <ul style={{ paddingLeft: "16px", marginTop: "6px" }}>
-                  {form.BillPDFs.map((url, index) => (
-                    <li key={index}>
-                      <a
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          color: "#007bff",
-                          textDecoration: "underline",
-                        }}
-                      >
-                        View PDF {index + 1}
-                      </a>
-                    </li>
-                  ))}
+                  {form.BillPDFs.map((item, index) => {
+                    const isUrl = typeof item === "string";
+                    const fileName = isUrl ? item.split("/").pop() : item.name;
+
+                    return (
+                      <li key={index}>
+                        {isUrl ? (
+                          <a
+                            href={item}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              color: "#007bff",
+                              textDecoration: "underline",
+                            }}
+                          >
+                            📄 {fileName}
+                          </a>
+                        ) : (
+                          <span>📄 {fileName}</span>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               ) : (
                 <span>No PDFs uploaded</span>

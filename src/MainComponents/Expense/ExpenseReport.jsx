@@ -42,30 +42,57 @@ export default function ExpenseReport() {
       return;
     }
 
-    // 🔹 Calculate Gross Total
-    const grossTotal = reports.reduce(
-      (sum, r) => sum + Number(r.TotalAmount || 0),
+    // 🔹 Totals
+    const totalCredit = reports.reduce(
+      (sum, r) => sum + Number(r.TotalCreditAmount || 0),
       0
     );
 
+    const totalDebit = reports.reduce(
+      (sum, r) => sum + Number(r.TotalDebitAmount || 0),
+      0
+    );
+
+    const totalAmount = totalCredit - totalDebit;
+
+    // 🔹 Header (ORDER MATTERS)
     const header = [
       "Expense Type",
       "Expense Sub Type",
-      "Total Amount",
+      "Credit Amount",
+      "Debit Amount",
+      "Amount",
       "Date From",
       "Date To",
     ];
 
-    const rows = reports.map((r) => [
-      `"${r.ExpenseType}"`,
-      `"${r.ExpenseSubType}"`,
-      `="${r.TotalAmount}"`, // force number → no 4E+08
-      `="${formatDate(r.DateFrom)}"`, // force text → no ####
-      `="${formatDate(r.DateTo)}"`, // force text → no ####
-    ]);
+    // 🔹 Rows
+    const rows = reports.map((r) => {
+      const credit = Number(r.TotalCreditAmount || 0);
+      const debit = Number(r.TotalDebitAmount || 0);
+      const amount = credit - debit;
 
-    // 🔹 Add Gross Total row
-    rows.push([`"GROSS TOTAL"`, `""`, `="${grossTotal}"`, `""`, `""`]);
+      return [
+        `"${r.ExpenseType}"`,
+        `"${r.ExpenseSubType}"`,
+        `="${credit}"`,
+        `="${debit}"`,
+        `="${amount}"`,
+        `="${formatDate(r.DateFrom)}"`,
+        `="${formatDate(r.DateTo)}"`,
+      ];
+    });
+
+    // 🔹 Gross Total row
+    rows.push([
+      `"GROSS TOTAL"`,
+      `""`,
+      `="${totalCredit}"`,
+      `="${totalDebit}"`,
+      `="${totalAmount}"`,
+      `""`,
+      `""`,
+    ]);
 
     const csvContent = [
       header.join(","),
@@ -193,7 +220,9 @@ export default function ExpenseReport() {
           <Column field="ExpenseType" header="Expense Type" sortable />
 
           <Column field="ExpenseSubType" header="Expense Sub Type" sortable />
-          <Column field="TotalAmount" header="Total Amount" sortable />
+          <Column field="TotalCreditAmount" header="Credit Amount" sortable />
+          <Column field="TotalDebitAmount" header="Debit Amount" sortable />
+
           <Column
             field="DateFrom"
             header="Date From"

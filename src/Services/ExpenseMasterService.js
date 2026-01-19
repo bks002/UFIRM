@@ -99,16 +99,13 @@ export const ExpenseMasterService = {
   },
 
   // =========================
-  // GET expense subtypes by type
+  // GET expense subtypes by type ID
   // =========================
-  getExpenseSubtypesByType: async (expenseTypeName) => {
+  getExpenseSubtypesByType: async (expenseTypeId) => {
     try {
       const res = await axios.get(
-        `${API_EXPENSE_TYPE}/subtypes/byType`,
-        {
-          params: { expenseTypeName },
-          withCredentials: false,
-        }
+        `${API_EXPENSE_TYPE}/subtypes/${expenseTypeId}`,
+        { withCredentials: false }
       );
       return res.data;
     } catch (error) {

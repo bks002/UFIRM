@@ -1,11 +1,36 @@
 import React from 'react';
 import Modal from 'react-bootstrap/Modal';
 import ChatBox from './ChatBox'; // Import the renamed component
+import { useEffect, useState } from "react";
+import { getTaskRemarks, getComplaintRemarks } from "../../Services/notificationService";
 
 const FMResponseModal = ({ notification, onClose, onReply, apiCall }) => {
   const isTaskNotification = notification && notification.TaskId;
   const isAssetNotification = notification && notification.AssetId;
   const isTicketNotification = notification && notification.TicketId;
+  const [taskRemarks, setTaskRemarks] = useState([]);
+  const [complaintRemarks, setComplaintRemarks] = useState([]);
+
+  useEffect(() => {
+    if (!isTaskNotification) return;
+
+    getTaskRemarks(
+      notification.TaskId,
+      notification.QuestionId,
+      notification.TaskDate
+    )
+      .then(data => setTaskRemarks(data || []))
+      .catch(() => setTaskRemarks([]));
+  }, [notification?.TaskId, notification?.QuestionId, notification?.TaskDate]);
+
+  useEffect(() => {
+    if (!isTicketNotification) return;
+
+    getComplaintRemarks(notification.TicketId)
+      .then(data => setComplaintRemarks(data || []))
+      .catch(() => setComplaintRemarks([]));
+  }, [notification?.TicketId]);
+
 
   return (
     <Modal show={!!notification} onHide={onClose} centered>
@@ -28,18 +53,19 @@ const FMResponseModal = ({ notification, onClose, onReply, apiCall }) => {
             {isTaskNotification ? (
               <>
                 <p><strong>Task ID:</strong> {notification.TaskId}</p>
-                <p><strong>Question ID:</strong> {notification.QuestionId}</p>
                 <p><strong>Task Name:</strong> {notification.TaskName}</p>
+                <p><strong>Question ID:</strong> {notification.QuestionId}</p>
+                <p><strong>Question Name:</strong> {notification.QuestionName}</p>
                 <p><strong>Property ID:</strong> {notification.PropertyId}</p>
+                <p><strong>Property Name:</strong> {notification.PropertyName}</p>
 
                 <ChatBox
-                  remark={notification.SupRemark}
-                  name={notification.SupName}
-                  remarkDateTime={notification.SUPdateTime}
+                  remarks={taskRemarks}
                   status={notification.CurrentStatus}
                   context="task"
                   onSend={onReply}
                 />
+
               </>
             ) :
               /* ---------------- ASSET NOTIFICATION ---------------- */
@@ -92,6 +118,12 @@ const FMResponseModal = ({ notification, onClose, onReply, apiCall }) => {
                     <p><strong>Created On:</strong> {new Date(notification.CreatedOn).toLocaleString()}</p>
                     <p><strong>Status:</strong> {notification.Status}</p>
                     <p><strong>Description:</strong> {notification.Description}</p>
+                    {notification.CustomerMobileNo && (
+                      <p>
+                        <strong>Customer Mobile Number:</strong> {notification.CustomerMobileNo}
+                      </p>
+                    )}
+
 
                     {notification.AttachmentUrl && (
                       <p>
@@ -103,10 +135,8 @@ const FMResponseModal = ({ notification, onClose, onReply, apiCall }) => {
                     )}
 
                     <ChatBox
-                      remark={notification.SupRemark || 'No remarks'}
-                      name={notification.SupName || 'All'}
-                      remarkDateTime={notification.CreatedOn || 'Unknown'}
-                      status={notification.Status || 'Unknown'}
+                      remarks={complaintRemarks}
+                      status={notification.Status}
                       context="ticket"
                       onSend={onReply}
                     />
