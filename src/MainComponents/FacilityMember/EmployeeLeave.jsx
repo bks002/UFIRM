@@ -44,11 +44,62 @@ const EmployeeLeave = () => {
   const [financialYear, setFinancialYear] = useState("");
 
   useEffect(() => {
-    if (propertyId) {
-      loadLeaves();
-      loadEmployees();
-      loadLeaveTypes();
-    }
+    if (!propertyId) return;
+
+    const loadAll = async () => {
+      setLoading(true);
+      try {
+        const [leaves, empData, leaveTypeData] = await Promise.all([
+          EmployeeLeaveService.getLeaves(propertyId),
+          FacilityLatlongService.getFacilityMembers(propertyId),
+          EmployeeLeaveService.getLeaveTypes(propertyId)
+        ]);
+
+        // 🔹 Create lookup maps
+        const empMap = {};
+        empData.forEach(e => {
+          empMap[e.FacilityMemberId] = e.Name;
+        });
+
+        const leaveTypeMap = {};
+        leaveTypeData.forEach(l => {
+          leaveTypeMap[l.Id] = l.LeaveType;
+        });
+
+        // 🔹 Enrich leave rows
+        const finalData = leaves.map(item => ({
+          id: item.Id,
+          employeeId: item.EmployeeId,
+          employeeName: empMap[item.EmployeeId] || "—",
+          leaveTypeId: item.LeaveTypeId,
+          leaveTypeName: leaveTypeMap[item.LeaveTypeId] || "—",
+          balance: item.Balance,
+          financialYear: item.FinancialYear,
+        }));
+
+        setLeaveData(finalData);
+
+        // Dropdowns
+        setEmployees(
+          empData.map(e => ({ label: e.Name, value: e.FacilityMemberId }))
+        );
+
+        setLeaveTypes(
+          leaveTypeData.map(l => ({ label: l.LeaveType, value: l.Id }))
+        );
+      } catch (err) {
+        console.error(err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to load data"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAll();
   }, [propertyId]);
 
   // ✅ GET Leaves for table
@@ -79,35 +130,35 @@ const EmployeeLeave = () => {
   };
 
   // ✅ GET Employees for dropdown
-  const loadEmployees = async () => {
-    try {
-      const empData = await FacilityLatlongService.getFacilityMembers(propertyId);
-      setEmployees(
-        empData.map((e) => ({
-          label: e.Name,
-          value: e.FacilityMemberId   // only Id, no object
-        }))
-      );
+  // const loadEmployees = async () => {
+  //   try {
+  //     const empData = await FacilityLatlongService.getFacilityMembers(propertyId);
+  //     setEmployees(
+  //       empData.map((e) => ({
+  //         label: e.Name,
+  //         value: e.FacilityMemberId   // only Id, no object
+  //       }))
+  //     );
 
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // };
 
   // ✅ GET Leave Types for dropdown
-  const loadLeaveTypes = async () => {
-    try {
-      const leaveTypeData = await EmployeeLeaveService.getLeaveTypes(propertyId);
-      setLeaveTypes(
-        leaveTypeData.map((lt) => ({
-          label: lt.LeaveType,  // for displaying
-          value: lt.Id          // actual value
-        }))
-      );
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  // const loadLeaveTypes = async () => {
+  //   try {
+  //     const leaveTypeData = await EmployeeLeaveService.getLeaveTypes(propertyId);
+  //     setLeaveTypes(
+  //       leaveTypeData.map((lt) => ({
+  //         label: lt.LeaveType,  // for displaying
+  //         value: lt.Id          // actual value
+  //       }))
+  //     );
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // };
 
   const resetForm = () => {
     setSelectedEmployee(null);
@@ -133,7 +184,7 @@ const EmployeeLeave = () => {
   };
 
   const validate = () => {
-    if (!selectedEmployee || !selectedLeaveType || !leaveCount || !leaveBalance || !financialYear) {
+    if (!selectedEmployee || !selectedLeaveType ||  !leaveBalance || !financialYear) {
       toast.current.show({
         severity: "warn",
         summary: "Validation",
@@ -151,8 +202,7 @@ const EmployeeLeave = () => {
 
     const record = {
       EmployeeId: Number(selectedEmployee),   // ensure number
-      LeaveTypeId: Number(selectedLeaveType), // ensure number
-      LeaveCount: Number(leaveCount),
+      LeaveTypeId: Number(selectedLeaveType),
       Balance: Number(leaveBalance),
       FinancialYear: financialYear,  // try "2025-2026" instead of just "2025"
       PropertyId: Number(propertyId), // convert to number
@@ -210,7 +260,7 @@ const EmployeeLeave = () => {
       <h5 className="m-0">Employee Leave</h5>
       <div className="d-flex gap-2 align-items-center">
         <span className="p-input-icon-left">
-         
+
           <InputText
             value={globalFilterValue}
             onChange={onGlobalFilterChange}
@@ -228,15 +278,15 @@ const EmployeeLeave = () => {
     </div>
   );
 
-  const employeeBodyTemplate = (rowData) => {
-    const emp = employees.find((e) => e.value === rowData.employeeId);
-    return emp ? emp.label : rowData.employeeId;
-  };
+  // const employeeBodyTemplate = (rowData) => {
+  //   const emp = employees.find((e) => e.value === rowData.employeeId);
+  //   return emp ? emp.label : rowData.employeeId;
+  // };
 
-  const leaveTypeBodyTemplate = (rowData) => {
-    const lt = LeaveType.find((l) => l.value === rowData.leaveTypeId);
-    return lt ? lt.label : rowData.leaveTypeId;
-  };
+  // const leaveTypeBodyTemplate = (rowData) => {
+  //   const lt = LeaveType.find((l) => l.value === rowData.leaveTypeId);
+  //   return lt ? lt.label : rowData.leaveTypeId;
+  // };
 
 
   const actionBodyTemplate = (rowData) => (
@@ -273,9 +323,8 @@ const EmployeeLeave = () => {
                 responsiveLayout="scroll"
               >
                 <Column header="#" body={indexTemplate} style={{ width: "5rem" }} />
-                <Column field="employeeId" header="Employee Name" body={employeeBodyTemplate} />
-                <Column field="leaveTypeId" header="Leave Type" body={leaveTypeBodyTemplate} />
-                <Column field="leaveCount" header="Leave Count" />
+                <Column field="employeeName" header="Employee Name" />
+<Column field="leaveTypeName" header="Leave Type" />
                 <Column field="balance" header="Leave Balance" />
                 <Column field="financialYear" header="Financial Year" />
                 <Column header="Action" body={actionBodyTemplate} style={{ width: "9rem" }} />
@@ -328,11 +377,6 @@ const EmployeeLeave = () => {
               placeholder="Select Leave Type"
               className="w-full"
             />
-          </div>
-
-          <div className="field mb-3">
-            <label>Leave Count</label>
-            <InputText value={leaveCount} onChange={(e) => setLeaveCount(e.target.value)} />
           </div>
 
           <div className="field mb-3">

@@ -1,5 +1,11 @@
 import React, { Fragment } from "react";
-import { BrowserRouter as Router, Switch, Route, Link, Redirect, } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Switch,
+  Route,
+  Link,
+  Redirect,
+} from "react-router-dom";
 import TicketingDashboard from "../MainComponents/Ticket/TicketingDashboard";
 import Department from "../pages/Department";
 import Home from "../MainComponents/Home/Home";
@@ -9,7 +15,7 @@ import UserProfile from "../pages/UserProfilePage";
 import ChangePassword from "../MainComponents/ChangePassword/ChangePassword";
 import DropDownList from "../ReactComponents/SelectBox/DropdownList";
 import ComplainManagement from "../pages/ComplainManagement";
-import PropertyMaster from "../pages/PropertyMaster";
+import PropertyMaster from "../MainComponents/PropertyMaster/PropertyMaster.jsx";
 import PropertyDetailsPage from "../pages/PropertyDetailsPage";
 import ParkingZonePage from "../pages/ParkingZonePage";
 import TicketCategoriesPage from "../pages/TicketCategoriesPage";
@@ -74,18 +80,34 @@ import FrequencyMasterPage from "../pages/FrequencyMasterPage";
 import ItemMasterPage from "../MainComponents/Inventory/itemPage";
 import PurchaseOrderPage from "../MainComponents/Inventory/PurchaseOrderMaster";
 import StockPage from "../MainComponents/Inventory/StockMaster";
+import StockItemsPage from "../pages/StockItemsPage";
 import AttendanceMaster from "../MainComponents/Attendance/attendance.jsx";
 import Leave from "../MainComponents/Attendance/Leaves.jsx";
 import Visitor from "../MainComponents/Visitor/Visitor.jsx";
 import FacilityLatlong from "../MainComponents/FacilityMember/FacilityLatlong.jsx";
 import LeaveMaster from "../MainComponents/Attendance/LeaveMaster.jsx";
 import EmployeeLeave from "../MainComponents/FacilityMember/EmployeeLeave.jsx";
-
+import SparePage from "../MainComponents/AssetsMaster/SpareMaster.jsx";
 import SpotVisitCalendar from "../MainComponents/Calendar/SpotVisitCalendar.jsx";
+import AllowanceDeduction from "../MainComponents/Payroll/AllowanceDeduction.jsx";
+import SalaryGroups from "../MainComponents/Payroll/SalaryGroups.jsx";
 import ExpenseMaster from "../MainComponents/Expense/ExpenseMaster.jsx";
 import ExpenseTypeMaster from "../MainComponents/Expense/ExpenseTypeMaster.jsx";
 import ExpenseReport from "../MainComponents/Expense/ExpenseReport.jsx";
-import Formula from "../MainComponents/FacilityMember/Formula.jsx";
+// import Formula from "../MainComponents/FacilityMember/Formula.jsx";
+import GenerateSalary from "../MainComponents/Payroll/GenerateSalary.jsx";
+import ProfessionalTax from "../MainComponents/Payroll/ProfessionalTax.jsx";
+import LabourFund from "../MainComponents/Payroll/LabourFund.jsx";
+import AttendanceSheet from "../MainComponents/Payroll/AttendanceSheet.jsx";
+import Linking from "../MainComponents/Payroll/Linking.jsx";
+import ItemAssignedPage from "../MainComponents/Inventory/ItemAssigned.jsx";
+import ItemSpecificationPage from "../MainComponents/Inventory/ItemSpecification.jsx";
+import OTHours from "../MainComponents/Payroll/OTHours.jsx";
+import ClientMasterPage from "../MainComponents/PropertyMaster/ClientMaster.jsx";
+import AD_Percentage from "../MainComponents/Payroll/AD_Percentage.jsx";
+import SGNEW from "../MainComponents/Payroll/SGNEW.jsx";
+import DMRReport from "../MainComponents/Reports/DMRReport.jsx";
+import AttendanceReportPage from "../MainComponents/Reports/AttendanceReport.jsx";
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -129,16 +151,20 @@ class MainNav extends React.Component {
 
   componentDidMount() {
 
+<<<<<<<<< Temporary merge branch 1
     var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
 
     //var token = window.sessionStorage.getItem("userinfo_key")
+=========
+    //var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
+    var token = window.sessionStorage.getItem("userinfo_key")
+>>>>>>>>> Temporary merge branch 2
 
     if (token === null) {
       const timerId = setTimeout(() => {
-        this.componentDidMount()
+        this.componentDidMount();
       }, 1000);
-    }
-    else {
+    } else {
       this.loaduserRole();
       this.loadProperty();
 
@@ -161,14 +187,14 @@ class MainNav extends React.Component {
     promiseWrapper(this.props.actions.updateproperty, {
       CompanyId: value,
     }).then((data) => {
-      this.setState({ customerData: data.departmentModel, });
+      this.setState({ customerData: data.departmentModel });
     });
     currentpropertyid = value;
   };
   onUpdateUserRole = (value) => {
     promiseWrapper(this.props.actions.updateuserrole, { UserRole: value }).then(
       (data) => {
-        this.setState({ customerData: data.departmentModel, });
+        this.setState({ customerData: data.departmentModel });
       }
     );
     currentpropertyid = value;
@@ -230,14 +256,11 @@ class MainNav extends React.Component {
                   </span>
                 </a>
                 <div className="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                  <Link to="/UserProfile" className="dropdown-item">
+                  <Link to="/Account/App/UserProfile" className="dropdown-item">
                     <p>My Profile</p>
                   </Link>
                   <div className="dropdown-divider"></div>
-                  <Link
-                    to="/ChangePassword"
-                    className="dropdown-item"
-                  >
+                  <Link to="/Account/App/ChangePassword" className="dropdown-item">
                     <p>Change Password </p>
                   </Link>
                   <div className="dropdown-divider"></div>
@@ -257,27 +280,27 @@ class MainNav extends React.Component {
                 className="brand-image"
               ></img>
               <span className="brand-text">
-                <img
-                  src="/Assets/firmity.png"
-                  alt="UFIRM Logo"
-                ></img>
+                <img src="/Assets/firmity.png" alt="UFIRM Logo"></img>
               </span>
             </Link>
             <div className="sidebar ">
               <nav className="mt-2">
                 <ul
-                  className="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu"
-                  data-accordion="false">
+                  className="nav nav-pills nav-sidebar flex-column"
+                  data-widget="treeview"
+                  role="menu"
+                  data-accordion="false"
+                >
                   <li className="nav-item has-treeview">
                     <a href="#" className="nav-link">
                       <i className="nav-icon fas fa-tachometer-alt"></i>
-                      <p>
-                        Dashboard
-                      </p>
+                      <p>Dashboard</p>
                     </a>
                   </li>
-                  {
-                    // this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager") || this.state.userRoles.includes("Property Admin")) ?
+                  {this.state.userRoles &&
+                  (this.state.userRoles.includes("Admin") ||
+                    this.state.userRoles.includes("Property Manager") ||
+                    this.state.userRoles.includes("Property Admin")) ? (
                     <li className="nav-item has-treeview">
                       <a href="#" className="nav-link">
                         <i className="nav-icon fas fa-calendar"></i>
@@ -291,8 +314,8 @@ class MainNav extends React.Component {
                           <Fragment>
                             <li className="nav-item">
                               <Link
-                                  to="/Account/App/CalendarCategory"
-                                  className="nav-link"
+                                to="/Account/App/CalendarCategory"
+                                className="nav-link"
                               >
                                 <i className=" fas fa-caret-right nav-icon"></i>
                                 <p>Category </p>
@@ -300,8 +323,8 @@ class MainNav extends React.Component {
                             </li>
                             <li className="nav-item">
                               <Link
-                                  to="/Account/App/CalendarSubCategory"
-                                  className="nav-link"
+                                to="/Account/App/CalendarSubCategory"
+                                className="nav-link"
                               >
                                 <i className=" fas fa-caret-right nav-icon"></i>
                                 <p>Sub Category </p>
@@ -364,8 +387,8 @@ class MainNav extends React.Component {
                         </li> */}
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/TaskEventsCalender"
-                              className="nav-link"
+                            to="/Account/App/TaskEventsCalender"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Task Calendar</p>
@@ -400,8 +423,8 @@ class MainNav extends React.Component {
                         {/*</li>*/}
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/GuardList"
-                              className="nav-link"
+                            to="/Account/App/GuardList"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Spot Visits</p>
@@ -409,8 +432,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/SpotVisitCalendar"
-                              className="nav-link"
+                            to="/Account/App/SpotVisitCalendar"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Spot Visit Calendar</p>
@@ -424,121 +447,171 @@ class MainNav extends React.Component {
                                                     </li> */}
                       </ul>
                     </li>
-                    // : null
-                  }
+                  ) : null}
+                  {this.state.userRoles &&
+                  (this.state.userRoles.includes("Admin") ||
+                    this.state.userRoles.includes("Property Manager") ||
+                    this.state.userRoles.includes("Property Admin") ||
+                    this.state.userRoles.includes("Inventory Manager")) ? (
+                    <li className="nav-item has-treeview">
+                      <a href="#" className="nav-link">
+                        <i className="nav-icon fas fa-wrench"></i>
+                        <p>
+                          Asset Management
+                          <i className="right fas fa-angle-left"></i>
+                        </p>
+                      </a>
+                      <ul className="nav nav-treeview">
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/AssetsMaster"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Assets Master</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/SpareMaster"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Spare Master</p> 
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/CheckIn&CheckOut"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Check IN & OUT</p>
+                          </Link>
+                        </li>
 
-                  <li className="nav-item has-treeview">
-                    <a href="#" className="nav-link">
-                      <i className="nav-icon fas fa-wrench"></i>
-                      <p>
-                        Asset Management
-                        <i className="right fas fa-angle-left"></i>
-                      </p>
-                    </a>
-                    <ul className="nav nav-treeview">
-                      <li className="nav-item">
-                        <Link
-                          to="/Account/App/AssetsMaster"
-                          className="nav-link"
-                        >
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Assets Master</p>
-                        </Link>
-                      </li>
-                      <li className="nav-item">
-                        <Link
-                          to="/Account/App/CheckIn&CheckOut"
-                          className="nav-link"
-                        >
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Check IN & OUT</p>
-                        </Link>
-                      </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/RentalAssets"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Rental Assets</p>
+                          </Link>
+                        </li>
 
-                      <li className="nav-item">
-                        <Link to="/Account/App/RentalAssets" className="nav-link">
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Rental Assets</p>
-                        </Link>
-                      </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/ServiceRecords"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Service Records</p>
+                          </Link>
+                        </li>
 
-                      <li className="nav-item">
-                        <Link to="/Account/App/ServiceRecords" className="nav-link">
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Service Records</p>
-                        </Link>
-                      </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/AssetTracking"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Asset Log</p>
+                          </Link>
+                        </li>
+                      </ul>
+                    </li>
+                  ) : null}
+                  {this.state.userRoles &&
+                  (this.state.userRoles.includes("Admin") ||
+                    this.state.userRoles.includes("Property Manager") ||
+                    this.state.userRoles.includes("Property Admin") ||
+                    this.state.userRoles.includes("Inventory Manager")) ? (
+                    <li className="nav-item has-treeview">
+                      <a href="#" className="nav-link">
+                        <i className="nav-icon fas fa-boxes"></i>
+                        <p>
+                          Inventory Management
+                          <i className="right fas fa-angle-left"></i>
+                        </p>
+                      </a>
+                      <ul className="nav nav-treeview">
+                        <li className="nav-item">
+                          <Link to="/Account/App/Category" className="nav-link">
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Category</p>
+                          </Link>
+                        </li>
 
-                      <li className="nav-item">
-                        <Link
-                          to="/Account/App/AssetTracking"
-                          className="nav-link"
-                        >
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Asset Log</p>
-                        </Link>
-                      </li>
-                    </ul>
-                  </li>
+                        <li className="nav-item">
+                          <Link to="/Account/App/Item" className="nav-link">
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Items</p>
+                          </Link>
+                        </li>
 
-                  <li className="nav-item has-treeview">
-                    <a href="#" className="nav-link">
-                      <i className="nav-icon fas fa-boxes"></i>
-                      <p>
-                        Inventory Management
-                        <i className="right fas fa-angle-left"></i>
-                      </p>
-                    </a>
-                    <ul className="nav nav-treeview">
-                      <li className="nav-item">
-                        <Link
-                          to="/Account/App/Category"
-                          className="nav-link"
-                        >
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Category</p>
-                        </Link>
-                      </li>
+                        <li className="nav-item">
+                          <Link to="/Account/App/Vendors" className="nav-link">
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Vendors</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link to="/Account/App/RateCard" className="nav-link">
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Rate Card</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/PurchaseOrders"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Purchase Orders</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link to="/Account/App/Stock" className="nav-link">
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Stock</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/StockItems"
+                            className="nav-link"
+                          >
+                            <i className="fas fa-caret-right nav-icon"></i>
+                            <p>Stock Items</p>
+                          </Link>
+                        </li>
 
-                      <li className="nav-item">
-                        <Link
-                          to="/Account/App/Item"
-                          className="nav-link"
-                        >
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Items</p>
-                        </Link>
-                      </li>
-
-                      <li className="nav-item">
-                        <Link to="/Account/App/Vendors" className="nav-link">
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Vendors</p>
-                        </Link>
-                      </li>
-                      <li className="nav-item">
-                        <Link to="/Account/App/RateCard" className="nav-link">
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Rate Card</p>
-                        </Link>
-                      </li>
-                      <li className="nav-item">
-                        <Link to="/Account/App/PurchaseOrders" className="nav-link">
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Purchase Orders</p>
-                        </Link>
-                      </li>
-                      <li className="nav-item">
-                        <Link to="/Account/App/Stock" className="nav-link">
-                          <i className=" fas fa-caret-right nav-icon"></i>
-                          <p>Stock</p>
-                        </Link>
-                      </li>
-                    </ul>
-                  </li>
-
-                  {
-                    // this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager")) ?
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/ItemSpecification"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Item Specification</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/ItemAssigned"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Item Assigned</p>
+                          </Link>
+                        </li>
+                      </ul>
+                    </li>
+                  ) : null}
+                  {this.state.userRoles &&
+                  (this.state.userRoles.includes("Admin") ||
+                    this.state.userRoles.includes("Property Manager") ||
+                    this.state.userRoles.includes("Property Admin")) ? (
                     <li className="nav-item has-treeview">
                       <a href="#" className="nav-link">
                         <i className="nav-icon fas fa-hotel"></i>
@@ -550,8 +623,8 @@ class MainNav extends React.Component {
                       <ul className="nav nav-treeview">
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/ManageResidentOwners"
-                              className="nav-link"
+                            to="/Account/App/ManageResidentOwners"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Manage Resident/Owners</p>
@@ -559,8 +632,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/RwaMember"
-                              className="nav-link"
+                            to="/Account/App/RwaMember"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Rwa Member</p>
@@ -575,8 +648,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/EmergencyContact"
-                              className="nav-link"
+                            to="/Account/App/EmergencyContact"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Emergency Contact </p>
@@ -590,8 +663,8 @@ class MainNav extends React.Component {
                                             </li> */}
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/Employeeassignment"
-                              className="nav-link"
+                            to="/Account/App/Employeeassignment"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Employee Assignment</p>
@@ -599,8 +672,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item ">
                           <Link
-                              to="/Account/App/PropertyMember"
-                              className="nav-link"
+                            to="/Account/App/PropertyMember"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Rent Agreement</p>
@@ -608,12 +681,14 @@ class MainNav extends React.Component {
                         </li>
                       </ul>
                     </li>
-                    // : null
-                  }
+                  ) : null}
 
-                  {
-                    // this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager")) ?
-
+                  {this.state.userRoles &&
+                  (this.state.userRoles.includes("Admin") ||
+                    this.state.userRoles.includes("Property Manager") ||
+                    this.state.userRoles.includes("Facility Manager") ||
+                    this.state.userRoles.includes("HR") ||
+                    this.state.userRoles.includes("Property Admin")) ? (
                     <li className="nav-item has-treeview">
                       <a href="#" className="nav-link">
                         <i className="nav-icon fas fa-address-book"></i>
@@ -625,24 +700,22 @@ class MainNav extends React.Component {
                       <ul className="nav nav-treeview">
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/FacilityMember"
-                              className="nav-link"
+                            to="/Account/App/FacilityMember"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Facility Member </p>
                           </Link>
                         </li>
                         <li className="nav-item">
-                          <Link
-                            to="/Account/App/Facility"
-                            className="nav-link"
-                          >
+                          <Link to="/Account/App/Facility" className="nav-link">
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Facility Latlong </p>
                           </Link>
                         </li>
 
-                        {this.state.userRoles && this.state.userRoles.includes("Admin") ?
+                        {this.state.userRoles &&
+                        this.state.userRoles.includes("Admin") ? (
                           <li className="nav-item">
                             <Link
                               to="/Account/App/CreateNewUser"
@@ -651,11 +724,16 @@ class MainNav extends React.Component {
                               <i className=" fas fa-caret-right nav-icon"></i>
                               <p>Create New User</p>
                             </Link>
-                          </li> : null}
+                          </li>
+                        ) : null}
+
                         <li className="nav-item">
-                          <Link to="/Account/App/Attendance" className="nav-link">
+                          <Link
+                            to="/Account/App/Attendance"
+                            className="nav-link"
+                          >
                             <i className=" fas fa-caret-right nav-icon"></i>
-                            <p >Attendance</p>
+                            <p>Attendance</p>
                           </Link>
                         </li>
 
@@ -678,10 +756,7 @@ class MainNav extends React.Component {
                           </Link>
                         </li>
                         <li className="nav-item">
-                          <Link
-                            to="/Account/App/leave"
-                            className="nav-link"
-                          >
+                          <Link to="/Account/App/leave" className="nav-link">
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Leaves </p>
                           </Link>
@@ -695,7 +770,7 @@ class MainNav extends React.Component {
                             <p>Expense Master </p>
                           </Link>
                         </li>
-                         <li className="nav-item">
+                        <li className="nav-item">
                           <Link
                             to="/Account/App/ExpenseTypeMaster"
                             className="nav-link"
@@ -704,7 +779,7 @@ class MainNav extends React.Component {
                             <p>Expense Type Master </p>
                           </Link>
                         </li>
-                         <li className="nav-item">
+                        <li className="nav-item">
                           <Link
                             to="/Account/App/ExpenseReport"
                             className="nav-link"
@@ -714,23 +789,12 @@ class MainNav extends React.Component {
                           </Link>
                         </li>
                         <li className="nav-item">
-                          <Link
-                            to="/Account/App/Visitor"
-                            className="nav-link"
-                          >
+                          <Link to="/Account/App/Visitor" className="nav-link">
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Visitor </p>
                           </Link>
                         </li>
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/Formula"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Formula</p>
-                          </Link>
-                        </li>
+
                         {/* <li className="nav-item">
                                         <Link to="/FacilityMember" className="nav-link">
                                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -745,11 +809,158 @@ class MainNav extends React.Component {
                                     </li> */}
                       </ul>
                     </li>
-                    // : null
-                  }
+                  ) : null}
 
-                  {
-                    // this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager")) ?
+                  {this.state.userRoles &&
+                  (this.state.userRoles.includes("Admin") ||
+                    this.state.userRoles.includes("HR") ||
+                    this.state.userRoles.includes("Property Admin")) ? (
+                    <li className="nav-item has-treeview">
+                      <a href="#" className="nav-link">
+                        <i className="nav-icon fas fa-rupee-sign"></i>
+                        <p>
+                          Payroll Management
+                          <i className="right fas fa-angle-left"></i>
+                        </p>
+                      </a>
+                      <ul className="nav nav-treeview">
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/GenerateSalary"
+                            className="nav-link"
+                          >
+                            <i className="fas fa-caret-right nav-icon"></i>
+                            <p>Generate Salary</p>
+                          </Link>
+                        </li>
+
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/AttendanceSheet"
+                            className="nav-link"
+                          >
+                            <i className="fas fa-caret-right nav-icon"></i>
+                            <p>Attendance Sheet</p>
+                          </Link>
+                        </li>
+
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/SGNEW"
+                            className="nav-link"
+                          >
+                            <i className="fas fa-caret-right nav-icon"></i>
+                            <p>Salary Groups</p>
+                          </Link>
+                        </li>
+
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/AllowanceDeduction"
+                            className="nav-link"
+                          >
+                            <i className="fas fa-caret-right nav-icon"></i>
+                            <p>Allowance Deduction</p>
+                          </Link>
+                        </li>
+
+                        <li className="nav-item">
+                          <Link to="/Account/App/Linking" className="nav-link">
+                            <i className="fas fa-caret-right nav-icon"></i>
+                            <p>Designation Linking</p>
+                          </Link>
+                        </li>
+
+                        <li className="nav-item">
+                          <Link to="/Account/App/OTHours" className="nav-link">
+                            <i className="fas fa-caret-right nav-icon"></i>
+                            <p>OT Hours</p>
+                          </Link>
+                        </li>
+
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/ProfessionalTax"
+                            className="nav-link"
+                          >
+                            <i className="fas fa-caret-right nav-icon"></i>
+                            <p>Professional Tax</p>
+                          </Link>
+                        </li>
+
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/LabourFund"
+                            className="nav-link"
+                          >
+                            <i className="fas fa-caret-right nav-icon"></i>
+                            <p>Labour Welfare Fund</p>
+                          </Link>
+                        </li>
+
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/AD_Percentage"
+                            className="nav-link"
+                          >
+                            <i className="fas fa-caret-right nav-icon"></i>
+                            <p>Percentage</p>
+                          </Link>
+                        </li>
+
+                        {/* <li className="nav-item">
+                          <Link to="/Account/App/Formula" className="nav-link">
+                            <i className="fas fa-caret-right nav-icon"></i>
+                            <p>Formula</p>
+                          </Link>
+                        </li> */}
+
+                        {/* <li className="nav-item">
+                          <Link
+                            to="/Account/App/SalaryGroups"
+                            className="nav-link"
+                          >
+                            <i className="fas fa-caret-right nav-icon"></i>
+                            <p>Salary Groups Old</p>
+                          </Link>
+                        </li> */}
+
+                      </ul>
+                    </li>
+                  ) : null}
+{this.state.userRoles &&
+                  (this.state.userRoles.includes("Admin") ||
+                    this.state.userRoles.includes("Property Manager") ||
+                    this.state.userRoles.includes("Property Admin") ||
+                    this.state.userRoles.includes("Inventory Manager")) ? (
+                    <li className="nav-item has-treeview">
+                      <a href="#" className="nav-link">
+                    <i className="nav-icon fas fa-chart-bar"></i>
+                        <p>
+                          Report
+                          <i className="right fas fa-angle-left"></i>
+                        </p>
+                      </a>
+                      <ul className="nav nav-treeview">
+                        <li className="nav-item">
+                          <Link to="/Account/App/DMRReport" className="nav-link">
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>DMR Report</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link to="/Account/App/AttendanceReport" className="nav-link">
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Attendance Report</p>
+                          </Link>
+                        </li>
+                      </ul>
+                    </li>
+                  ) : null}
+                  {this.state.userRoles &&
+                  (this.state.userRoles.includes("Admin") ||
+                    this.state.userRoles.includes("Property Manager") ||
+                    this.state.userRoles.includes("Property Admin")) ? (
                     <li className="nav-item has-treeview">
                       <a href="#" className="nav-link">
                         <i className="nav-icon fas fa-car"></i>
@@ -761,8 +972,8 @@ class MainNav extends React.Component {
                       <ul className="nav nav-treeview">
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/ParkingZone"
-                              className="nav-link"
+                            to="/Account/App/ParkingZone"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Parking Zone </p>
@@ -770,8 +981,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/ParkingDetails"
-                              className="nav-link"
+                            to="/Account/App/ParkingDetails"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Parking Details </p>
@@ -779,8 +990,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/ParkingAssignment"
-                              className="nav-link"
+                            to="/Account/App/ParkingAssignment"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Parking Assignment </p>
@@ -788,8 +999,7 @@ class MainNav extends React.Component {
                         </li>
                       </ul>
                     </li>
-                    // : null
-                  }
+                  ) : null}
 
                   {/* <li className="nav-item has-treeview">
                                         <a href="#" className="nav-link">
@@ -856,8 +1066,8 @@ class MainNav extends React.Component {
                                             </li>
                                         </ul>
                                     </li> */}
-                  {
-                    // this.state.userRoles && this.state.userRoles.includes("Admin") ?
+                  {this.state.userRoles &&
+                  this.state.userRoles.includes("Admin") ? (
                     <li className="nav-item has-treeview">
                       <a href="#" className="nav-link">
                         <i className="nav-icon fas fa-cog"></i>
@@ -869,21 +1079,19 @@ class MainNav extends React.Component {
                       <ul className="nav nav-treeview">
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/DocumentType"
-                              className="nav-link"
+                            to="/Account/App/DocumentType"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Document Type</p>
                           </Link>
                         </li>
                       </ul>
-
                     </li>
-                    // : null
-                  }
+                  ) : null}
 
-                  {
-                    // this.state.userRoles && this.state.userRoles.includes("Admin") ?
+                  {this.state.userRoles &&
+                  this.state.userRoles.includes("Admin") ? (
                     <li className="nav-item has-treeview">
                       <a href="#" className="nav-link">
                         <i className="nav-icon fas fa-user-cog"></i>
@@ -893,13 +1101,18 @@ class MainNav extends React.Component {
                         </p>
                       </a>
                       <ul className="nav nav-treeview">
-                        {this.state.userRoles && this.state.userRoles.includes("Admin") ?
+                        {this.state.userRoles &&
+                        this.state.userRoles.includes("Admin") ? (
                           <li className="nav-item">
-                            <Link to="/Account/App/AddNewUser" className="nav-link">
+                            <Link
+                              to="/Account/App/AddNewUser"
+                              className="nav-link"
+                            >
                               <i className=" fas fa-caret-right nav-icon"></i>
                               <p>Add New User </p>
                             </Link>
-                          </li> : null}
+                          </li>
+                        ) : null}
                         <li className="nav-item">
                           <Link to="/Account/App/user" className="nav-link">
                             <i className=" fas fa-caret-right nav-icon"></i>
@@ -908,8 +1121,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/department"
-                              className="nav-link"
+                            to="/Account/App/department"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Department </p>
@@ -928,9 +1141,12 @@ class MainNav extends React.Component {
                           </Link>
                         </li>
                         <li className="nav-item">
-                          <Link to="/Account/App/Attendance" className="nav-link">
+                          <Link
+                            to="/Account/App/Attendance"
+                            className="nav-link"
+                          >
                             <i className=" fas fa-caret-right nav-icon"></i>
-                            <p >Attendance</p>
+                            <p>Attendance</p>
                           </Link>
                         </li>
                         <li className="nav-item">
@@ -941,11 +1157,12 @@ class MainNav extends React.Component {
                         </li>
                       </ul>
                     </li>
-                    // : null
-                  }
+                  ) : null}
 
-                  {
-                    // this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager")) ?
+                  {this.state.userRoles &&
+                  (this.state.userRoles.includes("Admin") ||
+                    this.state.userRoles.includes("Property Manager") ||
+                    this.state.userRoles.includes("Property Admin")) ? (
                     <li className="nav-item has-treeview">
                       <a href="#" className="nav-link">
                         <i className="nav-icon fas fa-building"></i>
@@ -955,13 +1172,22 @@ class MainNav extends React.Component {
                         </p>
                       </a>
                       <ul
-                          className="nav nav-treeview"
-                          style={{display: "none"}}
+                        className="nav nav-treeview"
+                        style={{ display: "none" }}
                       >
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/PropertyMaster"
-                              className="nav-link"
+                            to="/Account/App/ClientMaster"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Client Master </p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/PropertyMaster"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Property Master </p>
@@ -969,8 +1195,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/PropertyTower"
-                              className="nav-link"
+                            to="/Account/App/PropertyTower"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Property Towers </p>
@@ -978,8 +1204,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/PropertyDetails"
-                              className="nav-link"
+                            to="/Account/App/PropertyDetails"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Property Details </p>
@@ -987,10 +1213,11 @@ class MainNav extends React.Component {
                         </li>
                       </ul>
                     </li>
-                    // : null
-                  }
-                  {
-                    // this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager")) ?
+                  ) : null}
+                  {this.state.userRoles &&
+                  (this.state.userRoles.includes("Admin") ||
+                    this.state.userRoles.includes("Property Manager") ||
+                    this.state.userRoles.includes("Property Admin")) ? (
                     <li className="nav-item has-treeview">
                       <a href="#" className="nav-link">
                         <i className="nav-icon fas fa-ticket-alt"></i>
@@ -1002,8 +1229,8 @@ class MainNav extends React.Component {
                       </a>
 
                       <ul
-                          className="nav nav-treeview"
-                          style={{display: "none"}}
+                        className="nav nav-treeview"
+                        style={{ display: "none" }}
                       >
                         {/*<li className="nav-item">*/}
                         {/*  <Link to="/Complain" className="nav-link">*/}
@@ -1014,8 +1241,8 @@ class MainNav extends React.Component {
 
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/TicketComplains"
-                              className="nav-link"
+                            to="/Account/App/TicketComplains"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Complaints</p>
@@ -1023,8 +1250,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/TicketCategories"
-                              className="nav-link"
+                            to="/Account/App/TicketCategories"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Category</p>
@@ -1056,11 +1283,12 @@ class MainNav extends React.Component {
                         {/*</li>*/}
                       </ul>
                     </li>
-                    // : null
-                  }
+                  ) : null}
 
-                  {
-                    // this.state.userRoles && (this.state.userRoles.includes("Admin") || this.state.userRoles.includes("Property Manager")) ?
+                  {this.state.userRoles &&
+                  (this.state.userRoles.includes("Admin") ||
+                    this.state.userRoles.includes("Property Manager") ||
+                    this.state.userRoles.includes("Property Admin")) ? (
                     <li className="nav-item has-treeview">
                       <a href="#" className="nav-link">
                         <i className="nav-icon fas fa-dumbbell"></i>
@@ -1072,8 +1300,8 @@ class MainNav extends React.Component {
                       <ul className="nav nav-treeview">
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/AmenitiesMaster"
-                              className="nav-link"
+                            to="/Account/App/AmenitiesMaster"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Amenities Master </p>
@@ -1081,8 +1309,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/AmenitiesAssignment"
-                              className="nav-link"
+                            to="/Account/App/AmenitiesAssignment"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Amenities Assignment</p>
@@ -1090,8 +1318,8 @@ class MainNav extends React.Component {
                         </li>
                         <li className="nav-item">
                           <Link
-                              to="/Account/App/AmenitiesBooking"
-                              className="nav-link"
+                            to="/Account/App/AmenitiesBooking"
+                            className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Amenities Booking</p>
@@ -1099,22 +1327,17 @@ class MainNav extends React.Component {
                         </li>
                       </ul>
                     </li>
-                    // : null
-                  }
+                  ) : null}
 
-                  {
-                    this.state.userRoles && this.state.userRoles.includes("Admin") ?
-                      <li className="nav-item has-treeview">
-                        <Link
-                          to="/Account/App/UploaderPage"
-                          className="nav-link"
-                        >
-                          <i className="nav-icon fas fa-cloud-upload-alt "></i>
-                          <p>Uploader </p>
-                        </Link>
-                      </li>
-                      : null
-                  }
+                  {this.state.userRoles &&
+                  this.state.userRoles.includes("Admin") ? (
+                    <li className="nav-item has-treeview">
+                      <Link to="/Account/App/UploaderPage" className="nav-link">
+                        <i className="nav-icon fas fa-cloud-upload-alt "></i>
+                        <p>Uploader </p>
+                      </Link>
+                    </li>
+                  ) : null}
                 </ul>
               </nav>
             </div>
@@ -1128,32 +1351,32 @@ class MainNav extends React.Component {
 
             <Route exact path="/Account/App" component={Home} />
             <Route exact path="/Account/App/ticket">
-              <TicketingDashboard/>
+              <TicketingDashboard />
             </Route>
             <Route path="/Account/App/department">
-              <Department/>
+              <Department />
             </Route>
             <Route path="/Account/App/ChangePassword">
-              <ChangePassword/>
+              <ChangePassword />
             </Route>
             <Route path="/Account/App/team"></Route>
             <Route path="/Account/App/EmergencyContact">
-              <EmergencyContactPage/>
+              <EmergencyContactPage />
             </Route>
             <Route path="/Account/App/user">
-              <User/>
+              <User />
             </Route>
             <Route path="/Account/App/UserProfile">
-              <UserProfile/>
+              <UserProfile />
             </Route>
             <Route path="/Account/App/FacilityMember">
-              <FacilityMember/>
+              <FacilityMemberPage/>
             </Route>
             <Route path="/Account/App/CreateNewUser">
-              <CreateNewUser/>
+              <CreateNewUser />
             </Route>
             <Route path="/Account/App/AddNewUser">
-              <AddNewUser/>
+              <AddNewUser />
             </Route>
             <Route path="/Account/App/Facility">
               <FacilityLatlong />
@@ -1172,30 +1395,36 @@ class MainNav extends React.Component {
               <AddNewUser />
             </Route>
             <Route path="/Account/App/PropertyMember">
-              <PropertyMember/>
+              <PropertyMember />
             </Route>
             <Route path="/Account/App/PropertyOwner">
-              <PropertyOwnerPage/>
+              <PropertyOwnerPage />
             </Route>
             <Route path="/Account/App/Tenant">
-              <PropertyTenatsPage/>
+              <PropertyTenatsPage />
             </Route>
-           
+
             {/* <Route path="/Home">
                             <PropertyDashboard />
                         </Route> */}
 
             <Route path="/Account/App/Complain">
-              <ComplainManagement/>
+              <ComplainManagement />
             </Route>
             <Route path="/Account/App/PropertyMaster">
-              <PropertyMaster/>
+              <PropertyMaster />
+            </Route>
+            <Route path="/Account/App/ClientMaster">
+              <ClientMasterPage />
             </Route>
             <Route path="/Account/App/PropertyDetails">
-              <PropertyDetailsPage/>
+              <PropertyDetailsPage />
+            </Route>
+            <Route path="/Account/App/SpareMaster">
+              <SparePage />
             </Route>
             <Route path="/Account/App/ParkingDetails">
-              <ParkingDetailsPage/>
+              <ParkingDetailsPage />
             </Route>
             <Route path="/Account/App/ParkingZone">
               <ParkingZonePage />
@@ -1292,9 +1521,9 @@ class MainNav extends React.Component {
             </Route>
             <Route path="/Account/App/Visitor">
               <Visitor />
-             </Route>
+            </Route>
             <Route path="/Account/App/ServiceRecords">
-              <ServiceRecords/>
+              <ServiceRecords />
             </Route>
             <Route path="/Account/App/EscalationGroup">
               <EscalationGroupPage />
@@ -1359,30 +1588,102 @@ class MainNav extends React.Component {
             <Route path="/Account/App/UploaderPage">
               <UploaderPage />
             </Route>
-            <Route path="/Account/App/Formula" component={Formula} />
-            <Route path="/Account/App/SpotVisitCalendar" component={SpotVisitCalendar} />
-             <Route path="/Account/App/ExpenseReport" component={ExpenseReport} />
-             <Route path="/Account/App/ExpenseTypeMaster" component={ExpenseTypeMaster} />
-            <Route path="/Account/App/ExpenseMaster" component={ExpenseMaster} />
+            <Route path="/Account/App/OTHours" component={OTHours} />
+            <Route path="/Account/App/Linking" component={Linking} />
+            <Route
+              path="/Account/App/AttendanceSheet"
+              component={AttendanceSheet}
+            />
+            <Route path="/Account/App/LabourFund" component={LabourFund} />
+            <Route
+              path="/Account/App/ProfessionalTax"
+              component={ProfessionalTax}
+            />
+            <Route
+              path="/Account/App/AD_Percentage"
+              component={AD_Percentage}
+            />
+            <Route
+              path="/Account/App/GenerateSalary"
+              component={GenerateSalary}
+            />
+            <Route path="/Account/App/SGNEW" component={SGNEW} />
+            <Route path="/Account/App/SalaryGroups" component={SalaryGroups} />
+            <Route
+              path="/Account/App/AllowanceDeduction"
+              component={AllowanceDeduction}
+            />
+            {/* <Route path="/Account/App/Formula" component={Formula} /> */}
+            <Route
+              path="/Account/App/SpotVisitCalendar"
+              component={SpotVisitCalendar}
+            />
+            <Route
+              path="/Account/App/ExpenseReport"
+              component={ExpenseReport}
+            />
+             <Route
+              path="/Account/App/AttendanceReport"
+              component={AttendanceReportPage}
+            />
+            <Route
+              path="/Account/App/ExpenseTypeMaster"
+              component={ExpenseTypeMaster}
+            />
+            <Route
+              path="/Account/App/ExpenseMaster"
+              component={ExpenseMaster}
+            />
             <Route path="/Account/App/leave" component={Leave} />
             <Route path="/Account/App/leavemaster" component={LeaveMaster} />
-            <Route path="/Account/App/Facility" component={FacilityLatlongPage} />
-            <Route path="/Account/App/EmployeeLeave" component={EmployeeLeave} />
+            <Route
+              path="/Account/App/Facility"
+              component={FacilityLatlongPage}
+            />
+            <Route path="/Account/App/DMRReport" component={DMRReport} />
+            <Route
+              path="/Account/App/EmployeeLeave"
+              component={EmployeeLeave}
+            />
+            <Route path="/Account/App/ItemSpecification">
+              <ItemSpecificationPage />
+            </Route>
+            <Route path="/Account/App/ItemAssigned">
+              <ItemAssignedPage />
+            </Route>
+            <Route path="/Account/App/StockItems">
+              <StockItemsPage />
+            </Route>
 
             {/* <Route path="/AttendanceSummary">
                             <AttendanceSummaryPage />
                         </Route> */}
           </Switch>
-          <footer className="main-footer">
-            <div className="float-right d-none d-sm-block">
-              <b>Version</b> 3.0.4-pre
+          <footer
+            className="main-footer"
+            style={{
+              padding: "6px 15px",
+              fontSize: "13px",
+              lineHeight: "18px",
+              background: "#ffffffff",
+              borderTop: "1px solid #dcdde1",
+              height: "0px",
+              overflow: "hidden",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <div>
+              <strong>
+                © 2025-2026 <a href="https://firmity.in/">Firmity.in</a>
+              </strong>
             </div>
-            <strong>
-              Copyright &copy; 2020-2021{" "}
-              <a href="http://www.ufirm.in">Ufirm.in</a>.
-            </strong>{" "}
-            All rights reserved.
+            <div>
+              <b>Version</b> 3.0.6-pre
+            </div>
           </footer>
+
           <aside className="control-sidebar control-sidebar-dark"></aside>
         </div>
       </Router>

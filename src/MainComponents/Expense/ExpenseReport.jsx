@@ -12,13 +12,7 @@ export default function ExpenseReport() {
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
   const dt = useRef(null);
-
-  // ✅ Default load
-  useEffect(() => {
-    if (propertyId) {
-      fetchExpenses("2025-01-01", "2025-12-31", propertyId);
-    }
-  }, [propertyId]);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchExpenses = async (from, to, officeId) => {
     try {
@@ -33,84 +27,168 @@ export default function ExpenseReport() {
     }
   };
 
- const applyFilter = () => {
-  const from = fromDate ? formatDate(fromDate) : "2025-01-01";
-  const to = toDate ? formatDate(toDate) : "2025-12-31";
+  const applyFilter = () => {
+    if (!fromDate || !toDate) {
+      alert("Please select both From Date and To Date");
+      return;
+    }
 
-  fetchExpenses(from, to, propertyId);
-};
+    fetchExpenses(formatDate(fromDate), formatDate(toDate), propertyId);
+  };
 
+  const exportCSV = () => {
+    if (!reports || reports.length === 0) {
+      alert("No data available to export!");
+      return;
+    }
 
-const exportCSV = () => {
-  if (!reports || reports.length === 0) {
-    alert("No data available to export!");
-    return;
-  }
+    // 🔹 Totals
+    const totalCredit = reports.reduce(
+      (sum, r) => sum + Number(r.TotalCreditAmount || 0),
+      0
+    );
 
-  const header = ["Expense Type", "Expense Sub Type", "Total Amount"];
-  const rows = reports.map((r) => [
-    r.ExpenseType,
-    r.ExpenseSubType,
-    r.TotalAmount,
-  ]);
+    const totalDebit = reports.reduce(
+      (sum, r) => sum + Number(r.TotalDebitAmount || 0),
+      0
+    );
 
-  const xls = [
-    header.join("\t"),
-    ...rows.map((row) => row.join("\t")),
-  ].join("\r\n");
+    const totalAmount = totalCredit - totalDebit;
 
-  const blob = new Blob([xls], { type: "application/vnd.ms-excel" });
+    // 🔹 Header (ORDER MATTERS)
+    const header = [
+      "Expense Type",
+      "Expense Sub Type",
+      "Credit Amount",
+      "Debit Amount",
+      "Amount",
+      "Date From",
+      "Date To",
+    ];
 
-  // 🔹 Now using same formatDate
-  const from = fromDate ? formatDate(fromDate) : "2025-01-01";
-  const to = toDate ? formatDate(toDate) : "2025-12-31";
+    // 🔹 Rows
+    const rows = reports.map((r) => {
+      const credit = Number(r.TotalCreditAmount || 0);
+      const debit = Number(r.TotalDebitAmount || 0);
+      const amount = credit - debit;
 
-  const fileName = `ExpenseReport_${from}_to_${to}.xls`;
+      return [
+        `"${r.ExpenseType}"`,
+        `"${r.ExpenseSubType}"`,
+        `="${credit}"`,
+        `="${debit}"`,
+        `="${amount}"`,
+        `="${formatDate(r.DateFrom)}"`,
+        `="${formatDate(r.DateTo)}"`,
+      ];
+    });
 
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = fileName;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  window.URL.revokeObjectURL(url);
-};
+    // 🔹 Gross Total row
+    rows.push([
+      `"GROSS TOTAL"`,
+      `""`,
+      `="${totalCredit}"`,
+      `="${totalDebit}"`,
+      `="${totalAmount}"`,
+      `""`,
+      `""`,
+    ]);
 
-const formatDate = (date) => {
-  if (!date) return null;
-  const d = new Date(date);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
+    const csvContent = [
+      header.join(","),
+      ...rows.map((row) => row.join(",")),
+    ].join("\r\n");
 
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
 
+    const from = formatDate(fromDate);
+    const to = formatDate(toDate);
 
+    const fileName = `ExpenseReport_${from}_to_${to}.csv`;
+
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const formatDate = (date) => {
+    if (!date) return null;
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const filteredReports = reports.filter((item) => {
+    const search = searchTerm.toLowerCase();
+    return (
+      item.ExpenseType?.toLowerCase().includes(search) ||
+      item.ExpenseSubType?.toLowerCase().includes(search)
+    );
+  });
+  const formatDisplayDate = (date) => {
+    if (!date) return "-";
+    const d = new Date(date);
+    return d.toLocaleDateString("en-GB"); // dd/mm/yyyy
+  };
 
   return (
-    <div className="content-wrapper">
+    <div className="content-wrapper pt-3">
       <section className="content">
         {/* 🔹 Header + Filter + Export Button */}
         <div className="d-flex justify-content-between align-items-center mb-2">
           <h5 className="m-0">Expense Report</h5>
 
           <div className="d-flex align-items-center gap-2">
+            <span className="p-input-icon-left">
+              <i
+                className="pi pi-search"
+                style={{
+                  left: "0.75rem",
+                  color: "#6c757d",
+                }}
+              />
+              <input
+                type="text"
+                className="p-inputtext p-component p-inputtext-sm"
+                placeholder="Search"
+                style={{
+                  width: "180px",
+                  paddingLeft: "2.5rem",
+                }}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </span>
+
             <Calendar
               value={fromDate}
               onChange={(e) => setFromDate(e.value)}
               placeholder="From Date"
               dateFormat="yy-mm-dd"
               showIcon
+              inputClassName="p-inputtext-sm"
+              inputStyle={{ width: "140px", paddingRight: "2.5rem" }}
             />
+
             <Calendar
               value={toDate}
               onChange={(e) => setToDate(e.value)}
               placeholder="To Date"
               dateFormat="yy-mm-dd"
               showIcon
+              inputClassName="p-inputtext-sm"
+              inputStyle={{ width: "140px", paddingRight: "2.5rem" }}
             />
+
             <Button
               type="button"
               label="Filter"
@@ -119,29 +197,45 @@ const formatDate = (date) => {
               onClick={applyFilter}
             />
             {/* 🔹 Export to CSV */}
-           <Button
-                type="button"
-                icon="pi pi-download"
-                label="Export to Excel"
-                className="p-button-sm p-button-success"
-                onClick={exportCSV}
-                />
-
+            <Button
+              type="button"
+              icon="pi pi-download"
+              label="Export to Excel"
+              className="p-button-sm p-button-success"
+              onClick={exportCSV}
+            />
           </div>
         </div>
 
         {/* 🔹 DataTable */}
         <DataTable
           ref={dt}
-          value={reports}
+          value={filteredReports}
           paginator
           rows={5}
           responsiveLayout="scroll"
           stripedRows
+          sortMode="single"
         >
-          <Column field="ExpenseType" header="Expense Type"  />
-          <Column field="ExpenseSubType" header="Expense Sub Type" />
-          <Column field="TotalAmount" header="Total Amount"  />
+          <Column field="ExpenseType" header="Expense Type" sortable />
+
+          <Column field="ExpenseSubType" header="Expense Sub Type" sortable />
+          <Column field="TotalCreditAmount" header="Credit Amount" sortable />
+          <Column field="TotalDebitAmount" header="Debit Amount" sortable />
+
+          <Column
+            field="DateFrom"
+            header="Date From"
+            sortable
+            body={(row) => formatDisplayDate(row.DateFrom)}
+          />
+
+          <Column
+            field="DateTo"
+            header="Date To"
+            sortable
+            body={(row) => formatDisplayDate(row.DateTo)}
+          />
         </DataTable>
       </section>
     </div>
