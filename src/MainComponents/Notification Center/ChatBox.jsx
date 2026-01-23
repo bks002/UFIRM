@@ -1,7 +1,40 @@
 import React, { useState } from 'react';
+import { useEffect, useRef } from "react";
 import { Button, Form } from 'react-bootstrap';
 
-const ChatBox = ({ remark, name, remarkDateTime, status, onSend, context, assetData }) => {
+const styles = {
+  chatScroll: {
+    maxHeight: "250px",
+    overflowY: "auto",
+    padding: "10px",
+  },
+  chatRow: {
+    display: "flex",
+    marginBottom: "8px",
+  },
+  chatLeft: {
+    justifyContent: "flex-start",
+  },
+  chatRight: {
+    justifyContent: "flex-end",
+  },
+  bubble: {
+    maxWidth: "70%",
+    padding: "8px 12px",
+    borderRadius: "12px",
+    fontSize: "14px",
+  },
+  supBubble: {
+    backgroundColor: "#e4e6eb",
+    borderTopLeftRadius: "0",
+  },
+  fmBubble: {
+    backgroundColor: "#dcf8c6",
+    borderTopRightRadius: "0",
+  },
+};
+
+const ChatBox = ({ remarks = [], onSend, status, context, assetData }) => {
   let statusOptions = [];
   if (context === 'task') statusOptions = ['Actionable', 'Completed'];
   else if (context === 'ticket') statusOptions = ['IN PROGRESS', 'RESOLVED', 'CLOSED', 'REOPEN'];
@@ -15,6 +48,8 @@ const ChatBox = ({ remark, name, remarkDateTime, status, onSend, context, assetD
   const [image, setImage] = useState(null);
   const [servicedBy, setServicedBy] = useState('');
   const [approvedBy, setApprovedBy] = useState('');
+
+  const chatEndRef = useRef(null);
 
   const handleSend = async () => {
     if (context === 'asset') {
@@ -51,10 +86,10 @@ const ChatBox = ({ remark, name, remarkDateTime, status, onSend, context, assetD
         }
 
         alert('Service Record saved successfully!');
-setTimeout(() => {
-  if (typeof assetData.apiCall === 'function') assetData.apiCall();
-  if (typeof assetData.onClose === 'function') assetData.onClose();
-}, 500);
+        setTimeout(() => {
+          if (typeof assetData.apiCall === 'function') assetData.apiCall();
+          if (typeof assetData.onClose === 'function') assetData.onClose();
+        }, 500);
 
         // Reset fields
         setInputValue('');
@@ -70,25 +105,26 @@ setTimeout(() => {
         alert('Something went wrong while saving.');
       }
     } else {
-      onSend(inputValue, currentStatus);
+      const statusToSend = currentStatus || status;
+      onSend(inputValue, statusToSend);
       setInputValue('');
     }
   };
 
   const formatDateTime = (dt) => {
-  if (!dt) return "";
+    if (!dt) return "";
 
-  const date = new Date(dt);
+    const date = new Date(dt);
 
-  return date.toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true
-  });
-};
+    return date.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true
+    });
+  };
 
   const handleMarkComplete = () => {
     setCurrentStatus('Completed');
@@ -102,6 +138,51 @@ setTimeout(() => {
     const nextIndex = (currentIndex + 1) % statusOptions.length;
     setCurrentStatus(statusOptions[nextIndex]);
   };
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [remarks]);
+
+  const stripHtml = (html) => html.replace(/<[^>]*>/g, "");
+
+  const parseRemark = (html) => {
+    if (!html) return { label: "", message: "", date: "" };
+
+    // 1. Strip HTML
+    const clean = stripHtml(html).trim();
+
+    // 2. Extract date (YYYY-MM-DD HH:mm:ss)
+    const dateMatch = clean.match(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
+    const rawDate = dateMatch ? dateMatch[0] : "";
+
+    // 3. Remove date from text completely
+    const textOnly = rawDate ? clean.replace(rawDate, "").trim() : clean;
+
+    // 4. Split label and message
+    const [label, ...msgParts] = textOnly.split(":");
+    const message = msgParts.join(":").trim();
+
+    // 5. Format date nicely
+    let formattedDate = "";
+    if (rawDate) {
+      const d = new Date(rawDate.replace(" ", "T"));
+      formattedDate = d.toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+    }
+
+    return {
+      label: label.trim(),
+      message,
+      date: formattedDate,
+    };
+  };
+
 
   return (
     <div className="container mt-3">
@@ -127,14 +208,83 @@ setTimeout(() => {
         </div>
       )}
 
-      <div className="alert alert-secondary mb-3">
-        {remark && (
-          <div className="mb-3 p-2 border rounded bg-light">
-            <div><strong>Remark:</strong> {remark}</div>
-            <div><strong>By:</strong> {name}</div>
-            <div><strong>Date:</strong> {formatDateTime(remarkDateTime)}</div>
+      <div
+        className="alert alert-secondary mb-3"
+        style={
+          context === "asset"
+            ? {}
+            : {
+              maxHeight: "300px",
+              display: "flex",
+              flexDirection: "column",
+            }
+        }
+      >
+
+
+        {context !== "asset" && (
+          <div
+            style={{
+              ...styles.chatScroll,
+              flex: 1,
+            }}
+          >
+
+
+            {remarks.length === 0 ? (
+              <p style={{ color: "#6c757d" }}>No remarks available</p>
+            ) : (
+              remarks.map((item, index) => {
+                const isFM = item.RemarkHtml?.includes("FM:");
+
+                return (
+                  <div
+                    key={index}
+                    style={{
+                      ...styles.chatRow,
+                      ...(isFM ? styles.chatRight : styles.chatLeft),
+                    }}
+                  >
+                    <div
+                      style={{
+                        ...styles.bubble,
+                        ...(isFM ? styles.fmBubble : styles.supBubble),
+                      }}
+                    >
+                      {(() => {
+                        const { label, message, date } = parseRemark(item.RemarkHtml);
+
+                        // 👇 ONLY complaint uses RemarkDate
+                        const finalDate =
+                          context === "ticket"
+                            ? formatDateTime(item.RemarkDate)
+                            : date;
+
+                        return (
+                          <>
+                            <div style={{ fontWeight: "600" }}>
+                              {label}: <span style={{ fontWeight: "normal" }}>{message}</span>
+                            </div>
+
+                            {finalDate && (
+                              <div style={{ fontSize: "12px", color: "#555", marginTop: "4px" }}>
+                                {finalDate}
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            <div ref={chatEndRef} />
           </div>
         )}
+
+
         {context === 'asset' ? (
           <div className="mt-3">
             <Form.Group className="mb-2">
