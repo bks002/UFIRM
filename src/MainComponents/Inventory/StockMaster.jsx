@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Button } from 'primereact/button';
 import { Toast } from 'primereact/toast';
-import { getCategories, getStock } from '../../Services/InventoryService';
+import { getCategories, getStock, addStockQuantity } from '../../Services/InventoryService';
 import { useSelector } from "react-redux";
 import { Dialog } from 'primereact/dialog';
 import { Dropdown } from 'primereact/dropdown';
@@ -88,10 +88,60 @@ const StockMaster = () => {
 
     const selectedItemObj = filteredGridData.find(i => i.ItemId === selectedItem);
 
+    const handleAddQuantity = async () => {
+    if (!selectedItem || !addQty) {
+        toast.current.show({
+            severity: 'warn',
+            summary: 'Warning',
+            detail: 'Please select item and quantity'
+        });
+        return;
+    }
+
+    const payload = {
+        Id: 0,
+        PropertyId: propertyId,
+        ItemId: selectedItem,
+        MinQty: selectedItemObj?.MinStockLevel || 0,
+        CurrentQty: addQty
+    };
+
+    try {
+        await addStockQuantity(payload);
+
+        toast.current.show({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Quantity added successfully'
+        });
+
+        setShowAddQtyDialog(false);
+        setAddQty(0);
+        setSelectedItem(null);
+        setAddQtyDialogCategory(null);
+
+        // refresh stock list
+        const stockData = await getStock(propertyId);
+        const uniqueStock = Array.isArray(stockData)
+            ? Array.from(new Map(stockData.map(item => [item.ItemId, item])).values())
+            : [];
+        setFilteredGridData(uniqueStock);
+
+    } catch (error) {
+        toast.current.show({
+            severity: 'error',
+            summary: 'Error',
+            detail: error.message || 'Failed to add quantity'
+        });
+    }
+};
+
+
     const dialogFooter = (
         <div>
             <Button label="Cancel" icon="pi pi-times" className="p-button-text" onClick={() => setShowAddQtyDialog(false)} />
-            <Button label="Add Quantity" icon="pi pi-check" onClick={() => setShowAddQtyDialog(false)} autoFocus />
+            <Button label="Add Quantity" icon="pi pi-check" onClick={handleAddQuantity} autoFocus />
+
         </div>
     );
 
