@@ -411,15 +411,7 @@ export default class EditTask extends Component {
             QuesData: quesData,
             loadingQuestions: false,
           },
-          () => {
-            // ✅ AUTO-SELECT FIRST QUESTION FOR FM REMARK
-            if (!this.state.selectedFMQuestion && quesData.length) {
-              this.setState(
-                { selectedFMQuestion: quesData[0] },
-                this.getTaskRemarksForEdit,
-              );
-            }
-          },
+          () => {},
         );
       }
 
@@ -480,13 +472,8 @@ export default class EditTask extends Component {
 
     getTaskRemarks(this.props.rowData.TaskId, selectedQ.QuesId, taskDate)
       .then((data) => {
-        const normalized = (data || []).map((r) => ({
-          remark: r.RemarkHtml,
-          remarkDateTime: r.RemarkDate,
-        }));
-
         this.setState({
-          taskRemarks: normalized,
+          taskRemarks: data || [], // ✅ DO NOT TOUCH SHAPE
           loadingRemarks: false,
         });
       })
@@ -498,28 +485,60 @@ export default class EditTask extends Component {
       });
   };
 
-  sendFMRemark = (message, status) => {
-    if (!message?.trim()) return;
+  sendFMRemark = async (message, status) => {
+    if (!message?.trim()) {
+      swal({
+        icon: "warning",
+        title: "Message required",
+        text: "Please type a message before sending.",
+      });
+      return;
+    }
 
-    const { selectedFMQuestion } = this.state;
-    if (!selectedFMQuestion) return;
+    const { selectedFMQuestion, resolvedTaskDate, taskRemarks } = this.state;
+    if (!selectedFMQuestion || !resolvedTaskDate) return;
+
+    // 🔥 REQUIRED by backend
+    const lastSupRemark = taskRemarks.find((r) =>
+      r.RemarkHtml?.includes("SUP:"),
+    );
 
     const payload = {
       TaskId: this.props.rowData.TaskId,
       QuestionId: selectedFMQuestion.QuesId,
-      Remark: message,
-      Status: status,
+      TaskName: this.props.rowData.Name,
+      FmId: 0,
+      FmRemark: message,
+      FmDateTime: new Date().toLocaleString("en-US", {
+        timeZone: "Asia/Kolkata",
+      }),
+      CurrentStatus: status,
+      SUPdateTime: lastSupRemark?.RemarkDate || resolvedTaskDate, // 🔥 FIX
+      TaskDate: resolvedTaskDate,
     };
 
-    this.ApiProvider.saveTaskRemark(payload)
-      .then(() => {})
-      .catch(() => {
-        swal({
-          icon: "error",
-          title: "Error",
-          text: "Unable to send remark",
-        });
+    try {
+      const res = await fetch("https://api.urest.in:8096/FMResponse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
+
+      if (!res.ok) {
+        const t = await res.text();
+        console.error("FMResponse failed:", t);
+        throw new Error("FM reply failed");
+      }
+
+      // reload chat
+      this.getTaskRemarksForEdit(selectedFMQuestion);
+    } catch (err) {
+      swal({
+        icon: "error",
+        title: "Error",
+        text: "Unable to send remark",
+      });
+    }
   };
 
   isEditTaskValid = () => {
@@ -669,9 +688,17 @@ export default class EditTask extends Component {
                       <a
                         className={`nav-link ${this.state.activeTab === "fmremark" ? "active" : ""}`}
                         onClick={() =>
-                          this.setState({ activeTab: "fmremark" }, () => {
-                            this.getQuestions();
-                          })
+                          this.setState(
+                            {
+                              activeTab: "fmremark",
+                              selectedFMQuestion: null,
+                              taskRemarks: [],
+                              resolvedTaskDate: null,
+                            },
+                            () => {
+                              this.getQuestions();
+                            },
+                          )
                         }
                       >
                         FM Remark
