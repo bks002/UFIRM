@@ -1,7 +1,7 @@
 import React, { Component } from "react";
-import { connect } from 'react-redux';
-import departmentAction from "../../../../src/redux/department/action.js"
-import { bindActionCreators } from 'redux';
+import { connect } from "react-redux";
+import departmentAction from "../../../../src/redux/department/action.js";
+import { bindActionCreators } from "redux";
 import moment from "moment";
 import LoadingOverlay from "react-loading-overlay";
 import { PropagateLoader } from "react-spinners";
@@ -16,8 +16,8 @@ import swal from "sweetalert";
 import { DELETE_CONFIRMATION_MSG } from "../../../Contants/Common";
 import EditTask from "./EditTask";
 import { downloadExcel } from "react-export-table-to-excel";
-import { CSVLink } from 'react-csv'
-import LayoutDataProvider from '../../../Routing/LayoutDataProvider'
+import { CSVLink } from "react-csv";
+import LayoutDataProvider from "../../../Routing/LayoutDataProvider";
 
 const $ = window.$;
 
@@ -76,15 +76,15 @@ class TaskList extends Component {
         },
         {
           Header: "Task Status",
-          accessor: "TaskStatus"
+          accessor: "TaskStatus",
         },
         {
           Header: "Task Priority",
-          accessor: "TaskPriority"
+          accessor: "TaskPriority",
         },
         {
           Header: "Remarks",
-          accessor: "Remarks"
+          accessor: "Remarks",
         },
         {
           Header: "Action",
@@ -154,11 +154,11 @@ class TaskList extends Component {
         },
         {
           Header: "Task Status",
-          accessor: "TaskStatus"
+          accessor: "TaskStatus",
         },
         {
           Header: "Task Priority",
-          accessor: "TaskPriority"
+          accessor: "TaskPriority",
         },
         // {
         //   Header: "Assigned To",
@@ -231,19 +231,27 @@ class TaskList extends Component {
       assign: [],
       dashboardAssign: [],
       taskPriorityList: [],
-      taskPriority: '',
-      filterFromDate: '',
-      filterToDate: '',
-      taskStatus: 'None',
+      taskPriority: "",
+      filterFromDate: "",
+      filterToDate: "",
+      taskStatus: "None",
       startDate: moment().clone().startOf("month"),
       endDate: moment().clone().endOf("month"),
       propertyId: 0,
       propertyData: [],
-      header: ["Task Id", "Category", "Sub Category", "Task Name", "Occurence", "Updated On", "Task Status"],
+      header: [
+        "Task Id",
+        "Category",
+        "Sub Category",
+        "Task Name",
+        "Occurence",
+        "Updated On",
+        "Task Status",
+      ],
       pendingTasks: 0,
       completedTasks: 0,
       actionableTasks: 0,
-      assignedProperty: []
+      assignedProperty: [],
     };
     this.ApiProvider = new ApiProvider();
     this.comdbprovider = new LayoutDataProvider();
@@ -256,24 +264,33 @@ class TaskList extends Component {
       tablePayload: {
         header: this.state.header,
         // accept two different data structures
-        body: this.state.data
-      }
+        body: this.state.data,
+      },
     });
   }
 
   loadProperty() {
-    this.comdbprovider.getUserAssignedproperty().then(
-      resp => {
-        if (resp && resp.ok && resp.status === 200) {
-          return resp.json().then(rData => {
-
-            this.setState({ propertyData: rData });
-          });
-        }
-      });
+    this.comdbprovider.getUserAssignedproperty().then((resp) => {
+      if (resp && resp.ok && resp.status === 200) {
+        return resp.json().then((rData) => {
+          this.setState({ propertyData: rData });
+        });
+      }
+    });
   }
 
-  getModel = (type, categoryId, subCategoryId, assignTo, occurance, startDate, endDate, taskStatus, propertyId, taskPriority) => {
+  getModel = (
+    type,
+    categoryId,
+    subCategoryId,
+    assignTo,
+    occurance,
+    startDate,
+    endDate,
+    taskStatus,
+    propertyId,
+    taskPriority,
+  ) => {
     var model = [];
     switch (type) {
       case "R":
@@ -287,7 +304,7 @@ class TaskList extends Component {
           DteTo: endDate,
           TaskStatus: taskStatus,
           PropertyId: propertyId,
-          TaskPriority: taskPriority
+          TaskPriority: taskPriority,
         });
         break;
       default:
@@ -382,7 +399,9 @@ class TaskList extends Component {
                     Remarks: element.Remarks,
                     TaskStatus: element.TaskStatus,
                     Occurence: element.Occurence.split(" ")[0],
-                    OccurenceView: this.modifyOccurence(element.Occurence.split(" ")[0]),
+                    OccurenceView: this.modifyOccurence(
+                      element.Occurence.split(" ")[0],
+                    ),
                     CategoryName: element.CategoryName,
                     SubCategoryName: element.SubCategoryName,
                     Location: element.Location,
@@ -393,10 +412,10 @@ class TaskList extends Component {
                     UpdatedOn: element.UpdatedOn,
                     PropertyId: element.PropertyId,
                     AssetId: element.AssetId,
-                    TaskPriority: element.TaskPriority
+                    TaskPriority: element.TaskPriority,
                   });
                 });
-                this.countTasksByStatus(taskData)
+                this.countTasksByStatus(taskData);
                 this.setState({ data: taskData, dataLoading: false });
                 break;
               case "D":
@@ -404,7 +423,7 @@ class TaskList extends Component {
                   appCommon.showtextalert(
                     "Task Deleted Successfully!",
                     "",
-                    "success"
+                    "success",
                   );
                 } else {
                   appCommon.showtextalert("Someting went wrong !", "", "error");
@@ -417,23 +436,22 @@ class TaskList extends Component {
         }
       });
     }
-
   };
 
   modifyOccurence = (Occurrence) => {
-    if (Occurrence === 'W') {
-      return 'Weekly'
+    if (Occurrence === "W") {
+      return "Weekly";
     }
-    if (Occurrence === 'Y') {
-      return 'Yearly'
+    if (Occurrence === "Y") {
+      return "Yearly";
     }
-    if (Occurrence === 'D') {
-      return 'Daily'
+    if (Occurrence === "D") {
+      return "Daily";
     }
-    if (Occurrence === 'M') {
-      return 'Monthly'
+    if (Occurrence === "M") {
+      return "Monthly";
     }
-  }
+  };
   manageSubCategory = (model, type, categoryId) => {
     this.ApiProvider.manageSubCategory(model, type, categoryId).then((resp) => {
       if (resp.ok && resp.status === 200) {
@@ -538,25 +556,39 @@ class TaskList extends Component {
     this.manageSubCategory(model, type, categoryId);
   }
   getTasks() {
-    var type = "R";
-    var categoryId = this.state.selectedCategoryId
-      ? this.state.selectedCategoryId
-      : 0;
-    var subCategoryId = (this.state.selectedSubCategoryId)
-      ? this.state.selectedSubCategoryId
-      : 0;
-    var assignToId = this.state.assignTo
-      ? this.state.assignTo
-      : 0;
-    var occurance = this.state.occurance ? this.state.occurance : 0;
-    var startDate = this.state.filterFromDate ? this.state.filterFromDate : '';
-    var endDate = this.state.filterToDate ? this.state.filterToDate : '';
-    var taskStatus = this.state.taskStatus === 'None' ? '' : this.state.taskStatus;
-    var propertyId = this.props.PropertyVal ? this.props.PropertyVal : 0;
-    var taskPriority = this.state.taskPriority ? this.state.taskPriority : 0;
-    var model = this.getModel(type, categoryId, subCategoryId, assignToId, occurance, startDate, endDate, taskStatus, propertyId, taskPriority);
-    this.manageTask(model, type);
-  }
+  const type = "R";
+
+  const categoryId = this.state?.selectedCategoryId || 0;
+  const subCategoryId = this.state?.selectedSubCategoryId || 0;
+  const assignToId = this.state?.assignTo || 0;
+  const occurance = this.state?.occurance || 0;
+
+  const startDate = this.state?.filterFromDate || "";
+  const endDate = this.state?.filterToDate || "";
+
+  const taskStatus =
+    this.state?.taskStatus && this.state.taskStatus !== "None"
+      ? this.state.taskStatus
+      : "";
+
+  const propertyId = this.props?.PropertyVal || 0;
+  const taskPriority = this.state?.taskPriority || 0;
+
+  const model = this.getModel(
+    type,
+    categoryId,
+    subCategoryId,
+    assignToId,
+    occurance,
+    startDate,
+    endDate,
+    taskStatus,
+    propertyId,
+    taskPriority
+  );
+
+  this.manageTask(model, type);
+}
   getAssign() {
     var type = "R";
     var model = this.getAssignModel(type);
@@ -600,50 +632,59 @@ class TaskList extends Component {
       startDate: startDate,
       endDate: endDate,
     });
-    $('#dataRange').on('apply.daterangepicker', function (ev, picker) {
+    $("#dataRange").on("apply.daterangepicker", function (ev, picker) {
       var startDate = picker.startDate;
       var endDate = picker.endDate;
-      _this.setState({ filterFromDate: startDate.format('YYYY-MM-DD'), filterToDate: endDate.format('YYYY-MM-DD') });
+      _this.setState({
+        filterFromDate: startDate.format("YYYY-MM-DD"),
+        filterToDate: endDate.format("YYYY-MM-DD"),
+      });
     });
   }
 
   componentDidMount() {
     const { PropertyVal } = this.props;
-    const status = this.props.status === 'Completed' ? 'Complete' : this.props.status;
+    const status =
+      this.props.status === "Completed" ? "Complete" : this.props.status;
     const priority = this.props.priority;
     const subCatId = parseInt(this.props.subCatId);
     const initialDate = this.props.dashDates;
     const today = moment();
-    this.setState({
-      filterFromDate: (status === null && priority === null) ? today.format('YYYY-MM-DD') : initialDate,
-      filterToDate: today.format('YYYY-MM-DD'),
-      filtered: true,
-      propertyId: PropertyVal,
-      taskStatus: status === null ? 0 : status,
-      taskPriority: priority === null ? 0 : priority,
-      selectedSubCategoryId: subCatId === null ? 0 : subCatId,
-    },
+    this.setState(
+      {
+        filterFromDate:
+          status === null && priority === null
+            ? today.format("YYYY-MM-DD")
+            : initialDate,
+        filterToDate: today.format("YYYY-MM-DD"),
+        filtered: true,
+        propertyId: PropertyVal,
+        taskStatus: status === null ? 0 : status,
+        taskPriority: priority === null ? 0 : priority,
+        selectedSubCategoryId: subCatId === null ? 0 : subCatId,
+      },
       // const startDate = moment().clone().startOf("month");
       // const endDate = moment().clone().endOf("month");
       // this.setState({
       //   filterFromDate: startDate.format('YYYY-MM-DD'),
       //   filterToDate: endDate.format('YYYY-MM-DD'),
       //   filtered: true
-      // }, 
+      // },
       () => {
-        const dateTo = new Date(this.state.filterToDate)
-        const dateFrom = new Date(this.state.filterFromDate)
+        const dateTo = new Date(this.state.filterToDate);
+        const dateFrom = new Date(this.state.filterFromDate);
         this.DateRangeConfig(dateFrom, dateTo);
         // this.DateRangeConfig(startDate, endDate);
         this.getCategory();
         this.getTasks();
         this.getTasksPriority();
-        this.getAssign()
-        this.getDashboardAssignList()
+        this.getAssign();
+        this.getDashboardAssignList();
         // this.getAllProperties();
-        this.loadProperty()
+        this.loadProperty();
         // this.TaskStatusConfig();
-      });
+      },
+    );
   }
 
   AddNew = () => {
@@ -651,13 +692,21 @@ class TaskList extends Component {
   };
 
   Filter = () => {
-    if (this.props.PropertyVal > 0 || this.state.assignTo > 0 || this.state.occurance !== "" || this.state.taskStatus !== "None") {
+    if (
+      this.props.PropertyVal > 0 ||
+      this.state.assignTo > 0 ||
+      this.state.occurance !== "" ||
+      this.state.taskStatus !== "None"
+    ) {
       this.setState({ filtered: true }, () => {
         this.getTasks();
       });
-
     } else {
-      appCommon.showtextalert("", "Please Select Any Filter Attribute", "warning");
+      appCommon.showtextalert(
+        "",
+        "Please Select Any Filter Attribute",
+        "warning",
+      );
     }
   };
 
@@ -666,14 +715,14 @@ class TaskList extends Component {
       filtered: false,
       selectedCategoryId: 0,
       selectedSubCategoryId: 0,
-      occurance: '',
+      occurance: "",
       assignTo: 0,
       taskStatus: "None",
       completedTasks: 0,
       pendingTasks: 0,
       actionableTasks: 0,
       taskPriority: 0,
-      data: []
+      data: [],
     });
     //this.getTasks();
   };
@@ -731,12 +780,16 @@ class TaskList extends Component {
         const startDate = moment().clone().startOf("month");
         const endDate = moment().clone().endOf("month");
         this.DateRangeConfig(startDate, endDate);
-        this.setState({ pendingTasks: 0, actionableTasks: 0, completedTasks: 0 })
+        this.setState({
+          pendingTasks: 0,
+          actionableTasks: 0,
+          completedTasks: 0,
+        });
 
         this.getCategory();
         this.getTasks();
         // this.TaskStatusConfig();
-      }
+      },
     );
   };
 
@@ -757,7 +810,7 @@ class TaskList extends Component {
 
     if (prevProps.PropertyVal !== this.props.PropertyVal) {
       this.getAssign();
-      this.getDashboardAssignList()
+      this.getDashboardAssignList();
     }
 
     if (prevProps.PropertyVal !== this.props.PropertyVal) {
@@ -767,9 +820,8 @@ class TaskList extends Component {
         this.componentDidMount();
       }
     }
-
   }
-  onCategorySelected = (val) => { };
+  onCategorySelected = (val) => {};
 
   // TaskStatusConfig() {
   //   let _this = this;
@@ -788,16 +840,16 @@ class TaskList extends Component {
 
   countTasksByStatus = (data) => {
     data.forEach((element) => {
-      if (element.TaskStatus === 'Completed') {
-        this.setState({ completedTasks: this.state.completedTasks + 1 })
+      if (element.TaskStatus === "Completed") {
+        this.setState({ completedTasks: this.state.completedTasks + 1 });
       }
-      if (element.TaskStatus === 'Pending') {
-        this.setState({ pendingTasks: this.state.pendingTasks + 1 })
+      if (element.TaskStatus === "Pending") {
+        this.setState({ pendingTasks: this.state.pendingTasks + 1 });
       }
-      if (element.TaskStatus === 'Actionable') {
-        this.setState({ actionableTasks: this.state.actionableTasks + 1 })
+      if (element.TaskStatus === "Actionable") {
+        this.setState({ actionableTasks: this.state.actionableTasks + 1 });
       }
-    })
+    });
   };
 
   render() {
@@ -811,18 +863,114 @@ class TaskList extends Component {
             >
               <div className="col-12">
                 <div className="card p-2">
-                  <div style={{ display: 'flex', gap: '16px', margin: '8px 0 8px 0' }}>
-                    <div style={{ flex: 1, background: '#40769b', color: 'white', borderRadius: '8px', padding: '12px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 600, fontSize: '1.5rem', minWidth: 0 }}>
-                      <span style={{ fontSize: '0.9rem', fontWeight: 600, marginLeft: 20 }}>Completed Tasks :</span>
-                      <span style={{ fontSize: '0.9rem', fontWeight: 600, marginRight: 20 }}>{this.state.completedTasks}</span>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "16px",
+                      margin: "8px 0 8px 0",
+                    }}
+                  >
+                    <div
+                      style={{
+                        flex: 1,
+                        background: "#40769b",
+                        color: "white",
+                        borderRadius: "8px",
+                        padding: "12px 0",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        fontWeight: 600,
+                        fontSize: "1.5rem",
+                        minWidth: 0,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "0.9rem",
+                          fontWeight: 600,
+                          marginLeft: 20,
+                        }}
+                      >
+                        Completed Tasks :
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "0.9rem",
+                          fontWeight: 600,
+                          marginRight: 20,
+                        }}
+                      >
+                        {this.state.completedTasks}
+                      </span>
                     </div>
-                    <div style={{ flex: 1, background: '#fa6154', color: 'white', borderRadius: '8px', padding: '12px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 600, fontSize: '1.5rem', minWidth: 0 }}>
-                      <span style={{ fontSize: '0.9rem', fontWeight: 600, marginLeft: 20 }}>Pending Tasks :</span>
-                      <span style={{ fontSize: '0.9rem', fontWeight: 600, marginRight: 20 }}>{this.state.pendingTasks}</span>
+                    <div
+                      style={{
+                        flex: 1,
+                        background: "#fa6154",
+                        color: "white",
+                        borderRadius: "8px",
+                        padding: "12px 0",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        fontWeight: 600,
+                        fontSize: "1.5rem",
+                        minWidth: 0,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "0.9rem",
+                          fontWeight: 600,
+                          marginLeft: 20,
+                        }}
+                      >
+                        Pending Tasks :
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "0.9rem",
+                          fontWeight: 600,
+                          marginRight: 20,
+                        }}
+                      >
+                        {this.state.pendingTasks}
+                      </span>
                     </div>
-                    <div style={{ flex: 1, background: '#1bb2c9', color: 'white', borderRadius: '8px', padding: '12px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 600, fontSize: '1.5rem', minWidth: 0 }}>
-                      <span style={{ fontSize: '0.9rem', fontWeight: 600, marginLeft: 20 }}>Actionable Tasks :</span>
-                      <span style={{ fontSize: '0.9rem', fontWeight: 600, marginRight: 20 }}>{this.state.actionableTasks}</span>
+                    <div
+                      style={{
+                        flex: 1,
+                        background: "#1bb2c9",
+                        color: "white",
+                        borderRadius: "8px",
+                        padding: "12px 0",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        fontWeight: 600,
+                        fontSize: "1.5rem",
+                        minWidth: 0,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "0.9rem",
+                          fontWeight: 600,
+                          marginLeft: 20,
+                        }}
+                      >
+                        Actionable Tasks :
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "0.9rem",
+                          fontWeight: 600,
+                          marginRight: 20,
+                        }}
+                      >
+                        {this.state.actionableTasks}
+                      </span>
                     </div>
                   </div>
                   <div className="card-header d-flex p-2">
@@ -845,16 +993,19 @@ class TaskList extends Component {
                               <option value={0}>Select Category</option>
                               {this.state.CategoryData
                                 ? this.state.CategoryData.map((e, key) => {
-                                  return (
-                                    <option key={key} value={e.Id}>
-                                      {e.Name}
-                                    </option>
-                                  );
-                                })
+                                    return (
+                                      <option key={key} value={e.Id}>
+                                        {e.Name}
+                                      </option>
+                                    );
+                                  })
                                 : null}
                             </select>
                           </div>
-                          <div className="nav-item mr-2" style={{ maxWidth: '160px' }}>
+                          <div
+                            className="nav-item mr-2"
+                            style={{ maxWidth: "160px" }}
+                          >
                             <select
                               className="form-control"
                               onChange={(e) =>
@@ -987,7 +1138,11 @@ class TaskList extends Component {
                               id="btnNewTask"
                               Action={this.Filter.bind(this)}
                               ClassName="btn btn-primary mr-2 rounded shadow-sm d-flex align-items-center"
-                              Text={<><i className="fa fa-filter mr-1"></i> Filter</>}
+                              Text={
+                                <>
+                                  <i className="fa fa-filter mr-1"></i> Filter
+                                </>
+                              }
                               title="Apply filters"
                             />
                           )}
@@ -996,12 +1151,29 @@ class TaskList extends Component {
                               id="btnNewTask"
                               Action={this.Reset.bind(this)}
                               ClassName="btn btn-danger mr-2 rounded shadow-sm d-flex align-items-center"
-                              Text={<><i className="fa fa-times mr-1"></i> Reset</>}
+                              Text={
+                                <>
+                                  <i className="fa fa-times mr-1"></i> Reset
+                                </>
+                              }
                               title="Clear all filters"
                             />
                           )}
-                          <button className="btn btn-outline-success mr-2 rounded shadow-sm d-flex align-items-center" name="Export" title="Export to Excel">
-                            <CSVLink data={this.state.data} filename={'Tasklist'} style={{ color: "inherit", textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+                          <button
+                            className="btn btn-outline-success mr-2 rounded shadow-sm d-flex align-items-center"
+                            name="Export"
+                            title="Export to Excel"
+                          >
+                            <CSVLink
+                              data={this.state.data}
+                              filename={"Tasklist"}
+                              style={{
+                                color: "inherit",
+                                textDecoration: "none",
+                                display: "flex",
+                                alignItems: "center",
+                              }}
+                            >
                               <i className="fa fa-file-excel-o mr-1"></i> Export
                             </CSVLink>
                           </button>
@@ -1010,7 +1182,9 @@ class TaskList extends Component {
                             Action={this.AddNew.bind(this)}
                             ClassName="btn btn-success rounded shadow-sm d-flex align-items-center px-3"
                             Icon={<i className="fa fa-plus mr-1"></i>}
-                            Text={<span style={{fontWeight:600}}>Add Task</span>}
+                            Text={
+                              <span style={{ fontWeight: 600 }}>Add Task</span>
+                            }
                             title="Add a new task"
                           />
                         </div>
@@ -1027,7 +1201,8 @@ class TaskList extends Component {
                         columns={this.state.columns}
                         hideGridSearchAndSize={true}
                         globalSearch={true}
-                        isDefaultPagination={true} />
+                        isDefaultPagination={true}
+                      />
                     </LoadingOverlay>
                   </div>
                 </div>
@@ -1040,7 +1215,7 @@ class TaskList extends Component {
             showAddModal={this.state.showAddModal}
             closeModal={this.closeModal}
             categoryData={this.state.CategoryData}
-            getTask={this.getTasks}
+            onTaskAdded={() => this.getTasks()}
             type={"PPMtask"}
           />
         )}

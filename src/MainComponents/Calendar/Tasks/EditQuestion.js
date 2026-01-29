@@ -11,8 +11,7 @@ import * as appCommon from "../../../Common/AppCommon.js";
 import { CreateValidator, ValidateControls } from "../Validation";
 import { ToastContainer, toast } from "react-toastify";
 import swal from "sweetalert";
-import { DELETE_CONFIRMATION_MSG } from '../../../Contants/Common';
-
+import { DELETE_CONFIRMATION_MSG } from "../../../Contants/Common";
 
 export default class EditQuestion extends Component {
   constructor(props) {
@@ -35,13 +34,13 @@ export default class EditQuestion extends Component {
           Id: Id,
         });
         break;
-        case 'D':
-            model.push({
-                CmdType: type,
-                Id: Id,
-              });
-              console.log(model)
-            break;
+      case "D":
+        model.push({
+          CmdType: type,
+          Id: Id,
+        });
+        console.log(model);
+        break;
       default:
     }
     return model;
@@ -52,12 +51,33 @@ export default class EditQuestion extends Component {
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
           switch (type) {
+            case "U":
+              if (
+                rData === "sucess !" ||
+                rData === "success !" ||
+                rData === "Updated !" ||
+                rData === "Updated!"
+              ) {
+                appCommon.showtextalert(
+                  "Question Updated Successfully!",
+                  "",
+                  "success",
+                );
+              }
+              {
+                appCommon.showtextalert(
+                  "Question Updated Successfully!",
+                  "",
+                  "success",
+                );
+              }
+              break;
             case "C":
               if (rData === "Created !") {
                 appCommon.showtextalert(
                   "Question Saved Successfully!",
                   "",
-                  "success"
+                  "success",
                 );
                 console.log("Question Saved Successfully!");
                 this.handleCancel();
@@ -66,8 +86,8 @@ export default class EditQuestion extends Component {
               let quesData = rData.map((element) => ({
                 QuesId: element.QuestID,
                 QuesName: element.QuestionName,
-                Action:element.Action,
-                Remark:element.Remarks
+                Action: element.Action,
+                Remark: element.Remarks,
               }));
               this.setState({ QuesData: quesData });
               break;
@@ -76,7 +96,7 @@ export default class EditQuestion extends Component {
                 appCommon.showtextalert(
                   "Question Deleted Successfully!",
                   "",
-                  "success"
+                  "success",
                 );
               } else {
                 appCommon.showtextalert("Someting went wrong !", "", "error");
@@ -98,7 +118,13 @@ export default class EditQuestion extends Component {
   }
 
   componentDidMount() {
-    // this.getQuestion();
+    const { rowData } = this.props;
+
+    this.setState({
+      taskId: rowData.TaskId,
+      QuesId: rowData.QuesId,
+      QuestionName: rowData.QuestionName,
+    });
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -112,7 +138,7 @@ export default class EditQuestion extends Component {
   };
 
   removeQuesFields = (QuesId) => {
-      console.log(QuesId)
+    console.log(QuesId);
     //debugger
     let myhtml = document.createElement("div");
     myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
@@ -142,8 +168,22 @@ export default class EditQuestion extends Component {
     });
   };
 
+  getQuesModel = (type) => {
+    if (type === "U") {
+      return [
+        {
+          TaskID: this.props.rowData.TaskId,
+          QuestID: this.state.QuesId,
+          QuestionName: this.state.QuestionName,
+        },
+      ];
+    }
+
+    return [];
+  };
+
   render() {
-    console.log(this.props)
+    console.log(this.props);
     return (
       <div>
         <Modal
@@ -184,27 +224,50 @@ export default class EditQuestion extends Component {
                     <div className="col-6">
                       <label>Question Id</label>
                       <input
-                        id="txtName"
-                        value={this.props.rowData.TaskId}
+                        value={this.props.rowData.QuesId || ""}
                         disabled
                         type="text"
                         className="form-control"
                       />
-                    </div> 
-                    <br/>
+                    </div>
+                    <br />
                     <div className="col-6">
                       <label>Question</label>
                       <input
-                        id="txtName"
-                        value={this.props.rowData.AssignedTo}
+                        value={this.state.QuestionName}
                         type="text"
                         className="form-control"
+                        onChange={(e) => {
+                          const value = e.target.value;
+
+                          this.setState({ QuestionName: value });
+                        }}
                       />
-                    </div> 
+                    </div>
                     <br />
-             
                   </div>
                   <div className="modal-footer">
+                    <Button
+                      Id="btnSave"
+                      Text="Save"
+                      ClassName="btn btn-primary"
+                      Action={() => {
+                        const model = this.getQuesModel("U");
+
+                        this.manageQues(model, "U");
+
+                        // 🔥 THIS IS THE KEY PART
+                        if (this.props.onQuestionUpdated) {
+                          this.props.onQuestionUpdated({
+                            QuesId: this.state.QuesId,
+                            QuestionName: this.state.QuestionName,
+                          });
+                        }
+
+                        this.props.closeModal();
+                      }}
+                    />
+
                     <Button
                       Id="btnCancel"
                       Text="Close"

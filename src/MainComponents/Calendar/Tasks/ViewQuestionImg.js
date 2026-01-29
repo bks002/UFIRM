@@ -11,8 +11,7 @@ import * as appCommon from "../../../Common/AppCommon.js";
 import { CreateValidator, ValidateControls } from "../Validation.js";
 import { ToastContainer, toast } from "react-toastify";
 import swal from "sweetalert";
-import { DELETE_CONFIRMATION_MSG } from '../../../Contants/Common.js';
-
+import { DELETE_CONFIRMATION_MSG } from "../../../Contants/Common.js";
 
 export default class ViewQuestionImg extends Component {
   constructor(props) {
@@ -26,6 +25,42 @@ export default class ViewQuestionImg extends Component {
     this.ApiProvider = new ApiProvider();
   }
 
+  manageQuestionImg = (model, type) => {
+    this.ApiProvider.manageQuesImage(model, type)
+      .then(async (resp) => {
+        const text = await resp.text();
+
+        if (!text) {
+          swal({
+            icon: "error",
+            title: "Error",
+            text: "No image exists for the specified TaskQuestionImageId",
+          });
+          return;
+        }
+
+        const rData = JSON.parse(text);
+
+        if (!rData?.Image) {
+          swal({
+            icon: "error",
+            title: "Error",
+            text: "No image exists for the specified TaskQuestionImageId",
+          });
+          return;
+        }
+
+        this.setState({ QuestImageData: rData.Image });
+      })
+      .catch(() => {
+        swal({
+          icon: "error",
+          title: "Error",
+          text: "Unable to load image",
+        });
+      });
+  };
+
   getQuesModel = (type, Id) => {
     var model = [];
     switch (type) {
@@ -35,13 +70,13 @@ export default class ViewQuestionImg extends Component {
           Id: Id,
         });
         break;
-        case 'D':
-            model.push({
-                CmdType: type,
-                Id: Id,
-              });
-              console.log(model)
-            break;
+      case "D":
+        model.push({
+          CmdType: type,
+          Id: Id,
+        });
+        console.log(model);
+        break;
       default:
     }
     return model;
@@ -57,7 +92,7 @@ export default class ViewQuestionImg extends Component {
                 appCommon.showtextalert(
                   "Question Saved Successfully!",
                   "",
-                  "success"
+                  "success",
                 );
                 console.log("Question Saved Successfully!");
                 this.handleCancel();
@@ -66,8 +101,8 @@ export default class ViewQuestionImg extends Component {
               let quesData = rData.map((element) => ({
                 QuesId: element.QuestID,
                 QuesName: element.QuestionName,
-                Action:element.Action,
-                Remark:element.Remarks
+                Action: element.Action,
+                Remark: element.Remarks,
               }));
               this.setState({ QuesData: quesData });
               break;
@@ -76,7 +111,7 @@ export default class ViewQuestionImg extends Component {
                 appCommon.showtextalert(
                   "Question Deleted Successfully!",
                   "",
-                  "success"
+                  "success",
                 );
               } else {
                 appCommon.showtextalert("Someting went wrong !", "", "error");
@@ -98,7 +133,25 @@ export default class ViewQuestionImg extends Component {
   }
 
   componentDidMount() {
-    // this.getQuestion();
+    const { TaskId, QuesId } = this.props.rowData || {};
+
+    if (!TaskId || !QuesId) {
+      swal({
+        icon: "error",
+        title: "Error",
+        text: "Invalid question selected",
+      });
+      return;
+    }
+
+    const model = [
+      {
+        TaskID: TaskId,
+        QuestID: QuesId,
+      },
+    ];
+
+    this.manageQuestionImg(model, "R");
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -112,7 +165,7 @@ export default class ViewQuestionImg extends Component {
   };
 
   removeQuesFields = (QuesId) => {
-      console.log(QuesId)
+    console.log(QuesId);
     //debugger
     let myhtml = document.createElement("div");
     myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
@@ -143,7 +196,7 @@ export default class ViewQuestionImg extends Component {
   };
 
   render() {
-    console.log(this.props)
+    console.log(this.props);
     return (
       <div>
         <Modal
@@ -170,9 +223,7 @@ export default class ViewQuestionImg extends Component {
                   className="card-body"
                   style={{ height: "450px", overflowY: "scroll" }}
                 >
-                  <div className="row">
-                    Image Data
-                  </div>
+                  <div className="row">Image Data</div>
                   <div className="modal-footer">
                     <Button
                       Id="btnCancel"
