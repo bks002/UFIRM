@@ -255,3 +255,13 @@ export const getStock = async (propertyId) => {
       console.error('Error fetching Purchase Order:', error);
     }
   };
+
+  // ✅ ADD STOCK QUANTITY (POST API)
+export const addStockQuantity = async (payload) => {
+    try {
+        const response = await api.post('/stock', payload);
+        return response.data;
+    } catch (error) {
+        handleApiError(error);
+    }
+};
