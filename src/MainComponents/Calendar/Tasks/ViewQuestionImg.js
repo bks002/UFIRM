@@ -12,6 +12,7 @@ import { CreateValidator, ValidateControls } from "../Validation.js";
 import { ToastContainer, toast } from "react-toastify";
 import swal from "sweetalert";
 import { DELETE_CONFIRMATION_MSG } from "../../../Contants/Common.js";
+import { getTaskQuestionImage } from "../../../Services/notificationService";
 
 export default class ViewQuestionImg extends Component {
   constructor(props) {
@@ -21,6 +22,9 @@ export default class ViewQuestionImg extends Component {
       QuestionName: "",
       QuesId: "",
       QuesData: [],
+      beforeImage: null,
+      afterImage: null,
+      loadingImage: true,
     };
     this.ApiProvider = new ApiProvider();
   }
@@ -132,27 +136,46 @@ export default class ViewQuestionImg extends Component {
     this.manageQues(model, type);
   }
 
-  componentDidMount() {
-    const { TaskId, QuesId } = this.props.rowData || {};
+  componentDidMount = async () => {
+    const { TaskId, QuesId, CreatedOn } = this.props.rowData || {};
 
-    if (!TaskId || !QuesId) {
+    if (!TaskId || !QuesId || !CreatedOn) {
       swal({
         icon: "error",
         title: "Error",
-        text: "Invalid question selected",
+        text: "Invalid question details",
       });
       return;
     }
 
-    const model = [
-      {
-        TaskID: TaskId,
-        QuestID: QuesId,
-      },
-    ];
+    this.setState({ loadingImage: true }); // 👈 START LOADING
 
-    this.manageQuestionImg(model, "R");
-  }
+    try {
+      const res = await getTaskQuestionImage({
+        taskId: TaskId,
+        questId: QuesId,
+        createdOn: moment(
+          CreatedOn,
+          ["YYYY-MM-DD", "YYYY-MM-DDTHH:mm:ss.SSS", "DD-MM-YYYY"],
+          true,
+        ).format("YYYY-MM-DD"),
+      });
+
+      this.setState({
+        beforeImage: res.beforeImage,
+        afterImage: res.afterImage,
+        loadingImage: false, // 👈 DONE
+      });
+    } catch (err) {
+      this.setState({ loadingImage: false }); // 👈 FAIL SAFE
+
+      swal({
+        icon: "error",
+        title: "Error",
+        text: "Unable to load question images",
+      });
+    }
+  };
 
   componentDidUpdate(prevProps, prevState) {
     if (prevState.selectedCategory !== this.state.selectedCategory) {
@@ -223,7 +246,37 @@ export default class ViewQuestionImg extends Component {
                   className="card-body"
                   style={{ height: "450px", overflowY: "scroll" }}
                 >
-                  <div className="row">Image Data</div>
+                  <div className="row">
+                    <div className="col-md-6 text-center">
+                      <h6>Before</h6>
+                      {this.state.loadingImage ? (
+                        <p className="text-info">Loading image…</p>
+                      ) : this.state.beforeImage ? (
+                        <img
+                          src={this.state.beforeImage}
+                          alt="Before"
+                          style={{ maxWidth: "100%", border: "1px solid #ddd" }}
+                        />
+                      ) : (
+                        <p className="text-muted">No before image</p>
+                      )}
+                    </div>
+
+                    <div className="col-md-6 text-center">
+                      <h6>After</h6>
+                      {this.state.loadingImage ? (
+                        <p className="text-info">Loading image…</p>
+                      ) : this.state.afterImage ? (
+                        <img
+                          src={this.state.afterImage}
+                          alt="After"
+                          style={{ maxWidth: "100%", border: "1px solid #ddd" }}
+                        />
+                      ) : (
+                        <p className="text-muted">No after image</p>
+                      )}
+                    </div>
+                  </div>
                   <div className="modal-footer">
                     <Button
                       Id="btnCancel"

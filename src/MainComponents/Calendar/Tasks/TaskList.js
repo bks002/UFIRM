@@ -92,14 +92,6 @@ class TaskList extends Component {
             return (
               <div style={{ display: "flex" }}>
                 <button
-                  className="btn btn-sm btn-primary"
-                  onClick={this.AddQuestion.bind(this, data.cell.row.original)}
-                  title="Add"
-                  style={{ marginRight: "5px" }}
-                >
-                  <i className="fa fa-plus"></i>
-                </button>
-                <button
                   className="btn btn-sm btn-info"
                   onClick={this.ViewTask.bind(this, data.cell.row.original)}
                   title="View"
@@ -252,10 +244,114 @@ class TaskList extends Component {
       completedTasks: 0,
       actionableTasks: 0,
       assignedProperty: [],
+      exporting: false,
     };
     this.ApiProvider = new ApiProvider();
     this.comdbprovider = new LayoutDataProvider();
   }
+
+  getExportDataWithQuestions = () => {
+    const exportRows = [];
+
+    this.state.data.forEach((task) => {
+      // 🔹 assume questions are stored here (adjust key if needed)
+      const questions = task.TaskTransactionModel1 || [];
+
+      // ❗ If no questions, export task once
+      if (!questions.length) {
+        exportRows.push({
+          ...task,
+          Questionnaire: "",
+        });
+      } else {
+        // ❗ If multiple questions, duplicate task row
+        questions.forEach((q) => {
+          exportRows.push({
+            ...task, // 👈 keeps ALL existing columns
+            Questionnaire: q.Question || q.QuestionName || "",
+          });
+        });
+      }
+    });
+
+    return exportRows;
+  };
+
+  fetchQuestionsForTask = async (task) => {
+    try {
+      const taskId = task.TaskId;
+
+      // Same date logic as ViewTask
+      let date = task.UpdatedOn.split("-");
+      const updatedOn = `${date[2]}-${date[1]}-${date[0]}`;
+
+      const model = [
+        {
+          CmdType: "R",
+          Id: taskId,
+          date: updatedOn,
+        },
+      ];
+
+      const resp = await this.ApiProvider.manageQues(model, "R");
+
+      if (resp.ok && resp.status === 200) {
+        const rData = await resp.json();
+
+        return rData.map((q) => ({
+          QuesId: q.QuestID,
+          QuesName: q.QuestionName,
+        }));
+      }
+
+      return [];
+    } catch (e) {
+      console.error("Question fetch failed for task", task.TaskId, e);
+      return [];
+    }
+  };
+
+  handleExportWithQuestions = async () => {
+    // 🛑 prevent double click
+    if (this.state.exporting) return;
+
+    this.setState({ exporting: true });
+
+    try {
+      const exportRows = [];
+
+      for (const task of this.state.data) {
+        const questions = await this.fetchQuestionsForTask(task);
+
+        const questionnaireText = questions.length
+          ? questions.map((q, i) => `${i + 1}. ${q.QuesName}`).join("\n")
+          : "";
+
+        // ❌ remove unwanted columns ONLY for export
+        const { AssignedToId, EntryType, Occurence, ...cleanTask } = task;
+
+        exportRows.push({
+          ...cleanTask,
+          Questionnaire: questionnaireText,
+        });
+      }
+
+      downloadExcel({
+        fileName: "Tasklist",
+        sheet: "Tasks",
+        tablePayload: {
+          header: Object.keys(exportRows[0] || {}),
+          body: exportRows,
+        },
+      });
+    } catch (err) {
+      console.error("Export failed:", err);
+      appCommon.showtextalert("Export failed", "Please try again", "error");
+    } finally {
+      // ✅ allow export again
+      this.setState({ exporting: false });
+    }
+  };
 
   handleDownloadExcel() {
     downloadExcel({
@@ -556,39 +652,39 @@ class TaskList extends Component {
     this.manageSubCategory(model, type, categoryId);
   }
   getTasks() {
-  const type = "R";
+    const type = "R";
 
-  const categoryId = this.state?.selectedCategoryId || 0;
-  const subCategoryId = this.state?.selectedSubCategoryId || 0;
-  const assignToId = this.state?.assignTo || 0;
-  const occurance = this.state?.occurance || 0;
+    const categoryId = this.state?.selectedCategoryId || 0;
+    const subCategoryId = this.state?.selectedSubCategoryId || 0;
+    const assignToId = this.state?.assignTo || 0;
+    const occurance = this.state?.occurance || 0;
 
-  const startDate = this.state?.filterFromDate || "";
-  const endDate = this.state?.filterToDate || "";
+    const startDate = this.state?.filterFromDate || "";
+    const endDate = this.state?.filterToDate || "";
 
-  const taskStatus =
-    this.state?.taskStatus && this.state.taskStatus !== "None"
-      ? this.state.taskStatus
-      : "";
+    const taskStatus =
+      this.state?.taskStatus && this.state.taskStatus !== "None"
+        ? this.state.taskStatus
+        : "";
 
-  const propertyId = this.props?.PropertyVal || 0;
-  const taskPriority = this.state?.taskPriority || 0;
+    const propertyId = this.props?.PropertyVal || 0;
+    const taskPriority = this.state?.taskPriority || 0;
 
-  const model = this.getModel(
-    type,
-    categoryId,
-    subCategoryId,
-    assignToId,
-    occurance,
-    startDate,
-    endDate,
-    taskStatus,
-    propertyId,
-    taskPriority
-  );
+    const model = this.getModel(
+      type,
+      categoryId,
+      subCategoryId,
+      assignToId,
+      occurance,
+      startDate,
+      endDate,
+      taskStatus,
+      propertyId,
+      taskPriority,
+    );
 
-  this.manageTask(model, type);
-}
+    this.manageTask(model, type);
+  }
   getAssign() {
     var type = "R";
     var model = this.getAssignModel(type);
@@ -1161,22 +1257,22 @@ class TaskList extends Component {
                           )}
                           <button
                             className="btn btn-outline-success mr-2 rounded shadow-sm d-flex align-items-center"
-                            name="Export"
-                            title="Export to Excel"
+                            onClick={this.handleExportWithQuestions}
+                            disabled={this.state.exporting}
                           >
-                            <CSVLink
-                              data={this.state.data}
-                              filename={"Tasklist"}
-                              style={{
-                                color: "inherit",
-                                textDecoration: "none",
-                                display: "flex",
-                                alignItems: "center",
-                              }}
-                            >
-                              <i className="fa fa-file-excel-o mr-1"></i> Export
-                            </CSVLink>
+                            {this.state.exporting ? (
+                              <>
+                                <i className="fa fa-spinner fa-spin mr-1"></i>{" "}
+                                Exporting...
+                              </>
+                            ) : (
+                              <>
+                                <i className="fa fa-file-excel-o mr-1"></i>{" "}
+                                Export
+                              </>
+                            )}
                           </button>
+
                           <Button
                             id="btnNewTask"
                             Action={this.AddNew.bind(this)}

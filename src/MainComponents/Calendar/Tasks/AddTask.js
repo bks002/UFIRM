@@ -10,6 +10,7 @@ import Button from "../../../ReactComponents/Button/Button";
 import * as appCommon from "../../../Common/AppCommon.js";
 import { ToastContainer, toast } from "react-toastify";
 import { getFrequencyList } from "../../../Services/masterService";
+import { createTaskWithQuestions } from "../../../Services/notificationService";
 
 class AddTask extends Component {
   constructor(props) {
@@ -59,7 +60,6 @@ class AddTask extends Component {
       // ===== Questions =====
       quesValues: [
         {
-          TaskID: "",
           QuestionName: "",
         },
       ],
@@ -106,41 +106,6 @@ class AddTask extends Component {
     return model;
   };
 
-  getTaskModel = (type) => {
-    var model = [];
-    switch (type) {
-      case "R":
-        model.push({
-          CmdType: type,
-        });
-        break;
-      case "C":
-        model.push({
-          CategoryId: parseInt(this.state.selectedCategory),
-          SubCategoryId: parseInt(this.state.selectedSubCategory),
-          Name: this.state.taskName,
-          Description: "Desc",
-          DateFrom: this.state.startDate,
-          DateTo: this.state.endDate,
-          TimeFrom: this.state.startTime.toString().split(" GMT")[0],
-          TimeTo: this.state.endTime.toString().split(" GMT")[0],
-          Remarks: this.state.remarks,
-          Occurence: this.state.occurence,
-          CreatedBy: 1,
-          CreatedOn: this.state.createdOn,
-          AssignTo: parseInt(this.state.assignTo),
-          RemindMe: this.state.remindme,
-          Location: this.state.location,
-          AssetsID: this.state.assetId ? parseInt(this.state.assetId) : 0,
-          QRCode: this.state.QRCode,
-          type: this.props.type,
-        });
-        break;
-      default:
-    }
-    return model;
-  };
-
   manageSubCategory = (model, type, categoryId) => {
     this.ApiProvider.manageSubCategory(model, type, categoryId).then((resp) => {
       if (resp.ok && resp.status == 200) {
@@ -156,36 +121,6 @@ class AddTask extends Component {
           switch (type) {
             case "R":
               this.setState({ subCategory: subCatData });
-              break;
-            default:
-          }
-        });
-      }
-    });
-  };
-
-  manageTask = (model, type) => {
-    this.ApiProvider.manageTask(model, type).then((resp) => {
-      if (resp.ok && resp.status === 200) {
-        return resp.json().then((rData) => {
-          switch (type) {
-            case "C":
-              if (rData === "Created !") {
-                appCommon.showtextalert(
-                  "Task Saved Successfully!",
-                  "",
-                  "success",
-                );
-                console.log("Task Saved Successfully!");
-                this.handleCancel();
-              } else {
-                appCommon.showtextalert(
-                  "Task Cannot Be Created !",
-                  rData.split("?")[0],
-                  "warning",
-                );
-                this.handleCancel();
-              }
               break;
             default:
           }
@@ -225,13 +160,7 @@ class AddTask extends Component {
 
   addQuesFields = () => {
     this.setState({
-      quesValues: [
-        ...this.state.quesValues,
-        {
-          TaskID: this.props.taskId || "",
-          QuestionName: "",
-        },
-      ],
+      quesValues: [...this.state.quesValues, { QuestionName: "" }],
     });
   };
 
@@ -381,29 +310,44 @@ class AddTask extends Component {
     this.setState({ isSaving: true });
 
     try {
-      // 1️⃣ Save Task
-      const taskModel = this.getTaskModel("C");
-      const taskResp = await this.ApiProvider.manageTask(taskModel, "C");
+      // 🧱 Build TASK object
+      const taskPayload = {
+        Id: 0,
+        CategoryId: parseInt(this.state.selectedCategory),
+        SubCategoryId: parseInt(this.state.selectedSubCategory),
+        Name: this.state.taskName,
+        Description: "Desc",
+        DateFrom: this.state.startDate,
+        DateTo: this.state.endDate,
+        TimeFrom: this.state.startTime,
+        TimeTo: this.state.endTime,
+        Remarks: this.state.remarks,
+        Occurence: this.state.occurence,
+        CreatedBy: 1,
+        CreatedOn: this.state.createdOn,
+        AssignTo: parseInt(this.state.assignTo),
+        RemindMe: this.state.remindme,
+        Location: this.state.location,
+        AssetsID: this.state.assetId ? parseInt(this.state.assetId) : 0,
+        QRCode: this.state.QRCode,
+        Type: this.props.type,
+      };
 
-      if (!taskResp.ok) throw new Error("Task create failed");
-
-      const taskResult = await taskResp.json();
-      if (taskResult !== "Created !") {
-        throw new Error(taskResult);
-      }
-
-      // 2️⃣ Prepare Questions payload (SINGLE array)
-      const questions = this.state.quesValues
+      // 🧱 Build QUESTIONS array
+      const questionsPayload = this.state.quesValues
         .filter((q) => q.QuestionName && q.QuestionName.trim() !== "")
         .map((q) => ({
-          TaskID: 0, // backend links task internally
           QuestionName: q.QuestionName.trim(),
         }));
 
-      // 3️⃣ Save Questions only if present
-      if (questions.length > 0) {
-        await this.ApiProvider.manageQues(questions, "C");
-      }
+      // 🧠 Final API payload
+      const payload = {
+        Task: taskPayload,
+        Questions: questionsPayload,
+      };
+
+      // 🚀 Single API call
+      await createTaskWithQuestions(payload);
 
       appCommon.showtextalert(
         "Task & Questions Saved Successfully!",
@@ -411,15 +355,11 @@ class AddTask extends Component {
         "success",
       );
 
-      // 4️⃣ Close modal
       this.handleCancel();
 
-      // 5️⃣ Refresh task list safely
-      setTimeout(() => {
-        if (this.props.onTaskAdded) {
-          this.props.onTaskAdded();
-        }
-      }, 0);
+      if (this.props.onTaskAdded) {
+        this.props.onTaskAdded();
+      }
     } catch (err) {
       console.error(err);
       appCommon.showtextalert(
@@ -493,7 +433,63 @@ class AddTask extends Component {
   z-index: 2;
   background: #2f5f7f;
 }
+/* ===== MAIN TITLE ROW ===== */
+.add-task-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #1f4f6d, #2f6f96);
+  border-radius: 4px 4px 0 0;
+}
 
+.add-task-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.add-task-close i {
+  color: #ffffff;
+  font-size: 18px;
+}
+
+/* ===== TABS ROW ===== */
+.card-header {
+  padding: 0;
+  background: #2f5f7f;
+}
+
+.card-header .nav-tabs {
+  padding: 6px 12px 0;
+  border-bottom: none;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.card-header .nav-tabs .nav-link {
+  font-size: 14px;
+  font-weight: 500;
+  color: #dbe7f0;
+  border: none;
+  padding: 8px 16px;
+}
+
+.card-header .nav-tabs .nav-link.active {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 4px 4px 0 0;
+}
+/* Make tabs feel clickable */
+.card-header .nav-tabs .nav-link {
+  cursor: pointer;
+}
+
+/* Optional: slightly clearer hover feedback */
+.card-header .nav-tabs .nav-link:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
 `}
         </style>
 
@@ -510,18 +506,15 @@ class AddTask extends Component {
             <div className="col-12">
               <div className="card card-primary">
                 <div className="card-header">
-                  <div className="d-flex justify-content-between align-items-center">
-                    <h3 className="card-title mb-0">Add Task</h3>
+                  <div className="add-task-header">
+                    <h3 className="add-task-title">Add Task</h3>
                     <button
-                      className="btn btn-tool"
+                      className="btn btn-tool add-task-close"
                       onClick={this.props.closeModal}
                     >
                       <i className="fas fa-times"></i>
                     </button>
                   </div>
-
-                  {/* divider */}
-                  <hr className="my-2" />
 
                   {/* tabs */}
                   <ul className="nav nav-tabs mt-2">

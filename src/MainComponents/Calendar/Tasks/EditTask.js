@@ -16,6 +16,7 @@ import ViewQuestionImg from "../../Calendar/Tasks/ViewQuestionImg";
 import ChatBox from "../../Notification Center/ChatBox";
 import { getTaskRemarks } from "../../../Services/notificationService";
 import { fetchNotifications } from "../../../Services/notificationService";
+import { createTaskWithQuestions } from "../../../Services/notificationService";
 
 export default class EditTask extends Component {
   constructor(props) {
@@ -40,8 +41,13 @@ export default class EditTask extends Component {
       createdOn: moment().format(),
       // startTime: moment().add(moment().minute() > 30 && 1, 'hours').minutes(moment().minute() <= 30 ? 30 : 0).toDate(),
       // endTime: moment().add(moment().minute() > 30 && 1, 'hours').minutes(moment().minute() <= 30 ? 30 : 0).add(30, 'm').toDate(),
-      startTime: new Date(),
-      endTime: new Date(),
+      startTime: props.rowData.TimeFrom
+        ? moment(props.rowData.TimeFrom, "HH:mm:ss").toDate()
+        : null,
+
+      endTime: props.rowData.TimeTo
+        ? moment(props.rowData.TimeTo, "HH:mm:ss").toDate()
+        : null,
       selectedCategory: props.rowData.TaskCategoryId,
       selectedSubCategory: props.rowData.TaskSubCategoryId,
       subCategory: [],
@@ -68,6 +74,9 @@ export default class EditTask extends Component {
       loadingRemarks: false,
       selectedFMQuestion: null, // { QuesId, QuestionName }
       resolvedTaskDate: null,
+      fmSelectedDate: null,
+      hasAnyRemarksForQuestion: false,
+      saving: false,
     };
     this.onStartDateChange = this.onStartDateChange.bind(this);
     this.onEndDateChange = this.onEndDateChange.bind(this);
@@ -304,12 +313,65 @@ export default class EditTask extends Component {
     // this.getAssets(model);
   }
 
-  handleSave = (e) => {
-    e.currentTarget.disabled = true;
-    var type = "C";
-    var model = this.getTaskModel(type);
-    this.manageTask(model, type);
+  handleSave = async (e) => {
+    e.preventDefault();
+
+    if (this.state.saving) return;
+    this.setState({ saving: true });
+
+    try {
+      // 🧱 TASK payload (EDIT mode)
+      const taskPayload = {
+        Id: this.props.rowData.TaskId, // 🔥 EXISTING TASK ID
+        CategoryId: parseInt(this.state.selectedCategory),
+        SubCategoryId: parseInt(this.state.selectedSubCategory),
+        Name: this.state.taskName,
+        Description: "Desc",
+        DateFrom: this.state.startDate,
+        DateTo: this.state.endDate,
+        TimeFrom: this.state.startTime,
+        TimeTo: this.state.endTime,
+        Remarks: "remarks",
+        Occurence: this.state.occurence,
+        CreatedBy: 1,
+        CreatedOn: this.state.createdOn,
+        AssignTo: parseInt(this.state.assignTo),
+        RemindMe: this.state.remindme,
+        Location: this.state.location,
+        AssetsID: this.state.assetId ? parseInt(this.state.assetId) : 0,
+        QRCode: this.state.QRCode,
+        Type: "U", // 🔥 UPDATE
+      };
+
+      // 🧱 QUESTIONS payload
+      const questionsPayload = this.state.QuesData.map((q) => ({
+        QuestionName: q.QuestionName,
+      }));
+
+      // 🧠 FINAL payload (same shape as AddTask)
+      const payload = {
+        Task: taskPayload,
+        Questions: questionsPayload,
+      };
+
+      // 🚀 SINGLE API CALL
+      await createTaskWithQuestions(payload);
+
+      // ✅ SUCCESS
+      appCommon.showtextalert("Task updated successfully!", "", "success");
+
+      this.props.closeModal();
+    } catch (err) {
+      console.error("Edit task failed:", err);
+      appCommon.showtextalert(
+        "Error while updating task",
+        err.message || "Something went wrong",
+        "error",
+      );
+      this.setState({ saving: false });
+    }
   };
+
   handleCancel = () => {
     this.props.closeModal();
   };
@@ -336,6 +398,13 @@ export default class EditTask extends Component {
     if (this.state.propertyId) {
       this.getAssets(this.state.propertyId);
     }
+
+    const taskDate = this.props.rowData.DateFrom;
+
+    this.setState({
+      fmSelectedDate: taskDate,
+      resolvedTaskDate: taskDate,
+    });
   }
 
   handleAssetChange = (e) => {
@@ -566,27 +635,48 @@ export default class EditTask extends Component {
   };
 
   resolveTaskDate = async (questionId) => {
-    const { TaskId, PropertyId } = this.props.rowData;
-
     try {
+      const { TaskId, PropertyId } = this.props.rowData;
+
       const list = await fetchNotifications("task", PropertyId);
 
-      const match = list.find(
+      const hasAny = list.some(
         (n) => n.TaskId === TaskId && n.QuestionId === questionId,
       );
 
-      if (match?.TaskDate) {
-        this.setState({ resolvedTaskDate: match.TaskDate }, () =>
-          this.getTaskRemarksForEdit({ QuesId: questionId }),
-        );
-      } else {
-        console.warn("❌ No TaskDate found");
-        this.setState({ loadingRemarks: false }); // 🔥 IMPORTANT
-      }
-    } catch (err) {
-      console.error("Failed to resolve TaskDate", err);
-      this.setState({ loadingRemarks: false }); // 🔥 IMPORTANT
+      this.setState(
+        {
+          hasAnyRemarksForQuestion: hasAny,
+          loadingRemarks: true,
+        },
+        () => this.getTaskRemarksForEdit({ QuesId: questionId }),
+      );
+    } catch {
+      this.setState(
+        {
+          hasAnyRemarksForQuestion: false,
+          loadingRemarks: true,
+        },
+        () => this.getTaskRemarksForEdit({ QuesId: questionId }),
+      );
     }
+  };
+
+  handleFMDateChange = (e) => {
+    const selectedDate = e.target.value;
+
+    this.setState(
+      {
+        fmSelectedDate: selectedDate,
+        resolvedTaskDate: selectedDate,
+        taskRemarks: [],
+      },
+      () => {
+        if (this.state.selectedFMQuestion) {
+          this.getTaskRemarksForEdit(this.state.selectedFMQuestion);
+        }
+      },
+    );
   };
 
   render() {
@@ -606,7 +696,63 @@ export default class EditTask extends Component {
   justify-content: center;
   padding: 0;
 }
+/* ===== MAIN TITLE ROW ===== */
+.add-task-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #1f4f6d, #2f6f96);
+  border-radius: 4px 4px 0 0;
+}
 
+.add-task-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.add-task-close i {
+  color: #ffffff;
+  font-size: 18px;
+}
+
+/* ===== TABS ROW ===== */
+.card-header {
+  padding: 0;
+  background: #2f5f7f;
+}
+
+.card-header .nav-tabs {
+  padding: 6px 12px 0;
+  border-bottom: none;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.card-header .nav-tabs .nav-link {
+  font-size: 14px;
+  font-weight: 500;
+  color: #dbe7f0;
+  border: none;
+  padding: 8px 16px;
+}
+
+.card-header .nav-tabs .nav-link.active {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 4px 4px 0 0;
+}
+  /* Make tabs feel clickable */
+.card-header .nav-tabs .nav-link {
+  cursor: pointer;
+}
+
+/* Optional: slightly clearer hover feedback */
+.card-header .nav-tabs .nav-link:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
  `}
         </style>
         <Modal
@@ -621,26 +767,16 @@ export default class EditTask extends Component {
           <div className="row">
             <div className="col-12">
               <div className="card card-primary">
-                <div className="card-header pb-0">
-                  <div className="d-flex justify-content-between align-items-center mb-2">
-                    <h3 className="card-title mb-0">Edit Task</h3>
-
-                    <div className="card-tools">
-                      <button
-                        className="btn btn-tool"
-                        onClick={this.props.closeModal}
-                      >
-                        <i className="fas fa-times"></i>
-                      </button>
-                    </div>
+                <div className="card-header">
+                  <div className="add-task-header">
+                    <h3 className="add-task-title">Edit Task</h3>
+                    <button
+                      className="btn btn-tool add-task-close"
+                      onClick={this.props.closeModal}
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
                   </div>
-
-                  <div
-                    style={{
-                      borderBottom: "1px solid #dee2e6",
-                      margin: "8px 0 12px 0",
-                    }}
-                  />
 
                   <ul className="nav nav-tabs mt-3">
                     <li className="nav-item">
@@ -693,7 +829,6 @@ export default class EditTask extends Component {
                               activeTab: "fmremark",
                               selectedFMQuestion: null,
                               taskRemarks: [],
-                              resolvedTaskDate: null,
                             },
                             () => {
                               this.getQuestions();
@@ -1058,23 +1193,23 @@ export default class EditTask extends Component {
                               {/* 🗑 DELETE QUESTION */}
                               <button
                                 className="btn btn-danger btn-icon"
-                                onClick={() =>
+                                onClick={() => {
                                   swal({
                                     title: "Delete Question?",
-                                    text: DELETE_CONFIRMATION_MSG,
+                                    text: "This question will be removed. You can save to apply changes.",
                                     icon: "warning",
-                                    buttons: ["No", "Yes"],
+                                    buttons: ["Cancel", "Delete"],
                                     dangerMode: true,
                                   }).then((ok) => {
-                                    if (ok) {
-                                      const model = this.getQuesModel(
-                                        "D",
-                                        q.QuesId,
-                                      );
-                                      this.manageQues(model, "D");
-                                    }
-                                  })
-                                }
+                                    if (!ok) return;
+
+                                    this.setState((prev) => ({
+                                      QuesData: prev.QuesData.filter(
+                                        (item) => item.QuesId !== q.QuesId,
+                                      ),
+                                    }));
+                                  });
+                                }}
                               >
                                 <i className="fa fa-trash" />
                               </button>
@@ -1212,34 +1347,42 @@ export default class EditTask extends Component {
 
                   {this.state.activeTab === "fmremark" && (
                     <>
-                      {/* 🔹 Question Selector Row */}
-                      <div className="d-flex flex-wrap gap-2 mb-3">
-                        {this.state.QuesData.map((q) => (
-                          <button
-                            key={q.QuesId}
-                            className={`btn btn-sm ${
-                              this.state.selectedFMQuestion?.QuesId === q.QuesId
-                                ? "btn-primary"
-                                : "btn-outline-primary"
-                            }`}
-                            onClick={() => {
-                              this.setState(
-                                {
-                                  selectedFMQuestion: q,
-                                  taskRemarks: [],
-                                  loadingRemarks: true,
-                                  resolvedTaskDate: null,
-                                },
-                                () => {
-                                  // 🔥 Resolve date FIRST, then fetch remarks
-                                  this.resolveTaskDate(q.QuesId);
-                                },
-                              );
-                            }}
-                          >
-                            {q.QuestionName}
-                          </button>
-                        ))}
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <div className="d-flex flex-wrap gap-2">
+                          {this.state.QuesData.map((q) => (
+                            <button
+                              key={q.QuesId}
+                              className={`btn btn-sm ${
+                                this.state.selectedFMQuestion?.QuesId ===
+                                q.QuesId
+                                  ? "btn-primary"
+                                  : "btn-outline-primary"
+                              }`}
+                              onClick={() => {
+                                this.setState(
+                                  {
+                                    selectedFMQuestion: q,
+                                    taskRemarks: [],
+                                    loadingRemarks: true,
+                                    hasAnyRemarksForQuestion: false,
+                                  },
+                                  () => this.resolveTaskDate(q.QuesId),
+                                );
+                              }}
+                            >
+                              {q.QuestionName}
+                            </button>
+                          ))}
+                        </div>
+
+                        <input
+                          type="date"
+                          className="form-control"
+                          style={{ maxWidth: "180px" }}
+                          value={this.state.fmSelectedDate || ""}
+                          onChange={this.handleFMDateChange}
+                          disabled={!this.state.selectedFMQuestion}
+                        />
                       </div>
 
                       {this.state.loadingRemarks && (
@@ -1258,6 +1401,16 @@ export default class EditTask extends Component {
                         />
                       )}
 
+                      {this.state.selectedFMQuestion &&
+                        !this.state.loadingRemarks &&
+                        this.state.taskRemarks.length === 0 && (
+                          <p className="text-muted mt-2">
+                            {this.state.hasAnyRemarksForQuestion
+                              ? "No remarks available for the selected date."
+                              : "No remarks have been exchanged for this question yet."}
+                          </p>
+                        )}
+
                       {!this.state.selectedFMQuestion && (
                         <p className="text-muted">
                           Select a question to view FM remarks.
@@ -1269,10 +1422,10 @@ export default class EditTask extends Component {
                   <div className="modal-footer">
                     <button
                       className="btn btn-primary"
-                      disabled={!this.isEditTaskValid()}
-                      onClick={(e) => this.handleSave(e)}
+                      disabled={!this.isEditTaskValid() || this.state.saving}
+                      onClick={this.handleSave}
                     >
-                      Save
+                      {this.state.saving ? "Saving..." : "Save"}
                     </button>
 
                     <button
@@ -1300,21 +1453,24 @@ export default class EditTask extends Component {
           pauseOnHover
         />
         <ToastContainer />
-        {/* ===== EDIT / ADD QUESTION MODAL ===== */}
-        {this.state.showEditQuestionModal && (
-          <EditQuestion
-            showEditQuestionModel={this.state.showEditQuestionModal}
+
+        {/* ===== VIEW QUESTION IMAGE MODAL ===== */}
+        {this.state.showViewQuestionImgModal && (
+          <ViewQuestionImg
+            showEditQuestionModel={this.state.showViewQuestionImgModal}
             closeModal={() =>
-              this.setState({ showEditQuestionModal: false }, this.getQuestions)
+              this.setState({ showViewQuestionImgModal: false })
             }
             rowData={{
               TaskId: this.props.rowData.TaskId,
-              ...this.state.selectedQuestion,
+              QuesId: this.state.selectedQuestion?.QuesId,
+              CreatedOn:
+                this.props.rowData.UpdatedOn || this.props.rowData.CreatedOn,
             }}
           />
         )}
 
-        {/* ===== VIEW QUESTION IMAGE MODAL ===== */}
+        {/* ===== EDIT QUESTION MODAL ===== */}
         {this.state.showEditQuestionModal && (
           <EditQuestion
             showEditQuestionModel={this.state.showEditQuestionModal}
@@ -1323,14 +1479,20 @@ export default class EditTask extends Component {
               TaskId: this.props.rowData.TaskId,
               ...this.state.selectedQuestion,
             }}
-            onQuestionUpdated={(updatedQuestion) => {
-              this.setState((prev) => ({
-                QuesData: prev.QuesData.map((q) =>
-                  q.QuesId === updatedQuestion.QuesId
-                    ? { ...q, QuestionName: updatedQuestion.QuestionName }
-                    : q,
-                ),
-              }));
+            onQuestionSave={(question) => {
+              this.setState((prev) => {
+                const exists = prev.QuesData.some(
+                  (q) => q.QuesId === question.QuesId,
+                );
+
+                return {
+                  QuesData: exists
+                    ? prev.QuesData.map((q) =>
+                        q.QuesId === question.QuesId ? question : q,
+                      )
+                    : [...prev.QuesData, question],
+                };
+              });
             }}
           />
         )}

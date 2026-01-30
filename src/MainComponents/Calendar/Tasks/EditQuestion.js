@@ -25,25 +25,27 @@ export default class EditQuestion extends Component {
     this.ApiProvider = new ApiProvider();
   }
 
-  getQuesModel = (type, Id) => {
-    var model = [];
-    switch (type) {
-      case "R":
-        model.push({
-          CmdType: type,
-          Id: Id,
-        });
-        break;
-      case "D":
-        model.push({
-          CmdType: type,
-          Id: Id,
-        });
-        console.log(model);
-        break;
-      default:
+  getQuesModel = (type) => {
+    if (type === "C") {
+      return [
+        {
+          TaskID: this.props.rowData.TaskId,
+          QuestionName: this.state.QuestionName,
+        },
+      ];
     }
-    return model;
+
+    if (type === "U") {
+      return [
+        {
+          TaskID: this.props.rowData.TaskId,
+          QuestID: this.state.QuesId,
+          QuestionName: this.state.QuestionName,
+        },
+      ];
+    }
+
+    return [];
   };
 
   manageQues = (model, type) => {
@@ -168,20 +170,6 @@ export default class EditQuestion extends Component {
     });
   };
 
-  getQuesModel = (type) => {
-    if (type === "U") {
-      return [
-        {
-          TaskID: this.props.rowData.TaskId,
-          QuestID: this.state.QuesId,
-          QuestionName: this.state.QuestionName,
-        },
-      ];
-    }
-
-    return [];
-  };
-
   render() {
     console.log(this.props);
     return (
@@ -249,17 +237,15 @@ export default class EditQuestion extends Component {
                   <div className="modal-footer">
                     <Button
                       Id="btnSave"
-                      Text="Save"
+                      Text="Update"
                       ClassName="btn btn-primary"
                       Action={() => {
-                        const model = this.getQuesModel("U");
+                        // 🚫 NO API CALL HERE
 
-                        this.manageQues(model, "U");
-
-                        // 🔥 THIS IS THE KEY PART
-                        if (this.props.onQuestionUpdated) {
-                          this.props.onQuestionUpdated({
-                            QuesId: this.state.QuesId,
+                        // Send question back to EditTask
+                        if (this.props.onQuestionSave) {
+                          this.props.onQuestionSave({
+                            QuesId: this.state.QuesId || Date.now(), // temp id
                             QuestionName: this.state.QuestionName,
                           });
                         }
