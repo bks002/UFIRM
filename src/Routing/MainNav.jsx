@@ -22,7 +22,7 @@ import TicketCategoriesPage from "../pages/TicketCategoriesPage";
 import PropertyTower from "../pages/PropertyTowerPage";
 import PropertyAssignmentPage from "../pages/PropertyAssignmentPage";
 import ParkingDetailsPage from "../pages/ParkingDetailsPage";
-import FacilityMemberPage from "../pages/FacilityMemberPage";
+import FacilityMemberPage from "../MainComponents/FacilityMember/FacilityMember";
 import FacilityMember from "../MainComponents/FacilityMember/FacilityMember.jsx";
 import FacilityLatlongPage from "../pages/FacilityLatlongPage";
 import ParkingAssignmentPage from "../pages/ParkingAssignmentsPage";
