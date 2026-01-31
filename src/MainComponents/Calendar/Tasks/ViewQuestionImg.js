@@ -11,8 +11,8 @@ import * as appCommon from "../../../Common/AppCommon.js";
 import { CreateValidator, ValidateControls } from "../Validation.js";
 import { ToastContainer, toast } from "react-toastify";
 import swal from "sweetalert";
-import { DELETE_CONFIRMATION_MSG } from '../../../Contants/Common.js';
-
+import { DELETE_CONFIRMATION_MSG } from "../../../Contants/Common.js";
+import { getTaskQuestionImage } from "../../../Services/notificationService";
 
 export default class ViewQuestionImg extends Component {
   constructor(props) {
@@ -22,9 +22,48 @@ export default class ViewQuestionImg extends Component {
       QuestionName: "",
       QuesId: "",
       QuesData: [],
+      beforeImage: null,
+      afterImage: null,
+      loadingImage: true,
     };
     this.ApiProvider = new ApiProvider();
   }
+
+  manageQuestionImg = (model, type) => {
+    this.ApiProvider.manageQuesImage(model, type)
+      .then(async (resp) => {
+        const text = await resp.text();
+
+        if (!text) {
+          swal({
+            icon: "error",
+            title: "Error",
+            text: "No image exists for the specified TaskQuestionImageId",
+          });
+          return;
+        }
+
+        const rData = JSON.parse(text);
+
+        if (!rData?.Image) {
+          swal({
+            icon: "error",
+            title: "Error",
+            text: "No image exists for the specified TaskQuestionImageId",
+          });
+          return;
+        }
+
+        this.setState({ QuestImageData: rData.Image });
+      })
+      .catch(() => {
+        swal({
+          icon: "error",
+          title: "Error",
+          text: "Unable to load image",
+        });
+      });
+  };
 
   getQuesModel = (type, Id) => {
     var model = [];
@@ -35,13 +74,13 @@ export default class ViewQuestionImg extends Component {
           Id: Id,
         });
         break;
-        case 'D':
-            model.push({
-                CmdType: type,
-                Id: Id,
-              });
-              console.log(model)
-            break;
+      case "D":
+        model.push({
+          CmdType: type,
+          Id: Id,
+        });
+        console.log(model);
+        break;
       default:
     }
     return model;
@@ -57,7 +96,7 @@ export default class ViewQuestionImg extends Component {
                 appCommon.showtextalert(
                   "Question Saved Successfully!",
                   "",
-                  "success"
+                  "success",
                 );
                 console.log("Question Saved Successfully!");
                 this.handleCancel();
@@ -66,8 +105,8 @@ export default class ViewQuestionImg extends Component {
               let quesData = rData.map((element) => ({
                 QuesId: element.QuestID,
                 QuesName: element.QuestionName,
-                Action:element.Action,
-                Remark:element.Remarks
+                Action: element.Action,
+                Remark: element.Remarks,
               }));
               this.setState({ QuesData: quesData });
               break;
@@ -76,7 +115,7 @@ export default class ViewQuestionImg extends Component {
                 appCommon.showtextalert(
                   "Question Deleted Successfully!",
                   "",
-                  "success"
+                  "success",
                 );
               } else {
                 appCommon.showtextalert("Someting went wrong !", "", "error");
@@ -97,9 +136,46 @@ export default class ViewQuestionImg extends Component {
     this.manageQues(model, type);
   }
 
-  componentDidMount() {
-    // this.getQuestion();
-  }
+  componentDidMount = async () => {
+    const { TaskId, QuesId, CreatedOn } = this.props.rowData || {};
+
+    if (!TaskId || !QuesId || !CreatedOn) {
+      swal({
+        icon: "error",
+        title: "Error",
+        text: "Invalid question details",
+      });
+      return;
+    }
+
+    this.setState({ loadingImage: true }); // 👈 START LOADING
+
+    try {
+      const res = await getTaskQuestionImage({
+        taskId: TaskId,
+        questId: QuesId,
+        createdOn: moment(
+          CreatedOn,
+          ["YYYY-MM-DD", "YYYY-MM-DDTHH:mm:ss.SSS", "DD-MM-YYYY"],
+          true,
+        ).format("YYYY-MM-DD"),
+      });
+
+      this.setState({
+        beforeImage: res.beforeImage,
+        afterImage: res.afterImage,
+        loadingImage: false, // 👈 DONE
+      });
+    } catch (err) {
+      this.setState({ loadingImage: false }); // 👈 FAIL SAFE
+
+      swal({
+        icon: "error",
+        title: "Error",
+        text: "Unable to load question images",
+      });
+    }
+  };
 
   componentDidUpdate(prevProps, prevState) {
     if (prevState.selectedCategory !== this.state.selectedCategory) {
@@ -112,7 +188,7 @@ export default class ViewQuestionImg extends Component {
   };
 
   removeQuesFields = (QuesId) => {
-      console.log(QuesId)
+    console.log(QuesId);
     //debugger
     let myhtml = document.createElement("div");
     myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
@@ -143,7 +219,7 @@ export default class ViewQuestionImg extends Component {
   };
 
   render() {
-    console.log(this.props)
+    console.log(this.props);
     return (
       <div>
         <Modal
@@ -171,7 +247,35 @@ export default class ViewQuestionImg extends Component {
                   style={{ height: "450px", overflowY: "scroll" }}
                 >
                   <div className="row">
-                    Image Data
+                    <div className="col-md-6 text-center">
+                      <h6>Before</h6>
+                      {this.state.loadingImage ? (
+                        <p className="text-info">Loading image…</p>
+                      ) : this.state.beforeImage ? (
+                        <img
+                          src={this.state.beforeImage}
+                          alt="Before"
+                          style={{ maxWidth: "100%", border: "1px solid #ddd" }}
+                        />
+                      ) : (
+                        <p className="text-muted">No before image</p>
+                      )}
+                    </div>
+
+                    <div className="col-md-6 text-center">
+                      <h6>After</h6>
+                      {this.state.loadingImage ? (
+                        <p className="text-info">Loading image…</p>
+                      ) : this.state.afterImage ? (
+                        <img
+                          src={this.state.afterImage}
+                          alt="After"
+                          style={{ maxWidth: "100%", border: "1px solid #ddd" }}
+                        />
+                      ) : (
+                        <p className="text-muted">No after image</p>
+                      )}
+                    </div>
                   </div>
                   <div className="modal-footer">
                     <Button

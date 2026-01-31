@@ -20,14 +20,25 @@ const handleApiError = (error) => {
     }
 };
 
-export const getAttendance = async (propertyId,FromDate, ToDate) => {
+export const getAttendance = async (
+    id,
+    fromDate,
+    toDate,
+    type = "PROPERTY" // default keeps backward compatibility
+) => {
     try {
-        const response = await api.get(`/monthly-summary?PropertyId=${ propertyId }&FromDate=${FromDate}&ToDate=${ToDate}` );
+        const url =
+            type === "CLIENT"
+                ? `/monthly-summary-by-client?ClientID=${id}&FromDate=${fromDate}&ToDate=${toDate}`
+                : `/monthly-summary?PropertyId=${id}&FromDate=${fromDate}&ToDate=${toDate}`;
+
+        const response = await api.get(url);
         return response.data;
     } catch (error) {
         handleApiError(error);
     }
 };
+
 
 const BASE_URL = "https://api.urest.in:8096/api/UfirmEmployee";
 

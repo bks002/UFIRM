@@ -94,7 +94,7 @@ import SalaryGroups from "../MainComponents/Payroll/SalaryGroups.jsx";
 import ExpenseMaster from "../MainComponents/Expense/ExpenseMaster.jsx";
 import ExpenseTypeMaster from "../MainComponents/Expense/ExpenseTypeMaster.jsx";
 import ExpenseReport from "../MainComponents/Expense/ExpenseReport.jsx";
-import Formula from "../MainComponents/FacilityMember/Formula.jsx";
+// import Formula from "../MainComponents/FacilityMember/Formula.jsx";
 import GenerateSalary from "../MainComponents/Payroll/GenerateSalary.jsx";
 import ProfessionalTax from "../MainComponents/Payroll/ProfessionalTax.jsx";
 import LabourFund from "../MainComponents/Payroll/LabourFund.jsx";
@@ -106,6 +106,8 @@ import OTHours from "../MainComponents/Payroll/OTHours.jsx";
 import ClientMasterPage from "../MainComponents/PropertyMaster/ClientMaster.jsx";
 import AD_Percentage from "../MainComponents/Payroll/AD_Percentage.jsx";
 import SGNEW from "../MainComponents/Payroll/SGNEW.jsx";
+import DMRReport from "../MainComponents/Reports/DMRReport.jsx";
+import AttendanceReportPage from "../MainComponents/Reports/AttendanceReport.jsx";
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -148,10 +150,12 @@ class MainNav extends React.Component {
   }
 
   componentDidMount() {
-    var token =
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
+
+
+    var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
 
     //var token = window.sessionStorage.getItem("userinfo_key")
+
 
     if (token === null) {
       const timerId = setTimeout(() => {
@@ -598,18 +602,6 @@ class MainNav extends React.Component {
                             <p>Item Assigned</p>
                           </Link>
                         </li>
-                        {/* <li className="nav-item">
-                                        <Link to="/FacilityMember" className="nav-link">
-                                            <i className=" fas fa-caret-right nav-icon"></i>
-                                            <p>In Out Register</p>
-                                        </Link>
-                                    </li> */}
-                        {/* <li className="nav-item">
-                                        <Link to="/FacilityMember" className="nav-link">
-                                            <i className=" fas fa-caret-right nav-icon"></i>
-                                            <p>Get Pass</p>
-                                        </Link>
-                                    </li> */}
                       </ul>
                     </li>
                   ) : null}
@@ -818,8 +810,6 @@ class MainNav extends React.Component {
 
                   {this.state.userRoles &&
                   (this.state.userRoles.includes("Admin") ||
-                    this.state.userRoles.includes("Property Manager") ||
-                    this.state.userRoles.includes("Facility Manager") ||
                     this.state.userRoles.includes("HR") ||
                     this.state.userRoles.includes("Property Admin")) ? (
                     <li className="nav-item has-treeview">
@@ -915,12 +905,12 @@ class MainNav extends React.Component {
                           </Link>
                         </li>
 
-                        <li className="nav-item">
+                        {/* <li className="nav-item">
                           <Link to="/Account/App/Formula" className="nav-link">
                             <i className="fas fa-caret-right nav-icon"></i>
                             <p>Formula</p>
                           </Link>
-                        </li>
+                        </li> */}
 
                         {/* <li className="nav-item">
                           <Link
@@ -935,7 +925,35 @@ class MainNav extends React.Component {
                       </ul>
                     </li>
                   ) : null}
-
+{this.state.userRoles &&
+                  (this.state.userRoles.includes("Admin") ||
+                    this.state.userRoles.includes("Property Manager") ||
+                    this.state.userRoles.includes("Property Admin") ||
+                    this.state.userRoles.includes("Inventory Manager")) ? (
+                    <li className="nav-item has-treeview">
+                      <a href="#" className="nav-link">
+                    <i className="nav-icon fas fa-chart-bar"></i>
+                        <p>
+                          Report
+                          <i className="right fas fa-angle-left"></i>
+                        </p>
+                      </a>
+                      <ul className="nav nav-treeview">
+                        <li className="nav-item">
+                          <Link to="/Account/App/DMRReport" className="nav-link">
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>DMR Report</p>
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link to="/Account/App/AttendanceReport" className="nav-link">
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Attendance Report</p>
+                          </Link>
+                        </li>
+                      </ul>
+                    </li>
+                  ) : null}
                   {this.state.userRoles &&
                   (this.state.userRoles.includes("Admin") ||
                     this.state.userRoles.includes("Property Manager") ||
@@ -1349,7 +1367,7 @@ class MainNav extends React.Component {
               <UserProfile />
             </Route>
             <Route path="/Account/App/FacilityMember">
-              <FacilityMember />
+              <FacilityMemberPage/>
             </Route>
             <Route path="/Account/App/CreateNewUser">
               <CreateNewUser />
@@ -1592,7 +1610,7 @@ class MainNav extends React.Component {
               path="/Account/App/AllowanceDeduction"
               component={AllowanceDeduction}
             />
-            <Route path="/Account/App/Formula" component={Formula} />
+            {/* <Route path="/Account/App/Formula" component={Formula} /> */}
             <Route
               path="/Account/App/SpotVisitCalendar"
               component={SpotVisitCalendar}
@@ -1600,6 +1618,10 @@ class MainNav extends React.Component {
             <Route
               path="/Account/App/ExpenseReport"
               component={ExpenseReport}
+            />
+             <Route
+              path="/Account/App/AttendanceReport"
+              component={AttendanceReportPage}
             />
             <Route
               path="/Account/App/ExpenseTypeMaster"
@@ -1615,6 +1637,7 @@ class MainNav extends React.Component {
               path="/Account/App/Facility"
               component={FacilityLatlongPage}
             />
+            <Route path="/Account/App/DMRReport" component={DMRReport} />
             <Route
               path="/Account/App/EmployeeLeave"
               component={EmployeeLeave}
@@ -1650,7 +1673,7 @@ class MainNav extends React.Component {
           >
             <div>
               <strong>
-                © 2025-2026 <a href="https://www.ufirm.in">Ufirm.in</a>
+                © 2025-2026 <a href="https://firmity.in/">Firmity.in</a>
               </strong>
             </div>
             <div>

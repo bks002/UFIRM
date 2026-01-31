@@ -1,99 +1,143 @@
-import React, { useState } from 'react';
-import { Button, Form } from 'react-bootstrap';
+import React, { useState } from "react";
+import { useEffect, useRef } from "react";
+import { Button, Form } from "react-bootstrap";
 
-const ChatBox = ({ remark, name, remarkDateTime, status, onSend, context, assetData }) => {
+const styles = {
+  chatScroll: {
+    maxHeight: "250px",
+    overflowY: "auto",
+    padding: "10px",
+  },
+  chatRow: {
+    display: "flex",
+    marginBottom: "8px",
+  },
+  chatLeft: {
+    justifyContent: "flex-start",
+  },
+  chatRight: {
+    justifyContent: "flex-end",
+  },
+  bubble: {
+    maxWidth: "70%",
+    padding: "8px 12px",
+    borderRadius: "12px",
+    fontSize: "14px",
+  },
+  supBubble: {
+    backgroundColor: "#e4e6eb",
+    borderTopLeftRadius: "0",
+  },
+  fmBubble: {
+    backgroundColor: "#dcf8c6",
+    borderTopRightRadius: "0",
+  },
+};
+
+const ChatBox = ({ remarks = [], onSend, status, context, assetData }) => {
   let statusOptions = [];
-  if (context === 'task') statusOptions = ['Actionable', 'Completed'];
-  else if (context === 'ticket') statusOptions = ['IN PROGRESS', 'RESOLVED', 'CLOSED', 'REOPEN'];
+  if (context === "task") statusOptions = ["Actionable", "Completed"];
+  else if (context === "ticket")
+    statusOptions = ["IN PROGRESS", "RESOLVED", "CLOSED", "REOPEN"];
 
-  const [inputValue, setInputValue] = useState('');
-  const [currentStatus, setCurrentStatus] = useState(status || statusOptions[0]);
-  const [serviceDate, setServiceDate] = useState('');
-  const [nextServiceDate, setNextServiceDate] = useState('');
-  const [serviceCost, setServiceCost] = useState('');
+  const [inputValue, setInputValue] = useState("");
+  const [currentStatus, setCurrentStatus] = useState(
+    status || statusOptions[0],
+  );
+  const [serviceDate, setServiceDate] = useState("");
+  const [nextServiceDate, setNextServiceDate] = useState("");
+  const [serviceCost, setServiceCost] = useState("");
   const [serviceDoc, setServiceDoc] = useState(null);
   const [image, setImage] = useState(null);
-  const [servicedBy, setServicedBy] = useState('');
-  const [approvedBy, setApprovedBy] = useState('');
+  const [servicedBy, setServicedBy] = useState("");
+  const [approvedBy, setApprovedBy] = useState("");
+
+  const chatEndRef = useRef(null);
+
+  const chatEndRef = useRef(null);
 
   const handleSend = async () => {
-    if (context === 'asset') {
+    if (context === "asset") {
       // ✅ Validation
       if (!assetData.AssetId || !serviceDate || !nextServiceDate) {
-        alert('Please fill Service Date, Next Service Date, and Asset ID.');
+        alert("Please fill Service Date, Next Service Date, and Asset ID.");
         return;
       }
 
       const formData = new FormData();
-      formData.append('AssetId', assetData.AssetId);
-      formData.append('ServiceDate', serviceDate);
-      formData.append('NextServiceDate', nextServiceDate);
-      formData.append('Remark', inputValue || 'No remarks');
-      formData.append('ServiceCost', serviceCost || '');
-      formData.append('ServicedBy', servicedBy || '');
-      formData.append('ApprovedBy', approvedBy || '');
+      formData.append("AssetId", assetData.AssetId);
+      formData.append("ServiceDate", serviceDate);
+      formData.append("NextServiceDate", nextServiceDate);
+      formData.append("Remark", inputValue || "No remarks");
+      formData.append("ServiceCost", serviceCost || "");
+      formData.append("ServicedBy", servicedBy || "");
+      formData.append("ApprovedBy", approvedBy || "");
 
       // ✅ Attach files if selected
-      if (serviceDoc) formData.append('ServiceDoc', serviceDoc);
-      if (image) formData.append('Image', image);
+      if (serviceDoc) formData.append("ServiceDoc", serviceDoc);
+      if (image) formData.append("Image", image);
 
       try {
-        const response = await fetch('https://api.urest.in:8096/api/Asset/SaveServiceRecord', {
-          method: 'POST',
-          body: formData, // FormData automatically sets multipart/form-data
-        });
+        const response = await fetch(
+          "https://api.urest.in:8096/api/Asset/SaveServiceRecord",
+          {
+            method: "POST",
+            body: formData, // FormData automatically sets multipart/form-data
+          },
+        );
 
         if (!response.ok) {
           const errText = await response.text();
-          console.error('Failed to save service record:', errText);
-          alert('Failed to save service record.');
+          console.error("Failed to save service record:", errText);
+          alert("Failed to save service record.");
           return;
         }
 
-        alert('Service Record saved successfully!');
-setTimeout(() => {
-  if (typeof assetData.apiCall === 'function') assetData.apiCall();
-  if (typeof assetData.onClose === 'function') assetData.onClose();
-}, 500);
+        alert("Service Record saved successfully!");
+        setTimeout(() => {
+          if (typeof assetData.apiCall === "function") assetData.apiCall();
+          if (typeof assetData.onClose === "function") assetData.onClose();
+        }, 500);
 
         // Reset fields
-        setInputValue('');
-        setServiceDate('');
-        setNextServiceDate('');
-        setServiceCost('');
+        setInputValue("");
+        setServiceDate("");
+        setNextServiceDate("");
+        setServiceCost("");
         setServiceDoc(null);
         setImage(null);
-        setServicedBy('');
-        setApprovedBy('');
+        setServicedBy("");
+        setApprovedBy("");
       } catch (error) {
-        console.error('Error:', error);
-        alert('Something went wrong while saving.');
+        console.error("Error:", error);
+        alert("Something went wrong while saving.");
       }
     } else {
-      onSend(inputValue, currentStatus);
-      setInputValue('');
+      const statusToSend = currentStatus || status;
+      onSend(inputValue, statusToSend);
+      setInputValue("");
     }
   };
 
   const formatDateTime = (dt) => {
-  if (!dt) return "";
+    if (!dt) return "";
 
-  const date = new Date(dt);
+    const date = new Date(dt);
 
-  return date.toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true
-  });
-};
+    return date.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
 
   const handleMarkComplete = () => {
-    setCurrentStatus('Completed');
-    onSend(inputValue, 'Completed');
-    setInputValue('');
+    setCurrentStatus("Completed");
+    onSend(inputValue || "Marked as completed", "Completed");
+    setInputValue("");
   };
 
   const toggleStatus = () => {
@@ -103,39 +147,155 @@ setTimeout(() => {
     setCurrentStatus(statusOptions[nextIndex]);
   };
 
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [remarks]);
+
+  const stripHtml = (html) => html.replace(/<[^>]*>/g, "");
+
+  const parseRemark = (html) => {
+    if (!html) return { label: "", message: "", date: "" };
+
+    // 1. Strip HTML
+    const clean = stripHtml(html).trim();
+
+    // 2. Extract date (YYYY-MM-DD HH:mm:ss)
+    const dateMatch = clean.match(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
+    const rawDate = dateMatch ? dateMatch[0] : "";
+
+    // 3. Remove date from text completely
+    const textOnly = rawDate ? clean.replace(rawDate, "").trim() : clean;
+
+    // 4. Split label and message
+    const [label, ...msgParts] = textOnly.split(":");
+    const message = msgParts.join(":").trim();
+
+    // 5. Format date nicely
+    let formattedDate = "";
+    if (rawDate) {
+      const d = new Date(rawDate.replace(" ", "T"));
+      formattedDate = d.toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+    }
+
+    return {
+      label: label.trim(),
+      message,
+      date: formattedDate,
+    };
+  };
+
   return (
     <div className="container mt-3">
-      {context !== 'asset' && (
+      {context !== "asset" && (
         <div className="alert alert-info mb-3 d-flex justify-content-between align-items-center">
           <span>
             Status: <strong>{currentStatus}</strong>
           </span>
 
-          {context === 'task' ? (
-            currentStatus === 'Actionable' && (
-              <Button variant="success" onClick={handleMarkComplete}>
-                Mark as Complete
-              </Button>
-            )
-          ) : (
-            statusOptions.length > 1 && (
-              <Button variant="secondary" onClick={toggleStatus}>
-                Change Status
-              </Button>
-            )
-          )}
+          {context === "task"
+            ? currentStatus === "Actionable" && (
+                <Button variant="success" onClick={handleMarkComplete}>
+                  Mark as Complete
+                </Button>
+              )
+            : statusOptions.length > 1 && (
+                <Button variant="secondary" onClick={toggleStatus}>
+                  Change Status
+                </Button>
+              )}
         </div>
       )}
 
-      <div className="alert alert-secondary mb-3">
-        {remark && (
-          <div className="mb-3 p-2 border rounded bg-light">
-            <div><strong>Remark:</strong> {remark}</div>
-            <div><strong>By:</strong> {name}</div>
-            <div><strong>Date:</strong> {formatDateTime(remarkDateTime)}</div>
+      <div
+        className="alert alert-secondary mb-3"
+        style={
+          context === "asset"
+            ? {}
+            : {
+                maxHeight: "300px",
+                display: "flex",
+                flexDirection: "column",
+              }
+        }
+      >
+        {context !== "asset" && (
+          <div
+            style={{
+              ...styles.chatScroll,
+              flex: 1,
+            }}
+          >
+            {remarks.length === 0 ? (
+              <p style={{ color: "#6c757d" }}>No remarks available</p>
+            ) : (
+              remarks.map((item, index) => {
+                const isFM = item.RemarkHtml?.includes("FM:");
+
+                return (
+                  <div
+                    key={index}
+                    style={{
+                      ...styles.chatRow,
+                      ...(isFM ? styles.chatRight : styles.chatLeft),
+                    }}
+                  >
+                    <div
+                      style={{
+                        ...styles.bubble,
+                        ...(isFM ? styles.fmBubble : styles.supBubble),
+                      }}
+                    >
+                      {(() => {
+                        const { label, message, date } = parseRemark(
+                          item.RemarkHtml,
+                        );
+
+                        // 👇 ONLY complaint uses RemarkDate
+                        const finalDate =
+                          context === "ticket"
+                            ? formatDateTime(item.RemarkDate)
+                            : date;
+
+                        return (
+                          <>
+                            <div style={{ fontWeight: "600" }}>
+                              {label}:{" "}
+                              <span style={{ fontWeight: "normal" }}>
+                                {message}
+                              </span>
+                            </div>
+
+                            {finalDate && (
+                              <div
+                                style={{
+                                  fontSize: "12px",
+                                  color: "#555",
+                                  marginTop: "4px",
+                                }}
+                              >
+                                {finalDate}
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            <div ref={chatEndRef} />
           </div>
         )}
-        {context === 'asset' ? (
+
+        {context === "asset" ? (
           <div className="mt-3">
             <Form.Group className="mb-2">
               <Form.Label>FM Remark</Form.Label>

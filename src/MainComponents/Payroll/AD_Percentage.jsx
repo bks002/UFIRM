@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
-  getAllowanceDeductionsByProperty,
+  getAllowancesDeductions,
   getADPercentages,
   addADPercentage,
   updateADPercentage,
@@ -57,7 +57,7 @@ const PropertyId = useSelector((state) => state.Commonreducer.puidn);
 
   const loadADNames = async () => {
     try {
-      const data = await getAllowanceDeductionsByProperty();
+      const data = await getAllowancesDeductions();
 
       const filtered = (data || [])
         .filter((x) =>
