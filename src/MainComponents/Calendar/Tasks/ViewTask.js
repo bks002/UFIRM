@@ -54,8 +54,17 @@ export default class ViewTask extends Component {
         moment(props.rowData.DateTo).isSameOrAfter(props.rowData.DateFrom)
           ? moment(props.rowData.DateTo).format("DD/MM/YYYY")
           : moment(props.rowData.DateFrom).format("DD/MM/YYYY"),
-      startTime: this.props.rowData.TimeFrom,
-      endTime: this.props.rowData.TimeTo,
+      startTime: this.props.rowData.TimeFrom
+        ? moment(this.props.rowData.TimeFrom, ["HH:mm:ss", "HH:mm"]).format(
+            "h:mm A",
+          )
+        : "",
+
+      endTime: this.props.rowData.TimeTo
+        ? moment(this.props.rowData.TimeTo, ["HH:mm:ss", "HH:mm"]).format(
+            "h:mm A",
+          )
+        : "",
       remindme: this.props.rowData.RemindMe,
       check: this.props.rowData.AllDay === "Y",
       hasAnyRemarksForQuestion: false,
