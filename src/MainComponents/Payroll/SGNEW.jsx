@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import {
-  getSalaryAllowancesByProperty,
-  getSalaryAllowancesByClient,
+  getSalaryAllowancesByProperties,
   getAllowancesDeductions,
   createSalaryAllowance,
   updateSalaryAllowance,
   getADPercentages,
 } from "../../Services/PayrollService";
-import { getPropertyById } from "../../Services/PropertyService";
+// import { getPropertyById } from "../../Services/PropertyService";
 import { getEmployeesByOffice } from "../../Services/PayrollService";
-import { getAllClients } from "../../Services/ClientService";
+import {
+  getAllClients,
+  getClientByPropertyId,
+  getPropertiesByClientId,
+} from "../../Services/ClientService";
 
 export default function SGNEW() {
   const propertyId = useSelector((state) => state.Commonreducer.puidn);
@@ -48,79 +51,91 @@ export default function SGNEW() {
   const [otBaseType, setOtBaseType] = useState("Base");
   const [previewSG, setPreviewSG] = useState(null);
   const isLoadingSG = React.useRef(false);
-  const [sgScope, setSgScope] = useState("");
-  const [clientList, setClientList] = useState([]);
-  const [selectedClientId, setSelectedClientId] = useState(null);
+  const [unitList, setUnitList] = useState([]);
+  const [selectedUnitId, setSelectedUnitId] = useState(null);
+
+  const [propertyList, setPropertyList] = useState([]);
+  const [selectedPropertyId, setSelectedPropertyId] = useState([]);
+  const [showPropertyDropdown, setShowPropertyDropdown] = useState(false);
 
   const [form, setForm] = useState({
     salaryGroupName: "",
     baseSalary: "",
-    totalWorkingDays: "",
-    shiftHours: "",
-    salaryCycleFrom: "",
-    salaryCycleTo: "",
+    totalWorkingDays: "0",
+    shiftHours: "0",
+    salaryCycleFrom: "0",
+    salaryCycleTo: "0",
     monthlySundays: "",
     excludeSunday: false,
   });
 
-  const [propertyDefaults, setPropertyDefaults] = useState({
-    totalWorkingDays: "",
-    shiftHours: "",
-  });
-
   useEffect(() => {
-    const fetchClients = async () => {
+    const loadUnits = async () => {
       try {
-        const res = await getAllClients();
-        setClientList(res || []);
+        // Property context → load single unit
+        if (Number(propertyId) > 0) {
+          const res = await getClientByPropertyId(propertyId);
+          setUnitList(res ? [res] : []);
+          setSelectedUnitId(res?.ClientID || null);
+        } else {
+          const res = await getAllClients();
+          setUnitList(res || []);
+        }
       } catch (err) {
-        console.log("Failed to load clients", err);
+        console.log("Failed to load units", err);
       }
     };
 
-    fetchClients();
-  }, []);
+    loadUnits();
+  }, [propertyId]);
 
   useEffect(() => {
-    if (sgScope === "CLIENT" && selectedClientId) {
-      loadSG();
+    const loadProperties = async () => {
+      try {
+        if (!selectedUnitId) {
+          setPropertyList([]);
+          setSelectedPropertyId([]);
+          return;
+        }
 
-      // 🔥 HARD RESET when switching client
-      setSelectedSG("");
-      resetSalaryGroupForm();
-    }
-  }, [selectedClientId, sgScope]);
+        const res = await getPropertiesByClientId(selectedUnitId);
+
+        setPropertyList(res || []);
+
+        // 🔥 select ALL properties by default
+        setSelectedPropertyId((res || []).map((p) => p.PropertyId));
+      } catch (err) {
+        console.log("Failed to load properties by unit", err);
+      }
+    };
+
+    loadProperties();
+  }, [selectedUnitId]);
 
   useEffect(() => {
-    // IMPORTANT: treat 0 / "0" as NO property
-    if (propertyId && Number(propertyId) > 0) {
-      setSgScope("PROPERTY");
+    if (!selectedPropertyId || selectedPropertyId.length === 0) {
+      setSalaryGroups([]);
       return;
     }
 
-    // 🔥 PROPERTY CLEARED — REAL RESET
-    setSgScope("");
-    setSelectedClientId(null);
-    setSalaryGroups([]);
-    setSelectedSG("");
-
-    resetFormCompletely(); // ✅ NOT resetSalaryGroupForm
-  }, [propertyId]);
-
-  useEffect(() => {
-    if (!propertyId) return;
-    loadPropertyInfo();
-    loadSG();
-  }, [propertyId]);
+    loadSG(selectedPropertyId);
+  }, [selectedPropertyId]);
 
   useEffect(() => {
     loadAD(); // GLOBAL – always load
+    loadADPercentages();
   }, []);
 
   useEffect(() => {
-    if (!propertyId) return;
+    const close = () => setShowPropertyDropdown(false);
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, []);
 
-    // 🔥 FULL HARD RESET ON PROPERTY CHANGE
+  useEffect(() => {
+    if (!selectedPropertyId || selectedPropertyId.length === 0) return;
+
+    // 🔥 FULL HARD RESET ON UNIT CHANGE
     setSelectedSG("");
     setDesignation("");
     setExcludeEmployees(false);
@@ -135,9 +150,6 @@ export default function SGNEW() {
     setAdFormula({});
     setActiveDeduction(null);
 
-    // 🔥 ALSO CLEAR API PERCENT CACHE
-    setAdPercentages([]);
-
     // 🔥 RESET FORM
     setForm((prev) => ({
       salaryGroupName: "",
@@ -149,12 +161,7 @@ export default function SGNEW() {
       excludeSunday: prev.excludeSunday,
       monthlySundays: prev.monthlySundays,
     }));
-  }, [propertyId]);
-
-  useEffect(() => {
-    if (!propertyId) return;
-    loadADPercentages();
-  }, [propertyId]);
+  }, [selectedUnitId]);
 
   useEffect(() => {
     if (!activeDeduction) return;
@@ -231,7 +238,7 @@ export default function SGNEW() {
     }
 
     setAdFormula((prev) => ({ ...prev, ...newFormulas }));
-  }, [form.baseSalary, adValueType, adPercentages, propertyId]);
+  }, [form.baseSalary, adValueType, adPercentages]);
 
   useEffect(() => {
     if (isLoadingSG.current) return;
@@ -398,7 +405,7 @@ export default function SGNEW() {
       PF: `(${[
         "Base",
         ...Object.keys(deductionAllowanceMap.PF || {}).filter(
-          (k) => deductionAllowanceMap.PF[k] && k !== "BaseSalary"
+          (k) => deductionAllowanceMap.PF[k] && k !== "BaseSalary",
         ),
       ].join(" + ")}) * ${percentage / 100}`,
     }));
@@ -411,31 +418,41 @@ export default function SGNEW() {
   ]);
 
   useEffect(() => {
-    if (!propertyId) return;
+    if (!selectedUnitId) {
+      setEmployees([]);
+      setDesignations([]);
+      return;
+    }
+
+    if (!selectedPropertyId || selectedPropertyId.length === 0) return;
 
     const fetchEmployees = async () => {
       try {
         setLoadingEmployees(true);
-        const res = await getEmployeesByOffice(propertyId);
-        setEmployees(res || []);
 
-        // extract unique designations
+        const allResults = await Promise.all(
+          selectedPropertyId.map((pid) => getEmployeesByOffice(pid)),
+        );
+
+        const mergedEmployees = allResults.flat().filter(Boolean);
+        setEmployees(mergedEmployees);
+
         const uniqueDesignations = [
           ...new Set(
-            (res || []).map((e) => e.EmployeeList?.Designation).filter(Boolean)
+            mergedEmployees
+              .map((e) => e.EmployeeList?.Designation)
+              .filter(Boolean),
           ),
         ];
 
         setDesignations(uniqueDesignations);
-      } catch (err) {
-        console.log("Failed to load employees", err);
       } finally {
         setLoadingEmployees(false);
       }
     };
 
     fetchEmployees();
-  }, [propertyId]);
+  }, [selectedUnitId, selectedPropertyId]);
 
   useEffect(() => {
     if (isLoadingSG.current) return;
@@ -571,25 +588,27 @@ export default function SGNEW() {
   const getEffectivePercentage = (adName) => {
     if (!adPercentages.length) return null;
 
-    const pid = Number(propertyId); // 🔥 FORCE NUMBER
+    const propertyIds = Array.isArray(selectedPropertyId)
+      ? selectedPropertyId
+      : [];
 
-    // 1️⃣ Property-specific (highest priority)
-    const propertySpecific = adPercentages.find(
-      (p) =>
-        p.AD_Name === adName &&
-        Number(p.PropertyId) === pid &&
-        p.IsGlobal === false &&
-        p.IsActive
+    for (const pid of propertyIds) {
+      const match = adPercentages.find(
+        (p) =>
+          p.AD_Name === adName &&
+          Number(p.PropertyId) === Number(pid) &&
+          p.IsGlobal === false &&
+          p.IsActive,
+      );
+
+      if (match) return match;
+    }
+
+    return (
+      adPercentages.find(
+        (p) => p.AD_Name === adName && p.IsGlobal && p.IsActive,
+      ) || null
     );
-
-    if (propertySpecific) return propertySpecific;
-
-    // 2️⃣ Global fallback
-    const globalPercent = adPercentages.find(
-      (p) => p.AD_Name === adName && p.IsGlobal === true && p.IsActive
-    );
-
-    return globalPercent || null;
   };
 
   const hasApiPercent = (name) => {
@@ -694,7 +713,7 @@ export default function SGNEW() {
 
   const loadADPercentages = async () => {
     try {
-      const res = await getADPercentages(propertyId); // ✅ PASS propertyId
+      const res = await getADPercentages();
       setAdPercentages(res);
     } catch (err) {
       console.log("Failed to fetch AD Percentages:", err);
@@ -716,53 +735,17 @@ export default function SGNEW() {
   const otherAllowances = cleanList.filter((x) => x.Type === "OA");
   const otherDeductions = cleanList.filter((x) => x.Type === "OD");
 
-  const loadSG = async () => {
+  const loadSG = async (propertyIds) => {
     try {
-      let res = [];
-
-      if (sgScope === "PROPERTY" && propertyId) {
-        res = await getSalaryAllowancesByProperty(propertyId);
+      if (!propertyIds || propertyIds.length === 0) {
+        setSalaryGroups([]);
+        return;
       }
 
-      if (sgScope === "CLIENT" && selectedClientId) {
-        res = await getSalaryAllowancesByClient(selectedClientId);
-      }
-
+      const res = await getSalaryAllowancesByProperties(propertyIds);
       setSalaryGroups(res || []);
     } catch (err) {
-      console.log("Failed to fetch SG:", err);
-    }
-  };
-
-  const loadPropertyInfo = async () => {
-    try {
-      const res = await getPropertyById(propertyId);
-
-      const twd = res.TotalWorkingDays || "";
-      const sh = res.ShiftHours || "";
-
-      // store defaults
-      setPropertyDefaults({
-        totalWorkingDays: twd,
-        shiftHours: sh,
-        salaryCycleFrom: res.Salarycycledayfrom ?? "",
-        salaryCycleTo: res.Salarycycledayto ?? "",
-        excludeSunday: !!res.Excludesunday,
-        monthlySundays: res.MonthSunday ?? "",
-      });
-
-      // update form initially
-      setForm((prev) => ({
-        ...prev,
-        totalWorkingDays: twd,
-        shiftHours: sh,
-        salaryCycleFrom: res.Salarycycledayfrom ?? "",
-        salaryCycleTo: res.Salarycycledayto ?? "",
-        excludeSunday: !!res.Excludesunday,
-        monthlySundays: res.MonthSunday ?? "",
-      }));
-    } catch (err) {
-      return null;
+      console.log("Failed to fetch Salary Groups by properties", err);
     }
   };
 
@@ -959,15 +942,15 @@ export default function SGNEW() {
 
   const handleSave = async () => {
     // ✅ VALIDATION FIRST
-    if (sgScope === "CLIENT" && !selectedClientId) {
-      alert("Please select a client");
+    if (!selectedPropertyId || selectedPropertyId.length === 0) {
+      alert("Please select at least one Property");
       return;
     }
     try {
       const adModel = buildADModel();
 
       const isUpdate = salaryGroups.some(
-        (sg) => sg.SalaryGroup === form.salaryGroupName
+        (sg) => sg.SalaryGroup === form.salaryGroupName,
       );
 
       const model = {
@@ -978,8 +961,7 @@ export default function SGNEW() {
 
         SalaryGroup: form.salaryGroupName,
         BaseSalary: Number(form.baseSalary),
-        ...(sgScope === "PROPERTY" && { Property_ID: propertyId }),
-        ...(sgScope === "CLIENT" && { ClientId: selectedClientId }),
+        PropertyIds: selectedPropertyId || [],
         PFLimit: pfLimit ? Number(pfLimit) : null,
         ESILimit: esiLimit ? Number(esiLimit) : null,
         TotalWorkingDays: Number(form.totalWorkingDays),
@@ -1008,9 +990,8 @@ export default function SGNEW() {
         alert("Salary group created!");
       }
 
-      // IMPORTANT FIX
-      await loadSG(); // <-- reload SG list so formulas update immediately
-      // reset ONLY when save succeeds
+      await loadSG(selectedPropertyId);
+
       resetSalaryGroupForm();
     } catch (err) {
       alert("Save failed! Check console.");
@@ -1089,12 +1070,12 @@ export default function SGNEW() {
     setForm({
       salaryGroupName: "",
       baseSalary: "",
-      totalWorkingDays: propertyDefaults.totalWorkingDays,
-      shiftHours: propertyDefaults.shiftHours,
-      salaryCycleFrom: propertyDefaults.salaryCycleFrom ?? "",
-      salaryCycleTo: propertyDefaults.salaryCycleTo ?? "",
-      excludeSunday: propertyDefaults.excludeSunday ?? false,
-      monthlySundays: propertyDefaults.monthlySundays ?? "",
+      totalWorkingDays: "0",
+      shiftHours: "0",
+      salaryCycleFrom: "0",
+      salaryCycleTo: "0",
+      excludeSunday: false,
+      monthlySundays: "",
     });
 
     setAdValueType({});
@@ -1123,32 +1104,10 @@ export default function SGNEW() {
     setOtBaseType("Base");
   };
 
-  const resetFormCompletely = () => {
-    setForm({
-      salaryGroupName: "",
-      baseSalary: "",
-      totalWorkingDays: "",
-      shiftHours: "",
-      salaryCycleFrom: "",
-      salaryCycleTo: "",
-      excludeSunday: false,
-      monthlySundays: "",
-    });
-
-    setPropertyDefaults({
-      totalWorkingDays: "",
-      shiftHours: "",
-      salaryCycleFrom: "",
-      salaryCycleTo: "",
-      excludeSunday: false,
-      monthlySundays: "",
-    });
-  };
-
   const allowOnlyNumbers = (e) => {
     const value = e.target.value;
 
-    if (/^\d*\.?\d*$/.test(value)) {
+    if (value === "" || /^\d*\.?\d*$/.test(value)) {
       setForm({ ...form, [e.target.name]: value });
     }
   };
@@ -1268,84 +1227,110 @@ export default function SGNEW() {
             }}
           />
 
-          {/* Select Type */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <label
-              style={{
-                fontSize: 15,
-                fontWeight: 600,
-                color: "#334155",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Select Type :
-            </label>
-
-            <select
-              className="form-control"
-              value={sgScope}
-              onChange={(e) => {
-                const value = e.target.value;
-                setSgScope(value);
-
-                if (value === "PROPERTY") {
-                  setSelectedClientId(null);
-                }
-              }}
-              style={{
-                width: 160,
-                height: 30,
-                fontSize: 14,
-                padding: "2px 8px",
-                borderRadius: 6,
-                border: "1px solid #cbd5f5",
-              }}
-            >
-              <option value="" disabled>
-                -- Select Type --
-              </option>
-
-              {propertyId && <option value="PROPERTY">Property</option>}
-              <option value="CLIENT">Client</option>
-            </select>
-          </div>
-
-          {/* Select Client */}
-          {sgScope === "CLIENT" && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <label
-                style={{
-                  fontSize: 15,
-                  fontWeight: 600,
-                  color: "#334155",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Select Client :
-              </label>
-
+          <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
+            {/* Select Unit */}
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <label style={{ fontWeight: 600 }}>Select Unit :</label>
               <select
                 className="form-control"
-                value={selectedClientId || ""}
-                onChange={(e) => setSelectedClientId(e.target.value)}
-                style={{
-                  width: 260,
-                  height: 30,
-                  fontSize: 14,
-                  padding: "2px 8px",
-                  borderRadius: 6,
-                  border: "1px solid #cbd5f5",
+                value={selectedUnitId || ""}
+                disabled={Number(propertyId) > 0}
+                onChange={(e) => {
+                  setSelectedUnitId(Number(e.target.value));
+                  setSelectedPropertyId([]);
+                  setSalaryGroups([]);
+                  resetSalaryGroupForm();
                 }}
+                style={{ width: 260 }}
               >
-                <option value="">-- Select Client --</option>
-                {clientList.map((c) => (
-                  <option key={c.ClientID} value={c.ClientID}>
-                    {c.ClientName}
+                <option value="">-- Select Unit --</option>
+                {unitList.map((u) => (
+                  <option key={u.ClientID} value={u.ClientID}>
+                    {u.ClientName}
                   </option>
                 ))}
               </select>
             </div>
-          )}
+
+            {/* Select Property */}
+            <div style={{ position: "relative", minWidth: 320 }}>
+              <label style={{ fontWeight: 600 }}>Select Property :</label>
+
+              {/* Dropdown trigger */}
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (propertyList.length > 0) {
+                    setShowPropertyDropdown((prev) => !prev);
+                  }
+                }}
+                style={{
+                  marginTop: 6,
+                  padding: "6px 10px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: 6,
+                  background: propertyList.length ? "#fff" : "#f9fafb",
+                  cursor: propertyList.length ? "pointer" : "not-allowed",
+                  fontSize: 13,
+                }}
+              >
+                {selectedPropertyId.length === 0
+                  ? "Select properties"
+                  : `${selectedPropertyId.length} property selected`}
+              </div>
+
+              {/* Dropdown panel */}
+              {showPropertyDropdown && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    left: 0,
+                    marginTop: 6,
+                    width: "100%",
+                    maxHeight: 220,
+                    overflowY: "auto",
+                    background: "#fff",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: 8,
+                    padding: 10,
+                    zIndex: 1000,
+                    boxShadow: "0 6px 14px rgba(0,0,0,0.15)",
+                  }}
+                >
+                  {propertyList.map((p) => (
+                    <label
+                      key={p.PropertyId}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        fontSize: 13,
+                        marginBottom: 6,
+                        cursor: "pointer",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedPropertyId.includes(p.PropertyId)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+
+                          setSelectedPropertyId((prev) =>
+                            checked
+                              ? [...prev, p.PropertyId]
+                              : prev.filter((id) => id !== p.PropertyId),
+                          );
+                        }}
+                      />
+                      {p.PropertyName}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* ROW 1: TITLE + SG NAME + SELECT SG */}
@@ -1459,7 +1444,7 @@ export default function SGNEW() {
                   setExcludedEmployeeIds([]);
                 } else {
                   handleDropdownSelect(
-                    salaryGroups.find((s) => s.SalaryGroup_ID == id)
+                    salaryGroups.find((s) => s.SalaryGroup_ID == id),
                   );
                 }
               }}
@@ -1660,7 +1645,7 @@ export default function SGNEW() {
                         <input
                           type="checkbox"
                           checked={excludedEmployeeIds.includes(
-                            emp.FacilityMember?.FacilityMemberId
+                            emp.FacilityMember?.FacilityMemberId,
                           )}
                           onChange={(e) => {
                             const empId = emp.FacilityMember?.FacilityMemberId;
@@ -1676,7 +1661,7 @@ export default function SGNEW() {
                             setExcludedEmployeeIds((prev) =>
                               e.target.checked
                                 ? [...prev, empId]
-                                : prev.filter((id) => id !== empId)
+                                : prev.filter((id) => id !== empId),
                             );
                           }}
                         />
@@ -1695,7 +1680,7 @@ export default function SGNEW() {
                             setExcludedEmployeeIds((prev) =>
                               prev.includes(empId)
                                 ? prev.filter((id) => id !== empId)
-                                : [...prev, empId]
+                                : [...prev, empId],
                             );
                           }}
                         >
@@ -1714,7 +1699,7 @@ export default function SGNEW() {
 
                             const sgId = emp.FacilityMember?.SG_Link_ID;
                             const sg = salaryGroups.find(
-                              (s) => Number(s.SalaryGroup_ID) === Number(sgId)
+                              (s) => Number(s.SalaryGroup_ID) === Number(sgId),
                             );
 
                             if (sg) setPreviewSG(sg);
@@ -2164,21 +2149,25 @@ export default function SGNEW() {
                     onChange={(e) => {
                       const checked = e.target.checked;
 
-                      if (checked) {
-                        activateDeductionWithBase("PF");
-                      }
-
                       setDeductionAllowanceMap((prev) => ({
                         ...prev,
                         PF: {
                           ...(prev.PF || {}),
+                          BaseSalary: checked ? true : prev.PF?.BaseSalary, // 🔥 FORCE BASE SALARY
                           [a.Name]: checked,
                         },
                       }));
 
-                      // 🔥 ALWAYS sync allowanceSelected when editing PF
+                      if (checked) {
+                        setActiveStatutory((prev) => ({ ...prev, PF: true }));
+                        activateDeductionWithBase("PF");
+                        setCalculatedAD((prev) => ({ ...prev, PF: true }));
+                      }
+
+                      // 🔥 ALWAYS sync allowanceSelected
                       setAllowanceSelected((prev) => ({
                         ...prev,
+                        BaseSalary: true,
                         [a.Name]: checked,
                       }));
 
@@ -2199,25 +2188,29 @@ export default function SGNEW() {
                     onChange={(e) => {
                       const checked = e.target.checked;
 
-                      if (checked) {
-                        activateDeductionWithBase("ESI");
-                      }
-
                       setDeductionAllowanceMap((prev) => ({
                         ...prev,
                         ESI: {
                           ...(prev.ESI || {}),
+                          BaseSalary: checked ? true : prev.ESI?.BaseSalary, // 🔥 FORCE BASE SALARY
                           [a.Name]: checked,
                         },
                       }));
 
-                      // 🔥 ALWAYS sync allowanceSelected for ESI (same as PF)
+                      if (checked) {
+                        setActiveStatutory((prev) => ({ ...prev, ESI: true }));
+                        activateDeductionWithBase("ESI");
+                        setCalculatedAD((prev) => ({ ...prev, ESI: true }));
+                      }
+
+                      // 🔥 ALWAYS sync allowanceSelected
                       setAllowanceSelected((prev) => ({
                         ...prev,
+                        BaseSalary: true,
                         [a.Name]: checked,
                       }));
 
-                      // 🔥 ENSURE fixed allowance value is present for ESI
+                      // 🔥 ENSURE fixed allowance value is present
                       if (checked && adValueType[a.Name] === "FIXED") {
                         setAllowanceAmounts((prev) => ({
                           ...prev,
@@ -2521,21 +2514,25 @@ export default function SGNEW() {
                     onChange={(e) => {
                       const checked = e.target.checked;
 
-                      if (checked) {
-                        activateDeductionWithBase("PF");
-                      }
-
                       setDeductionAllowanceMap((prev) => ({
                         ...prev,
                         PF: {
                           ...(prev.PF || {}),
+                          BaseSalary: checked ? true : prev.PF?.BaseSalary, // 🔥 FORCE BASE SALARY
                           [a.Name]: checked,
                         },
                       }));
 
-                      // 🔥 ALWAYS sync allowanceSelected when editing PF
+                      if (checked) {
+                        setActiveStatutory((prev) => ({ ...prev, PF: true }));
+                        activateDeductionWithBase("PF");
+                        setCalculatedAD((prev) => ({ ...prev, PF: true }));
+                      }
+
+                      // 🔥 ALWAYS sync allowanceSelected
                       setAllowanceSelected((prev) => ({
                         ...prev,
+                        BaseSalary: true,
                         [a.Name]: checked,
                       }));
 
@@ -2556,25 +2553,29 @@ export default function SGNEW() {
                     onChange={(e) => {
                       const checked = e.target.checked;
 
-                      if (checked) {
-                        activateDeductionWithBase("ESI");
-                      }
-
                       setDeductionAllowanceMap((prev) => ({
                         ...prev,
                         ESI: {
                           ...(prev.ESI || {}),
+                          BaseSalary: checked ? true : prev.ESI?.BaseSalary, // 🔥 FORCE BASE SALARY
                           [a.Name]: checked,
                         },
                       }));
 
-                      // 🔥 ALWAYS sync allowanceSelected for ESI (same as PF)
+                      if (checked) {
+                        setActiveStatutory((prev) => ({ ...prev, ESI: true }));
+                        activateDeductionWithBase("ESI");
+                        setCalculatedAD((prev) => ({ ...prev, ESI: true }));
+                      }
+
+                      // 🔥 ALWAYS sync allowanceSelected
                       setAllowanceSelected((prev) => ({
                         ...prev,
+                        BaseSalary: true,
                         [a.Name]: checked,
                       }));
 
-                      // 🔥 ENSURE fixed allowance value is present for ESI
+                      // 🔥 ENSURE fixed allowance value is present
                       if (checked && adValueType[a.Name] === "FIXED") {
                         setAllowanceAmounts((prev) => ({
                           ...prev,
@@ -2709,12 +2710,8 @@ export default function SGNEW() {
                   {d.Name === "PF" || d.Name === "ESI" ? (
                     <input
                       type="radio"
-                      /* ❌ NO name attribute → no mutual exclusion */
-                      checked={
-                        d.Name === "PF" || d.Name === "ESI"
-                          ? !!deductionAllowanceMap[d.Name]?.BaseSalary
-                          : activeDeduction === d.Name
-                      }
+                      name="statutoryDeduction" // ✅ ADD THIS LINE
+                      checked={!!deductionAllowanceMap[d.Name]?.BaseSalary}
                       onChange={() => {
                         // 🔥 PF / ESI are always ON once selected
                         setActiveStatutory((prev) => ({
@@ -2836,10 +2833,10 @@ export default function SGNEW() {
                       ? !!deductionAllowanceMap.PF?.BaseSalary &&
                         adValueType.PF === "PERCENT"
                       : d.Name === "ESI"
-                      ? !!deductionAllowanceMap.ESI?.BaseSalary &&
-                        adValueType.ESI === "PERCENT"
-                      : activeDeduction === d.Name &&
-                        adValueType[d.Name] === "PERCENT") && (
+                        ? !!deductionAllowanceMap.ESI?.BaseSalary &&
+                          adValueType.ESI === "PERCENT"
+                        : activeDeduction === d.Name &&
+                          adValueType[d.Name] === "PERCENT") && (
                       <input
                         type="number"
                         style={{ width: 55, height: 28, fontSize: 12 }}
@@ -3319,7 +3316,7 @@ export default function SGNEW() {
 
                 {/* OTHER ALLOWANCES */}
                 {previewSG.AllowancesDeductions.filter(
-                  (a) => a.Type === "A" || a.Type === "OA"
+                  (a) => a.Type === "A" || a.Type === "OA",
                 ).map((a) => (
                   <div
                     key={a.AD_Id}
@@ -3351,11 +3348,11 @@ export default function SGNEW() {
                     {(
                       Number(previewSG.BaseSalary) +
                       previewSG.AllowancesDeductions.filter(
-                        (a) => a.Type === "A" || a.Type === "OA"
+                        (a) => a.Type === "A" || a.Type === "OA",
                       ).reduce(
                         (sum, a) =>
                           sum + (a.FixedAmount || a.CalculatedAmount || 0),
-                        0
+                        0,
                       )
                     ).toFixed(2)}
                   </span>
@@ -3383,7 +3380,7 @@ export default function SGNEW() {
                 </div>
 
                 {previewSG.AllowancesDeductions.filter(
-                  (a) => a.Type === "D" || a.Type === "OD"
+                  (a) => a.Type === "D" || a.Type === "OD",
                 ).map((a) => (
                   <div
                     key={a.AD_Id}
@@ -3413,12 +3410,12 @@ export default function SGNEW() {
                   <span>
                     ₹{" "}
                     {previewSG.AllowancesDeductions.filter(
-                      (a) => a.Type === "D" || a.Type === "OD"
+                      (a) => a.Type === "D" || a.Type === "OD",
                     )
                       .reduce(
                         (sum, a) =>
                           sum + (a.FixedAmount || a.CalculatedAmount || 0),
-                        0
+                        0,
                       )
                       .toFixed(2)}
                   </span>

@@ -772,3 +772,26 @@ export async function deleteADPercentage(id) {
   }
 }
 
+// --------------------------------------------------
+// GET SALARY GROUPS BY MULTIPLE PROPERTIES
+// --------------------------------------------------
+export const getSalaryAllowancesByProperties = async (propertyIds = []) => {
+  if (!propertyIds.length) return [];
+
+  const ids = propertyIds.join(",");
+
+  const response = await fetch(
+    `https://api.urest.in:8096/api/salaryallowances/byproperties?propertyIds=${ids}`,
+    {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch salary groups by properties");
+  }
+
+  return response.json();
+};
+

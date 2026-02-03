@@ -59,3 +59,30 @@ export const getClientById = async (id) => {
     if (!response.ok) throw new Error("Failed to fetch client");
     return response.json();
 };
+
+// --------------------------------------------------
+// GET CLIENT (UNIT) BY PROPERTY ID
+// --------------------------------------------------
+export const getClientByPropertyId = async (propertyId) => {
+  const response = await fetch(
+    `${API_BASE}/api/client/basic/getbyproperty/${propertyId}`
+  );
+
+  if (!response.ok) throw new Error("Failed to fetch client by property");
+  return response.json();
+};
+
+// --------------------------------------------------
+// GET PROPERTIES BY CLIENT (UNIT)
+// --------------------------------------------------
+export const getPropertiesByClientId = async (clientId) => {
+  const response = await fetch(
+    `https://api.urest.in:8096/api/propertymaster/getbyclient/${clientId}`
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch properties by client");
+  }
+
+  return response.json();
+};
