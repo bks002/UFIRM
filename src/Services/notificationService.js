@@ -113,3 +113,63 @@ export const getComplaintRemarks = async (ticketId) => {
     throw error;
   }
 };
+
+// 🔹 CREATE TASK WITH QUESTIONS (UREST API)
+export const createTaskWithQuestions = async (payload) => {
+  try {
+    const res = await axios.post(
+      "https://api.urest.in:8096/CreateTask",
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: false, // important
+      }
+    );
+
+    return res.data; // {}
+  } catch (error) {
+    console.error("Error creating task with questions:", error);
+    throw error;
+  }
+};
+
+// 🔹 GET TASK QUESTION IMAGES (BEFORE / AFTER)
+export const getTaskQuestionImage = async ({
+  taskId,
+  questId,
+  createdOn,
+}) => {
+  try {
+    const res = await axios.get(
+      "https://api.urest.in:8096/GetTaskQuestionImage",
+      {
+        params: {
+          taskId,
+          questId,
+          createdOn,
+        },
+        headers: {
+          Accept: "application/json",
+        },
+        withCredentials: false,
+      }
+    );
+
+    const data = res.data || {};
+
+    return {
+      id: data.Id || null,
+      taskId: data.TaskId || taskId,
+      questId: data.QuestId || questId,
+      beforeImage: data.BeforeImage || null, // already base64 prefixed
+      afterImage: data.AfterImage || null,   // can be null
+      createdOn: data.CreatedOn || null,
+      updatedOn: data.UpdatedOn || null,
+    };
+  } catch (error) {
+    console.error("Error fetching task question image:", error);
+    throw error;
+  }
+};

@@ -632,6 +632,7 @@ const fetchManagersForDropdown = async () => {
       },
 
       FacilityMember: {
+        Name: employeeName,
         FacilityMemberId: selectedFacilityMemberId || 0,
         PropertyId: propertyId || 0,
         Address: (addressLine1 + " " + addressLine2).trim() || "",
