@@ -5,54 +5,73 @@ import ExportToCSV from "../ReactComponents/ExportToCSV/ExportToCSV";
 import { connect } from "react-redux";
 import { PropagateLoader } from "react-spinners";
 import LoadingOverlay from "react-loading-overlay";
+import {
+  getAssetRentOutReturnHistoryByAssetId,
+} from "../Services/RentalAssets";
 
-// The main page component
+/* ================= BASE64 IMAGE HELPER ================= */
+const isValidImageBase64 = (b64) =>
+  b64?.startsWith("/9j/") ||
+  b64?.startsWith("iVBOR") ||
+  b64?.startsWith("UklGR") ||
+  b64?.startsWith("data:image");
+
+const renderBase64Image = (base64) => {
+  if (!base64 || !isValidImageBase64(base64)) {
+    return <span>No Image</span>;
+  }
+
+  const src = base64.startsWith("data:image")
+    ? base64
+    : `data:image/*;base64,${base64}`;
+
+  return <img src={src} width={180} alt="Asset" />;
+};
+
 const RentAssetPage = (actions) => {
   const [rentalAssets, setRentalAssets] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  /* Rent / Return modal */
   const [viewModal, setViewModal] = useState(false);
   const [currentAsset, setCurrentAsset] = useState(null);
-  const [actionType, setActionType] = useState("rentout"); // "return" or "rentout"
+  const [actionType, setActionType] = useState("rentout");
 
-  // New: extract the fetch rentalAssets logic separately
+  /* History modal */
+  const [historyModal, setHistoryModal] = useState(false);
+  const [rentHistory, setRentHistory] = useState([]);
+
+  /* ================= FETCH ASSETS ================= */
   const fetchRentalAssets = async () => {
     try {
       setLoading(true);
-      const url = `https://api.urest.in:8096/api/Asset/GetRentalAssetData?PropId=${actions.propId}`;
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-      });
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      const data = await response.json();
+      const res = await fetch(
+        `https://api.urest.in:8096/api/Asset/GetRentalAssetData?PropId=${actions.propId}`
+      );
+      const data = await res.json();
       setRentalAssets(data);
       setLoading(false);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("Error fetching assets:", error);
       setLoading(false);
     }
   };
 
-  // Only depend on propId so list is fetched on mount/prop change
   useEffect(() => {
     fetchRentalAssets();
     // eslint-disable-next-line
   }, [actions.propId]);
 
-  const handleReturn = (asset) => {
-    setCurrentAsset(asset);
-    setActionType("return");
-    setViewModal(true);
-  };
-
+  /* ================= RENT / RETURN ================= */
   const handleRentOut = (asset) => {
     setCurrentAsset(asset);
     setActionType("rentout");
+    setViewModal(true);
+  };
+
+  const handleReturn = (asset) => {
+    setCurrentAsset(asset);
+    setActionType("return");
     setViewModal(true);
   };
 
@@ -62,7 +81,6 @@ const RentAssetPage = (actions) => {
     setActionType("");
   };
 
-  // Modified: Now triggers an immediate fetch after successful submit
   const handleSubmit = async (formData) => {
     const url =
       actionType === "return"
@@ -70,7 +88,7 @@ const RentAssetPage = (actions) => {
         : "https://api.urest.in:8096/ManageRentOutAsset";
 
     try {
-      const response = await fetch(url, {
+      await fetch(url, {
         method: actionType === "return" ? "PUT" : "POST",
         headers: {
           Accept: "application/json",
@@ -83,76 +101,105 @@ const RentAssetPage = (actions) => {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-
-      // After successful submission, immediately update asset list
-      await fetchRentalAssets();
-
+      fetchRentalAssets();
       handleCloseModal();
     } catch (error) {
-      console.error(`Error during ${actionType}:`, error);
+      console.error("Submit error:", error);
     }
   };
 
+  /* ================= VIEW HISTORY ================= */
+  const handleView = async (asset) => {
+    try {
+      setCurrentAsset(asset);
+      setHistoryModal(true);
+
+      const data =
+        await getAssetRentOutReturnHistoryByAssetId(asset.Id);
+
+      setRentHistory(data); // [{ RentOut:{}, Return:{} }]
+    } catch (error) {
+      console.error("History error:", error);
+    }
+  };
+
+  /* ================= UI ================= */
   return (
     <div className="content-wrapper">
-      <div className="content-header"></div>
       <section className="content">
         <div className="card container-fluid">
           <div className="d-flex justify-content-between align-items-center m-2">
-            <h2 className="mb-0">Rental Asset List</h2>
+            <h2>Rental Asset List</h2>
             <ExportToCSV
               data={rentalAssets}
-              className="btn btn-success btn-sm rounded px-3"
+              className="btn btn-success btn-sm"
             />
           </div>
+
           <LoadingOverlay
             active={loading}
             spinner={<PropagateLoader color="#336B93" size={30} />}
           >
-            <div className="table-responsive">
-              <table className="table table-striped">
-                <thead>
-                  <tr>
-                    <th>Serial No.</th>
-                    <th>Asset ID</th>
-                    <th>Asset Name</th>
-                    <th>Actions</th>
+            <table className="table table-striped table-bordered">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Asset ID</th>
+                  <th>Name</th>
+                  <th>Manufacturer</th>
+                  <th>Description</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {rentalAssets.map((asset, index) => (
+                  <tr key={asset.Id}>
+                    <td>{index + 1}</td>
+                    <td>{asset.Id}</td>
+                    <td>{asset.Name}</td>
+                    <td>{asset.Manufacturer}</td>
+                    <td>{asset.Description}</td>
+                    <td className="text-center">
+  {(asset.RentedOutDate === null || asset.ReturnDate) ? (
+    /* ✅ CHECK-OUT (GREEN ICON – SAME AS IMAGE) */
+    <button
+      className="btn btn-success btn-sm me-2"
+      title="Check Out"
+      onClick={() => handleRentOut(asset)}
+    >
+      <i className="pi pi-sign-out"></i>
+    </button>
+  ) : (
+    /* 🔄 RETURN */
+    <button
+      className="btn btn-warning btn-sm me-2"
+      title="Return"
+      onClick={() => handleReturn(asset)}
+    >
+      <i className="pi pi-sign-in"></i>
+    </button>
+  )}
+
+  {/* 👁️ VIEW */}
+  <button
+    className="btn btn-info btn-sm"
+    title="View"
+    onClick={() => handleView(asset)}
+  >
+    <i className="pi pi-eye"></i>
+  </button>
+</td>
+
                   </tr>
-                </thead>
-                <tbody>
-                  {rentalAssets.map((asset, index) => (
-                    <tr key={asset.Id}>
-                      <td>{index + 1}</td>
-                      <td>{asset.Id}</td>
-                      <td>{asset.Name}</td>
-                      <td className="align-middle">
-                        {asset.RentedOutDate === null || asset.ReturnDate ? (
-                          <button
-                            className="btn-lg btn-success btn-sm px-3 m-1"
-                            onClick={() => handleRentOut(asset)}
-                          >
-                            Rent Out
-                          </button>
-                        ) : (
-                          <button
-                            className="btn btn-warning btn-sm m-1 px-3 mr-2"
-                            onClick={() => handleReturn(asset)}
-                          >
-                            Return
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </LoadingOverlay>
         </div>
-        {viewModal ? (
+
+        {/* ================= RENT / RETURN POPUP ================= */}
+        {viewModal && (
           <RentalPopUp
             show={viewModal}
             handleClose={handleCloseModal}
@@ -160,13 +207,71 @@ const RentAssetPage = (actions) => {
             actionType={actionType}
             handleSubmit={handleSubmit}
           />
-        ) : undefined}
+        )}
+
+        {/* ================= HISTORY MODAL ================= */}
+        {historyModal && (
+          <div className="modal show d-block" tabIndex="-1">
+            <div className="modal-dialog modal-xl">
+              <div className="modal-content">
+
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    History : {currentAsset?.Name} (ID: {currentAsset?.Id})
+                  </h5>
+                  <button
+                    className="btn-close"
+                    onClick={() => setHistoryModal(false)}
+                  />
+                </div>
+
+                <div className="modal-body">
+                  {rentHistory.length === 0 ? (
+                    <p className="text-center">No history found</p>
+                  ) : (
+                    rentHistory.map((item, index) => (
+                      <div
+                        key={index}
+                        className="row mb-4 border-bottom pb-3"
+                      >
+                        {/* 🔵 RENT OUT */}
+                        <div className="col-md-6 border-end">
+                          <h6 className="text-primary mb-2">Rent Out</h6>
+                          <p><b>Assignee:</b> {item.RentOut?.AssigneeName}</p>
+                          <p><b>Rented To:</b> {item.RentOut?.RentedTo}</p>
+                          <p><b>Date:</b> {item.RentOut?.RentedOutDate}</p>
+                          <p><b>Tentative:</b> {item.RentOut?.TentativeDate}</p>
+                          <p><b>Out From:</b> {item.RentOut?.OutFrom}</p>
+                          <p><b>Monthly Rent:</b> {item.RentOut?.MonthlyRent}</p>
+                          <p><b>Approved By:</b> {item.RentOut?.ApprovedBy}</p>
+                          <p><b>RentOut Image:</b></p>
+                          {renderBase64Image(item.RentOut?.ImageOut)}
+                        </div>
+
+                        {/* 🟢 RETURN */}
+                        <div className="col-md-6">
+                          <h6 className="text-success mb-2">Return</h6>
+                          <p><b>Returned By:</b> {item.Return?.ReturnedBy}</p>
+                          <p><b>Return Date:</b> {item.Return?.ReturnDate}</p>
+                          <p><b>Return From:</b> {item.Return?.ReturnFrom}</p>
+                          <p><b>Return Image:</b></p>
+                          {renderBase64Image(item.Return?.ImageIn)}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+              </div>
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );
 };
 
-function mapStateToProps(state, props) {
+function mapStateToProps(state) {
   return {
     propId: state.Commonreducer.puidn,
   };
