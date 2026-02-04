@@ -823,7 +823,6 @@ const fetchManagersForDropdown = async () => {
                   <Column header="Department" body={(row) => row.Profile?.Department || "-"} />
                   <Column header="Gender" body={(row) => row.Profile?.Gender || "-"} />
                   <Column header="Contact" body={(row) => row.Profile?.PhoneNumber || "-"} />
-                  <Column header="Access Code" body={(row) => row.FacilityMember?.AccessCode || "-"} />
                   <Column header="Approved" body={(row) => row.FacilityMember?.IsApproved ? "Yes" : "No"} />
                 </DataTable>
               </div>
