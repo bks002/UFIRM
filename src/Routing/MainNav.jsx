@@ -287,12 +287,12 @@ class MainNav extends React.Component {
                   role="menu"
                   data-accordion="false"
                 >
-                  <li className="nav-item has-treeview">
+                  {/* <li className="nav-item has-treeview">
                     <a href="#" className="nav-link">
                       <i className="nav-icon fas fa-tachometer-alt"></i>
                       <p>Dashboard</p>
                     </a>
-                  </li>
+                  </li> */}
                   {this.state.userRoles &&
                   (this.state.userRoles.includes("Admin") ||
                     this.state.userRoles.includes("Property Manager") ||
@@ -381,7 +381,7 @@ class MainNav extends React.Component {
                             <p>Tasks Analysis</p>
                           </Link>
                         </li> */}
-                        <li className="nav-item">
+                        {/* <li className="nav-item">
                           <Link
                             to="/Account/App/TaskEventsCalender"
                             className="nav-link"
@@ -389,7 +389,7 @@ class MainNav extends React.Component {
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Task Calendar</p>
                           </Link>
-                        </li>
+                        </li> */}
                         <li className="nav-item">
                           <Link
                             to="/Account/App/PPMSpreadsheet"

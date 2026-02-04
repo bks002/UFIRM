@@ -1,46 +1,66 @@
 import React, { useEffect, useState } from "react";
 import PopUp from "../ReactComponents/CheckIn&OutModal/PopUp";
 import "bootstrap/dist/css/bootstrap.min.css";
-import ExportToCSV from "../ReactComponents/ExportToCSV/ExportToCSV"
-import { connect } from 'react-redux';
+import ExportToCSV from "../ReactComponents/ExportToCSV/ExportToCSV";
+import { connect } from "react-redux";
 import { PropagateLoader } from "react-spinners";
 import LoadingOverlay from "react-loading-overlay";
+import { getAssetCheckInOutHistoryByAssetId } 
+  from "../Services/CheckInCheckOut";
 
+/* ================= BASE64 IMAGE RENDER HELPER ================= */
+const renderBase64Image = (base64) => {
+  if (!base64) return <span>No Image</span>;
+
+  return (
+    <img
+      src={`data:image/jpeg;base64,${base64}`}
+      alt="Asset"
+      style={{
+        width: "180px",
+        height: "auto",
+        border: "1px solid #ccc",
+        borderRadius: "6px",
+        marginTop: "6px",
+      }}
+    />
+  );
+};
 
 const CheckInCheckOut = (actions) => {
   const [assetData, setAssetData] = useState([]);
   const [loading, setLoading] = useState(true);
+
   const [viewModal, setViewModal] = useState(false);
   const [currentAsset, setCurrentAsset] = useState(null);
-  const [actionType, setActionType] = useState(""); // "checkin" or "checkout"
+  const [actionType, setActionType] = useState("");
 
+  // 🔹 History states
+  const [historyModal, setHistoryModal] = useState(false);
+  const [historyData, setHistoryData] = useState([]);
+  const [historyAssetName, setHistoryAssetName] = useState("");
+
+  /* ================= FETCH ASSETS ================= */
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const url = `https://api.urest.in:8096/api/Asset/GetAssetCheckOutData?PropId=${actions.propId}`;
-        const response = await fetch(url, {
-          method: "GET",
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-        });
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
-        setAssetData(data);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setLoading(false);
-      }
-    };
-
     fetchData();
-  }, [actions.propId]); // only depends on propId
+  }, [actions.propId]);
 
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(
+        `https://api.urest.in:8096/api/Asset/GetAssetCheckOutData?PropId=${actions.propId}`
+      );
+      const data = await res.json();
+      setAssetData(data);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setLoading(false);
+    }
+  };
+
+  /* ================= CHECK IN / OUT ================= */
   const handleCheckIn = (asset) => {
     setCurrentAsset(asset);
     setActionType("checkin");
@@ -54,123 +74,196 @@ const CheckInCheckOut = (actions) => {
   };
 
   const handleCloseModal = () => {
-
     setViewModal(false);
     setCurrentAsset(null);
     setActionType("");
   };
 
   const handleSubmit = async (formData) => {
-    const url = actionType === "checkin"
-      ? "https://api.urest.in:8096/ManageCheckIn"
-      : "https://api.urest.in:8096/ManageCheckOut";
+    const url =
+      actionType === "checkin"
+        ? "https://api.urest.in:8096/ManageCheckIn"
+        : "https://api.urest.in:8096/ManageCheckOut";
 
     try {
-      const payload = { AssetId: currentAsset.Id, AssetName: currentAsset.Name, ...formData };
-
-      const response = await fetch(url, {
+      await fetch(url, {
         method: actionType === "checkin" ? "PUT" : "POST",
         headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
+          Accept: "application/json",
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          AssetId: currentAsset.Id,
+          AssetName: currentAsset.Name,
+          ...formData,
+        }),
       });
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-
-      // ✅ refresh asset list only after successful action
-      const refreshUrl = `https://api.urest.in:8096/api/Asset/GetAssetCheckOutData?PropId=${actions.propId}`;
-      const updatedRes = await fetch(refreshUrl);
-      const updatedData = await updatedRes.json();
-      setAssetData(updatedData);
-
+      fetchData();
       handleCloseModal();
     } catch (error) {
       console.error(`Error during ${actionType}:`, error);
     }
   };
 
+  /* ================= VIEW HISTORY ================= */
+  const handleViewHistory = async (asset) => {
+    try {
+      setHistoryAssetName(asset.Name);
+      setHistoryModal(true);
+
+      const data = await getAssetCheckInOutHistoryByAssetId(asset.Id);
+      setHistoryData(data); // [{ CheckOut:{}, CheckIn:{} }]
+    } catch (error) {
+      console.error("Error fetching history:", error);
+    }
+  };
+
+  /* ================= UI ================= */
   return (
     <div className="content-wrapper">
-      <div className="content-header">
-        <div className="container-fluid">
-          {/* <div className="row mb-2">
-            <div className="col-sm-6">
-              <h1 className="mt-5 text-dark">Check-IN & Check-OUT</h1>
-            </div>
-          </div> */}
-        </div>
-      </div>
       <section className="content">
+
         <div className="card container-fluid">
           <div className="d-flex justify-content-between align-items-center m-2">
             <h2 className="mb-0">Asset List</h2>
-            <ExportToCSV data={assetData} className="btn btn-success btn-sm rounded px-3" />
+            <ExportToCSV
+              data={assetData}
+              className="btn btn-success btn-sm rounded px-3"
+            />
           </div>
-          <div className="table-responsive table-bordered table-hover table-sm">
-            <LoadingOverlay
-              active={loading}
-              spinner={<PropagateLoader color="#336B93" size={30} />}
-            >
-              <table className="table table-striped">
-                <thead>
-                  <tr>
-                    <th>Serial No.</th>
-                    <th>Asset ID</th>
-                    <th>Asset Name</th>
-                    <th>Actions</th>
+
+          <LoadingOverlay
+            active={loading}
+            spinner={<PropagateLoader color="#336B93" size={30} />}
+          >
+            <table className="table table-striped table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Asset ID</th>
+                  <th>Asset Name</th>
+                  <th>Manufacturer</th>
+                  <th>Description</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {assetData.map((asset, index) => (
+                  <tr key={asset.Id}>
+                    <td>{index + 1}</td>
+                    <td>{asset.Id}</td>
+                    <td>{asset.Name}</td>
+                    <td>{asset.Manufacturer}</td>
+                    <td>{asset.Description}</td>
+                    <td>
+                      {asset.ReturnDate === null ? (
+                        <button
+                          className="btn btn-warning btn-sm me-1"
+                          onClick={() => handleCheckIn(asset)}
+                        >
+                          Check In
+                        </button>
+                      ) : (
+                        <button
+                          className="btn btn-success btn-sm me-1"
+                          onClick={() => handleCheckOut(asset)}
+                        >
+                          Check Out
+                        </button>
+                      )}
+
+                      <button
+                        className="btn btn-info btn-sm"
+                        onClick={() => handleViewHistory(asset)}
+                      >
+                        View
+                      </button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {assetData.map((asset, index) => (
-                    <tr key={asset.Id}>
-                      <td>{index + 1}</td>
-                      <td>{asset.Id}</td>
-                      <td>{asset.Name}</td>
-                      <td className="align-middle">
-                        {asset.ReturnDate === null ?
-
-                          <button
-                            className="btn-lg btn-warning btn-sm m-1 px-4 "
-                            onClick={() => handleCheckIn(asset)}
-                          >
-                            Check In
-                          </button> :
-                          <button
-                            className="btn-lg btn-success btn-sm px-3 m-1"
-                            onClick={() => handleCheckOut(asset)}
-                          >
-                            Check Out
-                          </button>
-                        }
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </LoadingOverlay>
-
-          </div>
+                ))}
+              </tbody>
+            </table>
+          </LoadingOverlay>
         </div>
-        {viewModal ? <PopUp
-          show={viewModal}
-          handleClose={handleCloseModal}
-          asset={currentAsset}
-          actionType={actionType}
-          handleSubmit={handleSubmit}
-        /> : undefined}
+
+        {/* ================= CHECK IN / OUT POPUP ================= */}
+        {viewModal && (
+          <PopUp
+            show={viewModal}
+            handleClose={handleCloseModal}
+            asset={currentAsset}
+            actionType={actionType}
+            handleSubmit={handleSubmit}
+          />
+        )}
+
+        {/* ================= HISTORY MODAL ================= */}
+        {historyModal && (
+          <div className="modal show d-block" tabIndex="-1">
+            <div className="modal-dialog modal-xl">
+              <div className="modal-content">
+
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    History : {historyAssetName}
+                  </h5>
+                  <button
+                    className="btn-close"
+                    onClick={() => setHistoryModal(false)}
+                  />
+                </div>
+
+                <div className="modal-body">
+                  {historyData.length === 0 ? (
+                    <p className="text-center">No history found</p>
+                  ) : (
+                    historyData.map((item, index) => (
+                      <div key={index} className="row mb-4 border-bottom pb-3">
+
+                        {/* 🔵 CHECK OUT */}
+                        <div className="col-md-6 border-end">
+                          <h6 className="text-primary mb-2">Check Out</h6>
+                          <p><b>Assignee:</b> {item.CheckOut?.AssigneeName}</p>
+                          <p><b>Purpose:</b> {item.CheckOut?.Purpose}</p>
+                          <p><b>Date:</b> {item.CheckOut?.CheckOutDateTime}</p>
+                          <p><b>Out From:</b> {item.CheckOut?.OutFrom}</p>
+                          <p><b>Sent To:</b> {item.CheckOut?.SentTo}</p>
+                          <p><b>Approved By:</b> {item.CheckOut?.ApprovedBy}</p>
+
+                          <p><b>CheckOut Image:</b></p>
+                          {renderBase64Image(item.CheckOut?.CheckOutImage)}
+                        </div>
+
+                        {/* 🟢 CHECK IN */}
+                        <div className="col-md-6">
+                          <h6 className="text-success mb-2">Check In</h6>
+                          <p><b>Returned By:</b> {item.CheckIn?.ReturnedBy}</p>
+                          <p><b>Return Date:</b> {item.CheckIn?.ReturnDate}</p>
+
+                          <p><b>Return Image:</b></p>
+                          {renderBase64Image(item.CheckIn?.ReturnImage)}
+                        </div>
+
+                      </div>
+                    ))
+                  )}
+                </div>
+
+              </div>
+            </div>
+          </div>
+        )}
+
       </section>
     </div>
   );
 };
 
-function mapStateToProps(state, props) {
+function mapStateToProps(state) {
   return {
     propId: state.Commonreducer.puidn,
-  }
+  };
 }
 
 export default connect(mapStateToProps)(CheckInCheckOut);
