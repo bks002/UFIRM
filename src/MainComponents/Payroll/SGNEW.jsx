@@ -278,7 +278,7 @@ export default function SGNEW() {
     if (!selectedSG) return;
     if (!salaryGroups.length || !adList.length) return;
 
-    const sg = salaryGroups.find((s) => s.SalaryGroup_ID == selectedSG);
+    const sg = salaryGroups.find((s) => s.SalaryGroup === selectedSG);
     if (!sg) return;
 
     let newDeductions = {};
@@ -708,56 +708,67 @@ export default function SGNEW() {
       alert("Please select at least one Property");
       return;
     }
+
     try {
       const adModel = buildADModel();
 
-      const isUpdate = salaryGroups.some(
+      // 🔑 detect update by SG name
+      const existingSG = salaryGroups.find(
         (sg) => sg.SalaryGroup === form.salaryGroupName,
       );
 
+      const isUpdate = !!existingSG;
+
       const model = {
-        SalaryGroup_ID: isUpdate
-          ? salaryGroups.find((sg) => sg.SalaryGroup === form.salaryGroupName)
-              .SalaryGroup_ID
-          : 0,
+        // ✅ NEW: multiple SG IDs
+        SalaryGroup_IDs: isUpdate ? existingSG.SalaryGroup_IDs : [],
 
         SalaryGroup: form.salaryGroupName,
         BaseSalary: Number(form.baseSalary),
-        PropertyIds: selectedPropertyId || [],
+        PropertyIds: selectedPropertyId,
+
         PFLimit: pfLimit ? Number(pfLimit) : null,
         ESILimit: esiLimit ? Number(esiLimit) : null,
+
         TotalWorkingDays: Number(form.totalWorkingDays),
         ShiftHours: Number(form.shiftHours),
+
         Salarystartfrom: form.salaryCycleFrom
           ? Number(form.salaryCycleFrom)
           : null,
         Salaryendto: form.salaryCycleTo ? Number(form.salaryCycleTo) : null,
+
         ExcludeSunday: form.excludeSunday,
         MonthSundays:
           form.monthlySundays !== "" ? Number(form.monthlySundays) : null,
+
         Designations: designation ? [designation] : [],
         ExcludedEmployeeIds: excludeEmployees ? excludedEmployeeIds : [],
+
         AllowancesDeductions: adModel,
+
         CreatedBy: 1,
         UpdatedBy: 1,
         IsActive: true,
       };
 
       if (isUpdate) {
-        const id = model.SalaryGroup_ID;
-        await updateSalaryAllowance(id, model);
+        // ✅ UPDATED: no separate ID param
+        await updateSalaryAllowance(model);
         alert("Salary group updated!");
       } else {
         await createSalaryAllowance(model);
         alert("Salary group created!");
       }
 
+      // 🔄 reload SG list for selected properties
       await loadSG(selectedPropertyId);
 
+      // 🔥 full reset
       resetAll();
     } catch (err) {
       alert("Save failed! Check console.");
-      console.log(err);
+      console.error(err);
     }
   };
 
@@ -857,19 +868,20 @@ export default function SGNEW() {
   };
 
   const resetAll = () => {
-    // 🔥 Reset SG + form
+    // 🔥 Always reset salary group form & SG state
     resetSalaryGroupForm();
     setSelectedSG("");
     setPreviewSG(null);
 
-    // 🔥 Reset scope
-    setSelectedUnitId(null);
+    // 🔥 ALWAYS reset page-level property selection
     setSelectedPropertyId([]);
-    setPropertyList([]);
     setShowPropertyDropdown(false);
 
-    // 🔥 Clear loaded SG list
-    setSalaryGroups([]);
+    // 🔥 Reset unit ONLY when NOT coming from navbar
+    if (!Number(propertyId) || Number(propertyId) <= 0) {
+      setSelectedUnitId(null);
+      setPropertyList([]);
+    }
   };
 
   const allowOnlyNumbers = (e) => {
@@ -1168,26 +1180,23 @@ export default function SGNEW() {
               }}
               value={selectedSG}
               onChange={(e) => {
-                const id = e.target.value;
-                setSelectedSG(id);
+                const name = e.target.value;
+                setSelectedSG(name);
 
-                if (id === "") {
-                  // 🔥 FULL RESET (same as clicking CREATE SALARY GROUP)
+                if (!name) {
                   resetSalaryGroupForm();
-                  setDesignation("");
-                  setExcludeEmployees(false);
-                  setExcludedEmployeeIds([]);
-                } else {
-                  handleDropdownSelect(
-                    salaryGroups.find((s) => s.SalaryGroup_ID == id),
-                  );
+                  return;
                 }
+
+                handleDropdownSelect(
+                  salaryGroups.find((s) => s.SalaryGroup === name),
+                );
               }}
             >
               <option value="">-- Select Existing SG --</option>
 
               {salaryGroups.map((sg) => (
-                <option key={sg.SalaryGroup_ID} value={sg.SalaryGroup_ID}>
+                <option key={sg.SalaryGroup} value={sg.SalaryGroup}>
                   {sg.SalaryGroup}
                 </option>
               ))}
