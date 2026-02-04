@@ -26,13 +26,13 @@ export default function SGNEW() {
   const [deductionAmounts, setDeductionAmounts] = useState({});
   const [deductionAllowanceMap, setDeductionAllowanceMap] = useState({});
   const [allowanceSelected, setAllowanceSelected] = useState({});
-  const [calculatedAD, setCalculatedAD] = useState({});
-  const [adFormula, setAdFormula] = useState({});
   const [selectedSG, setSelectedSG] = useState("");
+  const [previewSG, setPreviewSG] = useState(null);
   const [odDoubleFlags, setOdDoubleFlags] = useState({});
   const [multiplyValues, setMultiplyValues] = useState({});
   const [adValueType, setAdValueType] = useState({});
   const [editablePercentages, setEditablePercentages] = useState({});
+  const [adFormula, setAdFormula] = useState({});
   const [designation, setDesignation] = useState("");
   const [excludeEmployees, setExcludeEmployees] = useState(false);
   const [employees, setEmployees] = useState([]);
@@ -47,9 +47,7 @@ export default function SGNEW() {
     PF: false,
     ESI: false,
   });
-  const esiPreviewLock = React.useRef(false);
   const [otBaseType, setOtBaseType] = useState("Base");
-  const [previewSG, setPreviewSG] = useState(null);
   const isLoadingSG = React.useRef(false);
   const [unitList, setUnitList] = useState([]);
   const [selectedUnitId, setSelectedUnitId] = useState(null);
@@ -133,6 +131,108 @@ export default function SGNEW() {
   }, []);
 
   useEffect(() => {
+    if (!activeStatutory.PF) return;
+    if (adValueType.PF !== "PERCENT") return;
+
+    const percent =
+      Number(editablePercentages.PF) ||
+      getEffectivePercentage("PF")?.Percentage ||
+      0;
+
+    if (!percent) return;
+
+    let baseAmount = 0;
+    let formulaParts = [];
+
+    if (deductionAllowanceMap.PF?.BaseSalary) {
+      baseAmount += Number(form.baseSalary) || 0;
+      formulaParts.push("Base");
+    }
+
+    Object.entries(deductionAllowanceMap.PF || {}).forEach(([k, v]) => {
+      if (k !== "BaseSalary" && v) {
+        baseAmount += Number(allowanceAmounts[k]) || 0;
+        formulaParts.push(k);
+      }
+    });
+
+    if (!baseAmount) return;
+
+    const amount = Math.round(baseAmount * (percent / 100));
+
+    setDeductionAmounts((prev) => ({
+      ...prev,
+      PF: amount,
+    }));
+
+    setAdFormula((prev) => ({
+      ...prev,
+      PF:
+        formulaParts.length > 1
+          ? `(${formulaParts.join(" + ")}) * ${percent / 100}`
+          : `${formulaParts[0]} * ${percent / 100}`,
+    }));
+  }, [
+    activeStatutory.PF,
+    adValueType.PF,
+    editablePercentages.PF,
+    deductionAllowanceMap.PF,
+    form.baseSalary,
+    allowanceAmounts.HRA,
+  ]);
+
+  useEffect(() => {
+    if (!activeStatutory.ESI) return;
+    if (adValueType.ESI !== "PERCENT") return;
+
+    const percent =
+      Number(editablePercentages.ESI) ||
+      getEffectivePercentage("ESI")?.Percentage ||
+      0;
+
+    if (!percent) return;
+
+    let baseAmount = 0;
+    let formulaParts = [];
+
+    if (deductionAllowanceMap.ESI?.BaseSalary) {
+      baseAmount += Number(form.baseSalary) || 0;
+      formulaParts.push("Base");
+    }
+
+    Object.entries(deductionAllowanceMap.ESI || {}).forEach(([k, v]) => {
+      if (k !== "BaseSalary" && v) {
+        baseAmount += Number(allowanceAmounts[k]) || 0;
+        formulaParts.push(k);
+      }
+    });
+
+    if (!baseAmount) return;
+
+    const amount = Math.round(baseAmount * (percent / 100));
+
+    setDeductionAmounts((prev) => ({
+      ...prev,
+      ESI: amount,
+    }));
+
+    setAdFormula((prev) => ({
+      ...prev,
+      ESI:
+        formulaParts.length > 1
+          ? `(${formulaParts.join(" + ")}) * ${percent / 100}`
+          : `${formulaParts[0]} * ${percent / 100}`,
+    }));
+  }, [
+    activeStatutory.ESI,
+    adValueType.ESI,
+    editablePercentages.ESI,
+    deductionAllowanceMap.ESI,
+    form.baseSalary,
+    allowanceAmounts,
+  ]);
+
+  useEffect(() => {
     if (!selectedPropertyId || selectedPropertyId.length === 0) return;
 
     // 🔥 FULL HARD RESET ON UNIT CHANGE
@@ -146,7 +246,6 @@ export default function SGNEW() {
     setDeductionAmounts({});
     setAdValueType({});
     setEditablePercentages({});
-    setCalculatedAD({});
     setAdFormula({});
     setActiveDeduction(null);
 
@@ -174,18 +273,6 @@ export default function SGNEW() {
       ...(deductionAllowanceMap[activeDeduction] || {}),
     });
   }, [activeDeduction, deductionAllowanceMap]);
-
-  useEffect(() => {
-    // PF should ALWAYS react to allowance changes
-    if (activeStatutory.PF) {
-      setDeductionAmounts((prev) => ({ ...prev }));
-    }
-
-    // ESI should NOT react while in preview
-    if (activeStatutory.ESI && calculatedAD.ESI !== false) {
-      setDeductionAmounts((prev) => ({ ...prev }));
-    }
-  }, [allowanceAmounts, deductionAllowanceMap, activeStatutory, calculatedAD]);
 
   useEffect(() => {
     if (!selectedSG) return;
@@ -241,183 +328,6 @@ export default function SGNEW() {
   }, [form.baseSalary, adValueType, adPercentages]);
 
   useEffect(() => {
-    if (isLoadingSG.current) return;
-    if (esiPreviewLock.current) return;
-    const base = Number(form.baseSalary) || 0;
-    if (!base) return;
-
-    // 🔥 AUTO-ENABLE PF / ESI PREVIEW IN CREATE MODE
-    if (base > 0) {
-      if (
-        activeStatutory.ESI &&
-        deductionAllowanceMap.ESI?.BaseSalary === true &&
-        calculatedAD.ESI !== false // 🔥 DO NOT override preview
-      ) {
-        activateDeductionWithBase("ESI");
-      }
-    }
-
-    let newAllowanceAmounts = {};
-    let newDeductionAmounts = {};
-    let newFormulas = {};
-
-    if (!isLoadingSG.current) {
-      ["PF", "ESI"].forEach((d) => {
-        if (!adValueType[d]) {
-          setAdValueType((prev) => ({
-            ...prev,
-            [d]: "PERCENT",
-          }));
-        }
-      });
-    }
-
-    /* ===============================
-     🔹 ALLOWANCES (percentage based)
-     =============================== */
-    allowances.concat(otherAllowances).forEach((a) => {
-      const name = a.Name;
-
-      if (adValueType[name] !== "PERCENT") return;
-
-      const percentage = Number(editablePercentages[name]);
-      if (!percentage) return;
-
-      const amount = Math.round(base * (percentage / 100));
-
-      newAllowanceAmounts[name] = amount;
-      newFormulas[name] = `Base * ${percentage / 100}`;
-    });
-
-    /* ===============================
-     🔹 PF & ESI (STATUTORY – ALWAYS)
-     =============================== */
-    ["PF", "ESI"].forEach((d) => {
-      // 🔥 DO NOT recalc if in preview mode
-      if (calculatedAD[d] === false) return;
-
-      const percentObj = getEffectivePercentage(d);
-      const percentage =
-        editablePercentages[d] !== "" &&
-        editablePercentages[d] !== undefined &&
-        editablePercentages[d] !== null
-          ? Number(editablePercentages[d])
-          : Number(percentObj?.Percentage || 0);
-
-      if (!percentage) return;
-
-      let total = base;
-      let formulaParts = ["Base"];
-
-      Object.keys(deductionAllowanceMap[d] || {}).forEach((key) => {
-        if (!deductionAllowanceMap[d][key]) return;
-        if (key === "BaseSalary") return;
-
-        const val = Number(allowanceAmounts[key]) || 0;
-        total += val;
-        formulaParts.push(key);
-      });
-
-      newDeductionAmounts[d] = Math.round(total * (percentage / 100));
-      newFormulas[d] =
-        formulaParts.length === 1
-          ? `Base * ${percentage / 100}`
-          : `(${formulaParts.join(" + ")}) * ${percentage / 100}`;
-    });
-
-    /* ===============================
-     🔹 OTHER DEDUCTIONS (RADIO ONLY)
-     =============================== */
-    if (
-      activeDeduction &&
-      !["PF", "ESI"].includes(activeDeduction) &&
-      adValueType[activeDeduction] === "PERCENT"
-    ) {
-      const percentage = Number(editablePercentages[activeDeduction]) || 0;
-      if (percentage) {
-        let total = base;
-        let formulaParts = ["Base"];
-
-        Object.keys(allowanceSelected).forEach((key) => {
-          if (!allowanceSelected[key]) return;
-          if (key === "BaseSalary") return;
-
-          const val = Number(allowanceAmounts[key]) || 0;
-          total += val;
-          formulaParts.push(key);
-        });
-
-        const amount = Math.round(total * (percentage / 100));
-
-        newDeductionAmounts[activeDeduction] = amount;
-        newFormulas[activeDeduction] =
-          formulaParts.length === 1
-            ? `Base * ${percentage / 100}`
-            : `(${formulaParts.join(" + ")}) * ${percentage / 100}`;
-      }
-    }
-
-    setAllowanceAmounts((prev) => ({ ...prev, ...newAllowanceAmounts }));
-    setDeductionAmounts((prev) => ({ ...prev, ...newDeductionAmounts }));
-    setAdFormula((prev) => ({ ...prev, ...newFormulas }));
-  }, [
-    form.baseSalary,
-    editablePercentages,
-    allowanceAmounts,
-    allowanceSelected,
-    deductionAllowanceMap,
-    activeStatutory,
-    activeDeduction,
-    adValueType,
-  ]);
-
-  useEffect(() => {
-    if (isLoadingSG.current) return;
-    if (!activeStatutory.PF) return;
-
-    const base = Number(form.baseSalary) || 0;
-    if (!base) return;
-
-    const percentObj = getEffectivePercentage("PF");
-    const percentage =
-      editablePercentages.PF !== "" && editablePercentages.PF != null
-        ? Number(editablePercentages.PF)
-        : Number(percentObj?.Percentage || 0);
-
-    if (!percentage) return;
-
-    let total = base;
-
-    Object.keys(deductionAllowanceMap.PF || {}).forEach((key) => {
-      if (!deductionAllowanceMap.PF[key]) return;
-      if (key === "BaseSalary") return;
-
-      total += Number(allowanceAmounts[key]) || 0;
-    });
-
-    setDeductionAmounts((prev) => ({
-      ...prev,
-      PF: Math.round((total * percentage) / 100),
-    }));
-
-    setAdFormula((prev) => ({
-      ...prev,
-      PF: `(${[
-        "Base",
-        ...Object.keys(deductionAllowanceMap.PF || {}).filter(
-          (k) => deductionAllowanceMap.PF[k] && k !== "BaseSalary",
-        ),
-      ].join(" + ")}) * ${percentage / 100}`,
-    }));
-  }, [
-    allowanceAmounts,
-    deductionAllowanceMap.PF,
-    activeStatutory.PF,
-    editablePercentages.PF,
-    form.baseSalary,
-  ]);
-
-  useEffect(() => {
     if (!selectedUnitId) {
       setEmployees([]);
       setDesignations([]);
@@ -454,137 +364,6 @@ export default function SGNEW() {
     fetchEmployees();
   }, [selectedUnitId, selectedPropertyId]);
 
-  useEffect(() => {
-    if (isLoadingSG.current) return;
-    const base = Number(form.baseSalary) || 0;
-    if (!base) return;
-
-    let newDeductions = {};
-    let newFormulas = {};
-
-    deductions.concat(otherDeductions).forEach((d) => {
-      const name = d.Name;
-
-      /* ================= PF LIMIT LOGIC (SAFE INSERT) ================= */
-      const gross =
-        base +
-        Object.keys(allowanceAmounts)
-          .filter((key) => Number(allowanceAmounts[key]) > 0)
-          .reduce((sum, key) => sum + Number(allowanceAmounts[key]), 0);
-      const pfCap = Number(pfLimit) || 0;
-
-      if (
-        name === "PF" &&
-        adValueType[name] === "PERCENT" &&
-        pfCap > 0 &&
-        gross >= pfCap
-      ) {
-        const percentage =
-          Number(editablePercentages[name]) ||
-          getEffectivePercentage(name)?.Percentage ||
-          0;
-
-        newDeductions[name] = Math.round((pfCap * percentage) / 100);
-
-        // ❌ NO FORMULA when PF limit is applied
-        newFormulas[name] = null;
-
-        return; // 🚨 stop PF from falling into normal logic
-      }
-      /* ================================================================ */
-
-      /* ================= ESI LIMIT LOGIC ================= */
-      const esiCap = Number(esiLimit) || 0;
-
-      if (
-        name === "ESI" &&
-        adValueType[name] === "PERCENT" &&
-        esiCap > 0 &&
-        gross >= esiCap
-      ) {
-        const percentage =
-          Number(editablePercentages[name]) ||
-          getEffectivePercentage(name)?.Percentage ||
-          0;
-
-        newDeductions[name] = Math.round((esiCap * percentage) / 100);
-
-        // ❌ NO FORMULA when ESI limit is applied
-        newFormulas[name] = null;
-
-        return; // 🚨 stop ESI from falling into normal logic
-      }
-      /* ================================================== */
-
-      // ❌ Fixed deductions never recalc
-      if (adValueType[name] === "FIXED") return;
-
-      // 🔥 CASE 1: API FORMULA EXISTS (e.g. ESI)
-      if (adFormula[name] && !allowanceSelected) {
-        let total = base;
-
-        // add allowance dependencies if any
-        const usedAllowances = deductionAllowanceMap[name] || {};
-        Object.keys(usedAllowances).forEach((a) => {
-          if (usedAllowances[a]) {
-            total += Number(allowanceAmounts[a]) || 0;
-          }
-        });
-
-        const match = adFormula[name].match(/([\d.]+)$/);
-        if (!match) return;
-
-        const multiplier = Number(match[1]);
-        newDeductions[name] = Math.round(total * multiplier);
-        return;
-      }
-
-      // 🔹 CASE 2: SIMPLE % DEDUCTION (Base only)
-      // ❌ DO NOT override PF / ESI when active & allowance-based
-      // 🔥 NEVER override PF / ESI base+allowance calculation
-      if (["PF", "ESI"].includes(name)) {
-        return;
-      }
-
-      const percentObj = getEffectivePercentage(name);
-      if (!percentObj) return;
-
-      const percentage = percentObj.Percentage;
-      newDeductions[name] = Math.round(base * (percentage / 100));
-      newFormulas[name] = `Base * ${percentage / 100}`;
-
-      // ensure dropdown shows %
-      if (!adValueType[name]) {
-        setAdValueType((prev) => ({
-          ...prev,
-          [name]: "PERCENT",
-        }));
-      }
-    });
-
-    setDeductionAmounts((prev) => {
-      const merged = { ...prev };
-
-      Object.keys(newDeductions).forEach((key) => {
-        // 🔥 DO NOT overwrite preview deductions
-        if (calculatedAD[key] === false) return;
-
-        merged[key] = newDeductions[key];
-      });
-
-      return merged;
-    });
-    setAdFormula((prev) => ({ ...prev, ...newFormulas }));
-  }, [
-    form.baseSalary,
-    allowanceAmounts,
-    deductionAllowanceMap,
-    adValueType,
-    adPercentages,
-    pfLimit,
-    esiLimit,
-  ]);
-
   const getEffectivePercentage = (adName) => {
     if (!adPercentages.length) return null;
 
@@ -609,10 +388,6 @@ export default function SGNEW() {
         (p) => p.AD_Name === adName && p.IsGlobal && p.IsActive,
       ) || null
     );
-  };
-
-  const hasApiPercent = (name) => {
-    return !!getEffectivePercentage(name);
   };
 
   const buildADModel = () => {
@@ -678,7 +453,7 @@ export default function SGNEW() {
           calculated = 0;
         } else {
           // percentage-based deduction
-          if (!calculatedAD[name]) return;
+          if (calculated <= 0) return;
           calculated = Number(deductionAmounts[name]) || 0;
           if (calculated <= 0) return;
         }
@@ -758,7 +533,6 @@ export default function SGNEW() {
     setDeductionAmounts({});
     setAdValueType({});
     setEditablePercentages({});
-    setCalculatedAD({});
     setAdFormula({});
     setAllowanceSelected({});
     setDeductionAllowanceMap({});
@@ -874,10 +648,6 @@ export default function SGNEW() {
 
         // 🔥 ALSO MARK DEDUCTION AS VALID
         if (ad.Type === "D" || ad.Type === "OD") {
-          setCalculatedAD((prev) => ({
-            ...prev,
-            [name]: false,
-          }));
         }
       }
     });
@@ -898,13 +668,6 @@ export default function SGNEW() {
       ESI: !!deductionAllowanceRestoreMap.ESI,
     });
 
-    // 🔥 Mark them calculated so amounts show
-    setCalculatedAD((prev) => ({
-      ...prev,
-      PF: !!deductionAllowanceRestoreMap.PF,
-      ESI: !!deductionAllowanceRestoreMap.ESI,
-    }));
-
     // 🔥 RESTORE allowanceSelected for PF / ESI so formula works
     let restoredSelected = {};
 
@@ -921,7 +684,6 @@ export default function SGNEW() {
     // 4. Set UI states
     setAllowanceAmounts(newAllowances);
     setDeductionAmounts(newDeductions);
-    setCalculatedAD((prev) => ({ ...prev, ...calcFlags }));
     setAdFormula(formulas);
 
     setAllowanceSelected((prev) => ({
@@ -992,7 +754,7 @@ export default function SGNEW() {
 
       await loadSG(selectedPropertyId);
 
-      resetSalaryGroupForm();
+      resetAll();
     } catch (err) {
       alert("Save failed! Check console.");
       console.log(err);
@@ -1005,18 +767,9 @@ export default function SGNEW() {
     .reduce((sum, key) => sum + Number(allowanceAmounts[key]), 0);
 
   // SUM OF ALL DEDUCTIONS (D + OD)
-  const totalDeduction = Object.keys(deductionAmounts).reduce((sum, key) => {
-    const val = Number(deductionAmounts[key]) || 0;
-
-    const isReal = calculatedAD[key] === true;
-    const isFixed = adValueType[key] === "FIXED";
-
-    if (isReal || isFixed) {
-      return sum + val;
-    }
-
-    return sum;
-  }, 0);
+  const totalDeduction = Object.values(deductionAmounts)
+    .filter((v) => typeof v === "number" && v > 0)
+    .reduce((a, b) => a + b, 0);
 
   // GROSS = BASE + ALLOWANCES
   const totalGross = (Number(form.baseSalary) || 0) + totalAllowance;
@@ -1084,7 +837,6 @@ export default function SGNEW() {
     setAllowanceAmounts({});
     setDeductionAmounts({});
     setActiveDeduction(null);
-    setCalculatedAD({});
     setAdFormula({});
     setSelectedSG("");
     setOdDoubleFlags({});
@@ -1104,44 +856,28 @@ export default function SGNEW() {
     setOtBaseType("Base");
   };
 
+  const resetAll = () => {
+    // 🔥 Reset SG + form
+    resetSalaryGroupForm();
+    setSelectedSG("");
+    setPreviewSG(null);
+
+    // 🔥 Reset scope
+    setSelectedUnitId(null);
+    setSelectedPropertyId([]);
+    setPropertyList([]);
+    setShowPropertyDropdown(false);
+
+    // 🔥 Clear loaded SG list
+    setSalaryGroups([]);
+  };
+
   const allowOnlyNumbers = (e) => {
     const value = e.target.value;
 
     if (value === "" || /^\d*\.?\d*$/.test(value)) {
       setForm({ ...form, [e.target.name]: value });
     }
-  };
-
-  const handleRefreshSelections = () => {
-    // 🔹 Reset ONLY non-statutory deduction selection
-    setActiveDeduction(null);
-
-    // 🔹 Preserve BaseSalary selection (PF / ESI depend on it)
-    setAllowanceSelected((prev) => ({
-      BaseSalary: true,
-    }));
-
-    // 🔹 Preserve PF / ESI allowance mappings, reset others
-    setDeductionAllowanceMap((prev) => ({
-      PF: {
-        ...(prev.PF || {}),
-        BaseSalary: prev.PF?.BaseSalary ?? true,
-      },
-      ESI: {
-        ...(prev.ESI || {}),
-        BaseSalary: prev.ESI?.BaseSalary ?? true,
-      },
-    }));
-
-    // 🔹 Reset OD / other deduction helpers
-    setOdDoubleFlags({});
-    setMultiplyValues({});
-
-    // ❌ DO NOT touch:
-    // - allowanceAmounts
-    // - deductionAmounts
-    // - adFormula
-    // - editablePercentages
   };
 
   const filteredEmployees = designation
@@ -1174,12 +910,6 @@ export default function SGNEW() {
     setEditablePercentages((prev) => ({
       ...prev,
       [deductionName]: prev[deductionName] ?? percentObj?.Percentage ?? 0,
-    }));
-
-    // 4️⃣ Mark as calculated
-    setCalculatedAD((prev) => ({
-      ...prev,
-      [deductionName]: true,
     }));
   };
 
@@ -1253,8 +983,18 @@ export default function SGNEW() {
             </div>
 
             {/* Select Property */}
-            <div style={{ position: "relative", minWidth: 320 }}>
-              <label style={{ fontWeight: 600 }}>Select Property :</label>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                position: "relative",
+                minWidth: 420,
+              }}
+            >
+              <label style={{ fontWeight: 600, whiteSpace: "nowrap" }}>
+                Select Property :
+              </label>
 
               {/* Dropdown trigger */}
               <div
@@ -1265,7 +1005,7 @@ export default function SGNEW() {
                   }
                 }}
                 style={{
-                  marginTop: 6,
+                  flex: 1,
                   padding: "6px 10px",
                   border: "1px solid #d1d5db",
                   borderRadius: 6,
@@ -1345,12 +1085,7 @@ export default function SGNEW() {
           {/* TITLE */}
           <div
             onClick={() => {
-              // 🔥 FULL RESET TO CREATE MODE
-              setSelectedSG("");
-              setDesignation("");
-              setExcludeEmployees(false);
-              setExcludedEmployeeIds([]);
-              resetSalaryGroupForm();
+              resetAll();
             }}
             style={{
               display: "inline-block",
@@ -1913,24 +1648,72 @@ export default function SGNEW() {
                 onChange={(e) => {
                   const checked = e.target.checked;
 
-                  setActiveStatutory((prev) => ({ ...prev, PF: checked }));
-
-                  setDeductionAllowanceMap((prev) => ({
-                    ...prev,
-                    PF: { BaseSalary: checked },
-                  }));
-
-                  setCalculatedAD((prev) => ({
-                    ...prev,
-                    PF: checked,
-                  }));
-
                   if (checked) {
+                    // ✅ TURN PF ON
+                    setActiveStatutory((prev) => ({ ...prev, PF: true }));
+
+                    setDeductionAllowanceMap((prev) => ({
+                      ...prev,
+                      PF: {
+                        ...(prev.PF || {}),
+                        BaseSalary: true,
+                      },
+                    }));
+
                     activateDeductionWithBase("PF");
-                    setDeductionAmounts((prev) => ({ ...prev }));
+                  } else {
+                    // 1️⃣ Update BaseSalary mapping only
+                    setDeductionAllowanceMap((prev) => {
+                      const pfMap = { ...(prev.PF || {}) };
+                      delete pfMap.BaseSalary;
+
+                      // 2️⃣ Check if ANY allowance still uses PF
+                      const hasAnyPFAllowance = Object.keys(pfMap).some(
+                        (k) => pfMap[k] === true,
+                      );
+
+                      // 3️⃣ If none left → fully remove PF
+                      if (!hasAnyPFAllowance) {
+                        setActiveStatutory((prev) => ({ ...prev, PF: false }));
+
+                        // clear PF states
+                        setAdValueType((prev) => {
+                          const copy = { ...prev };
+                          delete copy.PF;
+                          return copy;
+                        });
+
+                        setEditablePercentages((prev) => {
+                          const copy = { ...prev };
+                          delete copy.PF;
+                          return copy;
+                        });
+
+                        setDeductionAmounts((prev) => {
+                          const copy = { ...prev };
+                          delete copy.PF;
+                          return copy;
+                        });
+
+                        setAdFormula((prev) => {
+                          const copy = { ...prev };
+                          delete copy.PF;
+                          return copy;
+                        });
+
+                        const newMap = { ...prev };
+                        delete newMap.PF;
+                        return newMap;
+                      }
+
+                      // 4️⃣ Otherwise keep PF alive (HRA still checked)
+                      return {
+                        ...prev,
+                        PF: pfMap,
+                      };
+                    });
                   }
                 }}
-                style={{ transform: "scale(1.1)", justifySelf: "center" }}
               />
 
               {/* ESI checkbox */}
@@ -1940,49 +1723,62 @@ export default function SGNEW() {
                 onChange={(e) => {
                   const checked = e.target.checked;
 
-                  // ✅ ONLY control allowance dependency
-                  setDeductionAllowanceMap((prev) => ({
-                    ...prev,
-                    ESI: { BaseSalary: checked },
-                  }));
+                  if (checked) {
+                    setActiveStatutory((prev) => ({ ...prev, ESI: true }));
 
-                  if (!checked) {
-                    // 🔒 LOCK preview so effects cannot revert it
-                    esiPreviewLock.current = true;
-
-                    setActiveStatutory((prev) => ({ ...prev, ESI: false }));
-                    setCalculatedAD((prev) => ({ ...prev, ESI: false }));
-
-                    setAdValueType((prev) => ({
+                    setDeductionAllowanceMap((prev) => ({
                       ...prev,
-                      ESI: "PERCENT",
+                      ESI: {
+                        ...(prev.ESI || {}),
+                        BaseSalary: true,
+                      },
                     }));
 
-                    const percentObj = getEffectivePercentage("ESI");
-                    const percentage =
-                      editablePercentages.ESI !== undefined &&
-                      editablePercentages.ESI !== null &&
-                      editablePercentages.ESI !== ""
-                        ? Number(editablePercentages.ESI)
-                        : Number(percentObj?.Percentage || 0);
+                    activateDeductionWithBase("ESI");
+                  } else {
+                    setDeductionAllowanceMap((prev) => {
+                      const esiMap = { ...(prev.ESI || {}) };
+                      delete esiMap.BaseSalary;
 
-                    const base = Number(form.baseSalary) || 0;
+                      const hasAnyESI = Object.values(esiMap).some(
+                        (v) => v === true,
+                      );
 
-                    setDeductionAmounts((prev) => ({
-                      ...prev,
-                      ESI: Math.round(base * (percentage / 100)),
-                    }));
+                      if (!hasAnyESI) {
+                        setActiveStatutory((p) => ({ ...p, ESI: false }));
 
-                    setAdFormula((prev) => ({
-                      ...prev,
-                      ESI: `Base * ${percentage / 100}`,
-                    }));
+                        setAdValueType((p) => {
+                          const c = { ...p };
+                          delete c.ESI;
+                          return c;
+                        });
 
-                    return;
+                        setEditablePercentages((p) => {
+                          const c = { ...p };
+                          delete c.ESI;
+                          return c;
+                        });
+
+                        setDeductionAmounts((p) => {
+                          const c = { ...p };
+                          delete c.ESI;
+                          return c;
+                        });
+
+                        setAdFormula((p) => {
+                          const c = { ...p };
+                          delete c.ESI;
+                          return c;
+                        });
+
+                        const newMap = { ...prev };
+                        delete newMap.ESI;
+                        return newMap;
+                      }
+
+                      return { ...prev, ESI: esiMap };
+                    });
                   }
-
-                  activateDeductionWithBase("ESI");
-                  esiPreviewLock.current = false; // 🔓 allow auto logic again
                 }}
                 style={{ transform: "scale(1.1)", justifySelf: "center" }}
               />
@@ -1991,12 +1787,9 @@ export default function SGNEW() {
               <div />
             </div>
             {allowances.map((a) => {
-              const isPreviewPercent =
-                !adValueType[a.Name] && hasApiPercent(a.Name);
-
               const isPercentMode = adValueType[a.Name] === "PERCENT";
 
-              const disableAmount = isPreviewPercent || isPercentMode;
+              const disableAmount = isPercentMode;
 
               return (
                 <div
@@ -2073,19 +1866,9 @@ export default function SGNEW() {
                         width: 32,
                         height: 28,
                         fontSize: 12,
-                        color:
-                          !adValueType[a.Name] && hasApiPercent(a.Name)
-                            ? "#94a3b8" // 🔥 light preview %
-                            : "#000",
+                        color: "#000",
                       }}
                     >
-                      {/* PREVIEW PLACEHOLDER (NOT A REAL OPTION) */}
-                      {!adValueType[a.Name] && hasApiPercent(a.Name) && (
-                        <option value="" hidden>
-                          %
-                        </option>
-                      )}
-
                       <option value="FIXED">#</option>
                       <option value="PERCENT">%</option>
                     </select>
@@ -2130,17 +1913,6 @@ export default function SGNEW() {
                         handleAllowanceAmount(a.Name, e.target.value)
                       }
                     />
-                    <span
-                      style={{
-                        fontSize: 12,
-                        color: "#555",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {adValueType[a.Name] === "PERCENT" && adFormula[a.Name]
-                        ? `= ${adFormula[a.Name]}`
-                        : ""}
-                    </span>
                   </div>
                   {/* PF Checkbox */}
                   <input
@@ -2149,29 +1921,73 @@ export default function SGNEW() {
                     onChange={(e) => {
                       const checked = e.target.checked;
 
-                      setDeductionAllowanceMap((prev) => ({
-                        ...prev,
-                        PF: {
+                      setDeductionAllowanceMap((prev) => {
+                        const pfMap = {
                           ...(prev.PF || {}),
-                          BaseSalary: checked ? true : prev.PF?.BaseSalary, // 🔥 FORCE BASE SALARY
+                          BaseSalary: prev.PF?.BaseSalary ?? false,
                           [a.Name]: checked,
-                        },
-                      }));
+                        };
 
-                      if (checked) {
-                        setActiveStatutory((prev) => ({ ...prev, PF: true }));
-                        activateDeductionWithBase("PF");
-                        setCalculatedAD((prev) => ({ ...prev, PF: true }));
-                      }
+                        // 🔑 does PF still have ANY allowance?
+                        const hasAnyPFAllowance = Object.values(pfMap).some(
+                          (v) => v === true,
+                        );
 
-                      // 🔥 ALWAYS sync allowanceSelected
+                        // ❌ last PF allowance removed → kill PF completely
+                        if (!hasAnyPFAllowance) {
+                          setActiveStatutory((p) => ({ ...p, PF: false }));
+
+                          setAdValueType((p) => {
+                            const c = { ...p };
+                            delete c.PF;
+                            return c;
+                          });
+
+                          setEditablePercentages((p) => {
+                            const c = { ...p };
+                            delete c.PF;
+                            return c;
+                          });
+
+                          setDeductionAmounts((p) => {
+                            const c = { ...p };
+                            delete c.PF;
+                            return c;
+                          });
+
+                          setAdFormula((p) => {
+                            const c = { ...p };
+                            delete c.PF;
+                            return c;
+                          });
+
+                          const newMap = { ...prev };
+                          delete newMap.PF;
+                          return newMap;
+                        }
+
+                        // ✅ PF still valid
+                        setActiveStatutory((p) => ({ ...p, PF: true }));
+
+                        // 🔥 initialize PF only when it becomes active
+                        if (checked && !prev.PF) {
+                          activateDeductionWithBase("PF");
+                        }
+
+                        return {
+                          ...prev,
+                          PF: pfMap,
+                        };
+                      });
+
+                      // 🔥 sync allowanceSelected (UI only)
                       setAllowanceSelected((prev) => ({
                         ...prev,
                         BaseSalary: true,
                         [a.Name]: checked,
                       }));
 
-                      // 🔥 ENSURE fixed allowance value is present
+                      // 🔥 ensure fixed allowance amount exists
                       if (checked && adValueType[a.Name] === "FIXED") {
                         setAllowanceAmounts((prev) => ({
                           ...prev,
@@ -2188,29 +2004,64 @@ export default function SGNEW() {
                     onChange={(e) => {
                       const checked = e.target.checked;
 
-                      setDeductionAllowanceMap((prev) => ({
-                        ...prev,
-                        ESI: {
+                      setDeductionAllowanceMap((prev) => {
+                        const esiMap = {
                           ...(prev.ESI || {}),
-                          BaseSalary: checked ? true : prev.ESI?.BaseSalary, // 🔥 FORCE BASE SALARY
+                          BaseSalary: prev.ESI?.BaseSalary ?? false,
                           [a.Name]: checked,
-                        },
-                      }));
+                        };
 
-                      if (checked) {
-                        setActiveStatutory((prev) => ({ ...prev, ESI: true }));
-                        activateDeductionWithBase("ESI");
-                        setCalculatedAD((prev) => ({ ...prev, ESI: true }));
-                      }
+                        const hasAnyESI = Object.values(esiMap).some(
+                          (v) => v === true,
+                        );
 
-                      // 🔥 ALWAYS sync allowanceSelected
+                        if (!hasAnyESI) {
+                          setActiveStatutory((p) => ({ ...p, ESI: false }));
+
+                          setAdValueType((p) => {
+                            const c = { ...p };
+                            delete c.ESI;
+                            return c;
+                          });
+
+                          setEditablePercentages((p) => {
+                            const c = { ...p };
+                            delete c.ESI;
+                            return c;
+                          });
+
+                          setDeductionAmounts((p) => {
+                            const c = { ...p };
+                            delete c.ESI;
+                            return c;
+                          });
+
+                          setAdFormula((p) => {
+                            const c = { ...p };
+                            delete c.ESI;
+                            return c;
+                          });
+
+                          const newMap = { ...prev };
+                          delete newMap.ESI;
+                          return newMap;
+                        }
+
+                        if (checked && !prev.ESI) {
+                          activateDeductionWithBase("ESI");
+                        }
+
+                        setActiveStatutory((p) => ({ ...p, ESI: true }));
+
+                        return { ...prev, ESI: esiMap };
+                      });
+
                       setAllowanceSelected((prev) => ({
                         ...prev,
                         BaseSalary: true,
                         [a.Name]: checked,
                       }));
 
-                      // 🔥 ENSURE fixed allowance value is present
                       if (checked && adValueType[a.Name] === "FIXED") {
                         setAllowanceAmounts((prev) => ({
                           ...prev,
@@ -2252,12 +2103,9 @@ export default function SGNEW() {
             }}
           >
             {otherAllowances.map((a) => {
-              const isPreviewPercent =
-                !adValueType[a.Name] && hasApiPercent(a.Name);
-
               const isPercentMode = adValueType[a.Name] === "PERCENT";
 
-              const disableAmount = isPreviewPercent || isPercentMode;
+              const disableAmount = isPercentMode;
 
               return (
                 <div
@@ -2406,7 +2254,7 @@ export default function SGNEW() {
                       </select>
                     </div>
                   ) : (
-                    /* NORMAL Allowances */
+                    /* OTHER Allowances */
                     <div
                       style={{
                         display: "flex",
@@ -2448,19 +2296,9 @@ export default function SGNEW() {
                           width: 32,
                           height: 28,
                           fontSize: 12,
-                          color:
-                            !adValueType[a.Name] && hasApiPercent(a.Name)
-                              ? "#94a3b8" // 🔥 light preview %
-                              : "#000",
+                          color: "#000",
                         }}
                       >
-                        {/* PREVIEW PLACEHOLDER (NOT A REAL OPTION) */}
-                        {!adValueType[a.Name] && hasApiPercent(a.Name) && (
-                          <option value="" hidden>
-                            %
-                          </option>
-                        )}
-
                         <option value="FIXED">#</option>
                         <option value="PERCENT">%</option>
                       </select>
@@ -2514,29 +2352,72 @@ export default function SGNEW() {
                     onChange={(e) => {
                       const checked = e.target.checked;
 
-                      setDeductionAllowanceMap((prev) => ({
-                        ...prev,
-                        PF: {
+                      setDeductionAllowanceMap((prev) => {
+                        const pfMap = {
                           ...(prev.PF || {}),
-                          BaseSalary: checked ? true : prev.PF?.BaseSalary, // 🔥 FORCE BASE SALARY
+                          BaseSalary: prev.PF?.BaseSalary ?? false,
                           [a.Name]: checked,
-                        },
-                      }));
+                        };
 
-                      if (checked) {
-                        setActiveStatutory((prev) => ({ ...prev, PF: true }));
-                        activateDeductionWithBase("PF");
-                        setCalculatedAD((prev) => ({ ...prev, PF: true }));
-                      }
+                        // 🔑 check if ANY PF source still exists
+                        const hasAnyPFSource = Object.values(pfMap).some(
+                          (v) => v === true,
+                        );
 
-                      // 🔥 ALWAYS sync allowanceSelected
+                        // ❌ last PF source removed → kill PF fully
+                        if (!hasAnyPFSource) {
+                          setActiveStatutory((p) => ({ ...p, PF: false }));
+
+                          setAdValueType((p) => {
+                            const c = { ...p };
+                            delete c.PF;
+                            return c;
+                          });
+
+                          setEditablePercentages((p) => {
+                            const c = { ...p };
+                            delete c.PF;
+                            return c;
+                          });
+
+                          setDeductionAmounts((p) => {
+                            const c = { ...p };
+                            delete c.PF;
+                            return c;
+                          });
+
+                          setAdFormula((p) => {
+                            const c = { ...p };
+                            delete c.PF;
+                            return c;
+                          });
+
+                          const newMap = { ...prev };
+                          delete newMap.PF;
+                          return newMap;
+                        }
+
+                        // ✅ PF still valid
+                        if (checked && !prev.PF) {
+                          activateDeductionWithBase("PF");
+                        }
+
+                        setActiveStatutory((p) => ({ ...p, PF: true }));
+
+                        return {
+                          ...prev,
+                          PF: pfMap,
+                        };
+                      });
+
+                      // 🔥 UI sync
                       setAllowanceSelected((prev) => ({
                         ...prev,
                         BaseSalary: true,
                         [a.Name]: checked,
                       }));
 
-                      // 🔥 ENSURE fixed allowance value is present
+                      // 🔥 ensure fixed OA value exists
                       if (checked && adValueType[a.Name] === "FIXED") {
                         setAllowanceAmounts((prev) => ({
                           ...prev,
@@ -2544,7 +2425,6 @@ export default function SGNEW() {
                         }));
                       }
                     }}
-                    style={{ transform: "scale(1.1)", justifySelf: "center" }}
                   />
 
                   <input
@@ -2553,29 +2433,64 @@ export default function SGNEW() {
                     onChange={(e) => {
                       const checked = e.target.checked;
 
-                      setDeductionAllowanceMap((prev) => ({
-                        ...prev,
-                        ESI: {
+                      setDeductionAllowanceMap((prev) => {
+                        const esiMap = {
                           ...(prev.ESI || {}),
-                          BaseSalary: checked ? true : prev.ESI?.BaseSalary, // 🔥 FORCE BASE SALARY
+                          BaseSalary: prev.ESI?.BaseSalary ?? false,
                           [a.Name]: checked,
-                        },
-                      }));
+                        };
 
-                      if (checked) {
-                        setActiveStatutory((prev) => ({ ...prev, ESI: true }));
-                        activateDeductionWithBase("ESI");
-                        setCalculatedAD((prev) => ({ ...prev, ESI: true }));
-                      }
+                        const hasAnyESI = Object.values(esiMap).some(
+                          (v) => v === true,
+                        );
 
-                      // 🔥 ALWAYS sync allowanceSelected
+                        if (!hasAnyESI) {
+                          setActiveStatutory((p) => ({ ...p, ESI: false }));
+
+                          setAdValueType((p) => {
+                            const c = { ...p };
+                            delete c.ESI;
+                            return c;
+                          });
+
+                          setEditablePercentages((p) => {
+                            const c = { ...p };
+                            delete c.ESI;
+                            return c;
+                          });
+
+                          setDeductionAmounts((p) => {
+                            const c = { ...p };
+                            delete c.ESI;
+                            return c;
+                          });
+
+                          setAdFormula((p) => {
+                            const c = { ...p };
+                            delete c.ESI;
+                            return c;
+                          });
+
+                          const newMap = { ...prev };
+                          delete newMap.ESI;
+                          return newMap;
+                        }
+
+                        if (checked && !prev.ESI) {
+                          activateDeductionWithBase("ESI");
+                        }
+
+                        setActiveStatutory((p) => ({ ...p, ESI: true }));
+
+                        return { ...prev, ESI: esiMap };
+                      });
+
                       setAllowanceSelected((prev) => ({
                         ...prev,
                         BaseSalary: true,
                         [a.Name]: checked,
                       }));
 
-                      // 🔥 ENSURE fixed allowance value is present
                       if (checked && adValueType[a.Name] === "FIXED") {
                         setAllowanceAmounts((prev) => ({
                           ...prev,
@@ -2674,7 +2589,9 @@ export default function SGNEW() {
                 fontSize: 12,
                 fontWeight: 600,
               }}
-              onClick={handleRefreshSelections}
+              onClick={() => {
+                resetAll();
+              }}
             >
               Refresh
             </button>
@@ -2688,7 +2605,7 @@ export default function SGNEW() {
           >
             {deductions.map((d) => {
               // compute REAL vs PREVIEW for this deduction
-              const isReal = !!calculatedAD[d.Name];
+              const isReal = adValueType[d.Name] === "FIXED";
               const valueType =
                 adValueType[d.Name] ||
                 (getEffectivePercentage(d.Name) ? "PERCENT" : "FIXED");
@@ -2733,17 +2650,6 @@ export default function SGNEW() {
                           ...prev,
                           [d.Name]: "PERCENT",
                         }));
-
-                        setCalculatedAD((prev) => ({
-                          ...prev,
-                          [d.Name]: true,
-                        }));
-
-                        // 🔥 Trigger recalculation safely
-                        setDeductionAmounts((prev) => ({
-                          ...prev,
-                          [d.Name]: prev[d.Name] || 0,
-                        }));
                       }}
                       style={{ transform: "scale(1.1)" }}
                     />
@@ -2769,11 +2675,6 @@ export default function SGNEW() {
                         setAdValueType((prev) => ({
                           ...prev,
                           [name]: "PERCENT",
-                        }));
-
-                        setCalculatedAD((prev) => ({
-                          ...prev,
-                          [name]: true,
                         }));
 
                         setDeductionAmounts((prev) => ({
@@ -2804,11 +2705,6 @@ export default function SGNEW() {
                         }));
 
                         if (type === "FIXED") {
-                          setCalculatedAD((prev) => ({
-                            ...prev,
-                            [d.Name]: false,
-                          }));
-
                           setEditablePercentages((prev) => ({
                             ...prev,
                             [d.Name]: "",
@@ -2829,14 +2725,7 @@ export default function SGNEW() {
                       <option value="PERCENT">%</option>
                       <option value="FIXED">#</option>
                     </select>
-                    {(d.Name === "PF"
-                      ? !!deductionAllowanceMap.PF?.BaseSalary &&
-                        adValueType.PF === "PERCENT"
-                      : d.Name === "ESI"
-                        ? !!deductionAllowanceMap.ESI?.BaseSalary &&
-                          adValueType.ESI === "PERCENT"
-                        : activeDeduction === d.Name &&
-                          adValueType[d.Name] === "PERCENT") && (
+                    {adValueType[d.Name] === "PERCENT" && (
                       <input
                         type="number"
                         style={{ width: 55, height: 28, fontSize: 12 }}
@@ -2854,7 +2743,6 @@ export default function SGNEW() {
                     <input
                       type="number"
                       className="form-control"
-                      disabled={isPercentage} // ⭐ THIS IS THE KEY LINE
                       style={{
                         width: 120,
                         height: "28px",
@@ -2865,10 +2753,7 @@ export default function SGNEW() {
                         cursor: isPercentage ? "not-allowed" : "text",
                         border: "1px solid #e5e7eb",
 
-                        color:
-                          isReal || adValueType[d.Name] === "FIXED"
-                            ? "#000"
-                            : "rgba(0,0,0,0.3)",
+                        color: "#000",
                       }}
                       value={deductionAmounts[d.Name] ?? ""}
                       onChange={(e) =>
@@ -2878,19 +2763,18 @@ export default function SGNEW() {
                         }))
                       }
                     />
-
-                    {/* FORMULA TEXT */}
-                    <span
-                      style={{
-                        fontSize: 12,
-                        color: "#555",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {adValueType[d.Name] === "PERCENT" && adFormula[d.Name]
-                        ? `= ${adFormula[d.Name]}`
-                        : ""}
-                    </span>
+                    {adValueType[d.Name] === "PERCENT" && adFormula[d.Name] && (
+                      <span
+                        style={{
+                          marginLeft: 8,
+                          fontSize: 12,
+                          color: "#475569", // subtle gray
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        = {adFormula[d.Name]}
+                      </span>
+                    )}
                   </div>
 
                   {/* FX BUTTON */}
@@ -3014,7 +2898,7 @@ export default function SGNEW() {
             }}
           >
             {otherDeductions.map((d) => {
-              const isReal = !!calculatedAD[d.Name];
+              const isReal = adValueType[d.Name] === "FIXED";
               const valueType =
                 adValueType[d.Name] ||
                 (getEffectivePercentage(d.Name) ? "PERCENT" : "FIXED");
@@ -3059,11 +2943,6 @@ export default function SGNEW() {
                         ...prev,
                         [name]: "PERCENT",
                       }));
-
-                      setCalculatedAD((prev) => ({
-                        ...prev,
-                        [name]: true,
-                      }));
                     }}
                     style={{ transform: "scale(1.1)" }}
                   />
@@ -3086,11 +2965,6 @@ export default function SGNEW() {
                         }));
 
                         if (type === "FIXED") {
-                          setCalculatedAD((prev) => ({
-                            ...prev,
-                            [d.Name]: false,
-                          }));
-
                           setEditablePercentages((prev) => ({
                             ...prev,
                             [d.Name]: "",
@@ -3130,7 +3004,6 @@ export default function SGNEW() {
                     <input
                       type="number"
                       className="form-control"
-                      disabled={isPercentage} // ⭐ THIS IS THE KEY LINE
                       style={{
                         width: 120,
                         height: "28px",
@@ -3141,10 +3014,7 @@ export default function SGNEW() {
                         cursor: isPercentage ? "not-allowed" : "text",
                         border: "1px solid #e5e7eb",
 
-                        color:
-                          isReal || adValueType[d.Name] === "FIXED"
-                            ? "#000"
-                            : "rgba(0,0,0,0.3)",
+                        color: "#000",
                       }}
                       value={deductionAmounts[d.Name] ?? ""}
                       onChange={(e) => {
@@ -3162,12 +3032,6 @@ export default function SGNEW() {
                           [d.Name]: "FIXED",
                         }));
 
-                        // 3️⃣ MARK AS REAL (not preview)
-                        setCalculatedAD((prev) => ({
-                          ...prev,
-                          [d.Name]: true,
-                        }));
-
                         // 4️⃣ REMOVE formula (fixed has none)
                         setAdFormula((prev) => ({
                           ...prev,
@@ -3175,19 +3039,6 @@ export default function SGNEW() {
                         }));
                       }}
                     />
-
-                    {/* FORMULA TEXT */}
-                    <span
-                      style={{
-                        fontSize: 12,
-                        color: "#555",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {adValueType[d.Name] === "PERCENT" && adFormula[d.Name]
-                        ? `= ${adFormula[d.Name]}`
-                        : ""}
-                    </span>
                   </div>
 
                   {/* PER DAY checkbox (only for selected items) */}
