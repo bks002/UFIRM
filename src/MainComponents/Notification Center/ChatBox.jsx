@@ -54,6 +54,7 @@ const ChatBox = ({ remarks = [], onSend, status, context, assetData }) => {
 
   const chatEndRef = useRef(null);
 
+  
 
   const handleSend = async () => {
     if (context === "asset") {
