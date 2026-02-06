@@ -22,8 +22,12 @@ import TicketCategoriesPage from "../pages/TicketCategoriesPage";
 import PropertyTower from "../pages/PropertyTowerPage";
 import PropertyAssignmentPage from "../pages/PropertyAssignmentPage";
 import ParkingDetailsPage from "../pages/ParkingDetailsPage";
+<<<<<<< HEAD
 import FacilityMemberPage from "../MainComponents/FacilityMember/FacilityMember";
 import FacilityMember from "../MainComponents/FacilityMember/FacilityMember.jsx";
+=======
+import FacilityMember from "../MainComponents/FacilityMember/FacilityMember";
+>>>>>>> origin/development
 import FacilityLatlongPage from "../pages/FacilityLatlongPage";
 import ParkingAssignmentPage from "../pages/ParkingAssignmentsPage";
 import EmergencyContactPage from "../pages/EmergencyContactPage";
@@ -150,7 +154,6 @@ class MainNav extends React.Component {
   }
 
   componentDidMount() {
-
 
     var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
 
@@ -288,12 +291,12 @@ class MainNav extends React.Component {
                   role="menu"
                   data-accordion="false"
                 >
-                  <li className="nav-item has-treeview">
+                  {/* <li className="nav-item has-treeview">
                     <a href="#" className="nav-link">
                       <i className="nav-icon fas fa-tachometer-alt"></i>
                       <p>Dashboard</p>
                     </a>
-                  </li>
+                  </li> */}
                   {this.state.userRoles &&
                   (this.state.userRoles.includes("Admin") ||
                     this.state.userRoles.includes("Property Manager") ||
@@ -382,7 +385,7 @@ class MainNav extends React.Component {
                             <p>Tasks Analysis</p>
                           </Link>
                         </li> */}
-                        <li className="nav-item">
+                        {/* <li className="nav-item">
                           <Link
                             to="/Account/App/TaskEventsCalender"
                             className="nav-link"
@@ -390,7 +393,7 @@ class MainNav extends React.Component {
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Task Calendar</p>
                           </Link>
-                        </li>
+                        </li> */}
                         <li className="nav-item">
                           <Link
                             to="/Account/App/PPMSpreadsheet"
@@ -1367,7 +1370,7 @@ class MainNav extends React.Component {
               <UserProfile />
             </Route>
             <Route path="/Account/App/FacilityMember">
-              <FacilityMemberPage/>
+              <FacilityMember/>
             </Route>
             <Route path="/Account/App/CreateNewUser">
               <CreateNewUser />

@@ -54,6 +54,11 @@ const ChatBox = ({ remarks = [], onSend, status, context, assetData }) => {
 
   const chatEndRef = useRef(null);
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> origin/development
   const handleSend = async () => {
     if (context === "asset") {
       // ✅ Validation
@@ -199,15 +204,15 @@ const ChatBox = ({ remarks = [], onSend, status, context, assetData }) => {
 
           {context === "task"
             ? currentStatus === "Actionable" && (
-                <Button variant="success" onClick={handleMarkComplete}>
-                  Mark as Complete
-                </Button>
-              )
+              <Button variant="success" onClick={handleMarkComplete}>
+                Mark as Complete
+              </Button>
+            )
             : statusOptions.length > 1 && (
-                <Button variant="secondary" onClick={toggleStatus}>
-                  Change Status
-                </Button>
-              )}
+              <Button variant="secondary" onClick={toggleStatus}>
+                Change Status
+              </Button>
+            )}
         </div>
       )}
 
@@ -217,10 +222,10 @@ const ChatBox = ({ remarks = [], onSend, status, context, assetData }) => {
           context === "asset"
             ? {}
             : {
-                maxHeight: "300px",
-                display: "flex",
-                flexDirection: "column",
-              }
+              maxHeight: "300px",
+              display: "flex",
+              flexDirection: "column",
+            }
         }
       >
         {context !== "asset" && (
@@ -263,9 +268,9 @@ const ChatBox = ({ remarks = [], onSend, status, context, assetData }) => {
 
                         return (
                           <>
-                            <div style={{ fontWeight: "600" }}>
+                            <div style={{ fontWeight: 600, color: "#000" }}>
                               {label}:{" "}
-                              <span style={{ fontWeight: "normal" }}>
+                              <span style={{ fontWeight: 400, color: "#000" }}>
                                 {message}
                               </span>
                             </div>
@@ -273,14 +278,16 @@ const ChatBox = ({ remarks = [], onSend, status, context, assetData }) => {
                             {finalDate && (
                               <div
                                 style={{
-                                  fontSize: "12px",
-                                  color: "#555",
+                                  fontSize: "13px",
+                                  fontWeight: 400,
+                                  color: "#000",
                                   marginTop: "4px",
                                 }}
                               >
                                 {finalDate}
                               </div>
                             )}
+
                           </>
                         );
                       })()}

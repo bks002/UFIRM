@@ -9,6 +9,7 @@ import { DELETE_CONFIRMATION_MSG } from '../../Contants/Common';
 import { getCategories, getCategoryById, createCategory, updateCategory, deleteCategory, PendingApprovalCategory } from "../../Services/InventoryService";
 import { useSelector, useDispatch } from 'react-redux';
 import ExportToCSV from '../../ReactComponents/ExportToCSV/ExportToCSV.js';
+import ApprovalModal, { ApprovalTriggerButton } from "./ApprovalPage";
 
 // Icons for Panel View
 const TableViewIcon = () => (
@@ -232,8 +233,7 @@ const Category = (props) => {
     const [importError, setImportError] = useState("");
     const [isDragging, setIsDragging] = useState(false);
     const [categoryHistory, setCategoryHistory] = useState([]);
-    const [selectedPendingIds, setSelectedPendingIds] = useState([]);
-    const [bulkActionLoading, setBulkActionLoading] = useState(false);
+    const [showApprovalModal, setShowApprovalModal] = useState(false);
     const fileInputRef = useRef(null);
 
     const gridHeader = [
@@ -354,59 +354,23 @@ const Category = (props) => {
         }
     };
 
-    // Bulk selection handlers
-    const handleSelectPending = (id) => {
-        setSelectedPendingIds(prev => {
-            if (prev.includes(id)) {
-                return prev.filter(itemId => itemId !== id);
-            } else {
-                return [...prev, id];
-            }
-        });
-    };
-
-    const handleSelectAllPending = () => {
-        if (selectedPendingIds.length === GridApproval.length) {
-            setSelectedPendingIds([]);
-        } else {
-            setSelectedPendingIds(GridApproval.map(item => item.Id));
-        }
-    };
-
-    const isAllPendingSelected = GridApproval.length > 0 && selectedPendingIds.length === GridApproval.length;
-    const isSomePendingSelected = selectedPendingIds.length > 0 && selectedPendingIds.length < GridApproval.length;
-
-    // Bulk approve handler
-    const handleBulkApprove = async () => {
-        if (selectedPendingIds.length === 0) {
-            appCommon.showtextalert("No Selection", "Please select at least one category to approve.", "warning");
-            return;
-        }
-
-        setBulkActionLoading(true);
+    // Bulk approve handler for approval modal
+    const handleCategoryBulkApprove = async (ids) => {
         try {
-            await bulkApproveCategories(selectedPendingIds, propertyId, userId || 0);
-            appCommon.showtextalert("Success", `${selectedPendingIds.length} category(ies) approved successfully!`, "success");
-            setSelectedPendingIds([]);
+            await bulkApproveCategories(ids, propertyId, userId || 0);
+            appCommon.showtextalert("Success", `${ids.length} category(ies) approved successfully!`, "success");
             await getPendingCategoryList(propertyId);
             await getCategoriesList(propertyId);
         } catch (error) {
             appCommon.showtextalert("Error", "Failed to approve categories. Please try again.", "error");
             console.error("Bulk approve error:", error);
-        } finally {
-            setBulkActionLoading(false);
         }
     };
 
-    // Bulk reject handler
-    const handleBulkReject = async () => {
-        if (selectedPendingIds.length === 0) {
-            appCommon.showtextalert("No Selection", "Please select at least one category to reject.", "warning");
-            return;
-        }
-
+    // Bulk reject handler for approval modal
+    const handleCategoryBulkReject = async (ids) => {
         let myhtml = document.createElement("div");
-        myhtml.innerHTML = `Are you sure you want to reject ${selectedPendingIds.length} selected category(ies)?`;
+        myhtml.innerHTML = `Are you sure you want to reject ${ids.length} selected category(ies)?`;
         swal({
             buttons: {
                 ok: "Yes, Reject",
@@ -418,22 +382,25 @@ const Category = (props) => {
             dangerMode: true
         }).then(async (value) => {
             if (value === "ok") {
-                setBulkActionLoading(true);
                 try {
-                    await bulkRejectCategories(selectedPendingIds, propertyId, userId || 0);
-                    appCommon.showtextalert("Success", `${selectedPendingIds.length} category(ies) rejected successfully!`, "success");
-                    setSelectedPendingIds([]);
+                    await bulkRejectCategories(ids, propertyId, userId || 0);
+                    appCommon.showtextalert("Success", `${ids.length} category(ies) rejected successfully!`, "success");
                     await getPendingCategoryList(propertyId);
                     await getCategoriesList(propertyId);
                 } catch (error) {
                     appCommon.showtextalert("Error", "Failed to reject categories. Please try again.", "error");
                     console.error("Bulk reject error:", error);
-                } finally {
-                    setBulkActionLoading(false);
                 }
             }
         });
     };
+
+    // Category approval modal columns
+    const approvalColumns = [
+        { key: 'Id', label: 'Id' },
+        { key: 'Name', label: 'Name' },
+        { key: 'Description', label: 'Description' },
+    ];
 
     const onGridDelete = (categoryData) => {
         let myhtml = document.createElement("div");
@@ -506,6 +473,7 @@ const Category = (props) => {
         setCategoryData(emptycategorydata);
         setOriginalCategoryData(null);
         getCategoriesList(propertyId);
+        getPendingCategoryList(propertyId);
     };
 
     const handleInputChange = (e) => {
@@ -676,135 +644,6 @@ const Category = (props) => {
     const handleDownloadTemplate = () => {
         // Template download - server doesn't have template yet
         appCommon.showtextalert("Template Unavailable", "The FIRMITY Category Template will be available soon.", "info");
-    };
-
-    // Render Pending Approval Section with new styling
-    const renderPendingApproval = () => {
-        if (GridApproval.length === 0 || pageMode !== "Home") return null;
-
-        return (
-            <div className="category-pending-approval">
-                <div className="category-pending-header">
-                    <div className="category-pending-header-left">
-                        <span className="category-pending-title">Pending For Approval</span>
-                        <span className="category-pending-count">{GridApproval.length}</span>
-                    </div>
-                    <div className="category-pending-header-right">
-                        {selectedPendingIds.length > 0 && (
-                            <span className="category-pending-selected">
-                                {selectedPendingIds.length} selected
-                            </span>
-                        )}
-                        <button
-                            className="category-bulk-btn approve"
-                            onClick={handleBulkApprove}
-                            disabled={selectedPendingIds.length === 0 || bulkActionLoading}
-                            title="Approve Selected"
-                        >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                            Bulk Approve
-                        </button>
-                        <button
-                            className="category-bulk-btn reject"
-                            onClick={handleBulkReject}
-                            disabled={selectedPendingIds.length === 0 || bulkActionLoading}
-                            title="Reject Selected"
-                        >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                                <line x1="18" y1="6" x2="6" y2="18"/>
-                                <line x1="6" y1="6" x2="18" y2="18"/>
-                            </svg>
-                            Bulk Reject
-                        </button>
-                    </div>
-                </div>
-                <div className="category-pending-table">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th className="category-checkbox-col">
-                                    <label className="category-checkbox-wrapper">
-                                        <input
-                                            type="checkbox"
-                                            checked={isAllPendingSelected}
-                                            ref={input => {
-                                                if (input) {
-                                                    input.indeterminate = isSomePendingSelected;
-                                                }
-                                            }}
-                                            onChange={handleSelectAllPending}
-                                        />
-                                        <span className="category-checkbox-custom"></span>
-                                    </label>
-                                </th>
-                                <th>Id</th>
-                                <th>Name</th>
-                                <th>Description</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {GridApproval.map((item) => (
-                                <tr key={item.Id} className={selectedPendingIds.includes(item.Id) ? 'selected' : ''}>
-                                    <td className="category-checkbox-col">
-                                        <label className="category-checkbox-wrapper">
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedPendingIds.includes(item.Id)}
-                                                onChange={() => handleSelectPending(item.Id)}
-                                            />
-                                            <span className="category-checkbox-custom"></span>
-                                        </label>
-                                    </td>
-                                    <td>{item.Id}</td>
-                                    <td>{item.Name}</td>
-                                    <td>{item.Description}</td>
-                                    <td>
-                                        <div className="category-pending-actions">
-                                            <button
-                                                className="category-action-btn edit"
-                                                onClick={() => onGridEdit(item.Id)}
-                                                title="Edit"
-                                            >
-                                                <EditIcon />
-                                            </button>
-                                            <button
-                                                className="category-action-btn view"
-                                                onClick={() => onGridView(item.Id)}
-                                                title="View"
-                                            >
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                                    <circle cx="12" cy="12" r="3"/>
-                                                </svg>
-                                            </button>
-                                            <button
-                                                className="category-action-btn delete"
-                                                onClick={() => onGridDelete(item.Id)}
-                                                title="Delete"
-                                            >
-                                                <DeleteIcon />
-                                            </button>
-                                            <button
-                                                className="category-action-btn approve"
-                                                onClick={() => onGridApprove(item.Id)}
-                                                title="Approve"
-                                            >
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                                                    <polyline points="20 6 9 17 4 12"/>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        );
     };
 
     // Import Modal
@@ -1171,8 +1010,20 @@ const Category = (props) => {
                 <span className="breadcrumb-current">Category</span>
             </div>
 
-            {/* Pending Approval Section */}
-            {renderPendingApproval()}
+            {/* Approval Modal Dialog */}
+            <ApprovalModal
+                show={showApprovalModal}
+                onClose={() => setShowApprovalModal(false)}
+                gridData={GridApproval}
+                columns={approvalColumns}
+                entityName="Category"
+                onEdit={onGridEdit}
+                onDelete={onGridDelete}
+                onApprove={onGridApprove}
+                onView={onGridView}
+                onBulkApprove={handleCategoryBulkApprove}
+                onBulkReject={handleCategoryBulkReject}
+            />
 
             {pageMode === 'Home' && (
                 <div className="row">
@@ -1200,6 +1051,7 @@ const Category = (props) => {
                                 </div>
                             </div>
                             <div className="category-header-actions">
+                                <ApprovalTriggerButton count={GridApproval.length} onClick={() => setShowApprovalModal(true)} />
                                 <div className="category-search-box">
                                     <span className="search-icon">
                                         <SearchIcon />
