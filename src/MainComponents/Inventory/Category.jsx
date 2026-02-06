@@ -179,6 +179,45 @@ const formatTimestamp = (dateString) => {
            date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 };
 
+// API functions for bulk approve/reject
+const bulkApproveCategories = async (categoryIds, propertyId, changedBy) => {
+    const response = await fetch('https://api.urest.in:8096/api/inventory/categories/approve', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            CategoryIds: categoryIds,
+            PropertyId: propertyId,
+            ChangedBy: changedBy
+        })
+    });
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+    }
+    return response.json();
+};
+
+const bulkRejectCategories = async (categoryIds, propertyId, changedBy) => {
+    const response = await fetch('https://api.urest.in:8096/api/inventory/categories/reject', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            CategoryIds: categoryIds,
+            PropertyId: propertyId,
+            ChangedBy: changedBy
+        })
+    });
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+    }
+    return response.json();
+};
+
 const Category = (props) => {
     const [pageMode, setPageMode] = useState("Home");
     const [viewMode, setViewMode] = useState("panel");
@@ -193,6 +232,8 @@ const Category = (props) => {
     const [importError, setImportError] = useState("");
     const [isDragging, setIsDragging] = useState(false);
     const [categoryHistory, setCategoryHistory] = useState([]);
+    const [selectedPendingIds, setSelectedPendingIds] = useState([]);
+    const [bulkActionLoading, setBulkActionLoading] = useState(false);
     const fileInputRef = useRef(null);
 
     const gridHeader = [
@@ -202,24 +243,27 @@ const Category = (props) => {
         { sTitle: 'Action', titleValue: 'Action', Action: "Edit&View&Delete", Index: '0', "orderable": false },
     ];
     const propertyId = useSelector((state) => state.Commonreducer.puidn);
+    const userId = useSelector((state) => state.Commonreducer.userId);
     const [loading, setLoading] = useState(false);
     const emptycategorydata = { Id: 0, Name: '', Description: '', propertyId: propertyId, IsApproved: false };
     const [categoryData, setCategoryData] = useState(emptycategorydata);
     const [originalCategoryData, setOriginalCategoryData] = useState(null);
     const dispatch = useDispatch();
 
-    // Load history when category is selected
-    useEffect(() => {
-        const loadHistory = async () => {
-            if (selectedCategory && propertyId) {
-                const history = await getCategoryHistoryFromAPI(propertyId, selectedCategory.Id);
-                setCategoryHistory(history);
-            } else {
-                setCategoryHistory([]);
-            }
-        };
-        loadHistory();
+    // Function to refresh history
+    const refreshHistory = useCallback(async () => {
+        if (selectedCategory && propertyId) {
+            const history = await getCategoryHistoryFromAPI(propertyId, selectedCategory.Id);
+            setCategoryHistory(history);
+        } else {
+            setCategoryHistory([]);
+        }
     }, [selectedCategory, propertyId]);
+
+    // Load history when category is selected or when switching to history tab
+    useEffect(() => {
+        refreshHistory();
+    }, [selectedCategory, propertyId, activeTab, refreshHistory]);
 
     const getPendingCategoryList = useCallback(async (propertyId) => {
         try {
@@ -260,7 +304,7 @@ const Category = (props) => {
     const handleCreateCategory = async (newCategory) => {
         try {
             await createCategory(newCategory);
-            appCommon.showtextalert("Category Saved Successfully!", "", "success");
+            appCommon.showtextalert("Category Saved for Approval!", "", "success");
             handleCancel();
             await getPendingCategoryList(propertyId);
             await getCategoriesList(propertyId);
@@ -308,6 +352,87 @@ const Category = (props) => {
             appCommon.showtextalert("Error Approving Category", error.message, "error");
             console.error("Error approving category:", error);
         }
+    };
+
+    // Bulk selection handlers
+    const handleSelectPending = (id) => {
+        setSelectedPendingIds(prev => {
+            if (prev.includes(id)) {
+                return prev.filter(itemId => itemId !== id);
+            } else {
+                return [...prev, id];
+            }
+        });
+    };
+
+    const handleSelectAllPending = () => {
+        if (selectedPendingIds.length === GridApproval.length) {
+            setSelectedPendingIds([]);
+        } else {
+            setSelectedPendingIds(GridApproval.map(item => item.Id));
+        }
+    };
+
+    const isAllPendingSelected = GridApproval.length > 0 && selectedPendingIds.length === GridApproval.length;
+    const isSomePendingSelected = selectedPendingIds.length > 0 && selectedPendingIds.length < GridApproval.length;
+
+    // Bulk approve handler
+    const handleBulkApprove = async () => {
+        if (selectedPendingIds.length === 0) {
+            appCommon.showtextalert("No Selection", "Please select at least one category to approve.", "warning");
+            return;
+        }
+
+        setBulkActionLoading(true);
+        try {
+            await bulkApproveCategories(selectedPendingIds, propertyId, userId || 0);
+            appCommon.showtextalert("Success", `${selectedPendingIds.length} category(ies) approved successfully!`, "success");
+            setSelectedPendingIds([]);
+            await getPendingCategoryList(propertyId);
+            await getCategoriesList(propertyId);
+        } catch (error) {
+            appCommon.showtextalert("Error", "Failed to approve categories. Please try again.", "error");
+            console.error("Bulk approve error:", error);
+        } finally {
+            setBulkActionLoading(false);
+        }
+    };
+
+    // Bulk reject handler
+    const handleBulkReject = async () => {
+        if (selectedPendingIds.length === 0) {
+            appCommon.showtextalert("No Selection", "Please select at least one category to reject.", "warning");
+            return;
+        }
+
+        let myhtml = document.createElement("div");
+        myhtml.innerHTML = `Are you sure you want to reject ${selectedPendingIds.length} selected category(ies)?`;
+        swal({
+            buttons: {
+                ok: "Yes, Reject",
+                cancel: "No",
+            },
+            content: myhtml,
+            icon: "warning",
+            closeOnClickOutside: false,
+            dangerMode: true
+        }).then(async (value) => {
+            if (value === "ok") {
+                setBulkActionLoading(true);
+                try {
+                    await bulkRejectCategories(selectedPendingIds, propertyId, userId || 0);
+                    appCommon.showtextalert("Success", `${selectedPendingIds.length} category(ies) rejected successfully!`, "success");
+                    setSelectedPendingIds([]);
+                    await getPendingCategoryList(propertyId);
+                    await getCategoriesList(propertyId);
+                } catch (error) {
+                    appCommon.showtextalert("Error", "Failed to reject categories. Please try again.", "error");
+                    console.error("Bulk reject error:", error);
+                } finally {
+                    setBulkActionLoading(false);
+                }
+            }
+        });
     };
 
     const onGridDelete = (categoryData) => {
@@ -533,6 +658,10 @@ const Category = (props) => {
     setShowImportModal(false);
     setImportFile(null);
     setImportError("");
+
+    // Refresh both pending and approved lists after import
+    await getPendingCategoryList(propertyId);
+    await getCategoriesList(propertyId);
   } catch (error) {
     console.error(error);
     setImportError("Upload failed. Please check the file format and try again.");
@@ -556,13 +685,60 @@ const Category = (props) => {
         return (
             <div className="category-pending-approval">
                 <div className="category-pending-header">
-                    <span className="category-pending-title">Pending For Approval</span>
-                    <span className="category-pending-count">{GridApproval.length}</span>
+                    <div className="category-pending-header-left">
+                        <span className="category-pending-title">Pending For Approval</span>
+                        <span className="category-pending-count">{GridApproval.length}</span>
+                    </div>
+                    <div className="category-pending-header-right">
+                        {selectedPendingIds.length > 0 && (
+                            <span className="category-pending-selected">
+                                {selectedPendingIds.length} selected
+                            </span>
+                        )}
+                        <button
+                            className="category-bulk-btn approve"
+                            onClick={handleBulkApprove}
+                            disabled={selectedPendingIds.length === 0 || bulkActionLoading}
+                            title="Approve Selected"
+                        >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            Bulk Approve
+                        </button>
+                        <button
+                            className="category-bulk-btn reject"
+                            onClick={handleBulkReject}
+                            disabled={selectedPendingIds.length === 0 || bulkActionLoading}
+                            title="Reject Selected"
+                        >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                            Bulk Reject
+                        </button>
+                    </div>
                 </div>
                 <div className="category-pending-table">
                     <table>
                         <thead>
                             <tr>
+                                <th className="category-checkbox-col">
+                                    <label className="category-checkbox-wrapper">
+                                        <input
+                                            type="checkbox"
+                                            checked={isAllPendingSelected}
+                                            ref={input => {
+                                                if (input) {
+                                                    input.indeterminate = isSomePendingSelected;
+                                                }
+                                            }}
+                                            onChange={handleSelectAllPending}
+                                        />
+                                        <span className="category-checkbox-custom"></span>
+                                    </label>
+                                </th>
                                 <th>Id</th>
                                 <th>Name</th>
                                 <th>Description</th>
@@ -571,7 +747,17 @@ const Category = (props) => {
                         </thead>
                         <tbody>
                             {GridApproval.map((item) => (
-                                <tr key={item.Id}>
+                                <tr key={item.Id} className={selectedPendingIds.includes(item.Id) ? 'selected' : ''}>
+                                    <td className="category-checkbox-col">
+                                        <label className="category-checkbox-wrapper">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedPendingIds.includes(item.Id)}
+                                                onChange={() => handleSelectPending(item.Id)}
+                                            />
+                                            <span className="category-checkbox-custom"></span>
+                                        </label>
+                                    </td>
                                     <td>{item.Id}</td>
                                     <td>{item.Name}</td>
                                     <td>{item.Description}</td>
@@ -906,29 +1092,36 @@ const Category = (props) => {
                                                         ) : (
                                                             <>
                                                                 <p className="category-history-action">
-                                                                    {entry.FieldName === 'IsApproved' && entry.After === 'True' 
-                                                                        ? 'Category Approved' 
+                                                                    {entry.FieldName === 'IsApproved'
+                                                                        ? (entry.After === 'True' || entry.After === '1' ? 'Approved' : 'Rejected')
                                                                         : `Changed ${entry.FieldName ? `the ${entry.FieldName.toLowerCase()}` : 'a field'}`
                                                                     }
                                                                 </p>
                                                                 {entry.Before !== null && entry.After !== null && (
                                                                     <div className="category-history-changes">
-                                                                        <span className="old-value">"{entry.Before}"</span>
+                                                                        <span className="old-value">
+                                                                            "{entry.FieldName === 'IsApproved'
+                                                                                ? (entry.Before === 'True' || entry.Before === '1' ? 'Approved' : 'Awaiting')
+                                                                                : entry.Before}"
+                                                                        </span>
                                                                         <span className="arrow">→</span>
-                                                                        <span className="new-value">"{entry.After}"</span>
+                                                                        <span className="new-value">
+                                                                            "{entry.FieldName === 'IsApproved'
+                                                                                ? (entry.After === 'True' || entry.After === '1' ? 'Approved' : 'Awaiting')
+                                                                                : entry.After}"
+                                                                        </span>
                                                                     </div>
                                                                 )}
                                                             </>
                                                         )}
                                                         
                                                         <div className="category-history-timer">
-                                                            <div className="timer-info">
-                                                                <span 
-                                                                className="timer-date">
-                                                                    {new Date(entry.ChangedOn).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                                            <span className="timer-date">
+                                                                {new Date(entry.ChangedOn).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                            </span>
+                                                            <span className="timer-separator">•</span>
                                                             <ClockIcon />
-                                                                <span className="timer-countdown">{getDaysRemaining(entry.DaysRemaining)} days until auto-delete</span>
-                                                            </div>
+                                                            <span className="timer-countdown">{getDaysRemaining(entry.DaysRemaining)} days until auto-delete</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1069,63 +1262,107 @@ const Category = (props) => {
             {/* Import Modal */}
             {renderImportModal()}
 
-            {/* Add/Edit Modal */}
+            {/* Add/Edit Modal - MaintainX Style */}
             {(pageMode === 'Add' || pageMode === 'Edit') && (
-                <div className="modal d-flex align-items-center justify-content-center show" tabIndex="-1" role="dialog">
-                    <div className="modal-dialog modal-lg" role="document">
-                        <div className="modal-content">
-                            <div className="modal-header">
-                                <h5 className="modal-title" id="exampleModalToggleLabel">
-                                    {pageMode === 'Add' ? "Add Category" : "Edit Category"}
-                                </h5>
+                <div className="category-modal-overlay">
+                    <div className="category-edit-modal">
+                        <div className="category-edit-modal-header">
+                            <div className="category-edit-modal-icon">
+                                {pageMode === 'Add' ? (
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                                        <line x1="12" y1="5" x2="12" y2="19"/>
+                                        <line x1="5" y1="12" x2="19" y2="12"/>
+                                    </svg>
+                                ) : (
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                    </svg>
+                                )}
                             </div>
-                            <div className="modal-body">
-                                <div className="row">
-                                    <div className="col-12">
-                                        <label htmlFor="Name">Category Name</label>
-                                        <input
-                                            id="Name"
-                                            required
-                                            placeholder="Enter Category Name"
-                                            type="text"
-                                            className="form-control"
-                                            value={categoryData.Name}
-                                            onChange={handleInputChange}
-                                        />
-                                    </div>
-                                    <div className="col-12 mt-3">
-                                        <label htmlFor="Description">Description</label>
-                                        <input
-                                            id="Description"
-                                            required
-                                            placeholder="Enter Description"
-                                            type="text"
-                                            className="form-control"
-                                            value={categoryData.Description}
-                                            onChange={handleInputChange}
-                                        />
-                                    </div>
-                                </div>
+                            <div className="category-edit-modal-title-section">
+                                <h3>{pageMode === 'Add' ? "Create New Category" : "Edit Category"}</h3>
+                                <p>{pageMode === 'Add' ? "Add a new category to organize your inventory" : "Update the category details below"}</p>
                             </div>
-                            <div className="modal-footer justify-content-start">
-                                <Button Id="btnSave" Text="Save" Action={handleSave}
-                                    ClassName="btn btn-primary" />
-                                <Button Id="btnCancel" Text="Cancel" Action={handleCancel}
-                                    ClassName="btn btn-secondary" />
-                                <ToastContainer
-                                    position="top-right"
-                                    autoClose={5000}
-                                    hideProgressBar={false}
-                                    newestOnTop={false}
-                                    closeOnClick
-                                    rtl={false}
-                                    pauseOnFocusLoss
-                                    draggable
-                                    pauseOnHover
+                            <button className="category-edit-modal-close" onClick={handleCancel}>
+                                <CloseIcon />
+                            </button>
+                        </div>
+                        <div className="category-edit-modal-body">
+                            <div className="category-edit-form-group">
+                                <label htmlFor="Name">
+                                    Category Name <span className="required">*</span>
+                                </label>
+                                <input
+                                    id="Name"
+                                    required
+                                    placeholder="e.g., Electronics, Furniture, Office Supplies"
+                                    type="text"
+                                    className="category-edit-input"
+                                    value={categoryData.Name}
+                                    onChange={handleInputChange}
                                 />
                             </div>
+                            <div className="category-edit-form-group">
+                                <label htmlFor="Description">
+                                    Description <span className="required">*</span>
+                                </label>
+                                <textarea
+                                    id="Description"
+                                    required
+                                    placeholder="Provide a brief description of this category..."
+                                    className="category-edit-textarea"
+                                    value={categoryData.Description}
+                                    onChange={handleInputChange}
+                                    rows="3"
+                                />
+                            </div>
+                            {pageMode === 'Edit' && categoryData.Id && (
+                                <div className="category-edit-info-badge">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <line x1="12" y1="16" x2="12" y2="12"/>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                                    </svg>
+                                    <span>Category ID: {categoryData.Id}</span>
+                                </div>
+                            )}
+                        </div>
+                        <div className="category-edit-modal-footer">
+                            <button className="category-edit-btn-cancel" onClick={handleCancel}>
+                                Cancel
+                            </button>
+                            <button className="category-edit-btn-save" onClick={handleSave}>
+                                {pageMode === 'Add' ? (
+                                    <>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                                            <line x1="12" y1="5" x2="12" y2="19"/>
+                                            <line x1="5" y1="12" x2="19" y2="12"/>
+                                        </svg>
+                                        Create Category
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                                            <polyline points="20 6 9 17 4 12"/>
+                                        </svg>
+                                        Save Changes
+                                    </>
+                                )}
+                            </button>
                         </div>
                     </div>
+                    <ToastContainer
+                        position="top-right"
+                        autoClose={5000}
+                        hideProgressBar={false}
+                        newestOnTop={false}
+                        closeOnClick
+                        rtl={false}
+                        pauseOnFocusLoss
+                        draggable
+                        pauseOnHover
+                    />
                 </div>
             )}
 
