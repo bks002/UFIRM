@@ -114,17 +114,24 @@ export async function deleteSalaryAllowance(salaryGroupId) {
   }
 }
 
-export async function updateSalaryAllowance(salaryGroupId, model) {
+export async function updateSalaryAllowance(model) {
   try {
-    const response = await fetch(`${SALARY_API_BASE_URL}/${salaryGroupId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify(model),
-    });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const response = await fetch(
+      `${SALARY_API_BASE_URL}/update`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(model),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
     return await response.json();
   } catch (error) {
     console.error("Error updating salary allowance:", error);

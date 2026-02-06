@@ -720,12 +720,14 @@ export default function SGNEW() {
       const isUpdate = !!existingSG;
 
       const model = {
-        // ✅ NEW: multiple SG IDs
+        // ✅ PUT API expects ARRAY
         SalaryGroup_IDs: isUpdate ? existingSG.SalaryGroup_IDs : [],
 
         SalaryGroup: form.salaryGroupName,
         BaseSalary: Number(form.baseSalary),
-        PropertyIds: selectedPropertyId,
+
+        // 🔥 FIXED KEY (THIS WAS THE BUG)
+        Property_IDs: selectedPropertyId,
 
         PFLimit: pfLimit ? Number(pfLimit) : null,
         ESILimit: esiLimit ? Number(esiLimit) : null,
