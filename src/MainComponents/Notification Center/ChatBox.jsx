@@ -54,11 +54,8 @@ const ChatBox = ({ remarks = [], onSend, status, context, assetData }) => {
 
   const chatEndRef = useRef(null);
 
-<<<<<<< HEAD
-=======
 
 
->>>>>>> origin/development
   const handleSend = async () => {
     if (context === "asset") {
       // ✅ Validation
