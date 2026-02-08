@@ -19,6 +19,7 @@ import { FacilityLatlongService } from "../../Services/FacilityLatlongService";
 const FacilityLatlong = () => {
   const toast = useRef(null);
   const propertyId = useSelector((state) => state.Commonreducer.puidn);
+  const [editingRow, setEditingRow] = useState(null);
 
   // Table & filters
   const [facilityData, setFacilityData] = useState([]);
@@ -38,7 +39,7 @@ const FacilityLatlong = () => {
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
   const [locationName, setLocationName] = useState("");
-  const [Type, setVisitType] = useState(""); 
+  const [Type, setVisitType] = useState("");
 
   useEffect(() => {
     if (propertyId) {
@@ -54,12 +55,14 @@ const FacilityLatlong = () => {
       const data = await FacilityLatlongService.getMembers(propertyId);
       setFacilityData(
         data.map((item) => ({
-          employeeId: item.FacilityMemberId,
-          employeeName: item.FacilityMemberName || item.MobileNumber, // if API gives name
+          id: item.Id,                           // ✅ PRIMARY KEY
+          facilityMemberId: item.FacilityMemberId,
+          employeeName: item.Name,
+          mobileNumber: item.MobileNumber,
           latitude: item.Latitude,
           longitude: item.Longitude,
           locationName: item.LocationName,
-          Type:item.Type
+          visitType: item.Type                  // ✅ rename
         }))
       );
     } catch (error) {
@@ -73,24 +76,40 @@ const FacilityLatlong = () => {
       setLoading(false);
     }
   };
+  
+  const openEditDialog = (row) => {
+  setEditingRow(row);
+
+  setSelectedEmployee({
+    FacilityMemberId: row.facilityMemberId,
+    MobileNumber: row.mobileNumber
+  });
+
+  setLatitude(row.latitude);
+  setLongitude(row.longitude);
+  setLocationName(row.locationName);
+  setVisitType(row.Type);
+
+  setDialogVisible(true);
+};
 
   // ✅ GET Facility Members for dropdown
   const loadEmployees = async () => {
-  try {
-    const empData = await FacilityLatlongService.getFacilityMembers(propertyId);
-    setEmployees(
-      empData.map((e) => ({
-        label: e.Name,
-        value: { 
-          FacilityMemberId: e.FacilityMemberId,
-          MobileNumber: e.MobileNumber
-        }
-      }))
-    );
-  } catch (error) {
-    console.error(error);
-  }
-};
+    try {
+      const empData = await FacilityLatlongService.getFacilityMembers(propertyId);
+      setEmployees(
+        empData.map((e) => ({
+          label: e.Name,
+          value: {
+            FacilityMemberId: e.FacilityMemberId,
+            MobileNumber: e.MobileNumber
+          }
+        }))
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const resetForm = () => {
     setSelectedEmployee(null);
@@ -116,7 +135,7 @@ const FacilityLatlong = () => {
   };
 
   const validate = () => {
-    if (!selectedEmployee || !latitude || !longitude || !Type || !locationName ) {
+    if (!selectedEmployee || !latitude || !longitude || !Type || !locationName) {
       toast.current.show({
         severity: "warn",
         summary: "Validation",
@@ -130,43 +149,40 @@ const FacilityLatlong = () => {
 
   // ✅ POST API
   const saveFacility = async () => {
-  if (!validate()) return;
+    if (!validate()) return;
 
-  const record = {
-    FacilityMemberId: selectedEmployee.FacilityMemberId, // ✅ from dropdown object
-    MobileNumber: selectedEmployee.MobileNumber,         // ✅ from dropdown object
-    Latitude: parseFloat(latitude),
-    Longitude: parseFloat(longitude),
-    IsActive: true,
-    Type: Type,
-    LocationName: locationName
-  };
-
-  try {
-    await FacilityLatlongService.addMember(record);
-    toast.current.show({
-      severity: "success",
-      summary: "Added",
-      detail: "Facility added successfully",
-      life: 2000,
-    });
-    loadFacilities();
-    setDialogVisible(false);
-    resetForm();
-  } catch (error) {
-    toast.current.show({
-      severity: "error",
-      summary: "Error",
-      detail: "Failed to add facility",
-    });
-  }
+    const payload = {
+  FacilityMemberId: selectedEmployee.FacilityMemberId,
+  MobileNumber: selectedEmployee.MobileNumber,
+  Latitude: parseFloat(latitude),
+  Longitude: parseFloat(longitude),
+  LocationName: locationName,
+  Type: Type,
+  IsActive: true
 };
+
+    try {
+      if (editingRow) {
+        await FacilityLatlongService.updateMember(editingRow.id, payload);
+        toast.current.show({ severity: "success", summary: "Updated", detail: "Facility updated" });
+      } else {
+        await FacilityLatlongService.addMember(payload);
+        toast.current.show({ severity: "success", summary: "Added", detail: "Facility added" });
+      }
+
+      loadFacilities();
+      setDialogVisible(false);
+      resetForm();
+    } catch {
+      toast.current.show({ severity: "error", summary: "Error", detail: "Operation failed" });
+    }
+  };
 
   // ✅ DELETE API
   const deleteFacility = async (rowData) => {
     if (!window.confirm("Are you sure you want to delete this member?")) return;
     try {
-      await FacilityLatlongService.deleteMember(rowData.employeeId);
+      await FacilityLatlongService.deleteMember(rowData.id);
       toast.current.show({
         severity: "success",
         summary: "Deleted",
@@ -184,31 +200,39 @@ const FacilityLatlong = () => {
 
   const header = (
     <div className="d-flex justify-content-between align-items-center p-2">
-          <h5 className="m-0">Facility Latlong</h5>
-          <div className="d-flex gap-2 align-items-center">
-            <span className="p-input-icon-left">
-             
-              <InputText
-                value={globalFilterValue}
-                onChange={onGlobalFilterChange}
-                placeholder="Search..."
-              />
-            </span>
+      <h5 className="m-0">Facility Latlong</h5>
+      <div className="d-flex gap-2 align-items-center">
+        <span className="p-input-icon-left">
 
-      <Button
-        label="Create"
-        icon="pi pi-plus"
-        onClick={openCreateDialog}
-        className="p-button-success"
-      />
-    </div>
+          <InputText
+            value={globalFilterValue}
+            onChange={onGlobalFilterChange}
+            placeholder="Search..."
+          />
+        </span>
+
+        <Button
+          label="Create"
+          icon="pi pi-plus"
+          onClick={openCreateDialog}
+          className="p-button-success"
+        />
+      </div>
     </div>
   );
 
   const actionBodyTemplate = (rowData) => (
     <div className="d-flex gap-2">
-                  <Button icon={<i class='fa fa-times'></i>} className="btn btn-sm btn-danger rounded" onClick={() => deleteFacility(rowData)} />
-      
+      <Button
+        icon="pi pi-pencil"
+        className="p-button-rounded p-button-text p-button-info"
+        onClick={() => openEditDialog(rowData)}
+      />
+      <Button
+        icon="pi pi-trash"
+        className="p-button-rounded p-button-text p-button-danger"
+        onClick={() => deleteFacility(rowData)}
+      />
     </div>
   );
 
@@ -228,13 +252,18 @@ const FacilityLatlong = () => {
                 paginator
                 rows={10}
                 filters={filters}
-                filterDisplay="row"
-                globalFilterFields={["employeeName", "latitude", "longitude", "locationName", "Type"]}
+                globalFilterFields={[
+                  "employeeName",
+                  "latitude",
+                  "longitude",
+                  "locationName",
+                  "visitType"
+                ]}
                 emptyMessage="No facilities found."
-                dataKey="employeeId"
-                breakpoint="960px"
+                dataKey="id"                // ✅ MUST be unique
                 responsiveLayout="scroll"
               >
+
                 <Column header="#" body={indexTemplate} style={{ width: "5rem" }} />
                 <Column field="employeeName" header="Employee Name" />
                 <Column field="latitude" header="Latitude" />
@@ -250,60 +279,52 @@ const FacilityLatlong = () => {
 
       {/* Add/Edit Dialog */}
       <Dialog
-        header={editingIndex !== null ? "Edit Facility" : "Add Facility"}
+        header={editingRow ? "Edit Facility Location" : "Add Facility Location"}
         visible={dialogVisible}
-        style={{ width: "450px" }}
+        style={{ width: "500px" }}
         modal
         onHide={() => setDialogVisible(false)}
-        footer={
-          <div className="d-flex justify-content-end gap-2">
-            <Button
-              label="Cancel"
-              className="p-button-text"
-              onClick={() => setDialogVisible(false)}
-            />
-            <Button
-              label={editingIndex !== null ? "Update" : "Add"}
-              icon="pi pi-check"
-              onClick={saveFacility}
-            />
-          </div>
-        }
       >
-        <div className="p-fluid">
-          <div className="field mb-3">
+        <div className="p-fluid grid">
+          <div className="field col-12">
             <label>Employee</label>
             <Dropdown
-  value={selectedEmployee}
-  options={employees}
-  onChange={(e) => setSelectedEmployee(e.value)}
-  placeholder="Select Employee"
-  className="w-full"
-  optionLabel="label"
-/>
-
+              value={selectedEmployee}
+              options={employees}
+              onChange={(e) => setSelectedEmployee(e.value)}
+              placeholder="Select Employee"
+              optionLabel="label"
+              disabled={!!editingRow}
+            />
           </div>
 
-          <div className="field mb-3">
+          <div className="field col-6">
             <label>Latitude</label>
             <InputText value={latitude} onChange={(e) => setLatitude(e.target.value)} />
           </div>
 
-          <div className="field mb-3">
+          <div className="field col-6">
             <label>Longitude</label>
             <InputText value={longitude} onChange={(e) => setLongitude(e.target.value)} />
           </div>
 
-          <div className="field">
+          <div className="field col-6">
             <label>Location Name</label>
             <InputText value={locationName} onChange={(e) => setLocationName(e.target.value)} />
           </div>
-           <div className="field">
+
+          <div className="field col-6">
             <label>Visit Type</label>
-            <InputText value={Type} onChange={(e) =>     setVisitType(e.target.value)} />
+            <InputText value={Type} onChange={(e) => setVisitType(e.target.value)} />
+          </div>
+
+          <div className="col-12 d-flex justify-content-end gap-2 mt-3">
+            <Button label="Cancel" className="p-button-text" onClick={() => setDialogVisible(false)} />
+            <Button label={editingRow ? "Update" : "Add"} icon="pi pi-check" onClick={saveFacility} />
           </div>
         </div>
       </Dialog>
+
     </div>
   );
 };
