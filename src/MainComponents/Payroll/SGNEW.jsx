@@ -719,40 +719,55 @@ export default function SGNEW() {
 
       const isUpdate = !!existingSG;
 
-      const model = {
-        // ✅ PUT API expects ARRAY
-        SalaryGroup_IDs: isUpdate ? existingSG.SalaryGroup_IDs : [],
+      const model = isUpdate
+        ? {
+            // 🔁 PUT payload
+            SalaryGroup_IDs: existingSG.SalaryGroup_IDs,
+            Property_IDs: selectedPropertyId,
+            SalaryGroup: form.salaryGroupName,
+            BaseSalary: Number(form.baseSalary),
 
-        SalaryGroup: form.salaryGroupName,
-        BaseSalary: Number(form.baseSalary),
+            PFLimit: pfLimit ? Number(pfLimit) : null,
+            ESILimit: esiLimit ? Number(esiLimit) : null,
+            TotalWorkingDays: Number(form.totalWorkingDays),
+            ShiftHours: Number(form.shiftHours),
+            Salarystartfrom: Number(form.salaryCycleFrom) || 0,
+            Salaryendto: Number(form.salaryCycleTo) || 0,
+            ExcludeSunday: form.excludeSunday,
+            MonthSundays:
+              form.monthlySundays !== "" ? Number(form.monthlySundays) : null,
 
-        // 🔥 FIXED KEY (THIS WAS THE BUG)
-        Property_IDs: selectedPropertyId,
+            Designations: designation ? [designation] : [],
+            ExcludedEmployeeIds: excludeEmployees ? excludedEmployeeIds : [],
+            AllowancesDeductions: adModel,
+            CreatedBy: 1,
+            UpdatedBy: 1,
+            IsActive: true,
+          }
+        : {
+            // ➕ POST payload
+            SalaryGroup_ID: 0,
+            PropertyIds: selectedPropertyId,
+            SalaryGroup: form.salaryGroupName,
+            BaseSalary: Number(form.baseSalary),
 
-        PFLimit: pfLimit ? Number(pfLimit) : null,
-        ESILimit: esiLimit ? Number(esiLimit) : null,
+            PFLimit: pfLimit ? Number(pfLimit) : null,
+            ESILimit: esiLimit ? Number(esiLimit) : null,
+            TotalWorkingDays: Number(form.totalWorkingDays),
+            ShiftHours: Number(form.shiftHours),
+            Salarystartfrom: Number(form.salaryCycleFrom) || 0,
+            Salaryendto: Number(form.salaryCycleTo) || 0,
+            ExcludeSunday: form.excludeSunday,
+            MonthSundays:
+              form.monthlySundays !== "" ? Number(form.monthlySundays) : null,
 
-        TotalWorkingDays: Number(form.totalWorkingDays),
-        ShiftHours: Number(form.shiftHours),
-
-        Salarystartfrom: form.salaryCycleFrom
-          ? Number(form.salaryCycleFrom)
-          : null,
-        Salaryendto: form.salaryCycleTo ? Number(form.salaryCycleTo) : null,
-
-        ExcludeSunday: form.excludeSunday,
-        MonthSundays:
-          form.monthlySundays !== "" ? Number(form.monthlySundays) : null,
-
-        Designations: designation ? [designation] : [],
-        ExcludedEmployeeIds: excludeEmployees ? excludedEmployeeIds : [],
-
-        AllowancesDeductions: adModel,
-
-        CreatedBy: 1,
-        UpdatedBy: 1,
-        IsActive: true,
-      };
+            Designations: designation ? [designation] : [],
+            ExcludedEmployeeIds: excludeEmployees ? excludedEmployeeIds : [],
+            AllowancesDeductions: adModel,
+            CreatedBy: 1,
+            UpdatedBy: 1,
+            IsActive: true,
+          };
 
       if (isUpdate) {
         // ✅ UPDATED: no separate ID param
