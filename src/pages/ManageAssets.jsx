@@ -104,7 +104,7 @@ const ServiceRecords = (actions) => {
             }
 
             const response = await saveServiceRecord(formDataToSend);
-            console.log("✅ Record saved:", response);
+            //console.log("✅ Record saved:", response);
 
             await getAssets();
             handleCancel();

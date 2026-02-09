@@ -1,22 +1,22 @@
-import React from 'react';
-import { CSVLink } from 'react-csv';
+import React from "react";
+import { CSVLink } from "react-csv";
+import { Button } from "primereact/button";
 
-const ExportToCSV = ({ data = [] ,className }) => {
+const ExportToCSV = ({ data = [], fileName = "Tasklist.csv" }) => {
   return (
     <CSVLink
       data={data}
-      filename="Tasklist.csv"
-      onClick={() => console.log('Export button clicked', data)}
-      className={className}
-      // style={{
-      //   color: 'white',
-      //   textDecoration: 'none',
-      //   backgroundColor: '#007bff',
-      //   padding: '10px',
-      //   borderRadius: '5px',
-      // }}
+      filename={fileName}
+      style={{ textDecoration: "none" }} // remove anchor styling
     >
-     Download Report <i className="fa fa-arrow-down" aria-hidden="true"></i>
+      <Button
+        label="Export"
+        icon="pi pi-download"
+        severity="info"
+        size="small"
+        tooltip="Download CSV"
+        type="button"
+      />
     </CSVLink>
   );
 };

@@ -490,7 +490,7 @@ export default class TaskStatusList extends Component {
   // };
 
   DeleteTask = (data) => {
-    console.log(data);
+    //console.log(data);
     let myhtml = document.createElement("div");
     myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
     alert: swal({

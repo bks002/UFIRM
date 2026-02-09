@@ -45,7 +45,7 @@ const RentOut = ({ Close, setData }) => {  // Destructure Close from props
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    console.log(formData); // Replace with actual form submission logic
+    //console.log(formData); // Replace with actual form submission logic
     setData(formData);
     setFormData({
       assigneeName: "",
