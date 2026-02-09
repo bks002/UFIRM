@@ -42,13 +42,6 @@ const SubCategoryIcon = () => (
     </svg>
 );
 
-const EditIcon = () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-    </svg>
-);
-
 const EmptyIcon = () => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <rect x="3" y="3" width="18" height="18" rx="2"/>
@@ -87,7 +80,6 @@ class SubCategory extends Component {
                 { sTitle: 'Id', titleValue: 'Value', "orderable": false },
                 { sTitle: 'Sub Category Name', titleValue: 'Name' },
                 { sTitle: 'Category Name', titleValue: 'CategoryName' },
-                { sTitle: 'Action', titleValue: 'Action', Action: "Edit", Index: '0', "orderable": false },
             ],
         }
         this.ApiProviderr = new ApiProvider();
@@ -200,21 +192,18 @@ class SubCategory extends Component {
             return;
         }
 
-        let type = this.state.subCategoryId ? 'U' : 'C';
+        let type = 'C';
 
         const model = [{
             categoryId: parseInt(this.state.selectedCategoryId),
             subCategoryName: this.state.subCategoryName,
-            subCategoryId: this.state.subCategoryId ? parseInt(this.state.subCategoryId) : null
+            subCategoryId: null
         }];
 
         this.ApiProviderr.manageSubCategory(model, type).then(
             resp => {
                 if (resp.ok) {
-                    appCommon.showtextalert(
-                        this.state.subCategoryId ? "Sub Category Updated Successfully!" : "Sub Category Saved Successfully!",
-                        "", "success"
-                    );
+                    appCommon.showtextalert("Sub Category Saved Successfully!", "", "success");
                     this.handleCancel();
                 }
             }
@@ -230,18 +219,6 @@ class SubCategory extends Component {
         });
     }
 
-    ongridedit(Id) {
-        var rowData = this.state.subCategoryData.find(item => item.Value == Id);
-        if (rowData) {
-            this.setState({
-                subCategoryId: rowData.Value,
-                subCategoryName: rowData.Name,
-                selectedCategoryId: rowData.CategoryId || '',
-                PageMode: 'Edit',
-            });
-        }
-    }
-
     handleCancel = () => {
         this.setState({
             PageMode: 'Home',
@@ -255,12 +232,6 @@ class SubCategory extends Component {
 
     handleSubCategorySelect = (subCategory) => {
         this.setState({ selectedSubCategory: subCategory });
-    }
-
-    handlePanelEdit = () => {
-        if (this.state.selectedSubCategory) {
-            this.ongridedit(this.state.selectedSubCategory.Value);
-        }
     }
 
     onPagechange = (page) => { }
@@ -326,15 +297,6 @@ class SubCategory extends Component {
                             <div className="category-panel-detail-header">
                                 <div className="category-panel-detail-title">
                                     <h3>{selectedSubCategory.Name}</h3>
-                                </div>
-                                <div className="category-panel-detail-actions">
-                                    <button
-                                        className="category-detail-btn"
-                                        onClick={this.handlePanelEdit}
-                                    >
-                                        <EditIcon />
-                                        Edit
-                                    </button>
                                 </div>
                             </div>
 
@@ -445,7 +407,6 @@ class SubCategory extends Component {
                                             IsPagination={false}
                                             ColumnCollection={this.state.gridHeader}
                                             Onpageindexchanged={this.onPagechange.bind(this)}
-                                            onEditMethod={this.ongridedit.bind(this)}
                                             DefaultPagination={false}
                                             IsSarching={false}
                                             GridData={filteredData}
@@ -458,27 +419,20 @@ class SubCategory extends Component {
                     </div>
                 )}
 
-                {/* Add/Edit Modal */}
-                {(this.state.PageMode === 'Add' || this.state.PageMode === 'Edit') && (
+                {/* Add Modal */}
+                {this.state.PageMode === 'Add' && (
                     <div className="category-modal-overlay">
                         <div className="category-edit-modal" style={{ maxWidth: '560px' }}>
                             <div className="category-edit-modal-header">
                                 <div className="category-edit-modal-icon">
-                                    {this.state.PageMode === 'Add' ? (
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                                            <line x1="12" y1="5" x2="12" y2="19"/>
-                                            <line x1="5" y1="12" x2="19" y2="12"/>
-                                        </svg>
-                                    ) : (
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                        </svg>
-                                    )}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                                        <line x1="12" y1="5" x2="12" y2="19"/>
+                                        <line x1="5" y1="12" x2="19" y2="12"/>
+                                    </svg>
                                 </div>
                                 <div className="category-edit-modal-title-section">
-                                    <h3>{this.state.PageMode === 'Add' ? "Create New Sub Category" : "Edit Sub Category"}</h3>
-                                    <p>{this.state.PageMode === 'Add' ? "Add a new planner sub category" : "Update the sub category details below"}</p>
+                                    <h3>Create New Sub Category</h3>
+                                    <p>Add a new planner sub category</p>
                                 </div>
                                 <button className="category-edit-modal-close" onClick={this.handleCancel}>
                                     <CloseIcon />
@@ -513,38 +467,17 @@ class SubCategory extends Component {
                                         onChange={(e) => this.setState({ subCategoryName: e.target.value })}
                                     />
                                 </div>
-                                {this.state.PageMode === 'Edit' && this.state.subCategoryId && (
-                                    <div className="category-edit-info-badge">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                                            <circle cx="12" cy="12" r="10"/>
-                                            <line x1="12" y1="16" x2="12" y2="12"/>
-                                            <line x1="12" y1="8" x2="12.01" y2="8"/>
-                                        </svg>
-                                        <span>Sub Category ID: {this.state.subCategoryId}</span>
-                                    </div>
-                                )}
                             </div>
                             <div className="category-edit-modal-footer">
                                 <button className="category-edit-btn-cancel" onClick={this.handleCancel}>
                                     Cancel
                                 </button>
                                 <button className="category-edit-btn-save" onClick={this.handleSave}>
-                                    {this.state.PageMode === 'Add' ? (
-                                        <>
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                                                <line x1="12" y1="5" x2="12" y2="19"/>
-                                                <line x1="5" y1="12" x2="19" y2="12"/>
-                                            </svg>
-                                            Create Sub Category
-                                        </>
-                                    ) : (
-                                        <>
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                                                <polyline points="20 6 9 17 4 12"/>
-                                            </svg>
-                                            Save Changes
-                                        </>
-                                    )}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                                        <line x1="12" y1="5" x2="12" y2="19"/>
+                                        <line x1="5" y1="12" x2="19" y2="12"/>
+                                    </svg>
+                                    Create Sub Category
                                 </button>
                             </div>
                         </div>

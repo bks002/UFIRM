@@ -13,13 +13,16 @@ export default function PPMCalendar() {
     memberName: "",
     tasksByName: {},
   });
+  const [expandedCell, setExpandedCell] = useState(null);
 
   const monthNames = [
     "January","February","March","April","May","June",
     "July","August","September","October","November","December",
   ];
 
-  const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const dayHeaders = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
+
+  const MAX_VISIBLE_CARDS = 2;
 
   /* ================= FETCH SUMMARY ================= */
 
@@ -54,14 +57,54 @@ export default function PPMCalendar() {
     new Date(date.getFullYear(), date.getMonth(), 1).getDay();
 
   const generateCalendarDays = () => {
-    const days = [];
-    const firstDay = getFirstDayOfMonth(currentDate);
-    const total = getDaysInMonth(currentDate);
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const totalDays = getDaysInMonth(currentDate);
+    const firstDay = getFirstDayOfMonth(currentDate); // 0=Sun, 1=Mon...
 
-    for (let i = 1; i < firstDay; i++) days.push(null);
-    for (let i = 1; i <= total; i++) days.push(i);
+    // Convert to Monday-start: Mon=0, Tue=1, ..., Sun=6
+    const startOffset = firstDay === 0 ? 6 : firstDay - 1;
+
+    const days = [];
+
+    // Previous month padding
+    const prevMonthDays = new Date(year, month, 0).getDate();
+    for (let i = startOffset - 1; i >= 0; i--) {
+      days.push({ day: prevMonthDays - i, currentMonth: false });
+    }
+
+    // Current month
+    for (let i = 1; i <= totalDays; i++) {
+      days.push({ day: i, currentMonth: true });
+    }
+
+    // Next month padding (fill to complete the last row)
+    const remainder = days.length % 7;
+    if (remainder !== 0) {
+      const needed = 7 - remainder;
+      for (let i = 1; i <= needed; i++) {
+        days.push({ day: i, currentMonth: false });
+      }
+    }
 
     return days;
+  };
+
+  const isToday = (day) => {
+    const today = new Date();
+    return (
+      day === today.getDate() &&
+      currentDate.getMonth() === today.getMonth() &&
+      currentDate.getFullYear() === today.getFullYear()
+    );
+  };
+
+  const goToPrevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  };
+
+  const goToNextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   };
 
   /* ================= MEMBER CLICK ================= */
@@ -95,9 +138,9 @@ export default function PPMCalendar() {
 
   const getStatusColor = (status) => {
     if (!status) return "";
-    if (status.toLowerCase() === "pending") return "text-danger";
-    if (status.toLowerCase() === "completed") return "text-success";
-    return "text-warning";
+    if (status.toLowerCase() === "pending") return "ppm-status-pending";
+    if (status.toLowerCase() === "completed") return "ppm-status-completed";
+    return "ppm-status-other";
   };
 
   const calendarDays = generateCalendarDays();
@@ -106,127 +149,141 @@ export default function PPMCalendar() {
 
   return (
     <div className="content-wrapper">
-      <div className="card" style={{ maxWidth: 1300, margin: "0 auto" }}>
+      <div className="ppm-calendar-container">
 
-        {/* ===== HEADER ===== */}
-        <div className="card-header d-flex justify-content-center gap-2">
-          <select
-            className="form-select"
-            style={{ width: 160 }}
-            value={currentDate.getMonth()}
-            onChange={(e) =>
-              setCurrentDate(
-                new Date(currentDate.getFullYear(), +e.target.value, 1)
-              )
-            }
-          >
-            {monthNames.map((m, i) => (
-              <option key={m} value={i}>{m}</option>
-            ))}
-          </select>
-
-          <select
-            className="form-select"
-            style={{ width: 120 }}
-            value={currentDate.getFullYear()}
-            onChange={(e) =>
-              setCurrentDate(
-                new Date(+e.target.value, currentDate.getMonth(), 1)
-              )
-            }
-          >
-            {Array.from({ length: 8 }, (_, i) => 2024 + i).map((y) => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
+        {/* ===== HEADER: Title + View Toggle ===== */}
+        <div className="ppm-header">
+          <h2 className="ppm-header-title">PPM Calendar</h2>
+          <div className="ppm-view-toggle">
+            <button className="ppm-view-toggle-btn active">Month</button>
+            <button className="ppm-view-toggle-btn" disabled>Week</button>
+          </div>
         </div>
 
-        {/* ===== CALENDAR ===== */}
-        <div className="card-body p-0">
-          <table
-            className="table table-bordered mb-0"
-            style={{ tableLayout: "fixed", width: "100%" }}
-          >
-            <thead className="table-light">
-              <tr>
-                {dayNames.map((d) => (
-                  <th key={d} className="text-center">{d}</th>
-                ))}
-              </tr>
-            </thead>
+        {/* ===== MONTH NAVIGATION ===== */}
+        <div className="ppm-nav-bar">
+          <button className="ppm-nav-btn" onClick={goToPrevMonth}>
+            <i className="fas fa-chevron-left"></i>
+          </button>
+          <span className="ppm-nav-label">
+            {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+          </span>
+          <button className="ppm-nav-btn" onClick={goToNextMonth}>
+            <i className="fas fa-chevron-right"></i>
+          </button>
+        </div>
 
-            <tbody>
-              {Array.from({ length: Math.ceil(calendarDays.length / 7) }).map(
-                (_, w) => (
-                  <tr key={w}>
-                    {Array.from({ length: 7 }).map((_, d) => {
-                      const day = calendarDays[w * 7 + d];
-                      const dateKey = day
-                        ? `${currentDate.getFullYear()}-${String(
-                            currentDate.getMonth() + 1
-                          ).padStart(2, "0")}-${String(day).padStart(2, "0")}`
-                        : null;
+        {/* ===== CALENDAR CARD ===== */}
+        <div className="ppm-calendar-card">
+          <div className="ppm-calendar-grid">
 
-                      const members = dateKey
-                        ? summaryByDate[dateKey]
-                        : null;
+            {/* Day-of-Week Headers */}
+            {dayHeaders.map((d) => (
+              <div key={d} className="ppm-day-header">{d}</div>
+            ))}
 
-                      return (
-                        <td
-  key={d}
-  style={{
-    height: members && members.length > 1 ? 160 : "auto",
-    minHeight: 90,                 // 👈 keeps UI neat for 1 item
-    verticalAlign: "top",
-    padding: 6,
-  }}
->
+            {/* Day Cells */}
+            {calendarDays.map((cell, idx) => {
+              const dateKey = cell.currentMonth
+                ? `${currentDate.getFullYear()}-${String(
+                    currentDate.getMonth() + 1
+                  ).padStart(2, "0")}-${String(cell.day).padStart(2, "0")}`
+                : null;
 
-                          {day && (
-                            <>
-                              <div style={{ fontWeight: 700, marginBottom: 4 }}>
-                                {day}
-                              </div>
+              const members = dateKey ? summaryByDate[dateKey] : null;
+              const visibleMembers = members
+                ? members.slice(0, MAX_VISIBLE_CARDS)
+                : [];
+              const hiddenCount = members
+                ? Math.max(0, members.length - MAX_VISIBLE_CARDS)
+                : 0;
 
-                              {/* 🔥 EXACT 2nd IMAGE STYLE SCROLL */}
-                              <div
-  style={{
-    height: members && members.length > 1 ? 115 : "auto",
-    overflowY: members && members.length > 1 ? "auto" : "visible",
-    paddingRight: members && members.length > 1 ? 4 : 0,
-  }}
->
+              return (
+                <div
+                  key={idx}
+                  className={`ppm-day-cell${
+                    !cell.currentMonth ? " ppm-other-month" : ""
+                  }`}
+                >
+                  {/* Day Number */}
+                  <div className="ppm-day-number">
+                    <span
+                      className={
+                        cell.currentMonth && isToday(cell.day) ? "ppm-today" : ""
+                      }
+                    >
+                      {cell.day}
+                    </span>
+                  </div>
 
-                                {members?.map((m, i) => (
-                                  <div
-                                    key={i}
-                                    onClick={() =>
-                                      handleMemberClick(m, dateKey)
-                                    }
-                                    style={{
-                                      background: "#f7f8fd",
-                                      borderRadius: 6,
-                                      padding: 8,
-                                      marginBottom: 6,
-                                      cursor: "pointer",
-                                      fontSize: "0.8rem",
-                                    }}
-                                  >
-                                    👷 {m.FacilityMemberName}<br />
-                                    📝 Tasks: {m.TaskCount}
-                                  </div>
-                                ))}
-                              </div>
-                            </>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                )
-              )}
-            </tbody>
-          </table>
+                  {/* Task Cards */}
+                  {cell.currentMonth && members && (
+                    <div className="ppm-tasks-container">
+                      {visibleMembers.map((m, i) => (
+                        <div
+                          key={i}
+                          className="ppm-task-card"
+                          onClick={() => handleMemberClick(m, dateKey)}
+                        >
+                          <span className="ppm-task-card-dot"></span>
+                          <span className="ppm-task-card-name">
+                            {m.FacilityMemberName}
+                          </span>
+                          <span className="ppm-task-card-count">
+                            {m.TaskCount}
+                          </span>
+                        </div>
+                      ))}
+
+                      {hiddenCount > 0 && (
+                        <button
+                          className="ppm-more-link"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExpandedCell(
+                              expandedCell === idx ? null : idx
+                            );
+                          }}
+                        >
+                          +{hiddenCount} more
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Overflow Popover */}
+                  {expandedCell === idx && members && (
+                    <>
+                      <div
+                        className="ppm-popover-backdrop"
+                        onClick={() => setExpandedCell(null)}
+                      />
+                      <div className="ppm-popover">
+                        {members.map((m, i) => (
+                          <div
+                            key={i}
+                            className="ppm-task-card"
+                            onClick={() => {
+                              setExpandedCell(null);
+                              handleMemberClick(m, dateKey);
+                            }}
+                          >
+                            <span className="ppm-task-card-dot"></span>
+                            <span className="ppm-task-card-name">
+                              {m.FacilityMemberName}
+                            </span>
+                            <span className="ppm-task-card-count">
+                              {m.TaskCount}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -234,18 +291,21 @@ export default function PPMCalendar() {
       <Dialog
         header="Task Details"
         visible={dialogVisible}
+        className="ppm-dialog"
         style={{ width: "75vw" }}
         modal
         onHide={() => setDialogVisible(false)}
       >
-        <h5>Facility Member: {dialogData.memberName}</h5>
+        <h5 className="ppm-dialog-member-name">
+          Facility Member: {dialogData.memberName}
+        </h5>
 
         {Object.entries(dialogData.tasksByName).map(
           ([taskName, rows], idx) => (
-            <div key={idx} style={{ marginBottom: 24 }}>
-              <h6>Task Name: {taskName}</h6>
+            <div key={idx} className="ppm-dialog-task-section">
+              <h6 className="ppm-dialog-task-title">Task: {taskName}</h6>
 
-              <table className="table table-bordered table-striped">
+              <table className="ppm-detail-table">
                 <thead>
                   <tr>
                     <th>Question</th>
