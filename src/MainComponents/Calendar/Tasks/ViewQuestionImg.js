@@ -79,7 +79,7 @@ export default class ViewQuestionImg extends Component {
           CmdType: type,
           Id: Id,
         });
-        console.log(model);
+        //console.log(model);
         break;
       default:
     }
@@ -188,7 +188,7 @@ export default class ViewQuestionImg extends Component {
   };
 
   removeQuesFields = (QuesId) => {
-    console.log(QuesId);
+    //console.log(QuesId);
     //debugger
     let myhtml = document.createElement("div");
     myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
@@ -219,7 +219,7 @@ export default class ViewQuestionImg extends Component {
   };
 
   render() {
-    console.log(this.props);
+    //console.log(this.props);
     return (
       <div>
         <Modal

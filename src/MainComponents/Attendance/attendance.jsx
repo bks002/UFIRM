@@ -62,7 +62,7 @@ export default function AttendanceMaster() {
                     label: emp.Name,
                     value: emp
                 }));
-                console.log("Fetched Employees:", formatted);
+               // console.log("Fetched Employees:", formatted);
                 setEmployeeList(formatted);
             } catch (error) {
                 console.error("Failed to load employees:", error);
@@ -216,14 +216,24 @@ export default function AttendanceMaster() {
     };
 
     const getDaysInMonth = (date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-    const getFirstDayOfMonth = (date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+    const getFirstDayOfMonth = (date) => {
+        const day = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+        return day === 0 ? 7 : day;
+    };
 
     const generateCalendarDays = () => {
         const daysInMonth = getDaysInMonth(currentDate);
         const firstDay = getFirstDayOfMonth(currentDate);
         const days = [];
-        for (let i = 1; i < firstDay; i++) days.push(null);
-        for (let i = 1; i <= daysInMonth; i++) days.push(i);
+
+        for (let i = 1; i < firstDay; i++) {
+            days.push(null);
+        }
+
+        for (let i = 1; i <= daysInMonth; i++) {
+            days.push(i);
+        }
+
         return days;
     };
 
@@ -281,11 +291,20 @@ export default function AttendanceMaster() {
         const employees = {};
         attendanceData.forEach(record => {
             const emp = record.EmployeeName;
+            const desig = record.Designation || "--";
+
             const recordDateObj = new Date(record.PunchDate);
             recordDateObj.setHours(12, 0, 0, 0);
             const dateKey = recordDateObj.toISOString().slice(0, 10);
-            if (!employees[emp]) employees[emp] = {};
-            employees[emp][dateKey] = {
+
+            if (!employees[emp]) {
+                employees[emp] = {
+                    Designation: desig,
+                    Attendance: {}
+                };
+            }
+
+            employees[emp].Attendance[dateKey] = {
                 CheckIn: record.MinCheckIn || "--",
                 CheckOut: record.MaxCheckOut || "--",
                 WorkingTime: record.TotalWorkingTime || "0h",
@@ -294,44 +313,59 @@ export default function AttendanceMaster() {
         });
 
         let ws_data = [];
-        Object.entries(employees).forEach(([emp, attMap]) => {
-            let present = 0, absent = 0, weekOff = 0, totalWTmin = 0;
+
+        Object.entries(employees).forEach(([emp, empData]) => {
+            const attMap = empData.Attendance;
+
+            let present = 0, absent = 0, holiday = 0, leave = 0, totalWTmin = 0;
 
             allDates.forEach(dateKey => {
                 const rec = attMap[dateKey];
-                let status = rec ? rec.Status : "Absent";
+                const status = rec ? rec.Status : "Absent";
+
                 if (status === "Present") present++;
-                else if (status === "WeekOff") weekOff++;
-                else absent++;
+                else if (status === "Holiday") holiday++;
+                else if (status === "Leave") leave++;
+                else if (status === "Absent") absent++;
 
                 if (rec && rec.WorkingTime && rec.WorkingTime !== "0h") {
-                    let parts = rec.WorkingTime.split(":");
-                    let h = parseInt(parts[0]) || 0;
-                    let m = parseInt(parts[1]) || 0;
+                    const parts = rec.WorkingTime.split(":");
+                    const h = parseInt(parts[0]) || 0;
+                    const m = parseInt(parts[1]) || 0;
                     totalWTmin += h * 60 + m;
                 }
             });
 
             const totalHours = `${Math.floor(totalWTmin / 60)}h ${totalWTmin % 60}m`;
 
-            ws_data.push([`Employee: ${emp}`]);
+            // 🔹 Employee + Designation
+            ws_data.push([`Employee: ${emp} (${empData.Designation})`]);
+
+            // 🔹 Summary (no Absent count)
             ws_data.push([
                 `Present: ${present}`,
                 `Absent: ${absent}`,
-                `WeekOff: ${weekOff}`,
+                `Holiday: ${holiday}`,
+                `Leave: ${leave}`,
                 `Working Hours: ${totalHours}`
             ]);
+
             ws_data.push([]);
 
+            // 🔹 Date-wise grid
             const displayDates = allDates.map(dateKey => {
                 const [y, m, d] = dateKey.split("-");
                 return `${d}-${m}-${y}`;
             });
+
             ws_data.push(["Date", ...displayDates]);
-            ws_data.push(["In", ...allDates.map(d => attMap[d] ? attMap[d].CheckIn : "--")]);
-            ws_data.push(["Out", ...allDates.map(d => attMap[d] ? attMap[d].CheckOut : "--")]);
-            ws_data.push(["WT", ...allDates.map(d => attMap[d] ? attMap[d].WorkingTime : "0h")]);
-            ws_data.push(["Status", ...allDates.map(d => attMap[d] ? attMap[d].Status : "Absent")]);
+            ws_data.push(["In", ...allDates.map(d => attMap[d]?.CheckIn || "--")]);
+            ws_data.push(["Out", ...allDates.map(d => attMap[d]?.CheckOut || "--")]);
+            ws_data.push(["WT", ...allDates.map(d => attMap[d]?.WorkingTime || "0h")]);
+
+            // 🔹 Status shows Present / Holiday / Leave / Absent
+            ws_data.push(["Status", ...allDates.map(d => attMap[d]?.Status || "Absent")]);
+
             ws_data.push([]);
         });
 
@@ -341,84 +375,84 @@ export default function AttendanceMaster() {
         XLSX.writeFile(wb, `Attendance_${month + 1}_${year}.xlsx`);
     };
 
-    const exportMonthToCSV_Horizontal = (attendanceData, currentDate) => {
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
+    // const exportMonthToCSV_Horizontal = (attendanceData, currentDate) => {
+    //     const year = currentDate.getFullYear();
+    //     const month = currentDate.getMonth();
+    //     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-        const allDates = [];
-        for (let d = 1; d <= daysInMonth; d++) {
-            const dateObj = new Date(year, month, d, 12, 0, 0);
-            const key = dateObj.toISOString().slice(0, 10);
-            const dayName = dateObj.toLocaleDateString("en-US", { weekday: "short" });
-            allDates.push({ key, label: `Day ${d} (${dayName})` });
-        }
+    //     const allDates = [];
+    //     for (let d = 1; d <= daysInMonth; d++) {
+    //         const dateObj = new Date(year, month, d, 12, 0, 0);
+    //         const key = dateObj.toISOString().slice(0, 10);
+    //         const dayName = dateObj.toLocaleDateString("en-US", { weekday: "short" });
+    //         allDates.push({ key, label: `Day ${d} (${dayName})` });
+    //     }
 
-        const employees = {};
-        attendanceData.forEach(record => {
-            const emp = record.EmployeeName;
-            const recordDateObj = new Date(record.PunchDate);
-            recordDateObj.setHours(12, 0, 0, 0);
-            const dateKey = recordDateObj.toISOString().slice(0, 10);
-            if (!employees[emp]) employees[emp] = {};
-            employees[emp][dateKey] = {
-                WorkingTime: record.TotalWorkingTime || "00:00:00",
-                Status: record.Status || "A"
-            };
-        });
+    //     const employees = {};
+    //     attendanceData.forEach(record => {
+    //         const emp = record.EmployeeName;
+    //         const recordDateObj = new Date(record.PunchDate);
+    //         recordDateObj.setHours(12, 0, 0, 0);
+    //         const dateKey = recordDateObj.toISOString().slice(0, 10);
+    //         if (!employees[emp]) employees[emp] = {};
+    //         employees[emp][dateKey] = {
+    //             WorkingTime: record.TotalWorkingTime || "00:00:00",
+    //             Status: record.Status || "A"
+    //         };
+    //     });
 
-        let ws_data = [];
-        ws_data.push([
-            "Employee Name",
-            ...allDates.map(d => d.label),
-            "Total P",
-            "Total A",
-            "Total WO",
-            "Payable Days",
-            "Total WT"
-        ]);
+    //     let ws_data = [];
+    //     ws_data.push([
+    //         "Employee Name",
+    //         ...allDates.map(d => d.label),
+    //         "Total P",
+    //         "Total A",
+    //         "Total WO",
+    //         "Payable Days",
+    //         "Total WT"
+    //     ]);
 
-        const sumTimes = (times) => {
-            let totalSeconds = times.reduce((acc, t) => {
-                const [h, m, s] = t.split(':').map(Number);
-                return acc + h * 3600 + m * 60 + s;
-            }, 0);
-            const h = Math.floor(totalSeconds / 3600);
-            const m = Math.floor((totalSeconds % 3600) / 60);
-            const s = totalSeconds % 60;
-            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-        };
+    //     const sumTimes = (times) => {
+    //         let totalSeconds = times.reduce((acc, t) => {
+    //             const [h, m, s] = t.split(':').map(Number);
+    //             return acc + h * 3600 + m * 60 + s;
+    //         }, 0);
+    //         const h = Math.floor(totalSeconds / 3600);
+    //         const m = Math.floor((totalSeconds % 3600) / 60);
+    //         const s = totalSeconds % 60;
+    //         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    //     };
 
-        Object.entries(employees).forEach(([emp, attMap]) => {
-            let row = [emp];
-            let totalP = 0, totalA = 0, totalWO = 0;
-            let dailyTimes = [];
+    //     Object.entries(employees).forEach(([emp, attMap]) => {
+    //         let row = [emp];
+    //         let totalP = 0, totalA = 0, totalWO = 0;
+    //         let dailyTimes = [];
 
-            allDates.forEach(({ key }) => {
-                const att = attMap[key];
-                if (att) {
-                    row.push(`Status: ${att.Status} WT: ${att.WorkingTime}`);
-                    if (att.Status === "P") totalP++;
-                    else if (att.Status === "A") totalA++;
-                    else if (att.Status === "WO") totalWO++;
-                    if (att.WorkingTime && att.WorkingTime !== "--") dailyTimes.push(att.WorkingTime);
-                } else {
-                    row.push("Status: A WT: --");
-                    totalA++;
-                }
-            });
+    //         allDates.forEach(({ key }) => {
+    //             const att = attMap[key];
+    //             if (att) {
+    //                 row.push(`Status: ${att.Status} WT: ${att.WorkingTime}`);
+    //                 if (att.Status === "P") totalP++;
+    //                 else if (att.Status === "A") totalA++;
+    //                 else if (att.Status === "WO") totalWO++;
+    //                 if (att.WorkingTime && att.WorkingTime !== "--") dailyTimes.push(att.WorkingTime);
+    //             } else {
+    //                 row.push("Status: A WT: --");
+    //                 totalA++;
+    //             }
+    //         });
 
-            const payableDays = totalP + totalWO;
-            const totalWT = dailyTimes.length ? sumTimes(dailyTimes) : "00:00:00";
-            row.push(totalP, totalA, totalWO, payableDays, totalWT);
-            ws_data.push(row);
-        });
+    //         const payableDays = totalP + totalWO;
+    //         const totalWT = dailyTimes.length ? sumTimes(dailyTimes) : "00:00:00";
+    //         row.push(totalP, totalA, totalWO, payableDays, totalWT);
+    //         ws_data.push(row);
+    //     });
 
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.aoa_to_sheet(ws_data);
-        XLSX.utils.book_append_sheet(wb, ws, "Attendance");
-        XLSX.writeFile(wb, `Attendance_${month + 1}_${year}.xlsx`);
-    };
+    //     const wb = XLSX.utils.book_new();
+    //     const ws = XLSX.utils.aoa_to_sheet(ws_data);
+    //     XLSX.utils.book_append_sheet(wb, ws, "Attendance");
+    //     XLSX.writeFile(wb, `Attendance_${month + 1}_${year}.xlsx`);
+    // };
 
     const exportDailyToCSV = (attendanceList, selectedDay) => {
         if (!attendanceList || attendanceList.length === 0) {
@@ -550,11 +584,9 @@ export default function AttendanceMaster() {
                         icon="pi pi-file-excel"
                         className="p-button-success"
                         onClick={() => {
-                            if (propertyId == 27) {
-                                exportMonthToCSV(attendanceData, currentDate);
-                            } else {
-                                exportMonthToCSV_Horizontal(attendanceData, currentDate);
-                            }
+
+                            exportMonthToCSV(attendanceData, currentDate);
+
                         }}
                     />
                 </div>

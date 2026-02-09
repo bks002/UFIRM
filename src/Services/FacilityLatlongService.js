@@ -43,6 +43,15 @@ addMember: async (memberData) => {
     return response.data;
   },
  
+  updateMember: async (memberData) => {
+    const response = await axios.put(
+      `${API_BASE_URL}/update-Member-Location/${memberData.Id}`,
+      memberData,
+      { headers: { "Content-Type": "application/json" } , withCredentials:false}
+      
+    );
+    return response.data;
+  },
 
   // ✅ Delete facility member
   deleteMember: async (memberId) => {

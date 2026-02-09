@@ -140,7 +140,7 @@ export default class EditQuestion extends Component {
   };
 
   removeQuesFields = (QuesId) => {
-    console.log(QuesId);
+    //console.log(QuesId);
     //debugger
     let myhtml = document.createElement("div");
     myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
@@ -171,7 +171,7 @@ export default class EditQuestion extends Component {
   };
 
   render() {
-    console.log(this.props);
+   // console.log(this.props);
     return (
       <div>
         <Modal

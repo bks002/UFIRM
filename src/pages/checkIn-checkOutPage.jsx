@@ -1,4 +1,13 @@
 import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+
+import { DataTable } from "primereact/datatable";
+import { Column } from "primereact/column";
+import { Button } from "primereact/button";
+import { Dialog } from "primereact/dialog";
+import { InputText } from "primereact/inputtext";
+import { ProgressSpinner } from "primereact/progressspinner";
+
 import PopUp from "../ReactComponents/CheckIn&OutModal/PopUp";
 import "bootstrap/dist/css/bootstrap.min.css";
 import ExportToCSV from "../ReactComponents/ExportToCSV/ExportToCSV";
@@ -25,7 +34,6 @@ const renderBase64Image = (base64) => {
   );
 };
 
-const CheckInCheckOut = (actions) => {
   const [assetData, setAssetData] = useState([]);
   const [loading, setLoading] = useState(true);
 

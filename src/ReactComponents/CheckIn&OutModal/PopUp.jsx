@@ -8,11 +8,11 @@ import CheckOut from '../../pages/CheckOutPage';
 function PopUp({ show, handleClose, asset, actionType, handleSubmit}) {
   const [formData, setFormData]=useState({});
   const handleCheckOutData=(CheckOutData)=>{
-    console.log(CheckOutData);
+    //console.log(CheckOutData);
     handleSubmit(CheckOutData);
   }
   const handleCheckInData =(CheckInData)=>{
-    console.log(CheckInData);
+    //console.log(CheckInData);
    
     handleSubmit(CheckInData);
   }
