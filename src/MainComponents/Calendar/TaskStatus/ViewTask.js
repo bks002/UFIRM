@@ -40,7 +40,7 @@ export default class ViewTask extends Component {
                 CmdType: type,
                 Id: Id,
               });
-              console.log(model)
+              //console.log(model)
             break;
       default:
     }
@@ -112,7 +112,7 @@ export default class ViewTask extends Component {
   };
 
   removeQuesFields = (QuesId) => {
-      console.log(QuesId)
+     // console.log(QuesId)
     //debugger
     let myhtml = document.createElement("div");
     myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";

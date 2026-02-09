@@ -180,7 +180,7 @@ class PropertyAssignment extends React.Component {
             resp => {
                 if (resp.ok && resp.status == 200) {
                     return resp.json().then(rData => {
-                        console.log(rData);
+                        //console.log(rData);
                         rData = appCommon.changejsoncolumnname(rData, "id", "Id");
                         rData = appCommon.changejsoncolumnname(rData, "text", "Name");
                         // rData.map((item) => { item.value = item.Name, item.label = item.Name, item.color = '#0052CC'; return item });
