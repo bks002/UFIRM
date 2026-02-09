@@ -34,6 +34,7 @@ const renderBase64Image = (base64) => {
   );
 };
 
+const CheckInCheckOut = ({ propId: actions }) => {
   const [assetData, setAssetData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -52,7 +53,7 @@ const renderBase64Image = (base64) => {
   /* ================= FETCH ASSETS ================= */
   useEffect(() => {
     fetchData();
-  }, [actions.propId]);
+  }, [actions?.propId]);
 
   const fetchData = async () => {
     try {
