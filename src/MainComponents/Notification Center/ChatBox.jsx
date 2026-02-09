@@ -54,6 +54,9 @@ const ChatBox = ({ remarks = [], onSend, status, context, assetData }) => {
 
   const chatEndRef = useRef(null);
 
+  
+
+
   const handleSend = async () => {
     if (context === "asset") {
       // ✅ Validation
@@ -263,9 +266,9 @@ const ChatBox = ({ remarks = [], onSend, status, context, assetData }) => {
 
                         return (
                           <>
-                            <div style={{ fontWeight: "600" }}>
+                            <div style={{ fontWeight: 600, color: "#000" }}>
                               {label}:{" "}
-                              <span style={{ fontWeight: "normal" }}>
+                              <span style={{ fontWeight: 400, color: "#000" }}>
                                 {message}
                               </span>
                             </div>
@@ -273,14 +276,16 @@ const ChatBox = ({ remarks = [], onSend, status, context, assetData }) => {
                             {finalDate && (
                               <div
                                 style={{
-                                  fontSize: "12px",
-                                  color: "#555",
+                                  fontSize: "13px",
+                                  fontWeight: 400,
+                                  color: "#000",
                                   marginTop: "4px",
                                 }}
                               >
                                 {finalDate}
                               </div>
                             )}
+
                           </>
                         );
                       })()}
