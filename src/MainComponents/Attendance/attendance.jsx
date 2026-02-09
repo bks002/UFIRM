@@ -62,7 +62,7 @@ export default function AttendanceMaster() {
                     label: emp.Name,
                     value: emp
                 }));
-                console.log("Fetched Employees:", formatted);
+               // console.log("Fetched Employees:", formatted);
                 setEmployeeList(formatted);
             } catch (error) {
                 console.error("Failed to load employees:", error);

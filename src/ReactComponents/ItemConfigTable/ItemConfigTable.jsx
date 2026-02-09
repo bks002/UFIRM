@@ -122,7 +122,7 @@ class Products extends React.Component {
         return product;
       });
       this.setState(newProducts);
-      console.log(this.state.products);
+     // console.log(this.state.products);
     };
     render() {  
       return (

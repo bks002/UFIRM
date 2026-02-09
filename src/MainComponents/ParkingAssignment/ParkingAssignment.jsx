@@ -155,7 +155,7 @@ class ParkingAssignment extends React.Component {
             this.setState({ PropertyParkingMappingId: rowData.propertyParkingMappingId });
             this.setState({ ParkingDetailsId: rowData.parkingDetailsId });
             this.setState({ propertyDetailsId: rowData.propertyDetailsId, VehicleDt: `${rowData.vehicleDt}` });
-            console.log(rowData.vehicleDt);
+            //console.log(rowData.vehicleDt);
             if (rowData.vehicleDt !== " - ") {
                 this.setState({ VehicleDt: `${rowData.vehicleDt}` });
             }
