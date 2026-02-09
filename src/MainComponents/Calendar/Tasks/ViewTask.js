@@ -54,8 +54,17 @@ export default class ViewTask extends Component {
         moment(props.rowData.DateTo).isSameOrAfter(props.rowData.DateFrom)
           ? moment(props.rowData.DateTo).format("DD/MM/YYYY")
           : moment(props.rowData.DateFrom).format("DD/MM/YYYY"),
-      startTime: this.props.rowData.TimeFrom,
-      endTime: this.props.rowData.TimeTo,
+      startTime: this.props.rowData.TimeFrom
+        ? moment(this.props.rowData.TimeFrom, ["HH:mm:ss", "HH:mm"]).format(
+            "h:mm A",
+          )
+        : "",
+
+      endTime: this.props.rowData.TimeTo
+        ? moment(this.props.rowData.TimeTo, ["HH:mm:ss", "HH:mm"]).format(
+            "h:mm A",
+          )
+        : "",
       remindme: this.props.rowData.RemindMe,
       check: this.props.rowData.AllDay === "Y",
       hasAnyRemarksForQuestion: false,
@@ -311,7 +320,7 @@ export default class ViewTask extends Component {
           CmdType: type,
           Id: Id,
         });
-        //console.log(model);
+        console.log(model);
         break;
       default:
     }
@@ -321,10 +330,10 @@ export default class ViewTask extends Component {
 
   manageQues = (model, type) => {
     this.ApiProvider.manageQues(model, type).then((resp) => {
-      //console.log(resp);
+      console.log(resp);
       if (resp.ok && resp.status == 200) {
         return resp.json().then((rData) => {
-          //console.log(rData);
+          console.log(rData);
           switch (type) {
             case "C":
               if (rData === "Created !") {
@@ -425,7 +434,7 @@ export default class ViewTask extends Component {
   };
 
   removeQuesFields = (QuesId) => {
-    //console.log(QuesId);
+    console.log(QuesId);
     //debugger
     let myhtml = document.createElement("div");
     myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
@@ -456,7 +465,7 @@ export default class ViewTask extends Component {
   };
 
   DeleteQuestion = (data) => {
-    //console.log(data);
+    console.log(data);
     let myhtml = document.createElement("div");
     myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
     alert: swal({

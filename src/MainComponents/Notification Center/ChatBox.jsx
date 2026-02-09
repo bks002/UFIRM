@@ -202,15 +202,15 @@ const ChatBox = ({ remarks = [], onSend, status, context, assetData }) => {
 
           {context === "task"
             ? currentStatus === "Actionable" && (
-              <Button variant="success" onClick={handleMarkComplete}>
-                Mark as Complete
-              </Button>
-            )
+                <Button variant="success" onClick={handleMarkComplete}>
+                  Mark as Complete
+                </Button>
+              )
             : statusOptions.length > 1 && (
-              <Button variant="secondary" onClick={toggleStatus}>
-                Change Status
-              </Button>
-            )}
+                <Button variant="secondary" onClick={toggleStatus}>
+                  Change Status
+                </Button>
+              )}
         </div>
       )}
 
@@ -220,10 +220,10 @@ const ChatBox = ({ remarks = [], onSend, status, context, assetData }) => {
           context === "asset"
             ? {}
             : {
-              maxHeight: "300px",
-              display: "flex",
-              flexDirection: "column",
-            }
+                maxHeight: "300px",
+                display: "flex",
+                flexDirection: "column",
+              }
         }
       >
         {context !== "asset" && (

@@ -114,17 +114,24 @@ export async function deleteSalaryAllowance(salaryGroupId) {
   }
 }
 
-export async function updateSalaryAllowance(salaryGroupId, model) {
+export async function updateSalaryAllowance(model) {
   try {
-    const response = await fetch(`${SALARY_API_BASE_URL}/${salaryGroupId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify(model),
-    });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const response = await fetch(
+      `${SALARY_API_BASE_URL}/update`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(model),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
     return await response.json();
   } catch (error) {
     console.error("Error updating salary allowance:", error);
@@ -771,4 +778,27 @@ export async function deleteADPercentage(id) {
     throw error;
   }
 }
+
+// --------------------------------------------------
+// GET SALARY GROUPS BY MULTIPLE PROPERTIES
+// --------------------------------------------------
+export const getSalaryAllowancesByProperties = async (propertyIds = []) => {
+  if (!propertyIds.length) return [];
+
+  const ids = propertyIds.join(",");
+
+  const response = await fetch(
+    `https://api.urest.in:8096/api/salaryallowances/byproperties?propertyIds=${ids}`,
+    {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch salary groups by properties");
+  }
+
+  return response.json();
+};
 

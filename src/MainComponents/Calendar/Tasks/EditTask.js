@@ -31,7 +31,7 @@ export default class EditTask extends Component {
       assign: [],
       remindme: "",
       repeat: "",
-      check: true,
+      check: false, // All Day = No by default
       startDate: new Date(),
       endDate: new Date(),
 
@@ -295,7 +295,7 @@ export default class EditTask extends Component {
     var type = "R";
     var model = this.getModel(type);
     model.propertyId = propId;
-    //console.log(model);
+    console.log(model);
     this.manageAssets(model, type);
   }
 
@@ -317,6 +317,16 @@ export default class EditTask extends Component {
     e.preventDefault();
 
     if (this.state.saving) return;
+
+    if (!this.hasAtLeastOneQuestion()) {
+      appCommon.showtextalert(
+        "Please add at least one question before saving.",
+        "",
+        "warning",
+      );
+      return;
+    }
+
     this.setState({ saving: true });
 
     try {
@@ -409,6 +419,19 @@ export default class EditTask extends Component {
 
   handleAssetChange = (e) => {
     const assetId = e.target.value;
+
+    // 👇 If user selects "Select Asset"
+    if (!assetId) {
+      this.setState({
+        assetId: "",
+        assetBrand: "",
+        lastServiceDate: null,
+        nextServiceDate: null,
+        assetPhoto: null,
+        QRCode: "",
+      });
+      return;
+    }
 
     this.setState({ assetId }, () => this.populateAssetDetails(assetId));
   };
@@ -630,6 +653,12 @@ export default class EditTask extends Component {
     );
   };
 
+  hasAtLeastOneQuestion = () => {
+    return this.state.QuesData.some(
+      (q) => q.QuestionName && q.QuestionName.trim() !== "",
+    );
+  };
+
   getNormalizedTaskDate = () => {
     return this.state.resolvedTaskDate;
   };
@@ -752,6 +781,16 @@ export default class EditTask extends Component {
 /* Optional: slightly clearer hover feedback */
 .card-header .nav-tabs .nav-link:hover {
   background: rgba(255, 255, 255, 0.12);
+}
+  select option[value=""] {
+  color: #9aa0a6;
+}
+  .placeholder-select {
+  color: #9aa0a6 !important;
+}
+
+.placeholder-select option {
+  color: #000; /* dropdown items stay normal */
 }
  `}
         </style>
@@ -994,6 +1033,7 @@ export default class EditTask extends Component {
                             <input
                               type="checkbox"
                               checked={this.state.check}
+                              disabled
                               onChange={(e) =>
                                 this.setState({ check: e.target.checked })
                               }
@@ -1052,6 +1092,7 @@ export default class EditTask extends Component {
                           <select
                             className="form-control"
                             value={this.state.remindme}
+                            disabled
                             onChange={(e) =>
                               this.setState({ remindme: e.target.value })
                             }
@@ -1233,12 +1274,12 @@ export default class EditTask extends Component {
                       {/* Asset selection */}
                       <div className="row mb-3 align-items-center">
                         <div className="col-md-2">
-                          <label>Asset Details</label>
+                          <label>Asset Name</label>
                         </div>
                         <div className="col-md-10">
                           <select
-                            className="form-control"
-                            value={this.state.assetId}
+                            className={`form-control ${!this.state.assetId ? "placeholder-select" : ""}`}
+                            value={this.state.assetId || ""}
                             onChange={this.handleAssetChange}
                           >
                             <option value="">Select Asset</option>
@@ -1422,7 +1463,11 @@ export default class EditTask extends Component {
                   <div className="modal-footer">
                     <button
                       className="btn btn-primary"
-                      disabled={!this.isEditTaskValid() || this.state.saving}
+                      disabled={
+                        !this.isEditTaskValid() ||
+                        !this.hasAtLeastOneQuestion() ||
+                        this.state.saving
+                      }
                       onClick={this.handleSave}
                     >
                       {this.state.saving ? "Saving..." : "Save"}
