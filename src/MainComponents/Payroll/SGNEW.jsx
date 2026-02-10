@@ -470,7 +470,7 @@ export default function SGNEW() {
         IsDouble: odDoubleFlags[name] || false,
         Perday:
           item.Type === "OD" &&
-          (name === "Food" || name === "Accommodation" || name === "Uniform")
+            (name === "Food" || name === "Accommodation" || name === "Uniform")
             ? !!perDayOD[name]
             : false,
       });
@@ -721,53 +721,53 @@ export default function SGNEW() {
 
       const model = isUpdate
         ? {
-            // 🔁 PUT payload
-            SalaryGroup_IDs: existingSG.SalaryGroup_IDs,
-            Property_IDs: selectedPropertyId,
-            SalaryGroup: form.salaryGroupName,
-            BaseSalary: Number(form.baseSalary),
+          // 🔁 PUT payload
+          SalaryGroup_IDs: existingSG.SalaryGroup_IDs,
+          Property_IDs: selectedPropertyId,
+          SalaryGroup: form.salaryGroupName,
+          BaseSalary: Number(form.baseSalary),
 
-            PFLimit: pfLimit ? Number(pfLimit) : null,
-            ESILimit: esiLimit ? Number(esiLimit) : null,
-            TotalWorkingDays: Number(form.totalWorkingDays),
-            ShiftHours: Number(form.shiftHours),
-            Salarystartfrom: Number(form.salaryCycleFrom) || 0,
-            Salaryendto: Number(form.salaryCycleTo) || 0,
-            ExcludeSunday: form.excludeSunday,
-            MonthSundays:
-              form.monthlySundays !== "" ? Number(form.monthlySundays) : null,
+          PFLimit: pfLimit ? Number(pfLimit) : null,
+          ESILimit: esiLimit ? Number(esiLimit) : null,
+          TotalWorkingDays: Number(form.totalWorkingDays),
+          ShiftHours: Number(form.shiftHours),
+          Salarystartfrom: Number(form.salaryCycleFrom) || 0,
+          Salaryendto: Number(form.salaryCycleTo) || 0,
+          ExcludeSunday: form.excludeSunday,
+          MonthSundays:
+            form.monthlySundays !== "" ? Number(form.monthlySundays) : null,
 
-            Designations: designation ? [designation] : [],
-            ExcludedEmployeeIds: excludeEmployees ? excludedEmployeeIds : [],
-            AllowancesDeductions: adModel,
-            CreatedBy: 1,
-            UpdatedBy: 1,
-            IsActive: true,
-          }
+          Designations: designation ? [designation] : [],
+          ExcludedEmployeeIds: excludeEmployees ? excludedEmployeeIds : [],
+          AllowancesDeductions: adModel,
+          CreatedBy: 1,
+          UpdatedBy: 1,
+          IsActive: true,
+        }
         : {
-            // ➕ POST payload
-            SalaryGroup_ID: 0,
-            PropertyIds: selectedPropertyId,
-            SalaryGroup: form.salaryGroupName,
-            BaseSalary: Number(form.baseSalary),
+          // ➕ POST payload
+          SalaryGroup_ID: 0,
+          PropertyIds: selectedPropertyId,
+          SalaryGroup: form.salaryGroupName,
+          BaseSalary: Number(form.baseSalary),
 
-            PFLimit: pfLimit ? Number(pfLimit) : null,
-            ESILimit: esiLimit ? Number(esiLimit) : null,
-            TotalWorkingDays: Number(form.totalWorkingDays),
-            ShiftHours: Number(form.shiftHours),
-            Salarystartfrom: Number(form.salaryCycleFrom) || 0,
-            Salaryendto: Number(form.salaryCycleTo) || 0,
-            ExcludeSunday: form.excludeSunday,
-            MonthSundays:
-              form.monthlySundays !== "" ? Number(form.monthlySundays) : null,
+          PFLimit: pfLimit ? Number(pfLimit) : null,
+          ESILimit: esiLimit ? Number(esiLimit) : null,
+          TotalWorkingDays: Number(form.totalWorkingDays),
+          ShiftHours: Number(form.shiftHours),
+          Salarystartfrom: Number(form.salaryCycleFrom) || 0,
+          Salaryendto: Number(form.salaryCycleTo) || 0,
+          ExcludeSunday: form.excludeSunday,
+          MonthSundays:
+            form.monthlySundays !== "" ? Number(form.monthlySundays) : null,
 
-            Designations: designation ? [designation] : [],
-            ExcludedEmployeeIds: excludeEmployees ? excludedEmployeeIds : [],
-            AllowancesDeductions: adModel,
-            CreatedBy: 1,
-            UpdatedBy: 1,
-            IsActive: true,
-          };
+          Designations: designation ? [designation] : [],
+          ExcludedEmployeeIds: excludeEmployees ? excludedEmployeeIds : [],
+          AllowancesDeductions: adModel,
+          CreatedBy: 1,
+          UpdatedBy: 1,
+          IsActive: true,
+        };
 
       if (isUpdate) {
         // ✅ UPDATED: no separate ID param
@@ -917,9 +917,13 @@ export default function SGNEW() {
     const sgId = Number(emp.FacilityMember?.SG_Link_ID);
     if (!sgId) return "Not Assigned";
 
-    const sg = salaryGroups.find((s) => Number(s.SalaryGroup_ID) === sgId);
+    const sg = salaryGroups.find(
+      (s) =>
+        Array.isArray(s.SalaryGroup_IDs) &&
+        s.SalaryGroup_IDs.some((id) => Number(id) === sgId)
+    );
 
-    return sg?.SalaryGroup || "Not Assigned";
+    return sg ? sg.SalaryGroup : "Not Assigned";
   };
 
   const activateDeductionWithBase = (deductionName) => {
