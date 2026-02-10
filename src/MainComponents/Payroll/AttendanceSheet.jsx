@@ -169,19 +169,24 @@ export default function AttendanceSheet() {
   // ---------------------------------------------------------
   useEffect(() => {
     setCurrentPage(1);
-    if (propertyId) {
-      getAttendanceByProperty(propertyId).then((data) => {
-        setAttendanceData(data || []);
+
+    async function loadAttendance() {
+      if (!propertyId) return;
+
+      try {
+        const data = await getAttendanceByProperty(propertyId);
+
+        const safeData = data || [];
+        setAttendanceData(safeData);
 
         const currMonthYear = getMonthYearString(month, year);
 
-        const filtered = (data || []).filter(
+        const filtered = safeData.filter(
           (item) => item.monthyear === currMonthYear
         );
 
         setFilteredAttendance(filtered);
 
-        // Map saved attendance → but allow manual override
         const mappedInputs = {};
         filtered.forEach((att) => {
           mappedInputs[att.EmpID] = {
@@ -191,17 +196,28 @@ export default function AttendanceSheet() {
             otDays: att.OtDays || "",
             otHours: att.OtHours || "",
             totalDays:
-              att.TotalWorkingDays || att.TotalWorkingDays === 0
-                ? att.TotalWorkingDays
-                : employeeSGMap[att.EmpID]?.totalDays ?? globalTotalDays,
-            manualTotalDays: false, // saved data is NOT manual
+              att.TotalWorkingDays ?? employeeSGMap[att.EmpID]?.totalDays ?? globalTotalDays,
+            manualTotalDays: false,
           };
         });
 
         setDayInputs(mappedInputs);
         setSelectedEmpIds(new Set());
-      });
+      } catch (err) {
+        // ✅ IMPORTANT PART
+        if (err?.response?.status === 404) {
+          // No attendance exists → this is NOT an error
+          setAttendanceData([]);
+          setFilteredAttendance([]);
+          setDayInputs({});
+          setSelectedEmpIds(new Set());
+        } else {
+          console.error("Attendance load failed:", err);
+        }
+      }
     }
+
+    loadAttendance();
   }, [propertyId, month, year, globalTotalDays, employeeSGMap]);
 
   // ---------------------------------------------------------
@@ -263,8 +279,8 @@ export default function AttendanceSheet() {
         field === "totalDays"
           ? parseFloat(value) || 0
           : parseFloat(current.totalDays) ||
-            employeeSGMap[empId]?.totalDays ||
-            globalTotalDays;
+          employeeSGMap[empId]?.totalDays ||
+          globalTotalDays;
 
       const w = parseFloat(updated.workingDays) || 0;
       const l = parseFloat(updated.leaveDays) || 0;
@@ -361,7 +377,7 @@ export default function AttendanceSheet() {
     setDeleting(true);
 
     try {
-      await deleteAttendanceMultiple(
+      await deleteMultipleAttendance(
         Array.from(selectedEmpIds).join(","),
         getMonthYearString(month, year)
       );
