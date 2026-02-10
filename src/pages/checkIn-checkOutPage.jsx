@@ -1,20 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-
-import { DataTable } from "primereact/datatable";
-import { Column } from "primereact/column";
-import { Button } from "primereact/button";
-import { Dialog } from "primereact/dialog";
-import { InputText } from "primereact/inputtext";
-import { ProgressSpinner } from "primereact/progressspinner";
-
 import PopUp from "../ReactComponents/CheckIn&OutModal/PopUp";
 import "bootstrap/dist/css/bootstrap.min.css";
 import ExportToCSV from "../ReactComponents/ExportToCSV/ExportToCSV";
 import { connect } from "react-redux";
 import { PropagateLoader } from "react-spinners";
 import LoadingOverlay from "react-loading-overlay";
-import { getAssetCheckInOutHistoryByAssetId } from "../Services/CheckInCheckOut";
+import { getAssetCheckInOutHistoryByAssetId } 
+  from "../Services/CheckInCheckOut";
 
 /* ================= BASE64 IMAGE RENDER HELPER ================= */
 const renderBase64Image = (base64) => {
@@ -26,6 +18,7 @@ const renderBase64Image = (base64) => {
       alt="Asset"
       style={{
         width: "180px",
+        height: "auto",
         border: "1px solid #ccc",
         borderRadius: "6px",
         marginTop: "6px",
@@ -34,26 +27,25 @@ const renderBase64Image = (base64) => {
   );
 };
 
-const CheckInCheckOut = ({ propId: actions }) => {
+const CheckInCheckOut = (actions) => {
   const [assetData, setAssetData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const recordsPerPage = 10;
 
   const [viewModal, setViewModal] = useState(false);
   const [currentAsset, setCurrentAsset] = useState(null);
   const [actionType, setActionType] = useState("");
 
+  // 🔹 History states
   const [historyModal, setHistoryModal] = useState(false);
   const [historyData, setHistoryData] = useState([]);
   const [historyAssetName, setHistoryAssetName] = useState("");
 
-  /* Pagination */
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-
   /* ================= FETCH ASSETS ================= */
   useEffect(() => {
     fetchData();
-  }, [actions?.propId]);
+  }, [actions.propId]);
 
   const fetchData = async () => {
     try {
@@ -62,13 +54,19 @@ const CheckInCheckOut = ({ propId: actions }) => {
         `https://api.urest.in:8096/api/Asset/GetAssetCheckOutData?PropId=${actions.propId}`
       );
       const data = await res.json();
-      setAssetData(data);
+      setAssetData(data || []);
+      setCurrentPage(1);
       setLoading(false);
     } catch (error) {
-      console.error("Fetch error:", error);
+      console.error("Error fetching data:", error);
       setLoading(false);
     }
   };
+
+  const indexOfLast = currentPage * recordsPerPage;
+  const indexOfFirst = indexOfLast - recordsPerPage;
+  const currentRecords = assetData.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.ceil(assetData.length / recordsPerPage);
 
   /* ================= CHECK IN / OUT ================= */
   const handleCheckIn = (asset) => {
@@ -95,42 +93,52 @@ const CheckInCheckOut = ({ propId: actions }) => {
         ? "https://api.urest.in:8096/ManageCheckIn"
         : "https://api.urest.in:8096/ManageCheckOut";
 
-    await fetch(url, {
-      method: actionType === "checkin" ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        AssetId: currentAsset.Id,
-        AssetName: currentAsset.Name,
-        ...formData,
-      }),
-    });
+    try {
+      await fetch(url, {
+        method: actionType === "checkin" ? "PUT" : "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          AssetId: currentAsset.Id,
+          AssetName: currentAsset.Name,
+          ...formData,
+        }),
+      });
 
-    fetchData();
-    handleCloseModal();
+      fetchData();
+      handleCloseModal();
+    } catch (error) {
+      console.error(`Error during ${actionType}:`, error);
+    }
   };
 
   /* ================= VIEW HISTORY ================= */
   const handleViewHistory = async (asset) => {
-    setHistoryAssetName(asset.Name);
-    setHistoryModal(true);
-    const data = await getAssetCheckInOutHistoryByAssetId(asset.Id);
-    setHistoryData(data);
-  };
+    try {
+      setHistoryAssetName(asset.Name);
+      setHistoryModal(true);
 
-  /* ================= PAGINATION ================= */
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = assetData.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(assetData.length / itemsPerPage);
+      const data = await getAssetCheckInOutHistoryByAssetId(asset.Id);
+      setHistoryData(data); // [{ CheckOut:{}, CheckIn:{} }]
+    } catch (error) {
+      console.error("Error fetching history:", error);
+    }
+  };
 
   /* ================= UI ================= */
   return (
     <div className="content-wrapper">
       <section className="content">
+
         <div className="card container-fluid">
           <div className="d-flex justify-content-between align-items-center m-2">
-            <h4>Asset List</h4>
-            <ExportToCSV data={assetData} className="btn btn-success btn-sm" />
+            <h2 className="mb-0">Asset List</h2>
+            <ExportToCSV
+              data={assetData}
+              className="btn btn-success btn-sm rounded px-3"
+            />
           </div>
 
           <LoadingOverlay
@@ -145,44 +153,39 @@ const CheckInCheckOut = ({ propId: actions }) => {
                   <th>Asset Name</th>
                   <th>Manufacturer</th>
                   <th>Description</th>
-                  <th className="text-center">Actions</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
-
               <tbody>
-                {currentItems.map((asset, index) => (
+                {currentRecords.map((asset, index) => (
                   <tr key={asset.Id}>
-                    <td>{indexOfFirstItem + index + 1}</td>
+                    <td>{indexOfFirst + index + 1}</td>
                     <td>{asset.Id}</td>
                     <td>{asset.Name}</td>
                     <td>{asset.Manufacturer}</td>
                     <td>{asset.Description}</td>
-
-                    <td className="text-center d-flex justify-content-center gap-2">
+                    <td className="text-center">
                       {asset.ReturnDate === null ? (
                         <button
-                          className="btn btn-warning btn-sm rounded"
-                          style={{ width: 38, height: 38 }}
+                          className="btn btn-warning btn-sm me-2"
                           title="Check In"
                           onClick={() => handleCheckIn(asset)}
                         >
-                          <i className="pi pi-arrow-left"></i>
+                          <i className="pi pi-sign-in"></i>
                         </button>
                       ) : (
                         <button
-                          className="btn btn-success btn-sm rounded"
-                          style={{ width: 38, height: 38 }}
+                          className="btn btn-success btn-sm me-2"
                           title="Check Out"
                           onClick={() => handleCheckOut(asset)}
                         >
-                          <i className="pi pi-arrow-right"></i>
+                          <i className="pi pi-sign-out"></i>
                         </button>
                       )}
 
                       <button
-                        className="btn btn-info btn-sm rounded"
-                        style={{ width: 38, height: 38 }}
-                        title="View History"
+                        className="btn btn-info btn-sm"
+                        title="View"
                         onClick={() => handleViewHistory(asset)}
                       >
                         <i className="pi pi-eye"></i>
@@ -193,32 +196,46 @@ const CheckInCheckOut = ({ propId: actions }) => {
               </tbody>
             </table>
 
-            {/* PAGINATION */}
-            <div className="d-flex justify-content-end align-items-center mb-2">
-              <button
-                className="btn btn-sm btn-secondary me-2"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(currentPage - 1)}
-              >
-                Prev
-              </button>
-
+            <div className="d-flex justify-content-between align-items-center">
               <span>
-                Page {currentPage} of {totalPages}
+                Showing {assetData.length === 0 ? 0 : indexOfFirst + 1} to{" "}
+                {Math.min(indexOfLast, assetData.length)} of {assetData.length} entries
               </span>
 
-              <button
-                className="btn btn-sm btn-secondary ms-2"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(currentPage + 1)}
-              >
-                Next
-              </button>
+              <ul className="pagination mb-0">
+                <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                  <button
+                    className="page-link"
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  >
+                    <i className="pi pi-angle-left"></i>
+                  </button>
+                </li>
+
+                <li className="page-item active">
+                  <span className="page-link">{currentPage}</span>
+                </li>
+
+                <li
+                  className={`page-item ${
+                    currentPage === totalPages || totalPages === 0 ? "disabled" : ""
+                  }`}
+                >
+                  <button
+                    className="page-link"
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(prev + 1, totalPages || 1))
+                    }
+                  >
+                    <i className="pi pi-angle-right"></i>
+                  </button>
+                </li>
+              </ul>
             </div>
           </LoadingOverlay>
         </div>
 
-        {/* ================= CHECK IN / OUT MODAL ================= */}
+        {/* ================= CHECK IN / OUT POPUP ================= */}
         {viewModal && (
           <PopUp
             show={viewModal}
@@ -229,13 +246,16 @@ const CheckInCheckOut = ({ propId: actions }) => {
           />
         )}
 
-        {/* ================= HISTORY MODAL (FULL DATA RESTORED) ================= */}
+        {/* ================= HISTORY MODAL ================= */}
         {historyModal && (
-          <div className="modal show d-block">
+          <div className="modal show d-block" tabIndex="-1">
             <div className="modal-dialog modal-xl">
               <div className="modal-content">
+
                 <div className="modal-header">
-                  <h5>History : {historyAssetName}</h5>
+                  <h5 className="modal-title">
+                    History : {historyAssetName}
+                  </h5>
                   <button
                     className="btn-close"
                     onClick={() => setHistoryModal(false)}
@@ -248,7 +268,8 @@ const CheckInCheckOut = ({ propId: actions }) => {
                   ) : (
                     historyData.map((item, index) => (
                       <div key={index} className="row mb-4 border-bottom pb-3">
-                        {/* CHECK OUT */}
+
+                        {/* 🔵 CHECK OUT */}
                         <div className="col-md-6 border-end">
                           <h6 className="text-primary mb-2">Check Out</h6>
                           <p><b>Assignee:</b> {item.CheckOut?.AssigneeName}</p>
@@ -257,26 +278,31 @@ const CheckInCheckOut = ({ propId: actions }) => {
                           <p><b>Out From:</b> {item.CheckOut?.OutFrom}</p>
                           <p><b>Sent To:</b> {item.CheckOut?.SentTo}</p>
                           <p><b>Approved By:</b> {item.CheckOut?.ApprovedBy}</p>
+
                           <p><b>CheckOut Image:</b></p>
                           {renderBase64Image(item.CheckOut?.CheckOutImage)}
                         </div>
 
-                        {/* CHECK IN */}
+                        {/* 🟢 CHECK IN */}
                         <div className="col-md-6">
                           <h6 className="text-success mb-2">Check In</h6>
                           <p><b>Returned By:</b> {item.CheckIn?.ReturnedBy}</p>
                           <p><b>Return Date:</b> {item.CheckIn?.ReturnDate}</p>
+
                           <p><b>Return Image:</b></p>
                           {renderBase64Image(item.CheckIn?.ReturnImage)}
                         </div>
+
                       </div>
                     ))
                   )}
                 </div>
+
               </div>
             </div>
           </div>
         )}
+
       </section>
     </div>
   );
@@ -289,3 +315,4 @@ function mapStateToProps(state) {
 }
 
 export default connect(mapStateToProps)(CheckInCheckOut);
+
