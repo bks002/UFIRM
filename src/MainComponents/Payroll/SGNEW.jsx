@@ -396,6 +396,28 @@ export default function SGNEW() {
     adList.forEach((item) => {
       const name = item.Name;
 
+      // 🔥 Special case: OTAmount must bypass zero amount filtering
+      if (name === "OTAmount") {
+        list.push({
+          AD_Id: item.ID,
+          Name: name,
+          Type: item.Type,
+          FixedAmount: 0,
+          CalculatedAmount: 0,
+          Formula: null,
+          FormulaId: null,
+
+          IsDouble: !!odDoubleFlags[name],
+          MultiplyValue: odDoubleFlags[name]
+            ? Number(multiplyValues[name]) || 0
+            : 0,
+
+          Isbasic: otBaseType === "Base" ? true : false,
+          Perday: false,
+        });
+        return;
+      }
+
       let fixed = 0;
       let calculated = 0;
 
@@ -421,23 +443,6 @@ export default function SGNEW() {
         } else {
           calculated = deductionAmounts[name] || 0;
         }
-      }
-
-      // Special case: OTAmount should always be included if selected
-      if (name === "OTAmount" && allowanceSelected["OTAmount"]) {
-        list.push({
-          AD_Id: item.ID,
-          Name: name,
-          Type: item.Type,
-          FixedAmount: 0,
-          IsDouble: odDoubleFlags[name] && multiplyValues[name] ? true : false,
-          MultiplyValue: multiplyValues[name] || null,
-          Formula: null,
-          FormulaId: null,
-          CalculatedAmount: 0,
-          Isbasic: otBaseType === "Base",
-        });
-        return;
       }
 
       // Allowances (A, OA) should ALWAYS be included if fixed amount > 0
@@ -467,7 +472,15 @@ export default function SGNEW() {
         CalculatedAmount: calculated,
         Formula: adValueType[name] === "FIXED" ? null : adFormula[name] || null,
         FormulaId: null,
+
         IsDouble: odDoubleFlags[name] || false,
+
+        MultiplyValue: odDoubleFlags[name]
+          ? Number(multiplyValues[name]) || 0
+          : 0,
+
+        Isbasic: false, // only OT uses Isbasic=true
+
         Perday:
           item.Type === "OD" &&
             (name === "Food" || name === "Accommodation" || name === "Uniform")
@@ -578,13 +591,30 @@ export default function SGNEW() {
         setOtBaseType(ad.Isbasic === false ? "Gross" : "Base");
       }
 
+      // 🔥 RESTORE OTAmount special flags
+      if (ad.Name === "OTAmount") {
+        setOdDoubleFlags((prev) => ({
+          ...prev,
+          OTAmount: !!ad.IsDouble,
+        }));
+
+        setMultiplyValues((prev) => ({
+          ...prev,
+          OTAmount: ad.MultiplyValue ?? null,
+        }));
+
+        setOtBaseType(ad.Isbasic === false ? "Gross" : "Base");
+      }
+
       // 🔥 RESTORE allowance usage FROM DEDUCTION FORMULA
       if (ad.Type === "D" && ad.Formula) {
         const usedAllowances = {};
 
         const tokens = ad.Formula.match(/[A-Z][A-Za-z0-9_]*/g) || [];
         tokens.forEach((t) => {
-          if (t !== "Base") {
+          if (t === "Base") {
+            usedAllowances["BaseSalary"] = true;
+          } else {
             usedAllowances[t] = true;
           }
         });
@@ -649,15 +679,6 @@ export default function SGNEW() {
         // 🔥 ALSO MARK DEDUCTION AS VALID
         if (ad.Type === "D" || ad.Type === "OD") {
         }
-      }
-    });
-    // 🔥 FORCE Base Salary inclusion for PF & ESI when loading SG
-    ["PF", "ESI"].forEach((d) => {
-      if (deductionAllowanceRestoreMap[d]) {
-        deductionAllowanceRestoreMap[d] = {
-          ...deductionAllowanceRestoreMap[d],
-          BaseSalary: true,
-        };
       }
     });
     // 🔥 COMMIT deduction → allowance dependency map FIRST
@@ -738,7 +759,7 @@ export default function SGNEW() {
             form.monthlySundays !== "" ? Number(form.monthlySundays) : null,
 
           Designations: designation ? [designation] : [],
-          ExcludedEmployeeIds: excludeEmployees ? excludedEmployeeIds : [],
+          ExcludedEmployeeIds: excludedEmployeeIds || [],
           AllowancesDeductions: adModel,
           CreatedBy: 1,
           UpdatedBy: 1,
@@ -762,7 +783,7 @@ export default function SGNEW() {
             form.monthlySundays !== "" ? Number(form.monthlySundays) : null,
 
           Designations: designation ? [designation] : [],
-          ExcludedEmployeeIds: excludeEmployees ? excludedEmployeeIds : [],
+          ExcludedEmployeeIds: excludedEmployeeIds || [],
           AllowancesDeductions: adModel,
           CreatedBy: 1,
           UpdatedBy: 1,
@@ -1460,11 +1481,14 @@ export default function SGNEW() {
                             fontWeight: 500,
                           }}
                           onClick={(e) => {
-                            e.stopPropagation(); // 🔥 critical
+                            e.stopPropagation();
 
-                            const sgId = emp.FacilityMember?.SG_Link_ID;
+                            const sgId = Number(emp.FacilityMember?.SG_Link_ID);
+
                             const sg = salaryGroups.find(
-                              (s) => Number(s.SalaryGroup_ID) === Number(sgId),
+                              (s) =>
+                                Array.isArray(s.SalaryGroup_IDs) &&
+                                s.SalaryGroup_IDs.some((id) => Number(id) === sgId)
                             );
 
                             if (sg) setPreviewSG(sg);

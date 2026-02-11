@@ -101,12 +101,13 @@ import AttendanceSheet from "../MainComponents/Payroll/AttendanceSheet.jsx";
 import Linking from "../MainComponents/Payroll/Linking.jsx";
 import ItemAssignedPage from "../MainComponents/Inventory/ItemAssigned.jsx";
 import ItemSpecificationPage from "../MainComponents/Inventory/ItemSpecification.jsx";
-import OTHours from "../MainComponents/Payroll/OTHours.jsx";
+// import OTHours from "../MainComponents/Payroll/OTHours.jsx";
 import ClientMasterPage from "../MainComponents/PropertyMaster/ClientMaster.jsx";
 import AD_Percentage from "../MainComponents/Payroll/AD_Percentage.jsx";
 import SGNEW from "../MainComponents/Payroll/SGNEW.jsx";
 import DMRReport from "../MainComponents/Reports/DMRReport.jsx";
 import AttendanceReportPage from "../MainComponents/Reports/AttendanceReport.jsx";
+import Report from "../MainComponents/Payroll/Report.jsx";
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -867,10 +868,20 @@ class MainNav extends React.Component {
                           </Link>
                         </li>
 
-                        <li className="nav-item">
+                        {/* <li className="nav-item">
                           <Link to="/Account/App/OTHours" className="nav-link">
                             <i className="fas fa-caret-right nav-icon"></i>
                             <p>OT Hours</p>
+                          </Link>
+                        </li> */}
+
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/Report"
+                            className="nav-link"
+                          >
+                            <i className="fas fa-caret-right nav-icon"></i>
+                            <p>Report Page</p>
                           </Link>
                         </li>
 
@@ -1584,7 +1595,7 @@ class MainNav extends React.Component {
             <Route path="/Account/App/UploaderPage">
               <UploaderPage />
             </Route>
-            <Route path="/Account/App/OTHours" component={OTHours} />
+            {/* <Route path="/Account/App/OTHours" component={OTHours} /> */}
             <Route path="/Account/App/Linking" component={Linking} />
             <Route
               path="/Account/App/AttendanceSheet"
@@ -1602,6 +1613,10 @@ class MainNav extends React.Component {
             <Route
               path="/Account/App/GenerateSalary"
               component={GenerateSalary}
+            />
+            <Route
+              path="/Account/App/Report"
+              component={Report}
             />
             <Route path="/Account/App/SGNEW" component={SGNEW} />
             <Route path="/Account/App/SalaryGroups" component={SalaryGroups} />

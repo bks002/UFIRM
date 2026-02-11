@@ -505,6 +505,32 @@ export const deleteMultipleAttendance = async (empIds, monthyear) => {
   return response.data;
 };
 
+// Upload Attendance File
+export const uploadAttendance = async (file, propertyId, monthyear) => {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("propertyId", propertyId);
+    formData.append("monthyear", monthyear);
+
+    const response = await axios.post(
+      `${BASE_URL}/UploadAttendance`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        withCredentials: false,
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Upload attendance failed:", error);
+    throw error;
+  }
+};
+
 
 const APIBASE_URL = "https://api.urest.in:8096/api";
 
@@ -802,3 +828,29 @@ export const getSalaryAllowancesByProperties = async (propertyIds = []) => {
   return response.json();
 };
 
+// ================= OT REPORT (MONTHLY SAVE) =================
+
+export async function saveMonthlyOTReport(model) {
+  try {
+    const response = await fetch(
+      "https://api.urest.in:8096/api/otreport/saveMonthly",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(model),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to save monthly OT report: ${response.status}`);
+    }
+
+    return await response.json(); // returns {}
+  } catch (error) {
+    console.error("Error saving monthly OT report:", error);
+    throw error;
+  }
+}

@@ -8,6 +8,7 @@ import {
   createAttendance,
   updateAttendance,
   deleteMultipleAttendance,
+  uploadAttendance,
 } from "../../Services/PayrollService";
 
 import { getEmployeesByOffice } from "../../Services/PayrollService";
@@ -109,6 +110,37 @@ export default function AttendanceSheet() {
     foodDed: "",
     status: "",
   };
+
+  const fileInputRef = React.useRef(null);
+  async function handleImportClick() {
+    fileInputRef.current.click();
+  }
+
+  async function handleFileChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      const monthyear = getMonthYearString(month, year);
+
+      const res = await uploadAttendance(file, propertyId, monthyear);
+
+      alert(res?.Message || "Attendance uploaded successfully!");
+
+      // Refresh attendance after upload
+      const refreshed = await getAttendanceByProperty(propertyId);
+      setAttendanceData(refreshed || []);
+      setFilteredAttendance(
+        (refreshed || []).filter(
+          (item) => item.monthyear === monthyear
+        )
+      );
+    } catch (err) {
+      alert("Upload failed.");
+    }
+
+    e.target.value = null; // reset input
+  }
 
   // -------------------------------------------------------------------
   // Load PropertyMaster TotalWorkingDays
@@ -789,6 +821,27 @@ export default function AttendanceSheet() {
 
         {/* Right: Actions */}
         <div style={{ display: "flex", gap: 12 }}>
+          {/* Hidden File Input */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            style={{ display: "none" }}
+            accept=".csv,.xlsx"
+            onChange={handleFileChange}
+          />
+
+          <button
+            onClick={handleImportClick}
+            style={{
+              background: "#38a169", // green
+              color: "#fff",
+              padding: "8px 20px",
+              borderRadius: 6,
+            }}
+          >
+            Import
+          </button>
+
           <button
             disabled={selectedEmpIds.size === 0 || saving}
             onClick={handleSaveAttendance}
@@ -875,7 +928,7 @@ export default function AttendanceSheet() {
               {/* Leave group */}
               <th colSpan={3} style={thStyle}>Leave</th>
 
-              <th rowSpan={2} style={{ ...thStyle, width: 130 }}>Week Off</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 130 }}>Weekly Off</th>
               <th rowSpan={2} style={{ ...thStyle, width: 100 }}>OT Days</th>
               <th rowSpan={2} style={{ ...thStyle, width: 110 }}>OT Hours</th>
               <th rowSpan={2} style={{ ...thStyle, width: 100 }}>NH Days</th>
