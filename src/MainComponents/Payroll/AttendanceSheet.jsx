@@ -127,19 +127,59 @@ export default function AttendanceSheet() {
 
       alert(res?.Message || "Attendance uploaded successfully!");
 
-      // Refresh attendance after upload
+      // 🔥 Reload attendance
       const refreshed = await getAttendanceByProperty(propertyId);
-      setAttendanceData(refreshed || []);
-      setFilteredAttendance(
-        (refreshed || []).filter(
-          (item) => item.monthyear === monthyear
-        )
+      const safeData = refreshed || [];
+
+      setAttendanceData(safeData);
+
+      const filtered = safeData.filter(
+        (item) => item.monthyear === monthyear
       );
+
+      setFilteredAttendance(filtered);
+
+      // 🔥 Rebuild dayInputs from uploaded data
+      const mappedInputs = {};
+      filtered.forEach((att) => {
+        mappedInputs[att.EmpID] = {
+          workingDays: att.WorkingDays,
+          EL: att.EL ?? "",
+          CL: att.CL ?? "",
+          SL: att.SL ?? "",
+          weekDaysOff: att.WeekDaysOff,
+          otDays: att.OtDays || "",
+          otHours: att.OtHours || "",
+          totalDays: att.TotalWorkingDays ?? globalTotalDays,
+          manualTotalDays: false,
+          nhDays: att.NHDays ?? "",
+          fhDays: att.FHDays ?? "",
+          holidays: att.Holidays ?? "",
+          divideByDays: att.DivideByDays ?? "",
+          otMonthDays: att.OtMonthDays ?? "",
+          pfArrear: att.PFArrear ?? "",
+          otherArrear: att.OtherArrear ?? "",
+          incentive: att.Incentive ?? "",
+          advanceDed: att.AdvanceDed ?? "",
+          uniformDed: att.UniformDed ?? "",
+          bgvDed: att.BGVDed ?? "",
+          roomDed: att.RoomDed ?? "",
+          fineDed: att.FineDed ?? "",
+          joiningKits: att.JoiningKits ?? "",
+          otherDed: att.OtherDed ?? "",
+          foodDed: att.FoodDed ?? "",
+          status: att.Status ?? "",
+        };
+      });
+
+      setDayInputs(mappedInputs);
+      setSelectedEmpIds(new Set());
     } catch (err) {
+      console.error("Upload failed:", err);
       alert("Upload failed.");
     }
 
-    e.target.value = null; // reset input
+    e.target.value = null;
   }
 
   // -------------------------------------------------------------------
@@ -833,7 +873,7 @@ export default function AttendanceSheet() {
           <button
             onClick={handleImportClick}
             style={{
-              background: "#38a169", // green
+              background: "#2b6cb0",   // clean blue
               color: "#fff",
               padding: "8px 20px",
               borderRadius: 6,
@@ -1325,7 +1365,8 @@ export default function AttendanceSheet() {
                   </td>
 
                   <td style={tdStyle}>
-                    <select
+                    <input
+                      type="text"
                       disabled={!isChecked}
                       value={inp.status || ""}
                       onChange={(e) =>
@@ -1334,14 +1375,8 @@ export default function AttendanceSheet() {
                       style={{
                         ...inputStyle,
                         width: "120px",
-                        cursor: isChecked ? "pointer" : "not-allowed",
                       }}
-                    >
-                      <option value="">Select</option>
-                      <option value="Open">Open</option>
-                      <option value="Processed">Processed</option>
-                      <option value="Hold">Hold</option>
-                    </select>
+                    />
                   </td>
 
                 </tr>

@@ -517,16 +517,15 @@ export const uploadAttendance = async (file, propertyId, monthyear) => {
       `${BASE_URL}/UploadAttendance`,
       formData,
       {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        withCredentials: false,
+        withCredentials: false,   // keep this
+        // ❌ do NOT set Content-Type manually
       }
     );
 
     return response.data;
   } catch (error) {
     console.error("Upload attendance failed:", error);
+    console.error("Error details:", error.response ? error.response.data : error.message);
     throw error;
   }
 };
@@ -828,8 +827,32 @@ export const getSalaryAllowancesByProperties = async (propertyIds = []) => {
   return response.json();
 };
 
-// ================= OT REPORT (MONTHLY SAVE) =================
 
+// ----------------OTReport API Calls------------------- 
+// ================= GET MONTHLY OT REPORT =================
+export async function getMonthlyOTReport(propertyId, month, year) {
+  try {
+    const url = `https://api.urest.in:8096/api/otreport/getMonthly?propertyId=${propertyId}&month=${month}&year=${year}`;
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch monthly OT report: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching monthly OT report:", error);
+    throw error;
+  }
+}
+
+// ================= OT REPORT (MONTHLY SAVE) =================
 export async function saveMonthlyOTReport(model) {
   try {
     const response = await fetch(
@@ -851,6 +874,60 @@ export async function saveMonthlyOTReport(model) {
     return await response.json(); // returns {}
   } catch (error) {
     console.error("Error saving monthly OT report:", error);
+    throw error;
+  }
+}
+
+// ================= UPDATE MONTHLY OT REPORT =================
+export async function updateMonthlyOTReport(model) {
+  try {
+    const response = await fetch(
+      "https://api.urest.in:8096/api/otreport/updateMonthly",
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(model),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to update monthly OT report: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating monthly OT report:", error);
+    throw error;
+  }
+}
+
+// ================= DELETE MONTHLY OT REPORT =================
+export async function deleteMonthlyOTReport(
+  propertyId,
+  employeeId,
+  month,
+  year
+) {
+  try {
+    const url = `https://api.urest.in:8096/api/otreport/deleteMonthly?propertyId=${propertyId}&employeeId=${employeeId}&month=${month}&year=${year}`;
+
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete monthly OT report: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error deleting monthly OT report:", error);
     throw error;
   }
 }
