@@ -25,6 +25,8 @@ export default function StockItems() {
   const [rows, setRows] = useState([]);
   const [sortedField, setSortedField] = useState(null);
   const [sortAsc, setSortAsc] = useState(true);
+  const [viewMode, setViewMode] = useState("panel");
+  const [selectedRowKey, setSelectedRowKey] = useState(null);
   const toastRef = useRef(null);
 
   // Scroll page to top when component mounts
@@ -39,6 +41,16 @@ export default function StockItems() {
   useEffect(() => {
   setRows([]);
 }, [mode]);
+
+  useEffect(() => {
+    if (!rows.length) {
+      setSelectedRowKey(null);
+      return;
+    }
+    if (!rows.some((r, i) => `${r.id ?? r.item_id ?? "row"}-${i}` === selectedRowKey)) {
+      setSelectedRowKey(`${rows[0].id ?? rows[0].item_id ?? "row"}-0`);
+    }
+  }, [rows, selectedRowKey]);
 
 
   // Helpers: created_on parsing/formatting
@@ -450,6 +462,110 @@ export default function StockItems() {
         .stock-table-animate {
           animation: fadeInStock 0.35s ease-in-out;
         }
+        .stock-items-toggle {
+          display: inline-flex;
+          border: 1px solid #d4e3ed;
+          border-radius: 8px;
+          overflow: hidden;
+          background: #fff;
+        }
+        .stock-items-toggle button {
+          border: none;
+          background: transparent;
+          padding: 6px 10px;
+          font-size: 12px;
+          font-weight: 600;
+          color: #4A7FA8;
+          cursor: pointer;
+        }
+        .stock-items-toggle button.active {
+          background: #e8f1f8;
+          color: #1E4A6B;
+        }
+        .stock-items-mode-group {
+          border: 1px solid #d4e3ed;
+          border-radius: 8px;
+          padding: 6px 10px;
+          margin-left: 14px;
+          display: inline-flex;
+          align-items: center;
+          gap: 14px;
+          background: #fff;
+        }
+        .stock-items-action-btn {
+          border: 1px solid #d4e3ed;
+          border-radius: 8px;
+          padding: 7px 12px;
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+        .stock-items-action-btn.primary { background: #2684ff; border-color: #2684ff; color: #fff; }
+        .stock-items-action-btn.success { background: #2E7D4A; border-color: #2E7D4A; color: #fff; }
+        .stock-items-action-btn.danger { background: #A83232; border-color: #A83232; color: #fff; }
+        .stock-items-action-btn:hover { filter: brightness(0.95); }
+        .stock-items-panel {
+          display: grid;
+          grid-template-columns: 360px minmax(0, 1fr);
+          gap: 12px;
+        }
+        .stock-items-list {
+          border: 1px solid #e5eef5;
+          border-radius: 8px;
+          background: #fff;
+          max-height: 560px;
+          overflow-y: auto;
+          padding: 8px;
+        }
+        .stock-items-list-row {
+          width: 100%;
+          text-align: left;
+          border: 1px solid #e4edf4;
+          border-radius: 8px;
+          background: #fff;
+          margin-bottom: 8px;
+          padding: 10px;
+          cursor: pointer;
+        }
+        .stock-items-list-row.active {
+          background: #eef5fb;
+          border-color: #4A7FA8;
+          box-shadow: inset 2px 0 0 #4A7FA8;
+        }
+        .stock-items-detail {
+          border: 1px solid #e5eef5;
+          border-radius: 8px;
+          background: #fff;
+          padding: 14px;
+        }
+        .stock-items-detail-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(120px, 1fr));
+          gap: 12px;
+          margin-top: 10px;
+        }
+        .stock-items-detail-grid .label {
+          font-size: 11px;
+          font-weight: 700;
+          color: #7a8ea0;
+          text-transform: uppercase;
+          margin-bottom: 3px;
+        }
+        .stock-items-detail-grid .value {
+          font-size: 13px;
+          color: #1E4A6B;
+          font-weight: 600;
+        }
+        .stock-items-specs {
+          margin-top: 12px;
+          border-top: 1px solid #e8eff5;
+          padding-top: 10px;
+        }
+        @media (max-width: 1024px) {
+          .stock-items-panel {
+            grid-template-columns: 1fr;
+          }
+        }
         @keyframes fadeInStock {
           from { opacity: 0; transform: translateY(6px); }
           to { opacity: 1; transform: translateY(0); }
@@ -465,12 +581,28 @@ export default function StockItems() {
   style={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb" }}
 >
 
-          <div className="card-body d-flex flex-wrap align-items-center">
-
-            <div className="d-flex flex-wrap align-items-center ml-auto">
+          <div className="card-body d-flex flex-wrap align-items-center justify-content-between">
+            <div className="d-flex align-items-center mb-2 mb-md-0">
+              <h5 className="mb-0 mr-3" style={{ color: "#1E4A6B", fontWeight: 700 }}>Stock Items</h5>
+              <div className="stock-items-toggle">
+                <button
+                  type="button"
+                  className={viewMode === "panel" ? "active" : ""}
+                  onClick={() => setViewMode("panel")}
+                >
+                  Panel View
+                </button>
+                <button
+                  type="button"
+                  className={viewMode === "table" ? "active" : ""}
+                  onClick={() => setViewMode("table")}
+                >
+                  Table View
+                </button>
+              </div>
               {/* Plain radio buttons (back to original style) */}
-              <div className="m-4 d-flex gap: 15px">
-                <label className="mr-3 mb-0">
+              <div className="stock-items-mode-group">
+                <label className="mb-0">
                   <input
                     type="radio"
                     name="stockMode"
@@ -483,7 +615,7 @@ export default function StockItems() {
                   Requisition
                 </label>
 
-                <label className="mr-3 mb-0">
+                <label className="mb-0">
                   <input
                     type="radio"
                     name="stockMode"
@@ -509,19 +641,19 @@ export default function StockItems() {
                   Both
                 </label>
               </div>
+            </div>
 
               {/* Action buttons grouped */}
-<div className="d-flex" style={{ gap: "10px" }}>
-  <button className="btn btn-sm btn-primary" onClick={fetchData}>
-    View Report
-  </button>
-  <button className="btn btn-sm btn-success" onClick={exportExcel}>
-    Export Excel
-  </button>
-  <button className="btn btn-sm btn-danger" onClick={exportPDF}>
-    Export PDF
-  </button>
-</div>
+            <div className="d-flex mb-2 mb-md-0" style={{ gap: "8px" }}>
+              <button className="stock-items-action-btn primary" onClick={fetchData}>
+                View Report
+              </button>
+              <button className="stock-items-action-btn success" onClick={exportExcel}>
+                Export Excel
+              </button>
+              <button className="stock-items-action-btn danger" onClick={exportPDF}>
+                Export PDF
+              </button>
             </div>
           </div>
         </div>
@@ -548,8 +680,88 @@ export default function StockItems() {
           </div>
         )}
 
+        {/* Panel View */}
+        {!loading && rows.length > 0 && viewMode === "panel" && (
+          <div className="stock-items-panel stock-table-animate">
+            <div className="stock-items-list">
+              {rows.map((row, index) => {
+                const rowKey = `${row.id ?? row.item_id ?? "row"}-${index}`;
+                return (
+                  <button
+                    key={rowKey}
+                    type="button"
+                    className={`stock-items-list-row ${selectedRowKey === rowKey ? "active" : ""}`}
+                    onClick={() => setSelectedRowKey(rowKey)}
+                  >
+                    <div style={{ fontWeight: 700, color: "#1E4A6B", fontSize: 13 }}>{row.item_name || "-"}</div>
+                    <div style={{ fontSize: 11, color: "#7a8ea0", marginTop: 3 }}>{row.gender || "-"}</div>
+                    <div style={{ fontSize: 11, color: "#4A7FA8", marginTop: 6, fontWeight: 700 }}>
+                      Qty: {row.quantity ?? 0}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="stock-items-detail">
+              {(() => {
+                const selectedIndex = rows.findIndex((r, i) => `${r.id ?? r.item_id ?? "row"}-${i}` === selectedRowKey);
+                const activeRow = selectedIndex >= 0 ? rows[selectedIndex] : rows[0];
+                if (!activeRow) return null;
+                return (
+                  <>
+                    <h4 style={{ margin: 0, color: "#1E4A6B", fontWeight: 700 }}>{activeRow.item_name || "-"}</h4>
+                    <div className="stock-items-detail-grid">
+                      <div>
+                        <div className="label">Gender</div>
+                        <div className="value">{activeRow.gender || "-"}</div>
+                      </div>
+                      <div>
+                        <div className="label">Quantity</div>
+                        <div className="value">{activeRow.quantity ?? 0}</div>
+                      </div>
+                      <div>
+                        <div className="label">Created Date</div>
+                        <div className="value">{formatDate(activeRow.created_on)}</div>
+                      </div>
+                      <div>
+                        <div className="label">Created Time</div>
+                        <div className="value">{formatTime12(activeRow.created_on)}</div>
+                      </div>
+                      {mode === "both" && (
+                        <>
+                          <div>
+                            <div className="label">Requisition</div>
+                            <div className="value">{activeRow.isRequisition ? "Yes" : "No"}</div>
+                          </div>
+                          <div>
+                            <div className="label">Handover</div>
+                            <div className="value">{activeRow.isHandover ? "Yes" : "No"}</div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    <div className="stock-items-specs">
+                      <div className="label">Specifications</div>
+                      {(!Array.isArray(activeRow.specifications) || activeRow.specifications.length === 0) && (
+                        <div className="text-muted">No Specifications</div>
+                      )}
+                      {Array.isArray(activeRow.specifications) && activeRow.specifications.map((s, idx) => (
+                        <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#1E4A6B", marginBottom: 4 }}>
+                          <span>{s.specification_name}: {s.specification_value}</span>
+                          {String(s.specification_name).toLowerCase().includes("color") &&
+                            renderColorBlock(s.specification_value)}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+
         {/* Data Table */}
-        {!loading && rows.length > 0 && (
+        {!loading && rows.length > 0 && viewMode === "table" && (
           <div className="card shadow-sm stock-table-animate">
             <div className="card-body p-0">
               <div className="table-responsive">

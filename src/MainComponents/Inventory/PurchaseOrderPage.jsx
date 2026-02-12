@@ -150,13 +150,111 @@ const PurchaseOrderPage = () => {
         setSelectedGridData([]);
     };
 
+    const selectedSubtotal = selectedGridData.reduce((sum, row) => {
+        const amount = (row?.Price || 0) * (row?.Quantity || 0);
+        return sum + amount;
+    }, 0);
+
     return (
         <div>
             <Toast ref={toast} />
-            <section className="content">
+            <style>{`
+                .po-create-shell {
+                    max-height: 72vh;
+                    overflow-y: auto;
+                    padding-right: 4px;
+                }
+                .po-create-note {
+                    color: #6e7f8e;
+                    font-size: 12px;
+                    margin-bottom: 12px;
+                }
+                .po-create-section-title {
+                    color: #233a4d;
+                    font-size: 28px;
+                    font-weight: 700;
+                    margin: 0 0 14px 0;
+                }
+                .po-create-block-title {
+                    color: #22384c;
+                    font-size: 28px;
+                    font-weight: 700;
+                    margin: 18px 0 10px 0;
+                }
+                .po-create-grid {
+                    display: grid;
+                    grid-template-columns: repeat(3, minmax(180px, 1fr));
+                    gap: 12px;
+                }
+                .po-create-field label {
+                    font-size: 11px;
+                    font-weight: 700;
+                    color: #718393;
+                    text-transform: uppercase;
+                    margin-bottom: 5px;
+                    display: block;
+                }
+                .po-create-field .form-control {
+                    height: 36px;
+                    border: 1px solid #d5e3ed;
+                    border-radius: 7px;
+                    font-size: 12px;
+                }
+                .po-create-table-wrap {
+                    border: 1px solid #d7e4ee;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    margin-top: 10px;
+                }
+                .po-create-summary {
+                    border-top: 1px solid #d7e4ee;
+                    padding-top: 10px;
+                    margin-top: 10px;
+                    display: grid;
+                    grid-template-columns: 1fr auto;
+                    row-gap: 6px;
+                    column-gap: 14px;
+                    font-size: 13px;
+                }
+                .po-create-summary strong {
+                    color: #22384c;
+                }
+                .po-create-footer {
+                    margin-top: 14px;
+                    display: flex;
+                    justify-content: flex-end;
+                }
+                .po-create-btn {
+                    border-radius: 7px !important;
+                    padding: 8px 14px !important;
+                    font-size: 12px !important;
+                    font-weight: 600 !important;
+                    border: 1px solid #2f9cff !important;
+                    background: #2f9cff !important;
+                }
+                .po-create-dialog .p-dialog-header {
+                    border-bottom: 1px solid #d7e4ee;
+                    background: #f9fbfd;
+                }
+                .po-create-dialog .p-dialog-title {
+                    color: #233a4d;
+                    font-weight: 700;
+                }
+                @media (max-width: 900px) {
+                    .po-create-grid {
+                        grid-template-columns: 1fr;
+                    }
+                }
+            `}</style>
+            <section className="content po-create-shell">
                 <div>
-                    <div className="row">
-                        <div className="col">
+                    <h3 className="po-create-section-title">Purchase Order</h3>
+                    <div className="po-create-note">
+                        Select vendor and item rates, then continue to quantity and final confirmation.
+                    </div>
+
+                    <div className="po-create-grid">
+                        <div className="po-create-field">
                             <label>Category</label>
                             <select
                                 className="form-control"
@@ -171,7 +269,7 @@ const PurchaseOrderPage = () => {
                                 ))}
                             </select>
                         </div>
-                        <div className="col">
+                        <div className="po-create-field">
                             <label>Items</label>
                             <select
                                 className="form-control"
@@ -186,7 +284,7 @@ const PurchaseOrderPage = () => {
                                 ))}
                             </select>
                         </div>
-                        <div className="col">
+                        <div className="po-create-field">
                             <label>Vendor</label>
                             <select
                                 className="form-control"
@@ -202,7 +300,9 @@ const PurchaseOrderPage = () => {
                             </select>
                         </div>
                     </div>
-                    <div className="row mt-3">
+
+                    <h4 className="po-create-block-title">Order Items</h4>
+                    <div className="po-create-table-wrap">
                         <DataTable
                             value={filteredGridData}
                             paginator
@@ -221,15 +321,26 @@ const PurchaseOrderPage = () => {
                             <Column selectionMode="multiple" header={<div className='px-2'>Select</div>} />
                         </DataTable>
                     </div>
-                    <div className="row mt-3">
-                        <div className="col-12 text-right">
-                            <Button
-                                label="Create Purchase Order"
-                                icon="pi pi-plus"
-                                onClick={openDialog}
-                                disabled={selectedGridData.length === 0}
-                            />
-                        </div>
+
+                    <div className="po-create-summary">
+                        <span>Subtotal</span>
+                        <span>₹{selectedSubtotal.toLocaleString("en-IN")}</span>
+                        <strong>Total</strong>
+                        <strong>₹{selectedSubtotal.toLocaleString("en-IN")}</strong>
+                    </div>
+
+                    <h4 className="po-create-block-title" style={{ fontSize: '32px', marginTop: '18px' }}>
+                        Shipping Information
+                    </h4>
+
+                    <div className="po-create-footer">
+                        <Button
+                            label="Create Purchase Order"
+                            icon="pi pi-plus"
+                            className="po-create-btn"
+                            onClick={openDialog}
+                            disabled={selectedGridData.length === 0}
+                        />
                     </div>
                 </div>
             </section>
@@ -239,7 +350,8 @@ const PurchaseOrderPage = () => {
                 onHide={onHideDialog}
                 modal
                 style={{ width: '90vw', height: '90vh' }}
-                header="Purchase Order"
+                className="po-create-dialog"
+                header="New Purchase Order"
             >
                 <POQuantityComponent selectedGridData={selectedGridData} filteredGridData={filteredGridData}/>
             </Dialog>

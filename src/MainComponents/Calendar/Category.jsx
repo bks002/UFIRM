@@ -307,6 +307,7 @@ class Category extends Component {
             catDesc: "",
             catColor: "#FFA500",
             isShowColorPicker: false,
+            viewMode: 'panel',
         }, () => {
             setTimeout(() => { CreateValidator(); }, 50);
         });
@@ -555,7 +556,7 @@ class Category extends Component {
                                             onChange={(e) => this.setState({ searchTerm: e.target.value })}
                                         />
                                     </div>
-                                    <button className="category-add-btn" onClick={this.Addnew.bind(this)}>
+                                    <button className="category-add-btn" onClick={this.Addnew}>
                                         <PlusIcon />
                                         New Category
                                     </button>

@@ -44,6 +44,8 @@ const RateCard = (props) => {
   const [viewDialogVisible, setViewDialogVisible] = useState(false)
   const [selectedRateCard, setSelectedRateCard] = useState(null)
   const [pageMode, setPageMode] = useState("home")
+  const [viewMode, setViewMode] = useState("panel")
+  const [selectedRateCardId, setSelectedRateCardId] = useState(null)
   const [filters, setFilters] = useState({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
     CategoryName: { value: null, matchMode: FilterMatchMode.EQUALS },
@@ -83,6 +85,16 @@ const RateCard = (props) => {
       })
     }
   }, [propertyId])
+
+  useEffect(() => {
+    if (!gridData.length) {
+      setSelectedRateCardId(null)
+      return
+    }
+    if (!gridData.some((x) => x.Id === selectedRateCardId)) {
+      setSelectedRateCardId(gridData[0].Id)
+    }
+  }, [gridData, selectedRateCardId])
 
   const loadInitialData = async () => {
     setLoading(true)
@@ -136,6 +148,24 @@ const RateCard = (props) => {
       VendorName: "",
     })
     setPageMode("Add")
+    setIsDialogVisible(true)
+  }
+
+  const editRateCard = (data) => {
+    setRateCardData({
+      Id: data.Id,
+      CategoryId: data.CategoryId,
+      ItemId: data.ItemId,
+      VendorId: data.VendorId,
+      Price: data.Price,
+      ValidTill: data.ValidTill ? new Date(data.ValidTill) : null,
+      CreatedBy: data.CreatedBy || 1,
+      IsApproved: data.IsApproved ?? true,
+      CategoryName: data.CategoryName || "",
+      ItemName: data.ItemName || "",
+      VendorName: data.VendorName || "",
+    })
+    setPageMode("Edit")
     setIsDialogVisible(true)
   }
 
@@ -257,13 +287,19 @@ const RateCard = (props) => {
       <React.Fragment>
         <Button
           icon={<i className="fa fa-eye" aria-hidden="true"></i>}
-          className="p-button-rounded p-button-info mr-2"
+          className="p-button-rounded p-button-info mr-2 ratecard-icon-btn view"
           onClick={() => viewRateCard(rowData)}
           tooltip="View"
         />
         <Button
+          icon={<i className="fa fa-pencil" aria-hidden="true"></i>}
+          className="p-button-rounded p-button-warning mr-2 ratecard-icon-btn edit"
+          onClick={() => editRateCard(rowData)}
+          tooltip="Edit"
+        />
+        <Button
           icon={<i className="fa fa-trash" aria-hidden="true"></i>}
-          className="p-button-rounded p-button-danger"
+          className="p-button-rounded p-button-danger ratecard-icon-btn delete"
           onClick={() => confirmDelete(rowData)}
           tooltip="Delete"
         />
@@ -281,8 +317,24 @@ const RateCard = (props) => {
   }
 
   const header = (
-    <div className="card-header d-flex justify-content-between align-items-center p-2">
-      <div className="input-group input-group-sm">
+    <div className="card-header d-flex justify-content-between align-items-center p-2 flex-wrap" style={{ gap: "10px" }}>
+      <div className="d-flex align-items-center" style={{ gap: "12px" }}>
+        <div className="ratecard-view-toggle">
+          <button
+            type="button"
+            className={viewMode === "panel" ? "active" : ""}
+            onClick={() => setViewMode("panel")}
+          >
+            Panel View
+          </button>
+          <button
+            type="button"
+            className={viewMode === "table" ? "active" : ""}
+            onClick={() => setViewMode("table")}
+          >
+            Table View
+          </button>
+        </div>
         <span className="p-input-icon-right">
           <i className="pi pi-search" />
           <InputText
@@ -295,7 +347,7 @@ const RateCard = (props) => {
         </span>
       </div>
 
-      <div className="d-flex">
+      <div className="d-flex align-items-center" style={{ gap: "8px" }}>
         <ExportToCSV data={gridData} className="btn btn-success btn-sm rounded ml-2 mr-2" />
         <Button label="Add New Rate" icon="pi pi-plus" className="btn btn-success btn-sm rounded" onClick={openNew} />
       </div>
@@ -352,7 +404,7 @@ const RateCard = (props) => {
     <React.Fragment>
       <Button label="Cancel" icon="pi pi-times" className="p-button-text" onClick={hideDialog} />
       <Button
-        label={pageMode === "Add" ? "Create" : "Create"}
+        label={pageMode === "Add" ? "Create" : "Update"}
         icon="pi pi-check"
         className="p-button-text"
         onClick={saveRateCard}
@@ -363,6 +415,135 @@ const RateCard = (props) => {
   return (
     <div className="card">
       <Toast ref={toast} />
+      <style>{`
+        .ratecard-view-toggle {
+          display: inline-flex;
+          border: 1px solid #d4e3ed;
+          border-radius: 8px;
+          overflow: hidden;
+          background: #fff;
+        }
+        .ratecard-view-toggle button {
+          border: none;
+          background: transparent;
+          padding: 7px 12px;
+          font-size: 12px;
+          font-weight: 600;
+          color: #4A7FA8;
+          cursor: pointer;
+        }
+        .ratecard-view-toggle button.active {
+          background: #e8f1f8;
+          color: #1E4A6B;
+        }
+        .ratecard-icon-btn {
+          width: 28px !important;
+          height: 28px !important;
+          padding: 0 !important;
+          border-radius: 7px !important;
+          border: 1px solid transparent !important;
+        }
+        .ratecard-icon-btn.view {
+          background: #e8f1f8 !important;
+          color: #1E4A6B !important;
+          border-color: #cfe0ee !important;
+        }
+        .ratecard-icon-btn.edit {
+          background: #fff4e8 !important;
+          color: #ff8b00 !important;
+          border-color: #ffd8ad !important;
+        }
+        .ratecard-icon-btn.delete {
+          background: #ffecec !important;
+          color: #d64545 !important;
+          border-color: #ffc9c9 !important;
+        }
+        .ratecard-panel-layout {
+          display: grid;
+          grid-template-columns: 360px minmax(0, 1fr);
+          gap: 12px;
+          padding: 12px;
+        }
+        .ratecard-panel-list {
+          border: 1px solid #d4e3ed;
+          border-radius: 8px;
+          background: #fff;
+          max-height: 560px;
+          overflow-y: auto;
+          padding: 8px;
+        }
+        .ratecard-panel-item {
+          width: 100%;
+          text-align: left;
+          border: 1px solid #e4edf4;
+          border-radius: 8px;
+          background: #fff;
+          padding: 10px;
+          margin-bottom: 8px;
+          cursor: pointer;
+        }
+        .ratecard-panel-item.active {
+          background: #eef5fb;
+          border-color: #4A7FA8;
+          box-shadow: inset 2px 0 0 #4A7FA8;
+        }
+        .ratecard-panel-detail {
+          border: 1px solid #d4e3ed;
+          border-radius: 8px;
+          background: #fff;
+          padding: 14px;
+        }
+        .ratecard-detail-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(140px, 1fr));
+          gap: 12px;
+          margin-top: 10px;
+        }
+        .ratecard-label {
+          font-size: 11px;
+          text-transform: uppercase;
+          color: #7a8ea0;
+          font-weight: 700;
+          margin-bottom: 3px;
+        }
+        .ratecard-value {
+          font-size: 13px;
+          color: #1E4A6B;
+          font-weight: 600;
+        }
+        .ratecard-dialog .p-dialog-header {
+          border-bottom: 1px solid #d4e3ed;
+          background: #f8fafb;
+        }
+        .ratecard-dialog .p-dialog-title {
+          color: #1E4A6B;
+          font-weight: 700;
+        }
+        .ratecard-form-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+        .ratecard-field label {
+          font-size: 12px;
+          color: #4f6475;
+          font-weight: 600;
+          margin-bottom: 6px;
+          display: block;
+        }
+        .ratecard-dialog-footer {
+          display: flex;
+          justify-content: flex-end;
+          gap: 8px;
+        }
+        @media (max-width: 1024px) {
+          .ratecard-panel-layout {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+
+      {viewMode === "table" && (
       <DataTable
         value={gridData}
         loading={loading}
@@ -405,23 +586,85 @@ const RateCard = (props) => {
         <Column field="ValidTill" header=" Valid Till" body={(rowData) => formatDate(rowData.ValidTill)} />
         <Column header="Action" body={actionBodyTemplate} />
       </DataTable>
+      )}
+
+      {viewMode === "panel" && (
+        <>
+          {header}
+          <div className="ratecard-panel-layout">
+            <div className="ratecard-panel-list">
+              {gridData.map((row) => (
+                <button
+                  key={row.Id}
+                  type="button"
+                  className={`ratecard-panel-item ${selectedRateCardId === row.Id ? "active" : ""}`}
+                  onClick={() => setSelectedRateCardId(row.Id)}
+                >
+                  <div style={{ fontWeight: 700, color: "#1E4A6B", fontSize: 13 }}>{row.ItemName || "-"}</div>
+                  <div style={{ marginTop: 2, color: "#7a8ea0", fontSize: 11 }}>{row.VendorName || "-"}</div>
+                  <div style={{ marginTop: 6, color: "#4A7FA8", fontWeight: 700, fontSize: 12 }}>
+                    ₹{row.Price} {row.ValidTill ? `• ${formatDate(row.ValidTill)}` : ""}
+                  </div>
+                </button>
+              ))}
+            </div>
+            <div className="ratecard-panel-detail">
+              {(() => {
+                const active = gridData.find((x) => x.Id === selectedRateCardId) || gridData[0];
+                if (!active) return <div className="text-muted">No rate cards found.</div>;
+                return (
+                  <>
+                    <div className="d-flex justify-content-between align-items-start">
+                      <h3 style={{ margin: 0, color: "#1E4A6B", fontWeight: 700 }}>{active.ItemName}</h3>
+                      <div className="d-flex">
+                        <Button
+                          icon={<i className="fa fa-eye" aria-hidden="true"></i>}
+                          className="p-button-rounded mr-2 ratecard-icon-btn view"
+                          onClick={() => viewRateCard(active)}
+                          tooltip="View"
+                        />
+                        <Button
+                          icon={<i className="fa fa-pencil" aria-hidden="true"></i>}
+                          className="p-button-rounded mr-2 ratecard-icon-btn edit"
+                          onClick={() => editRateCard(active)}
+                          tooltip="Edit"
+                        />
+                        <Button
+                          icon={<i className="fa fa-trash" aria-hidden="true"></i>}
+                          className="p-button-rounded ratecard-icon-btn delete"
+                          onClick={() => confirmDelete(active)}
+                          tooltip="Delete"
+                        />
+                      </div>
+                    </div>
+                    <div className="ratecard-detail-grid">
+                      <div><div className="ratecard-label">Category</div><div className="ratecard-value">{active.CategoryName || "-"}</div></div>
+                      <div><div className="ratecard-label">Vendor</div><div className="ratecard-value">{active.VendorName || "-"}</div></div>
+                      <div><div className="ratecard-label">Rate</div><div className="ratecard-value">₹{active.Price}</div></div>
+                      <div><div className="ratecard-label">Valid Till</div><div className="ratecard-value">{formatDate(active.ValidTill) || "-"}</div></div>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        </>
+      )}
 
       <Dialog
         visible={isDialogVisible}
         style={{ width: "50vw" }}
+        className="ratecard-dialog"
         contentStyle={{ backgroundColor: "white" }}
-        header={`${pageMode === "Add" ? "Add" : "Add"} Rate Card`}
+        header={`${pageMode === "Add" ? "Add" : "Edit"} Rate Card`}
         modal
-        footer={rateCardDialogFooter}
+        footer={<div className="ratecard-dialog-footer">{rateCardDialogFooter}</div>}
         onHide={hideDialog}
         breakpoints={{ "960px": "80vw", "640px": "95vw" }}
       >
-        <div className="row">
-          <div className="col-12 md:col-6">
-            <div className="mb-3">
+        <div className="ratecard-form-grid">
+          <div className="ratecard-field">
               <label htmlFor="category">Category</label>
-              <div className="mb-3">
-                <div className="card flex justify-content-center">
                   <Dropdown
                     id="category"
                     onChange={onCategoryChange}
@@ -430,15 +673,9 @@ const RateCard = (props) => {
                     optionLabel="Name"
                     placeholder="Select Category"
                   />
-                </div>
-              </div>
-            </div>
           </div>
-          <div className="col-12 md:col-6">
-            <div className="mb-3">
+          <div className="ratecard-field">
               <label htmlFor="item">Item</label>
-              <div className="mb-3">
-                <div className="card flex justify-content-center">
                   <Dropdown
                     id="item"
                     value={filteredItems.find(item => item.Id === rateCardData.ItemId)}
@@ -448,20 +685,14 @@ const RateCard = (props) => {
                     placeholder="Select Item"
                     disabled={!rateCardData.CategoryId}
                   />
-                </div>
-              </div>
               {!rateCardData.CategoryId && <small className="p-error">Please select a category first.</small>}
               {rateCardData.CategoryId &&
                 filteredItems.length === 0 && (
                   <small className="p-text-secondary">No items available for the selected category.</small>
                 )}
-            </div>
           </div>
-          <div className="col-12 md:col-6">
-            <div className="mb-3">
+          <div className="ratecard-field">
               <label htmlFor="vendor">Vendor</label>
-              <div className="mb-3">
-                <div className="card flex justify-content-center">
                   <Dropdown
                     id="vendor"
                     value={vendors.find((ven) => ven.Id === rateCardData.VendorId)}
@@ -470,12 +701,8 @@ const RateCard = (props) => {
                     optionLabel="Name"
                     placeholder="Select Vendor"
                   />
-                </div>
-              </div>
-            </div>
           </div>
-          <div className="col-12 md:col-6">
-            <div className="mb-3">
+          <div className="ratecard-field">
               <label htmlFor="rate">Rate</label>
               <div className="p-inputgroup">
                 <InputText
@@ -495,10 +722,8 @@ const RateCard = (props) => {
                   </span>
                 )}
               </div>
-            </div>
           </div>
-          <div className="col-12 md:col-6">
-            <div className="mb-3">
+          <div className="ratecard-field">
               <label htmlFor="ValidTill">Valid Till</label>
               <div className="p-inputgroup">
                 <Calendar
@@ -508,7 +733,6 @@ const RateCard = (props) => {
                   showIcon
                 />
               </div>
-            </div>
           </div>
         </div>
       </Dialog>

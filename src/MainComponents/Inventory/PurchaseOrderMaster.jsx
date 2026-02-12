@@ -42,6 +42,9 @@ const PurchaseOrderMaster = () => {
     const [filteredGridData, setFilteredGridData] = useState([emptyallGridData]);
     const [displayDialog, setDisplayDialog] = useState(false);
     const [preview, setpreview] = useState(false);
+    const [viewMode, setViewMode] = useState("panel");
+    const [selectedPanelPoId, setSelectedPanelPoId] = useState(null);
+    const [panelTab, setPanelTab] = useState("details");
     const toast = useRef(null);
 
     useEffect(() => {
@@ -62,6 +65,16 @@ const PurchaseOrderMaster = () => {
         };
         fetchData();
     }, [propertyId]);
+
+    useEffect(() => {
+        if (!filteredGridData.length) {
+            setSelectedPanelPoId(null);
+            return;
+        }
+        if (!filteredGridData.some((po) => po.PurchaseOrderId === selectedPanelPoId)) {
+            setSelectedPanelPoId(filteredGridData[0].PurchaseOrderId);
+        }
+    }, [filteredGridData, selectedPanelPoId]);
 
     const openDialog = () => {
         setDisplayDialog(true);
@@ -189,7 +202,7 @@ const PurchaseOrderMaster = () => {
             <React.Fragment>
                 <Button
                     icon={<i className="fa fa-eye" aria-hidden="true"></i>}
-                    className="p-button-rounded rounded p-button-info mr-2"
+                    className="p-button-rounded rounded p-button-info mr-2 po-icon-btn po-icon-view"
                     onClick={() => {
                         setSelectedRow(rowData);
                         setpreview(true);
@@ -197,8 +210,7 @@ const PurchaseOrderMaster = () => {
                 />
                 <Button
                     icon={<i className="fa fa-print" aria-hidden="true"></i>}
-                    className="p-button-rounded rounded p-button-info"
-                    style={{ backgroundColor: 'green', borderColor: 'green', color: 'white' }}
+                    className="p-button-rounded rounded p-button-info po-icon-btn po-icon-print"
                     onClick={() => {
                         printRow(rowData);
                     }}
@@ -207,9 +219,164 @@ const PurchaseOrderMaster = () => {
         )
     }
 
+    const activePurchaseOrder =
+        filteredGridData.find((po) => po.PurchaseOrderId === selectedPanelPoId) || filteredGridData[0] || null;
+
+    const panelActionButtons = (rowData) => {
+        if (!rowData) return null;
+        return (
+            <div className="d-flex align-items-center" style={{ gap: '8px' }}>
+                <Button
+                    icon={<i className="fa fa-eye" aria-hidden="true"></i>}
+                    className="p-button-rounded p-button-info po-icon-btn po-icon-view"
+                    onClick={() => {
+                        setSelectedRow(rowData);
+                        setpreview(true);
+                    }}
+                    tooltip="Preview"
+                />
+                <Button
+                    icon={<i className="fa fa-print" aria-hidden="true"></i>}
+                    className="p-button-rounded p-button-info po-icon-btn po-icon-print"
+                    onClick={() => printRow(rowData)}
+                    tooltip="Print"
+                />
+            </div>
+        );
+    };
+
     return (
         <div className="content-wrapper">
             <Toast ref={toast} />
+            <style>{`
+                .po-view-toggle {
+                    display: inline-flex;
+                    border: 1px solid #d4e3ed;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    background: #fff;
+                }
+                .po-view-toggle button {
+                    border: none;
+                    background: transparent;
+                    padding: 7px 12px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: #4A7FA8;
+                }
+                .po-view-toggle button.active {
+                    background: #e8f1f8;
+                    color: #1E4A6B;
+                }
+                .po-master-shell {
+                    border: 1px solid #d4e3ed;
+                    border-radius: 10px;
+                    background: #fff;
+                    overflow: hidden;
+                }
+                .po-panel-layout {
+                    display: grid;
+                    grid-template-columns: 340px minmax(0, 1fr);
+                    min-height: 560px;
+                }
+                .po-panel-list {
+                    border-right: 1px solid #dce8f1;
+                    max-height: 560px;
+                    overflow-y: auto;
+                    padding: 10px;
+                }
+                .po-panel-item {
+                    width: 100%;
+                    border: 1px solid #e5edf4;
+                    border-radius: 8px;
+                    background: #fff;
+                    text-align: left;
+                    padding: 10px;
+                    margin-bottom: 8px;
+                    cursor: pointer;
+                }
+                .po-panel-item.active {
+                    border-color: #2f9cff;
+                    box-shadow: inset 2px 0 0 #2f9cff;
+                    background: #f5faff;
+                }
+                .po-panel-detail {
+                    padding: 14px;
+                    background: #fff;
+                }
+                .po-detail-title {
+                    font-size: 24px;
+                    line-height: 1.2;
+                    margin: 0;
+                    color: #22384c;
+                    font-weight: 700;
+                }
+                .po-tabline {
+                    display: flex;
+                    gap: 24px;
+                    border-bottom: 1px solid #dce8f1;
+                    margin-top: 12px;
+                }
+                .po-tabline button {
+                    border: none;
+                    background: none;
+                    font-size: 12px;
+                    color: #6d7f8d;
+                    padding: 10px 0;
+                    font-weight: 600;
+                    border-bottom: 2px solid transparent;
+                }
+                .po-tabline button.active {
+                    color: #2684ff;
+                    border-bottom-color: #2684ff;
+                }
+                .po-detail-grid {
+                    margin-top: 16px;
+                    display: grid;
+                    grid-template-columns: repeat(2, minmax(160px, 1fr));
+                    gap: 16px;
+                }
+                .po-label {
+                    font-size: 11px;
+                    text-transform: uppercase;
+                    color: #7a8ea0;
+                    font-weight: 700;
+                    margin-bottom: 4px;
+                }
+                .po-value {
+                    font-size: 13px;
+                    color: #22384c;
+                    font-weight: 600;
+                    word-break: break-word;
+                }
+                .po-icon-btn {
+                    width: 28px !important;
+                    height: 28px !important;
+                    padding: 0 !important;
+                    border-radius: 7px !important;
+                    border: 1px solid transparent !important;
+                }
+                .po-icon-view {
+                    background: #e8f1f8 !important;
+                    color: #1E4A6B !important;
+                    border-color: #cfe0ee !important;
+                }
+                .po-icon-print {
+                    background: #ebfff3 !important;
+                    color: #1f9d57 !important;
+                    border-color: #c5efd6 !important;
+                }
+                @media (max-width: 1024px) {
+                    .po-panel-layout {
+                        grid-template-columns: 1fr;
+                    }
+                    .po-panel-list {
+                        border-right: none;
+                        border-bottom: 1px solid #dce8f1;
+                        max-height: 260px;
+                    }
+                }
+            `}</style>
             <div className="content-header">
                 <div>
                     <div className="row ">
@@ -219,8 +386,24 @@ const PurchaseOrderMaster = () => {
                     </div>
                 </div>
             </div>
-            <div className="card-header d-flex justify-content-between align-items-center p-2">
-                <div className="input-group input-group-sm">
+            <div className="card-header d-flex justify-content-between align-items-center p-2 flex-wrap" style={{ gap: '10px' }}>
+                <div className="d-flex align-items-center" style={{ gap: '12px' }}>
+                    <div className="po-view-toggle">
+                        <button
+                            type="button"
+                            className={viewMode === "panel" ? "active" : ""}
+                            onClick={() => setViewMode("panel")}
+                        >
+                            Panel View
+                        </button>
+                        <button
+                            type="button"
+                            className={viewMode === "table" ? "active" : ""}
+                            onClick={() => setViewMode("table")}
+                        >
+                            Table View
+                        </button>
+                    </div>
                     <span className="p-input-icon-right">
                         <i className="pi pi-search" />
                         <InputText
@@ -233,11 +416,12 @@ const PurchaseOrderMaster = () => {
                     </span>
                 </div>
 
-                <div className="d-flex">
+                <div className="d-flex align-items-center" style={{ gap: '8px' }}>
                     <ExportToCSV className="btn btn-success btn-sm rounded ml-2 mr-2" data={filteredGridData}/>
                     <Button label="Create Purchase Order" icon="pi pi-plus" className="btn btn-success btn-sm rounded" onClick={openDialog} />
                 </div>
             </div>
+            {viewMode === "table" && (
             <div className="row mt-3">
                 <DataTable
                     value={filteredGridData}
@@ -256,12 +440,134 @@ const PurchaseOrderMaster = () => {
                     <Column header="Action" body={actionBodyTemplate} />
                 </DataTable>
             </div>
+            )}
+
+            {viewMode === "panel" && (
+                <div className="po-master-shell mt-3">
+                    <div className="po-panel-layout">
+                        <div className="po-panel-list">
+                            <div style={{ fontSize: '12px', color: '#667e92', marginBottom: '8px', fontWeight: 600 }}>
+                                All Purchase Orders ({filteredGridData.length})
+                            </div>
+                            {filteredGridData.map((po) => {
+                                const poId = po.PurchaseOrderId;
+                                const total = Array.isArray(po.Items)
+                                    ? po.Items.reduce((sum, item) => sum + (item.LineTotal || item.Price * item.Quantity || 0), 0)
+                                    : 0;
+                                return (
+                                    <button
+                                        key={poId || po.PONumber}
+                                        type="button"
+                                        className={`po-panel-item ${poId === selectedPanelPoId ? "active" : ""}`}
+                                        onClick={() => setSelectedPanelPoId(poId)}
+                                    >
+                                        <div style={{ fontSize: '14px', color: '#22384c', fontWeight: 700 }}>
+                                            {po.PONumber || "Purchase Order"}
+                                        </div>
+                                        <div style={{ fontSize: '12px', color: '#6d7f8d', marginTop: '2px' }}>
+                                            {po.VendorName || "-"}
+                                        </div>
+                                        <div style={{ fontSize: '12px', color: '#7a8ea0', marginTop: '2px' }}>
+                                            {po.PODateTime || "-"}
+                                        </div>
+                                        <div style={{ fontSize: '12px', color: '#1E4A6B', marginTop: '4px', fontWeight: 700 }}>
+                                            Total Cost: ₹{Number(total || 0).toLocaleString("en-IN")}
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <div className="po-panel-detail">
+                            {!activePurchaseOrder ? (
+                                <div className="text-muted">No purchase order found.</div>
+                            ) : (
+                                <>
+                                    <div className="d-flex justify-content-between align-items-start">
+                                        <h2 className="po-detail-title">{activePurchaseOrder.PONumber || "Purchase Order"}</h2>
+                                        {panelActionButtons(activePurchaseOrder)}
+                                    </div>
+                                    <div className="po-tabline">
+                                        <button
+                                            type="button"
+                                            className={panelTab === "details" ? "active" : ""}
+                                            onClick={() => setPanelTab("details")}
+                                        >
+                                            Details
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={panelTab === "history" ? "active" : ""}
+                                            onClick={() => setPanelTab("history")}
+                                        >
+                                            Comments & History
+                                        </button>
+                                    </div>
+
+                                    {panelTab === "details" && (
+                                        <>
+                                            <div className="po-detail-grid">
+                                                <div>
+                                                    <div className="po-label">Vendor</div>
+                                                    <div className="po-value">{activePurchaseOrder.VendorName || "-"}</div>
+                                                </div>
+                                                <div>
+                                                    <div className="po-label">Date</div>
+                                                    <div className="po-value">{activePurchaseOrder.PODateTime || "-"}</div>
+                                                </div>
+                                                <div>
+                                                    <div className="po-label">Shipping Address</div>
+                                                    <div className="po-value">{activePurchaseOrder.ShippingAddress || "-"}</div>
+                                                </div>
+                                                <div>
+                                                    <div className="po-label">Billing Address</div>
+                                                    <div className="po-value">{activePurchaseOrder.BillingAddress || "-"}</div>
+                                                </div>
+                                            </div>
+                                            <div style={{ marginTop: '16px' }}>
+                                                <div className="po-label" style={{ marginBottom: '8px' }}>Order Cost Breakdown</div>
+                                                <DataTable value={activePurchaseOrder.Items || []} stripedRows responsiveLayout="scroll" size="small">
+                                                    <Column field="ItemName" header="Item Name" />
+                                                    <Column field="Quantity" header="Ordered" />
+                                                    <Column field="QuantityReceived" header="Received" />
+                                                    <Column field="MeasurementUnit" header="Unit" />
+                                                    <Column
+                                                        field="Price"
+                                                        header="Unit Cost"
+                                                        body={(row) => `₹${row.Price || row.Rate || 0}`}
+                                                    />
+                                                    <Column
+                                                        field="LineTotal"
+                                                        header="Total Cost"
+                                                        body={(row) => {
+                                                            const total = row.LineTotal || row.Price * row.Quantity || 0;
+                                                            return `₹${Number(total).toLocaleString("en-IN")}`;
+                                                        }}
+                                                    />
+                                                </DataTable>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {panelTab === "history" && (
+                                        <div style={{ marginTop: '16px' }}>
+                                            <div className="po-label">Comments & History</div>
+                                            <div className="po-value" style={{ color: '#6d7f8d', fontWeight: 500 }}>
+                                                History API under progress.
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
             <Dialog
                 visible={displayDialog}
                 onHide={onHideDialog}
                 modal
                 style={{ width: '90vw', height: '90vh' }}
-                header="Create Purchase Order"
+                header="New Purchase Order"
             >
                 <PurchaseOrderPage />
             </Dialog>

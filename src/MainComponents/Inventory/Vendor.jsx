@@ -493,6 +493,7 @@ const Vendor = (props) => {
 
   const Addnew = () => {
     setPageMode("Add")
+    setViewMode("panel")
     CreateValidator()
     setVendorData(emptyVendorData)
     setSelectedFile(null)

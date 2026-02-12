@@ -459,15 +459,15 @@ const ItemMaster = (props) => {
         );
     };
 
-    // Render Create/Edit Dialog
+    // Render Create/Edit/View Dialog
     const renderItemDialog = () => {
-        if (pageMode !== 'Add' && pageMode !== 'Edit') return null;
+        if (pageMode !== 'Add' && pageMode !== 'Edit' && pageMode !== 'View') return null;
 
         return (
             <div className="approval-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
                 <div className="item-form-modal">
                     <div className="item-form-modal-header">
-                        <h3>{pageMode === 'Add' ? 'New Item' : 'Edit Item'}</h3>
+                        <h3>{pageMode === 'Add' ? 'New Item' : pageMode === 'Edit' ? 'Edit Item' : 'View Item'}</h3>
                         <button className="approval-modal-close" onClick={handleClose} title="Close">
                             <CloseIcon />
                         </button>
@@ -479,6 +479,7 @@ const ItemMaster = (props) => {
                                 className="item-form-input"
                                 value={item.CategoryId}
                                 onChange={(e) => setItem({ ...item, CategoryId: parseInt(e.target.value) || 0 })}
+                                disabled={pageMode === 'View'}
                             >
                                 <option value="">Select Category</option>
                                 {categories.map((cat) => (
@@ -494,6 +495,8 @@ const ItemMaster = (props) => {
                                 placeholder="Enter Item Name"
                                 value={item.Name}
                                 onChange={(e) => setItem({ ...item, Name: e.target.value })}
+                                readOnly={pageMode === 'View'}
+                                disabled={pageMode === 'View'}
                             />
                         </div>
                         <div className="item-form-section">
@@ -504,6 +507,8 @@ const ItemMaster = (props) => {
                                 value={item.Description}
                                 onChange={(e) => setItem({ ...item, Description: e.target.value })}
                                 rows={3}
+                                readOnly={pageMode === 'View'}
+                                disabled={pageMode === 'View'}
                             />
                         </div>
                         <div className="item-form-row">
@@ -515,6 +520,8 @@ const ItemMaster = (props) => {
                                     placeholder="Enter Measuring Unit"
                                     value={item.MeasurementUnit}
                                     onChange={(e) => setItem({ ...item, MeasurementUnit: e.target.value })}
+                                    readOnly={pageMode === 'View'}
+                                    disabled={pageMode === 'View'}
                                 />
                             </div>
                             <div className="item-form-section">
@@ -525,6 +532,8 @@ const ItemMaster = (props) => {
                                     placeholder="Enter Minimum Stock Level"
                                     value={item.MinStockLevel}
                                     onChange={(e) => setItem({ ...item, MinStockLevel: e.target.value })}
+                                    readOnly={pageMode === 'View'}
+                                    disabled={pageMode === 'View'}
                                 />
                             </div>
                         </div>
@@ -537,6 +546,8 @@ const ItemMaster = (props) => {
                                     placeholder="Enter Brand Name"
                                     value={item.BrandName}
                                     onChange={(e) => setItem({ ...item, BrandName: e.target.value })}
+                                    readOnly={pageMode === 'View'}
+                                    disabled={pageMode === 'View'}
                                 />
                             </div>
                             <div className="item-form-section">
@@ -547,18 +558,20 @@ const ItemMaster = (props) => {
                                     placeholder="Enter HSN Code"
                                     value={item.HSNCode}
                                     onChange={(e) => setItem({ ...item, HSNCode: e.target.value })}
+                                    readOnly={pageMode === 'View'}
+                                    disabled={pageMode === 'View'}
                                 />
                             </div>
                         </div>
                     </div>
                     <div className="item-form-modal-footer">
-                        <button className="item-form-cancel-btn" onClick={handleClose}>Cancel</button>
-                        <button
+                        <button className="item-form-cancel-btn" onClick={handleClose}>Close</button>
+                        {pageMode !== 'View' && <button
                             className="item-form-save-btn"
                             onClick={pageMode === "Add" ? handleCreateItem : handleUpdateItem}
                         >
                             {pageMode === "Add" ? "Create Item" : "Update Item"}
-                        </button>
+                        </button>}
                     </div>
                 </div>
             </div>

@@ -141,9 +141,67 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
     return (
         <>
         <Toast ref={toast} />
-        <div>
-            <div className="d-flex justify-content-between mb-4">
-                <div className="d-flex flex-column me-3 flex-grow-1">
+        <style>{`
+            .po-qty-shell {
+                max-height: 72vh;
+                overflow-y: auto;
+                padding-right: 4px;
+            }
+            .po-qty-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 14px;
+                margin-bottom: 14px;
+            }
+            .po-qty-field label {
+                display: block;
+                font-size: 11px;
+                text-transform: uppercase;
+                color: #718393;
+                font-weight: 700;
+                margin-bottom: 6px;
+            }
+            .po-qty-table {
+                border: 1px solid #d7e4ee;
+                border-radius: 8px;
+                overflow: hidden;
+            }
+            .po-qty-summary {
+                margin-top: 12px;
+                display: grid;
+                grid-template-columns: 1fr auto;
+                gap: 8px;
+                font-size: 13px;
+                border-top: 1px solid #d7e4ee;
+                padding-top: 10px;
+            }
+            .po-qty-summary strong {
+                color: #22384c;
+            }
+            .po-qty-footer {
+                display: flex;
+                justify-content: flex-end;
+                margin-top: 14px;
+            }
+            .po-qty-btn {
+                border-radius: 7px !important;
+                padding: 8px 14px !important;
+                font-size: 12px !important;
+                font-weight: 600 !important;
+            }
+            .po-preview-dialog .p-dialog-header {
+                border-bottom: 1px solid #d7e4ee;
+                background: #f9fbfd;
+            }
+            @media (max-width: 900px) {
+                .po-qty-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+        `}</style>
+        <div className="po-qty-shell">
+            <div className="po-qty-grid">
+                <div className="po-qty-field">
                     <label htmlFor="Shipping">Shipping Address</label>
                     <InputText
                         id="Shipping"
@@ -152,7 +210,7 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
                         placeholder="Enter shipping address"
                     />
                 </div>
-                <div className="d-flex flex-column ms-3 flex-grow-1">
+                <div className="po-qty-field">
                     <label htmlFor="Billing">Billing Address</label>
                     <InputText
                         id="Billing"
@@ -163,6 +221,7 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
                 </div>
             </div>
 
+            <div className="po-qty-table">
             <DataTable
                 value={items}
                 dataKey="Id"
@@ -180,17 +239,17 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
                 <Column header="Quantity" body={QuantityTemplate} />
                 <Column body={TotalAmountTemplate} header="Total Amount" />
             </DataTable>
-
-            <div className="text-end mt-3">
-                <strong>Total Order Amount: </strong>
-                {new Intl.NumberFormat('en-IN', {
-                    style: 'currency',
-                    currency: 'INR',
-                }).format(grandTotal)}
             </div>
 
-            <div className="d-flex justify-content-end mt-3">
-                <Button label="Preview Order" icon="pi pi-check" className="p-button-success" onClick={openPlaceOrder} />
+            <div className="po-qty-summary">
+                <span>Subtotal</span>
+                <span>{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(grandTotal)}</span>
+                <strong>Total</strong>
+                <strong>{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(grandTotal)}</strong>
+            </div>
+
+            <div className="po-qty-footer">
+                <Button label="Preview Order" icon="pi pi-check" className="p-button-success po-qty-btn" onClick={openPlaceOrder} />
             </div>
 
             <Dialog
@@ -198,6 +257,7 @@ const POQuantityComponent = ({ selectedGridData = [] }) => {
                 onHide={onHideDialog}
                 modal
                 style={{ width: '90vw', maxHeight: '90vh', overflowY: 'auto' }}
+                className="po-preview-dialog"
                 header={
                     <div>
                         <h5 className='mb-4'>Preview Purchase Order(s)</h5>

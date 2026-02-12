@@ -297,7 +297,7 @@ class Frequency extends Component {
     }
 
     Addnew = () => {
-        this.setState({ PageMode: 'Add' }, () => {
+        this.setState({ PageMode: 'Add', viewMode: 'panel' }, () => {
             CreateValidator();
         });
     }
@@ -526,7 +526,7 @@ class Frequency extends Component {
                                             onChange={(e) => this.setState({ searchTerm: e.target.value })}
                                         />
                                     </div>
-                                    <button className="category-add-btn" onClick={this.Addnew.bind(this)}>
+                                    <button className="category-add-btn" onClick={this.Addnew}>
                                         <PlusIcon />
                                         Add Frequency
                                     </button>

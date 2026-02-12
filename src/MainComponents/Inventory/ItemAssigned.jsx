@@ -27,7 +27,9 @@ import "primereact/resources/primereact.min.css";
 export default function ItemAssignedPage() {
   const [grouped, setGrouped] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-const [selectedRows, setSelectedRows] = useState([]);
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [viewMode, setViewMode] = useState("panel");
+  const [selectedPanelId, setSelectedPanelId] = useState(null);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [specifications, setSpecifications] = useState([]);
@@ -457,6 +459,16 @@ const handleApprove = async () => {
     );
   });
 
+  useEffect(() => {
+    if (!filtered.length) {
+      setSelectedPanelId(null);
+      return;
+    }
+    if (!filtered.some((r) => r.Id === selectedPanelId)) {
+      setSelectedPanelId(filtered[0].Id);
+    }
+  }, [filtered, selectedPanelId]);
+
   return (
     <div
       className="container-fluid py-3"
@@ -469,15 +481,143 @@ const handleApprove = async () => {
       }}
     >
       <Toast ref={toast} />
+      <style>{`
+        .item-assigned-toggle {
+          display: inline-flex;
+          border: 1px solid #d4e3ed;
+          border-radius: 8px;
+          overflow: hidden;
+          background: #fff;
+        }
+        .item-assigned-toggle button {
+          border: none;
+          background: transparent;
+          padding: 8px 12px;
+          font-size: 12px;
+          font-weight: 600;
+          color: #4A7FA8;
+          cursor: pointer;
+        }
+        .item-assigned-toggle button.active {
+          background: #e8f1f8;
+          color: #1E4A6B;
+        }
+        .item-assigned-panel {
+          display: grid;
+          grid-template-columns: 360px minmax(0, 1fr);
+          gap: 12px;
+        }
+        .item-assigned-list {
+          border: 1px solid #d4e3ed;
+          border-radius: 8px;
+          background: #fff;
+          max-height: 640px;
+          overflow-y: auto;
+          padding: 8px;
+        }
+        .item-assigned-card {
+          border: 1px solid #e4edf4;
+          border-radius: 8px;
+          background: #fff;
+          padding: 10px;
+          margin-bottom: 8px;
+          cursor: pointer;
+        }
+        .item-assigned-card.active {
+          background: #eef5fb;
+          border-color: #4A7FA8;
+          box-shadow: inset 2px 0 0 #4A7FA8;
+        }
+        .item-assigned-detail {
+          border: 1px solid #d4e3ed;
+          border-radius: 8px;
+          background: #fff;
+          padding: 14px;
+        }
+        .item-assigned-detail-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(120px, 1fr));
+          gap: 12px;
+          margin-top: 10px;
+        }
+        .item-assigned-label {
+          font-size: 11px;
+          color: #7a8ea0;
+          text-transform: uppercase;
+          font-weight: 700;
+          margin-bottom: 3px;
+        }
+        .item-assigned-value {
+          font-size: 13px;
+          color: #1E4A6B;
+          font-weight: 600;
+        }
+        .item-assigned-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+        .item-assigned-left-head {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .item-assigned-actions {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: 8px;
+        }
+        .item-assigned-icon-btn {
+          border: none !important;
+          width: 28px !important;
+          height: 28px !important;
+          border-radius: 7px !important;
+          padding: 0 !important;
+          font-size: 0.75rem !important;
+        }
+        .item-assigned-icon-btn.edit {
+          background: #fff4e8 !important;
+          color: #ff8b00 !important;
+          border: 1px solid #ffd8ad !important;
+        }
+        .item-assigned-icon-btn.delete {
+          background: #ffecec !important;
+          color: #d64545 !important;
+          border: 1px solid #ffc9c9 !important;
+        }
+        @media (max-width: 1024px) {
+          .item-assigned-panel {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
 
       <div className="card shadow-sm mt-3">
-        <div
-          className="card-body d-flex flex-wrap align-items-center"
-          style={{ paddingBottom: "10px" }}
-        >
-          <h5 className="mb-0">Item Assigned</h5>
+        <div className="card-body item-assigned-header" style={{ paddingBottom: "10px" }}>
+          <div className="item-assigned-left-head">
+            <h5 className="mb-0">Item Assigned</h5>
+            <div className="item-assigned-toggle">
+    <button
+      type="button"
+      className={viewMode === "panel" ? "active" : ""}
+      onClick={() => setViewMode("panel")}
+    >
+      Panel View
+    </button>
+    <button
+      type="button"
+      className={viewMode === "table" ? "active" : ""}
+      onClick={() => setViewMode("table")}
+    >
+      Table View
+    </button>
+  </div>
+          </div>
 
-          <div className="ml-auto d-flex align-items-center" style={{ gap: "12px" }}>
+          <div className="d-flex align-items-center" style={{ gap: "12px" }}>
 
   {/* ✅ Search bar - matches Add Item button size */}
       {/* <span className="search-icon-wrapper">
@@ -511,7 +651,7 @@ const handleApprove = async () => {
 />
 
   {/* ✅ Add button - rounded */}
-  <Button
+<Button
     label="Add Item"
     icon="pi pi-plus"
     className="p-button-success"
@@ -528,6 +668,111 @@ const handleApprove = async () => {
         </div>
 
         <div className="card-body p-3">
+          {viewMode === "panel" && (
+            <div className="item-assigned-panel">
+              <div className="item-assigned-list">
+                {filtered.length === 0 && (
+                  <div className="text-muted text-center py-4">No records found.</div>
+                )}
+                {filtered.map((row, index) => {
+                  const isSelected = selectedPanelId === row.Id;
+                  const checked = selectedRows.includes(row.Id);
+                  return (
+                    <div
+                      key={row.Id ?? index}
+                      className={`item-assigned-card ${isSelected ? "active" : ""}`}
+                      onClick={() => setSelectedPanelId(row.Id)}
+                    >
+                      <div className="d-flex align-items-start justify-content-between">
+                        <div>
+                          <div style={{ fontWeight: 700, color: "#1E4A6B", fontSize: 13 }}>{row.Item_Name}</div>
+                          <div style={{ color: "#7a8ea0", fontSize: 11, marginTop: 2 }}>{row.Gender}</div>
+                          <div style={{ color: "#4A7FA8", fontSize: 11, marginTop: 6, fontWeight: 700 }}>{row.Quantity} units</div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            if (e.target.checked) {
+                              setSelectedRows([...selectedRows, row.Id]);
+                            } else {
+                              setSelectedRows(selectedRows.filter((id) => id !== row.Id));
+                            }
+                          }}
+                        />
+                      </div>
+                      <div className="mt-2">{renderTypeBadge(row)}</div>
+                      <div className="item-assigned-actions">
+                        <Button
+                          icon="pi pi-pencil"
+                          className="item-assigned-icon-btn edit"
+                          onClick={(e) => { e.stopPropagation(); openEditDialog(row); }}
+                        />
+                        <Button
+                          icon="pi pi-trash"
+                          className="item-assigned-icon-btn delete"
+                          onClick={(e) => { e.stopPropagation(); openDeleteDialog(row); }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="item-assigned-detail">
+                {(() => {
+                  const active = filtered.find((r) => r.Id === selectedPanelId) || filtered[0];
+                  if (!active) return <div className="text-muted">No records found.</div>;
+                  return (
+                    <>
+                      <h3 style={{ margin: 0, color: "#1E4A6B", fontWeight: 700 }}>{active.Item_Name}</h3>
+                      <div className="item-assigned-detail-grid">
+                        <div>
+                          <div className="item-assigned-label">Gender</div>
+                          <div className="item-assigned-value">{active.Gender}</div>
+                        </div>
+                        <div>
+                          <div className="item-assigned-label">Quantity</div>
+                          <div className="item-assigned-value">{active.Quantity}</div>
+                        </div>
+                        <div>
+                          <div className="item-assigned-label">Type</div>
+                          <div className="item-assigned-value">{active.IsRequisition ? "Requisition" : active.IsHandover ? "Handover" : "-"}</div>
+                        </div>
+                        <div>
+                          <div className="item-assigned-label">Approved</div>
+                          <div className="item-assigned-value">{active.IsFMApproved ? "Yes" : "No"}</div>
+                        </div>
+                        <div>
+                          <div className="item-assigned-label">Date</div>
+                          <div className="item-assigned-value">{formatDate(active.Created_On)}</div>
+                        </div>
+                        <div>
+                          <div className="item-assigned-label">Time</div>
+                          <div className="item-assigned-value">{formatTime12(active.Created_On)}</div>
+                        </div>
+                      </div>
+                      <div style={{ marginTop: 12, borderTop: "1px solid #e8eff5", paddingTop: 10 }}>
+                        <div className="item-assigned-label">Specifications</div>
+                        {(!Array.isArray(active.Details) || active.Details.length === 0) && (
+                          <span className="text-muted">No Specifications</span>
+                        )}
+                        {Array.isArray(active.Details) && active.Details.map((d, i) => (
+                          <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                            <span className="item-assigned-value">{d.Specification_Name}: {d.Specification_Value}</span>
+                            {String(d.Specification_Name).toLowerCase().includes("color") &&
+                              renderColorBlock(d.Specification_Value)}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
+
+          {viewMode === "table" && (
           <div className="table-responsive">
             <table
               className="table table-bordered table-striped table-hover mb-0 table-sm"
@@ -629,25 +874,13 @@ const handleApprove = async () => {
                     <td className="text-center">
                       <Button
                         icon="pi pi-pencil"
-                        className="p-button-rounded p-button-warning p-button-sm mr-2"
-                        style={{
-                          width: "24px",
-                          height: "24px",
-                          padding: "0",
-                          fontSize: "0.65rem",
-                        }}
+                        className="item-assigned-icon-btn edit mr-2"
                         onClick={() => openEditDialog(row)}
                       />
 
                       <Button
                         icon="pi pi-trash"
-                        className="p-button-rounded p-button-danger p-button-sm"
-                        style={{
-                          width: "24px",
-                          height: "24px",
-                          padding: "0",
-                          fontSize: "0.65rem",
-                        }}
+                        className="item-assigned-icon-btn delete"
                         onClick={() => openDeleteDialog(row)}
                       />
                     </td>
@@ -656,6 +889,7 @@ const handleApprove = async () => {
               </tbody>
             </table>
           </div>
+          )}
         </div>
       </div>
 
