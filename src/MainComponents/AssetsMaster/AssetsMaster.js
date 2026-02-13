@@ -552,57 +552,95 @@ handleSave = async () => {
             return (
               <div>
                 <style>{`
-                  .asset-view-header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; }
-                  .asset-view-toggle { display:inline-flex; border:1px solid #d4e3ed; border-radius:8px; overflow:hidden; background:#fff; }
-                  .asset-view-toggle button { border:none; background:transparent; padding:7px 12px; font-size:12px; font-weight:600; color:#4A7FA8; }
-                  .asset-view-toggle button.active { background:#e8f1f8; color:#1E4A6B; }
-                  .asset-panel-shell { display:grid; grid-template-columns:340px minmax(0,1fr); border:1px solid #d8e6f0; border-radius:10px; overflow:hidden; min-height:560px; }
-                  .asset-panel-list { border-right:1px solid #d8e6f0; max-height:560px; overflow-y:auto; padding:10px; background:#fff; }
-                  .asset-panel-item { width:100%; text-align:left; border:1px solid #e6eff6; border-radius:8px; background:#fff; padding:10px; margin-bottom:8px; cursor:pointer; }
-                  .asset-panel-item.active { border-color:#2f9cff; background:#f5faff; box-shadow: inset 2px 0 0 #2f9cff; }
-                  .asset-panel-create { width:100%; border:1px dashed #2f9cff; border-radius:10px; padding:14px; margin-bottom:10px; background:#f3f9ff; color:#1E4A6B; font-weight:700; }
-                  .asset-panel-detail { max-height:560px; overflow-y:auto; padding:16px; background:#fff; }
-                  .asset-d-label { font-size:11px; color:#7a8ea0; text-transform:uppercase; font-weight:700; margin-bottom:4px; }
-                  .asset-d-value { font-size:13px; color:#22384c; font-weight:600; word-break:break-word; }
-                  .asset-d-grid { margin-top:12px; display:grid; grid-template-columns:repeat(2,minmax(180px,1fr)); gap:14px; }
-                  .asset-create-shell { border:1px solid #d8e6f0; border-radius:10px; box-shadow:0 10px 24px rgba(20,42,61,0.08); background:#fff; }
+                  .asset-breadcrumb { display:flex; align-items:center; gap:6px; font-size:14px; color:#4A7FA8; margin-bottom:12px; }
+                  .asset-breadcrumb .breadcrumb-link { cursor:pointer; }
+                  .asset-breadcrumb .breadcrumb-link:hover { color:#1E4A6B; text-decoration:underline; }
+                  .asset-breadcrumb .breadcrumb-current { color:#1E4A6B; font-weight:600; }
+                  .asset-page-title { font-size:24px; font-weight:700; color:#1E4A6B; margin:0 0 16px 0; }
+                  .asset-view-header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:16px; padding:0; }
+                  .asset-view-toggle { display:inline-flex; border:1px solid #d4e3ed; border-radius:10px; overflow:hidden; background:#e8eff5; padding:4px; gap:4px; }
+                  .asset-view-toggle button { border:none; background:transparent; padding:8px 16px; font-size:13px; font-weight:600; color:#4A7FA8; border-radius:7px; transition:all 0.25s ease; display:flex; align-items:center; gap:6px; }
+                  .asset-view-toggle button:hover { background:rgba(51,107,147,0.12); color:#1E4A6B; }
+                  .asset-view-toggle button.active { background:#336B93; color:#fff; box-shadow:0 2px 6px rgba(51,107,147,0.25); }
+                  .asset-search-box { position:relative; }
+                  .asset-search-box input { padding:10px 14px 10px 40px; border:1px solid #d4e3ed; border-radius:10px; font-size:14px; width:260px; background:#fff; transition:all 0.25s ease; }
+                  .asset-search-box input:focus { outline:none; border-color:#336B93; box-shadow:0 0 0 3px rgba(51,107,147,0.15); }
+                  .asset-search-box .search-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#7a8ea0; }
+                  .asset-export-btn { display:flex; align-items:center; gap:6px; padding:10px 16px; border:1px solid #d4e3ed; border-radius:10px; background:#fff; color:#336B93; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.25s ease; }
+                  .asset-export-btn:hover { background:#e8f1f8; border-color:#336B93; }
+                  .asset-add-btn { display:flex; align-items:center; gap:8px; padding:10px 18px; border:none; border-radius:10px; background:#2E7D4A; color:#fff; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.25s ease; box-shadow:0 2px 6px rgba(46,125,74,0.25); }
+                  .asset-add-btn:hover { background:#256b3e; box-shadow:0 4px 12px rgba(46,125,74,0.35); transform:translateY(-1px); }
+                  .asset-panel-shell { display:grid; grid-template-columns:340px minmax(0,1fr); border:1px solid #d8e6f0; border-radius:12px; overflow:hidden; min-height:560px; box-shadow:0 2px 8px rgba(51,107,147,0.12); }
+                  .asset-panel-list { border-right:1px solid #d8e6f0; max-height:560px; overflow-y:auto; padding:12px; background:#fff; }
+                  .asset-panel-item { width:100%; text-align:left; border:1px solid #e6eff6; border-radius:10px; background:#fff; padding:12px; margin-bottom:10px; cursor:pointer; transition:all 0.2s ease; }
+                  .asset-panel-item:hover { border-color:#4A7FA8; background:#f8fbff; }
+                  .asset-panel-item.active { border-color:#336B93; background:#f0f7ff; box-shadow:inset 3px 0 0 #336B93; }
+                  .asset-panel-create { width:100%; border:2px dashed #336B93; border-radius:10px; padding:14px; margin-bottom:12px; background:#f3f9ff; color:#1E4A6B; font-weight:700; cursor:pointer; transition:all 0.2s ease; }
+                  .asset-panel-create:hover { background:#e8f1f8; border-color:#1E4A6B; }
+                  .asset-panel-detail { max-height:560px; overflow-y:auto; padding:20px; background:#fff; }
+                  .asset-d-label { font-size:11px; color:#7a8ea0; text-transform:uppercase; font-weight:700; margin-bottom:4px; letter-spacing:0.5px; }
+                  .asset-d-value { font-size:14px; color:#22384c; font-weight:600; word-break:break-word; }
+                  .asset-d-grid { margin-top:16px; display:grid; grid-template-columns:repeat(2,minmax(180px,1fr)); gap:16px; }
+                  .asset-detail-btn { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s ease; }
+                  .asset-edit-btn { background:#336B93; color:#fff; border:none; }
+                  .asset-edit-btn:hover { background:#1E4A6B; }
+                  .asset-delete-btn { background:#fff; color:#A83232; border:1px solid #A83232; }
+                  .asset-delete-btn:hover { background:#fef2f2; }
+                  .asset-create-shell { border:1px solid #d8e6f0; border-radius:12px; box-shadow:0 10px 24px rgba(20,42,61,0.08); background:#fff; }
                   .asset-create-shell .modal-body { max-height:calc(100vh - 200px); overflow-y:auto; }
+                  .asset-table-card { border-radius:12px; border:1px solid #d8e6f0; box-shadow:0 2px 8px rgba(51,107,147,0.12); }
                   @media (max-width:1024px){ .asset-panel-shell { grid-template-columns:1fr; } .asset-panel-list { border-right:none; border-bottom:1px solid #d8e6f0; max-height:250px; } }
                 `}</style>
+
+                {/* Breadcrumb */}
+                <div className="asset-breadcrumb">
+                  <span className="breadcrumb-link">Assets</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+                  <span className="breadcrumb-current">Asset Master</span>
+                </div>
+
+                {/* Page Title */}
+                <h1 className="asset-page-title">Asset Master</h1>
+
                 {this.state.PageMode === "Home" && (
                   <div className="row">
                     <div className="col-12">
-                      <div className="card p-2">
+                      <div className="card p-3">
                         <div className="asset-view-header">
                           <div className="asset-view-toggle">
                             <button type="button" className={this.state.viewMode === "panel" ? "active" : ""} onClick={() => this.setState({ viewMode: "panel" })}>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="12" y="3" width="9" height="18" rx="1"/></svg>
                               Panel View
                             </button>
                             <button type="button" className={this.state.viewMode === "table" ? "active" : ""} onClick={() => this.setState({ viewMode: "table" })}>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
                               Table View
                             </button>
                           </div>
-                          <div className="d-flex align-items-center gap-2">
-                            <input
-                              type="text"
-                              className="form-control form-control-sm"
-                              style={{ width: 220 }}
-                              placeholder="Search assets..."
-                              value={this.state.searchText}
-                              onChange={(e) => this.setState({ searchText: e.target.value })}
-                            />
-                            <ExportToCSV data={filteredAssets} className="btn btn-success btn-sm rounded mr-2"/>
-                            <Button
-                              id="btnNewComplain"
-                              Action={this.Addnew.bind(this)}
-                              ClassName="btn btn-success btn-sm rounded"
-                              Icon={<i className="fa fa-plus" aria-hidden="true"></i>}
-                              Text=" Create New Asset"
-                            />
+                          <div className="d-flex align-items-center gap-3">
+                            <div className="asset-search-box">
+                              <span className="search-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                              </span>
+                              <input
+                                type="text"
+                                placeholder="Search assets..."
+                                value={this.state.searchText}
+                                onChange={(e) => this.setState({ searchText: e.target.value })}
+                              />
+                            </div>
+                            <ExportToCSV data={filteredAssets} className="asset-export-btn"/>
+                            {this.state.viewMode === "table" && (
+                              <button type="button" className="asset-add-btn" onClick={this.Addnew.bind(this)}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Create New Asset
+                              </button>
+                            )}
                           </div>
                         </div>
-                        {this.state.viewMode === "table" && <div className="card-body pt-2">
+                        {this.state.viewMode === "table" && <div className="card-body pt-2 asset-table-card">
                           <DataGrid
+                            key={`asset-grid-${filteredAssets.length}`}
                             Id="grdAssetsMaster"
                             IsPagination={false}
                             ColumnCollection={this.state.gridHeader}
@@ -611,7 +649,7 @@ handleSave = async () => {
                             onGridDeleteMethod={this.onGridDelete.bind(this)}
                             onGridViewMethod={this.onGridView.bind(this)}
                             DefaultPagination={true}
-                            IsSarching="true"
+                            IsSarching={false}
                             GridData={filteredAssets}
                             pageSize="2000"
                           />
@@ -620,7 +658,8 @@ handleSave = async () => {
                           <div className="asset-panel-shell">
                             <div className="asset-panel-list">
                               <button type="button" className="asset-panel-create" onClick={this.Addnew.bind(this)}>
-                                + Create New Asset
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" style={{marginRight:6}}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Create New Asset
                               </button>
                               {filteredAssets.map((item) => (
                                 <button
@@ -629,7 +668,7 @@ handleSave = async () => {
                                   className={`asset-panel-item ${activeAsset && activeAsset.Id === item.Id ? "active" : ""}`}
                                   onClick={() => this.setState({ selectedAssetId: item.Id })}
                                 >
-                                  <div style={{ fontWeight: 700, color: "#22384c", fontSize: 13 }}>{item.Name || "-"}</div>
+                                  <div style={{ fontWeight: 700, color: "#22384c", fontSize: 14 }}>{item.Name || "-"}</div>
                                   <div style={{ fontSize: 12, color: "#6d7f8d" }}>#{item.Id} • {item.Manufacturer || "-"}</div>
                                 </button>
                               ))}
@@ -638,26 +677,46 @@ handleSave = async () => {
                               {!activeAsset && <div className="text-muted">No assets found.</div>}
                               {activeAsset && (
                                 <>
-                                  <h3 style={{ margin: 0, color: "#22384c", fontWeight: 700 }}>{activeAsset.Name || "-"}</h3>
+                                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12}}>
+                                    <h3 style={{ margin: 0, color: "#1E4A6B", fontWeight: 700, fontSize:20 }}>{activeAsset.Name || "-"}</h3>
+                                    <div className="d-flex gap-2">
+                                      <button type="button" className="asset-detail-btn asset-edit-btn" onClick={() => this.ongridedit(activeAsset.Id)}>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                        Edit
+                                      </button>
+                                      <button type="button" className="asset-detail-btn asset-delete-btn" onClick={() => this.onGridDelete(activeAsset.Id)}>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                        Delete
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <p style={{color:'#7a8ea0', fontSize:13, marginBottom:16}}>Asset ID: #{activeAsset.Id}</p>
                                   <div className="asset-d-grid">
-                                    <div><div className="asset-d-label">Asset ID</div><div className="asset-d-value">{activeAsset.Id || "-"}</div></div>
                                     <div><div className="asset-d-label">Asset Type</div><div className="asset-d-value">{activeAsset.AssetType || "-"}</div></div>
                                     <div><div className="asset-d-label">Manufacturer</div><div className="asset-d-value">{activeAsset.Manufacturer || "-"}</div></div>
                                     <div><div className="asset-d-label">Model</div><div className="asset-d-value">{activeAsset.AssetModel || "-"}</div></div>
                                     <div><div className="asset-d-label">QR Code</div><div className="asset-d-value">{activeAsset.QRCode || "-"}</div></div>
+                                    <div><div className="asset-d-label">Last Service Date</div><div className="asset-d-value">{activeAsset.LastServiceDate || "-"}</div></div>
                                     <div><div className="asset-d-label">Next Service Date</div><div className="asset-d-value">{activeAsset.NextServiceDate || "-"}</div></div>
+                                    <div><div className="asset-d-label">Is Moveable</div><div className="asset-d-value">{activeAsset.IsMoveable ? "Yes" : "No"}</div></div>
+                                    <div><div className="asset-d-label">Is Rentable</div><div className="asset-d-value">{activeAsset.IsRentable ? "Yes" : "No"}</div></div>
+                                    <div><div className="asset-d-label">Asset Value</div><div className="asset-d-value">₹{activeAsset.AssetValue || 0}</div></div>
+                                    <div><div className="asset-d-label">Status</div><div className="asset-d-value">{activeAsset.Status ? "Functional" : "Non-Functional"}</div></div>
+                                    <div><div className="asset-d-label">Category</div><div className="asset-d-value">{activeAsset.Category || "-"}</div></div>
+                                    <div><div className="asset-d-label">Location</div><div className="asset-d-value">{activeAsset.Location || "-"}</div></div>
                                   </div>
-                                  <div className="d-flex gap-2 mt-3">
-                                    <button type="button" className="btn btn-info btn-sm" onClick={() => this.onGridView(activeAsset.Id)}>
-                                      <i className="fa fa-eye" /> View
-                                    </button>
-                                    <button type="button" className="btn btn-primary btn-sm" onClick={() => this.ongridedit(activeAsset.Id)}>
-                                      <i className="fa fa-pencil" /> Edit
-                                    </button>
-                                    <button type="button" className="btn btn-danger btn-sm" onClick={() => this.onGridDelete(activeAsset.Id)}>
-                                      <i className="fa fa-trash" /> Delete
-                                    </button>
-                                  </div>
+                                  {activeAsset.Description && (
+                                    <div style={{marginTop:20}}>
+                                      <div className="asset-d-label">Description</div>
+                                      <div className="asset-d-value">{activeAsset.Description}</div>
+                                    </div>
+                                  )}
+                                  {activeAsset.AssetImage && (
+                                    <div style={{marginTop:20}}>
+                                      <div className="asset-d-label">Asset Image</div>
+                                      <img src={`data:image/png;base64,${activeAsset.AssetImage}`} alt="Asset" style={{maxWidth:200, borderRadius:8, marginTop:8, border:'1px solid #d8e6f0'}} />
+                                    </div>
+                                  )}
                                 </>
                               )}
                             </div>

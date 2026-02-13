@@ -234,7 +234,7 @@ const ServiceRecords = (actions) => {
                                         onClick={() => setSelectedAssetId(asset.Id)}
                                     >
                                         <div style={{ fontWeight: 700, color: "#22384c", fontSize: 13 }}>{asset.Name || "-"}</div>
-                                        <div style={{ fontSize: 12, color: "#6d7f8d" }}>#{asset.Id} • {asset._status}</div>
+                                        <div style={{ fontSize: 12, color: asset._status === "Overdue" ? "#A83232" : "#B8860B", fontWeight: 600 }}>#{asset.Id} • {asset._status}</div>
                                     </button>
                                 ))}
                             </div>
@@ -245,7 +245,7 @@ const ServiceRecords = (actions) => {
                                         <h3 style={{ margin: 0, color: "#22384c", fontWeight: 700 }}>{activeAsset.Name || "-"}</h3>
                                         <div className="service-grid">
                                             <div><div className="service-label">Asset ID</div><div className="service-value">{activeAsset.Id || "-"}</div></div>
-                                            <div><div className="service-label">Service Status</div><div className="service-value">{activeAsset._status}</div></div>
+                                            <div><div className="service-label">Service Status</div><div className="service-value" style={{ color: activeAsset._status === "Overdue" ? "#A83232" : "#B8860B", fontWeight: 700 }}>{activeAsset._status}</div></div>
                                             <div><div className="service-label">Next Service Date</div><div className="service-value">{activeAsset.NextServiceDate || "-"}</div></div>
                                         </div>
                                         <div className="d-flex gap-2 mt-3">
