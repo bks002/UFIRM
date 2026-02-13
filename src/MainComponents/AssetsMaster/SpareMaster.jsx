@@ -23,6 +23,8 @@ const SparePage = () => {
 
     const [selectedRow, setSelectedRow] = useState(null);
     const [globalFilter, setGlobalFilter] = useState("");
+    const [viewMode, setViewMode] = useState("panel");
+    const [selectedSpareId, setSelectedSpareId] = useState(null);
 
     const [assetId, setAssetId] = useState("");
 
@@ -206,6 +208,14 @@ const SparePage = () => {
             <h5 className="m-0">Spare Master</h5>
 
             <div className="d-flex gap-2">
+                <div className="spot-visit-view-toggle">
+                    <button type="button" className={viewMode === "panel" ? "active" : ""} onClick={() => setViewMode("panel")}>
+                        Panel View
+                    </button>
+                    <button type="button" className={viewMode === "table" ? "active" : ""} onClick={() => setViewMode("table")}>
+                        Table View
+                    </button>
+                </div>
                 <InputText
                     placeholder="Search..."
                     value={globalFilter}
@@ -232,12 +242,36 @@ const SparePage = () => {
         </div>
     );
 
+    const filteredSpares = (spares || []).filter((s) => {
+        if (!globalFilter) return true;
+        const text = `${s.SpareType || ""} ${s.SerialNumber || ""} ${s.VendorName || ""}`.toLowerCase();
+        return text.includes(globalFilter.toLowerCase());
+    });
+
+    const activeSpare = filteredSpares.find((s) => s.SpareID === selectedSpareId) || filteredSpares[0] || null;
+
     return (
         <div className="content-wrapper p-3">
             <Toast ref={toast} />
+            <style>{`
+                .spot-visit-view-toggle { display:inline-flex; border:1px solid #d4e3ed; border-radius:8px; overflow:hidden; background:#fff; }
+                .spot-visit-view-toggle button { border:none; background:transparent; padding:7px 12px; font-size:12px; font-weight:600; color:#4A7FA8; }
+                .spot-visit-view-toggle button.active { background:#e8f1f8; color:#1E4A6B; }
+                .spare-panel-shell { display:grid; grid-template-columns:340px minmax(0,1fr); border:1px solid #d8e6f0; border-radius:10px; overflow:hidden; min-height:520px; }
+                .spare-panel-list { border-right:1px solid #d8e6f0; max-height:520px; overflow-y:auto; padding:10px; background:#fff; }
+                .spare-panel-item { width:100%; text-align:left; border:1px solid #e6eff6; border-radius:8px; background:#fff; padding:10px; margin-bottom:8px; cursor:pointer; }
+                .spare-panel-item.active { border-color:#2f9cff; background:#f5faff; box-shadow: inset 2px 0 0 #2f9cff; }
+                .spare-panel-detail { max-height:520px; overflow-y:auto; padding:16px; background:#fff; }
+                .spare-label { font-size:11px; color:#7a8ea0; text-transform:uppercase; font-weight:700; margin-bottom:4px; }
+                .spare-value { font-size:13px; color:#22384c; font-weight:600; word-break:break-word; }
+                .spare-grid { margin-top:10px; display:grid; grid-template-columns:repeat(2, minmax(170px,1fr)); gap:14px; }
+                .spare-dialog .p-dialog-header { background:#f8fbff; border-bottom:1px solid #d8e6f0; }
+                .spare-dialog .p-dialog-title { color:#1E4A6B; font-weight:700; }
+                @media (max-width:1024px){ .spare-panel-shell { grid-template-columns:1fr; } .spare-panel-list { border-right:none; border-bottom:1px solid #d8e6f0; max-height:240px; } }
+            `}</style>
 
             {/* TABLE */}
-            <DataTable
+            {viewMode === "table" && <DataTable
                 value={spares}
                 paginator
                 rows={10}
@@ -256,7 +290,44 @@ const SparePage = () => {
                 <Column field="VendorName" header="Vendor" />
                 <Column field="PurchaseDate" header="Purchase Date" body={(row) => row.PurchaseDate?.slice(0, 10)} />
                 <Column field="ExpiryDate" header="Expiry Date" body={(row) => row.ExpiryDate?.slice(0, 10)} />
-            </DataTable>
+            </DataTable>}
+
+            {viewMode === "panel" && (
+                <div className="spare-panel-shell">
+                    <div className="spare-panel-list">
+                        <div style={{ fontSize: 12, color: "#6d7f8d", fontWeight: 600, marginBottom: 8 }}>
+                            Spares ({filteredSpares.length})
+                        </div>
+                        {filteredSpares.map((s) => (
+                            <button
+                                key={s.SpareID}
+                                type="button"
+                                className={`spare-panel-item ${activeSpare && activeSpare.SpareID === s.SpareID ? "active" : ""}`}
+                                onClick={() => setSelectedSpareId(s.SpareID)}
+                            >
+                                <div style={{ fontWeight: 700, color: "#22384c", fontSize: 13 }}>{s.SpareType || "-"}</div>
+                                <div style={{ fontSize: 12, color: "#6d7f8d" }}>{s.SerialNumber || "-"}</div>
+                            </button>
+                        ))}
+                    </div>
+                    <div className="spare-panel-detail">
+                        {!activeSpare && <div className="text-muted">No spare records found.</div>}
+                        {activeSpare && (
+                            <>
+                                <h3 style={{ margin: 0, color: "#22384c", fontWeight: 700 }}>{activeSpare.SpareType || "-"}</h3>
+                                <div className="spare-grid">
+                                    <div><div className="spare-label">Spare ID</div><div className="spare-value">{activeSpare.SpareID || "-"}</div></div>
+                                    <div><div className="spare-label">Asset ID</div><div className="spare-value">{activeSpare.AssetID || "-"}</div></div>
+                                    <div><div className="spare-label">Serial Number</div><div className="spare-value">{activeSpare.SerialNumber || "-"}</div></div>
+                                    <div><div className="spare-label">Vendor</div><div className="spare-value">{activeSpare.VendorName || "-"}</div></div>
+                                    <div><div className="spare-label">Rating</div><div className="spare-value">{activeSpare.Rating || "-"}</div></div>
+                                    <div><div className="spare-label">Quantity</div><div className="spare-value">{activeSpare.Quantity || "-"}</div></div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* ADD MULTIPLE SPARES DIALOG */}
             <Dialog
@@ -264,6 +335,7 @@ const SparePage = () => {
                 visible={dialogVisible}
                 onHide={() => setDialogVisible(false)}
                 style={{ width: "650px" }}
+                className="spare-dialog"
                 footer={
                     <div className="d-flex justify-content-end gap-2">
                         <Button label="Cancel" className="p-button-text" onClick={() => setDialogVisible(false)} />

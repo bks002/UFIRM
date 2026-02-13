@@ -51,6 +51,9 @@ class AssetsMaster extends Component {
       isLoading: false,
       GridData: [],
       DueGridData:[],
+      viewMode: "panel",
+      searchText: "",
+      selectedAssetId: null,
       gridHeader: [
         // { sTitle: "S No.", titleValue: "sNo", orderable: false },
         { sTitle: "Id", titleValue: "Id", orderable: true },
@@ -539,34 +542,66 @@ handleSave = async () => {
 
 
   render() {
+            const filteredAssets = (this.state.GridData || []).filter((item) => {
+              if (!this.state.searchText) return true;
+              const text = `${item.Id || ""} ${item.Name || ""} ${item.Description || ""} ${item.Manufacturer || ""}`.toLowerCase();
+              return text.includes(this.state.searchText.toLowerCase());
+            });
+            const activeAsset =
+              filteredAssets.find((a) => a.Id === this.state.selectedAssetId) || filteredAssets[0] || null;
             return (
               <div>
+                <style>{`
+                  .asset-view-header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; }
+                  .asset-view-toggle { display:inline-flex; border:1px solid #d4e3ed; border-radius:8px; overflow:hidden; background:#fff; }
+                  .asset-view-toggle button { border:none; background:transparent; padding:7px 12px; font-size:12px; font-weight:600; color:#4A7FA8; }
+                  .asset-view-toggle button.active { background:#e8f1f8; color:#1E4A6B; }
+                  .asset-panel-shell { display:grid; grid-template-columns:340px minmax(0,1fr); border:1px solid #d8e6f0; border-radius:10px; overflow:hidden; min-height:560px; }
+                  .asset-panel-list { border-right:1px solid #d8e6f0; max-height:560px; overflow-y:auto; padding:10px; background:#fff; }
+                  .asset-panel-item { width:100%; text-align:left; border:1px solid #e6eff6; border-radius:8px; background:#fff; padding:10px; margin-bottom:8px; cursor:pointer; }
+                  .asset-panel-item.active { border-color:#2f9cff; background:#f5faff; box-shadow: inset 2px 0 0 #2f9cff; }
+                  .asset-panel-create { width:100%; border:1px dashed #2f9cff; border-radius:10px; padding:14px; margin-bottom:10px; background:#f3f9ff; color:#1E4A6B; font-weight:700; }
+                  .asset-panel-detail { max-height:560px; overflow-y:auto; padding:16px; background:#fff; }
+                  .asset-d-label { font-size:11px; color:#7a8ea0; text-transform:uppercase; font-weight:700; margin-bottom:4px; }
+                  .asset-d-value { font-size:13px; color:#22384c; font-weight:600; word-break:break-word; }
+                  .asset-d-grid { margin-top:12px; display:grid; grid-template-columns:repeat(2,minmax(180px,1fr)); gap:14px; }
+                  .asset-create-shell { border:1px solid #d8e6f0; border-radius:10px; box-shadow:0 10px 24px rgba(20,42,61,0.08); background:#fff; }
+                  .asset-create-shell .modal-body { max-height:calc(100vh - 200px); overflow-y:auto; }
+                  @media (max-width:1024px){ .asset-panel-shell { grid-template-columns:1fr; } .asset-panel-list { border-right:none; border-bottom:1px solid #d8e6f0; max-height:250px; } }
+                `}</style>
                 {this.state.PageMode === "Home" && (
                   <div className="row">
                     <div className="col-12">
-                      <div className="card">
-                        <div className="card-header d-flex p-0">
-                          <ul className="nav ml-auto tableFilterContainer">
-                            <li className="nav-item">
-                              <div className="input-group input-group-sm">
-                                <div className="input-group-prepend">
-                                  <ExportToCSV data={this.state.GridData} 
-                                  className="btn btn-success btn-sm rounded mr-2"/>
-                                  <Button
-                                    id="btnNewComplain"
-                                    Action={this.Addnew.bind(this)}
-                                    ClassName="btn btn-success btn-sm rounded"
-                                    Icon={
-                                      <i className="fa fa-plus" aria-hidden="true"></i>
-                                    }
-                                    Text=" Create New Asset"
-                                  />
-                                </div>
-                              </div>
-                            </li>
-                          </ul>
+                      <div className="card p-2">
+                        <div className="asset-view-header">
+                          <div className="asset-view-toggle">
+                            <button type="button" className={this.state.viewMode === "panel" ? "active" : ""} onClick={() => this.setState({ viewMode: "panel" })}>
+                              Panel View
+                            </button>
+                            <button type="button" className={this.state.viewMode === "table" ? "active" : ""} onClick={() => this.setState({ viewMode: "table" })}>
+                              Table View
+                            </button>
+                          </div>
+                          <div className="d-flex align-items-center gap-2">
+                            <input
+                              type="text"
+                              className="form-control form-control-sm"
+                              style={{ width: 220 }}
+                              placeholder="Search assets..."
+                              value={this.state.searchText}
+                              onChange={(e) => this.setState({ searchText: e.target.value })}
+                            />
+                            <ExportToCSV data={filteredAssets} className="btn btn-success btn-sm rounded mr-2"/>
+                            <Button
+                              id="btnNewComplain"
+                              Action={this.Addnew.bind(this)}
+                              ClassName="btn btn-success btn-sm rounded"
+                              Icon={<i className="fa fa-plus" aria-hidden="true"></i>}
+                              Text=" Create New Asset"
+                            />
+                          </div>
                         </div>
-                        <div className="card-body pt-2">
+                        {this.state.viewMode === "table" && <div className="card-body pt-2">
                           <DataGrid
                             Id="grdAssetsMaster"
                             IsPagination={false}
@@ -577,17 +612,64 @@ handleSave = async () => {
                             onGridViewMethod={this.onGridView.bind(this)}
                             DefaultPagination={true}
                             IsSarching="true"
-                            GridData={this.state.GridData}
+                            GridData={filteredAssets}
                             pageSize="2000"
                           />
-                        </div>
+                        </div>}
+                        {this.state.viewMode === "panel" && (
+                          <div className="asset-panel-shell">
+                            <div className="asset-panel-list">
+                              <button type="button" className="asset-panel-create" onClick={this.Addnew.bind(this)}>
+                                + Create New Asset
+                              </button>
+                              {filteredAssets.map((item) => (
+                                <button
+                                  key={item.Id}
+                                  type="button"
+                                  className={`asset-panel-item ${activeAsset && activeAsset.Id === item.Id ? "active" : ""}`}
+                                  onClick={() => this.setState({ selectedAssetId: item.Id })}
+                                >
+                                  <div style={{ fontWeight: 700, color: "#22384c", fontSize: 13 }}>{item.Name || "-"}</div>
+                                  <div style={{ fontSize: 12, color: "#6d7f8d" }}>#{item.Id} • {item.Manufacturer || "-"}</div>
+                                </button>
+                              ))}
+                            </div>
+                            <div className="asset-panel-detail">
+                              {!activeAsset && <div className="text-muted">No assets found.</div>}
+                              {activeAsset && (
+                                <>
+                                  <h3 style={{ margin: 0, color: "#22384c", fontWeight: 700 }}>{activeAsset.Name || "-"}</h3>
+                                  <div className="asset-d-grid">
+                                    <div><div className="asset-d-label">Asset ID</div><div className="asset-d-value">{activeAsset.Id || "-"}</div></div>
+                                    <div><div className="asset-d-label">Asset Type</div><div className="asset-d-value">{activeAsset.AssetType || "-"}</div></div>
+                                    <div><div className="asset-d-label">Manufacturer</div><div className="asset-d-value">{activeAsset.Manufacturer || "-"}</div></div>
+                                    <div><div className="asset-d-label">Model</div><div className="asset-d-value">{activeAsset.AssetModel || "-"}</div></div>
+                                    <div><div className="asset-d-label">QR Code</div><div className="asset-d-value">{activeAsset.QRCode || "-"}</div></div>
+                                    <div><div className="asset-d-label">Next Service Date</div><div className="asset-d-value">{activeAsset.NextServiceDate || "-"}</div></div>
+                                  </div>
+                                  <div className="d-flex gap-2 mt-3">
+                                    <button type="button" className="btn btn-info btn-sm" onClick={() => this.onGridView(activeAsset.Id)}>
+                                      <i className="fa fa-eye" /> View
+                                    </button>
+                                    <button type="button" className="btn btn-primary btn-sm" onClick={() => this.ongridedit(activeAsset.Id)}>
+                                      <i className="fa fa-pencil" /> Edit
+                                    </button>
+                                    <button type="button" className="btn btn-danger btn-sm" onClick={() => this.onGridDelete(activeAsset.Id)}>
+                                      <i className="fa fa-trash" /> Delete
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
                 )}
               {(this.state.PageMode === "Add" || this.state.PageMode === "Edit") && (
               <div>
-                <div className="modal-content p-2 rounded">
+                <div className="modal-content p-2 rounded asset-create-shell">
                   <div className="modal-body">
                     <div className="container-fluid">
 

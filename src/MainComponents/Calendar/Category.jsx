@@ -556,7 +556,7 @@ class Category extends Component {
                                             onChange={(e) => this.setState({ searchTerm: e.target.value })}
                                         />
                                     </div>
-                                    <button className="category-add-btn" onClick={this.Addnew}>
+                                    <button type="button" className="category-add-btn" onClick={() => this.Addnew()}>
                                         <PlusIcon />
                                         New Category
                                     </button>

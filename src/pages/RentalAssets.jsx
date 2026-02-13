@@ -29,6 +29,9 @@ const renderBase64Image = (base64) => {
 const RentAssetPage = (actions) => {
   const [rentalAssets, setRentalAssets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState("panel");
+  const [selectedAssetId, setSelectedAssetId] = useState(null);
+  const [searchText, setSearchText] = useState("");
 
   /* pagination */
   const [currentPage, setCurrentPage] = useState(1);
@@ -65,8 +68,14 @@ const RentAssetPage = (actions) => {
   /* ================= PAGINATION ================= */
   const indexOfLast = currentPage * recordsPerPage;
   const indexOfFirst = indexOfLast - recordsPerPage;
-  const currentRecords = rentalAssets.slice(indexOfFirst, indexOfLast);
-  const totalPages = Math.ceil(rentalAssets.length / recordsPerPage);
+  const searchedAssets = (rentalAssets || []).filter((asset) => {
+    if (!searchText) return true;
+    const text = `${asset.Id || ""} ${asset.Name || ""} ${asset.Manufacturer || ""} ${asset.Description || ""}`.toLowerCase();
+    return text.includes(searchText.toLowerCase());
+  });
+  const currentRecords = searchedAssets.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.ceil(searchedAssets.length / recordsPerPage);
+  const activeAsset = searchedAssets.find((x) => x.Id === selectedAssetId) || searchedAssets[0] || null;
 
   /* ================= ACTIONS ================= */
   const handleRentOut = (asset) => {
@@ -115,21 +124,52 @@ const RentAssetPage = (actions) => {
   return (
     <div className="content-wrapper">
       <section className="content">
+        <style>{`
+          .rental-view-toggle { display:inline-flex; border:1px solid #d4e3ed; border-radius:8px; overflow:hidden; background:#fff; }
+          .rental-view-toggle button { border:none; background:transparent; padding:7px 12px; font-size:12px; font-weight:600; color:#4A7FA8; }
+          .rental-view-toggle button.active { background:#e8f1f8; color:#1E4A6B; }
+          .rental-panel-shell { display:grid; grid-template-columns:340px minmax(0,1fr); border:1px solid #d8e6f0; border-radius:10px; overflow:hidden; min-height:540px; }
+          .rental-panel-list { border-right:1px solid #d8e6f0; max-height:540px; overflow-y:auto; padding:10px; background:#fff; }
+          .rental-panel-item { width:100%; text-align:left; border:1px solid #e6eff6; border-radius:8px; background:#fff; padding:10px; margin-bottom:8px; cursor:pointer; }
+          .rental-panel-item.active { border-color:#2f9cff; background:#f5faff; box-shadow: inset 2px 0 0 #2f9cff; }
+          .rental-panel-detail { max-height:540px; overflow-y:auto; padding:16px; background:#fff; }
+          .rental-label { font-size:11px; color:#7a8ea0; text-transform:uppercase; font-weight:700; margin-bottom:4px; }
+          .rental-value { font-size:13px; color:#22384c; font-weight:600; word-break:break-word; }
+          .rental-grid { margin-top:12px; display:grid; grid-template-columns:repeat(2,minmax(180px,1fr)); gap:14px; }
+          @media (max-width:1024px){ .rental-panel-shell { grid-template-columns:1fr; } .rental-panel-list { border-right:none; border-bottom:1px solid #d8e6f0; max-height:240px; } }
+        `}</style>
         <div className="card container-fluid p-3">
 
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h4 className="mb-0">Rental Asset List</h4>
-            <ExportToCSV
-              data={rentalAssets}
-              className="btn btn-success btn-sm"
-            />
+            <div className="d-flex align-items-center gap-2">
+              <div className="rental-view-toggle">
+                <button type="button" className={viewMode === "panel" ? "active" : ""} onClick={() => setViewMode("panel")}>Panel View</button>
+                <button type="button" className={viewMode === "table" ? "active" : ""} onClick={() => setViewMode("table")}>Table View</button>
+              </div>
+              <input
+                type="text"
+                className="form-control form-control-sm"
+                style={{ width: 200 }}
+                placeholder="Search..."
+                value={searchText}
+                onChange={(e) => {
+                  setSearchText(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+              <ExportToCSV
+                data={searchedAssets}
+                className="btn btn-success btn-sm"
+              />
+            </div>
           </div>
 
           <LoadingOverlay
             active={loading}
             spinner={<PropagateLoader color="#336B93" size={20} />}
           >
-            <table className="table table-striped table-hover">
+            {viewMode === "table" && <table className="table table-striped table-hover">
               <thead>
                 <tr>
                   <th>Asset ID</th>
@@ -183,12 +223,58 @@ const RentAssetPage = (actions) => {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table>}
+
+            {viewMode === "panel" && (
+              <div className="rental-panel-shell">
+                <div className="rental-panel-list">
+                  {searchedAssets.map((asset) => (
+                    <button
+                      key={asset.Id}
+                      type="button"
+                      className={`rental-panel-item ${activeAsset && activeAsset.Id === asset.Id ? "active" : ""}`}
+                      onClick={() => setSelectedAssetId(asset.Id)}
+                    >
+                      <div style={{ fontWeight: 700, color: "#22384c", fontSize: 13 }}>{asset.Name || "-"}</div>
+                      <div style={{ fontSize: 12, color: "#6d7f8d" }}>#{asset.Id} • {asset.Manufacturer || "-"}</div>
+                    </button>
+                  ))}
+                </div>
+                <div className="rental-panel-detail">
+                  {!activeAsset && <div className="text-muted">No assets found.</div>}
+                  {activeAsset && (
+                    <>
+                      <h3 style={{ margin: 0, color: "#22384c", fontWeight: 700 }}>{activeAsset.Name || "-"}</h3>
+                      <div className="rental-grid">
+                        <div><div className="rental-label">Asset ID</div><div className="rental-value">{activeAsset.Id || "-"}</div></div>
+                        <div><div className="rental-label">Manufacturer</div><div className="rental-value">{activeAsset.Manufacturer || "-"}</div></div>
+                        <div><div className="rental-label">Description</div><div className="rental-value">{activeAsset.Description || "-"}</div></div>
+                        <div><div className="rental-label">Rental Status</div><div className="rental-value">{(activeAsset.RentedOutDate === null || activeAsset.ReturnDate) ? "Available" : "Rented Out"}</div></div>
+                      </div>
+                      <div className="d-flex gap-2 mt-3">
+                        {(activeAsset.RentedOutDate === null || activeAsset.ReturnDate) ? (
+                          <button className="btn btn-success btn-sm" onClick={() => handleRentOut(activeAsset)}>
+                            <i className="pi pi-sign-out" /> Check Out
+                          </button>
+                        ) : (
+                          <button className="btn btn-warning btn-sm" onClick={() => handleReturn(activeAsset)}>
+                            <i className="pi pi-sign-in" /> Return
+                          </button>
+                        )}
+                        <button className="btn btn-info btn-sm" onClick={() => handleView(activeAsset)}>
+                          <i className="pi pi-eye" /> View History
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* PAGINATION */}
-            <div className="d-flex justify-content-between align-items-center">
+            {viewMode === "table" && <div className="d-flex justify-content-between align-items-center">
               <span>
-                Showing {currentRecords.length} out of {recordsPerPage} entries
+                Showing {searchedAssets.length === 0 ? 0 : indexOfFirst + 1} to {Math.min(indexOfLast, searchedAssets.length)} of {searchedAssets.length} entries
               </span>
 
               <ul className="pagination mb-0">
@@ -230,7 +316,7 @@ const RentAssetPage = (actions) => {
                   </button>
                 </li>
               </ul>
-            </div>
+            </div>}
           </LoadingOverlay>
         </div>
 
