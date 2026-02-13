@@ -518,7 +518,7 @@ export default class TaskAnalysis extends Component {
     $('#dataRange').on('apply.daterangepicker', function (ev, picker) {
       var startDate = picker.startDate;
       var endDate = picker.endDate;
-      console.log(startDate , endDate);
+      //console.log(startDate , endDate);
       _this.setState({ filterFromDate: startDate.format('YYYY-MM-DD'), filterToDate: endDate.format('YYYY-MM-DD') })
   });
   }

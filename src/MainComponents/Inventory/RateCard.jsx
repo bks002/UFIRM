@@ -119,6 +119,19 @@ const RateCard = (props) => {
     }
   }
 
+  const toISTISOString = (date) => {
+  if (!date) return null;
+
+  const istOffset = 330; // minutes
+  const localDate = new Date(date);
+
+  const istTime = new Date(
+    localDate.getTime() + istOffset * 60 * 1000
+  );
+
+  return istTime.toISOString();
+};
+
   const loadCategories = async () => {
     const data = await getCategories(propertyId)
     setCategories(data)
@@ -194,7 +207,7 @@ const RateCard = (props) => {
       const payload = {
         ...rateCardData,
         PropertyId: propertyId,
-        ValidTill: rateCardData.ValidTill ? new Date(rateCardData.ValidTill).toISOString() : null,
+        ValidTill: toISTISOString(rateCardData.ValidTill),
       }
       await createRateCard(payload)
       toast.current.show({

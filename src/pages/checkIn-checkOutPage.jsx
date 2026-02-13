@@ -1,62 +1,72 @@
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-
-import { DataTable } from "primereact/datatable";
-import { Column } from "primereact/column";
-import { Button } from "primereact/button";
-import { Dialog } from "primereact/dialog";
-import { InputText } from "primereact/inputtext";
-import { ProgressSpinner } from "primereact/progressspinner";
-
 import PopUp from "../ReactComponents/CheckIn&OutModal/PopUp";
+import "bootstrap/dist/css/bootstrap.min.css";
 import ExportToCSV from "../ReactComponents/ExportToCSV/ExportToCSV";
-import { getAssetCheckInOutHistoryByAssetId } from "../Services/CheckInCheckOut";
+import { connect } from "react-redux";
+import { PropagateLoader } from "react-spinners";
+import LoadingOverlay from "react-loading-overlay";
+import { getAssetCheckInOutHistoryByAssetId } 
+  from "../Services/CheckInCheckOut";
 
-/* ================= IMAGE HELPER ================= */
-const renderBase64Image = (base64) =>
-  base64 ? (
+/* ================= BASE64 IMAGE RENDER HELPER ================= */
+const renderBase64Image = (base64) => {
+  if (!base64) return <span>No Image</span>;
+
+  return (
     <img
       src={`data:image/jpeg;base64,${base64}`}
       alt="Asset"
-      style={{ width: "180px", borderRadius: "6px", marginTop: "6px" }}
+      style={{
+        width: "180px",
+        height: "auto",
+        border: "1px solid #ccc",
+        borderRadius: "6px",
+        marginTop: "6px",
+      }}
     />
-  ) : (
-    <span className="text-500">No Image</span>
   );
+};
 
-const CheckInCheckOut = () => {
-  const propId = useSelector((state) => state.Commonreducer.puidn);
-
+const CheckInCheckOut = (actions) => {
   const [assetData, setAssetData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [globalFilter, setGlobalFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const recordsPerPage = 10;
 
   const [viewModal, setViewModal] = useState(false);
   const [currentAsset, setCurrentAsset] = useState(null);
   const [actionType, setActionType] = useState("");
 
+  // 🔹 History states
   const [historyModal, setHistoryModal] = useState(false);
   const [historyData, setHistoryData] = useState([]);
   const [historyAssetName, setHistoryAssetName] = useState("");
 
-  /* ================= FETCH DATA ================= */
+  /* ================= FETCH ASSETS ================= */
   useEffect(() => {
     fetchData();
-  }, [propId]);
+  }, [actions.propId]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const res = await fetch(
-        `https://api.urest.in:8096/api/Asset/GetAssetCheckOutData?PropId=${propId}`
+        `https://api.urest.in:8096/api/Asset/GetAssetCheckOutData?PropId=${actions.propId}`
       );
-      setAssetData(await res.json());
-    } catch (err) {
-      console.error("Fetch error:", err);
-    } finally {
+      const data = await res.json();
+      setAssetData(data || []);
+      setCurrentPage(1);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching data:", error);
       setLoading(false);
     }
   };
+
+  const indexOfLast = currentPage * recordsPerPage;
+  const indexOfFirst = indexOfLast - recordsPerPage;
+  const currentRecords = assetData.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.ceil(assetData.length / recordsPerPage);
 
   /* ================= CHECK IN / OUT ================= */
   const handleCheckIn = (asset) => {
@@ -97,193 +107,212 @@ const CheckInCheckOut = () => {
         }),
       });
 
-      await fetchData();
+      fetchData();
       handleCloseModal();
     } catch (error) {
-      console.error("Submit error:", error);
+      console.error(`Error during ${actionType}:`, error);
     }
   };
 
-  /* ================= HISTORY ================= */
+  /* ================= VIEW HISTORY ================= */
   const handleViewHistory = async (asset) => {
-    setHistoryAssetName(asset.Name);
-    setHistoryModal(true);
-    setHistoryData(await getAssetCheckInOutHistoryByAssetId(asset.Id));
+    try {
+      setHistoryAssetName(asset.Name);
+      setHistoryModal(true);
+
+      const data = await getAssetCheckInOutHistoryByAssetId(asset.Id);
+      setHistoryData(data); // [{ CheckOut:{}, CheckIn:{} }]
+    } catch (error) {
+      console.error("Error fetching history:", error);
+    }
   };
 
-  /* ================= ACTION COLUMN ================= */
-  const actionTemplate = (asset) => (
-    <div className="flex gap-2 justify-content-center">
-      {asset.ReturnDate === null ? (
-        <Button
-          icon="pi pi-sign-in"
-          severity="warning"
-          rounded
-          tooltip="Check In"
-          onClick={() => handleCheckIn(asset)}
-        />
-      ) : (
-        <Button
-          icon="pi pi-sign-out"
-          severity="success"
-          rounded
-          tooltip="Check Out"
-          onClick={() => handleCheckOut(asset)}
-        />
-      )}
-
-      <Button
-        icon="pi pi-eye"
-        severity="info"
-        rounded
-        tooltip="View History"
-        onClick={() => handleViewHistory(asset)}
-      />
-    </div>
-  );
-
-  /* ================= TABLE HEADER ================= */
-  const tableHeader = (
-    <div className="flex justify-content-between align-items-center flex-wrap gap-2">
-      <span className="p-input-icon-left">
-
-        <InputText
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          placeholder="Search assets..."
-        />
-      </span>
-    </div>
-  );
-  const buildHistoryExportData = (historyData, assetName) => {
-    if (!historyData || !historyData.length) return [];
-
-    return historyData.map((item) => ({
-      "Asset Name": assetName,
-      "Assignee": item.CheckOut?.AssigneeName || "",
-      "Purpose": item.CheckOut?.Purpose || "",
-      "Check Out Date": item.CheckOut?.CheckOutDateTime || "",
-      "Out From": item.CheckOut?.OutFrom || "",
-      "Sent To": item.CheckOut?.SentTo || "",
-      "Approved By": item.CheckOut?.ApprovedBy || "",
-      "Returned By": item.CheckIn?.ReturnedBy || "",
-      "Return Date": item.CheckIn?.ReturnDate || ""
-    }));
-  };
-
+  /* ================= UI ================= */
   return (
     <div className="content-wrapper">
       <section className="content">
-        <div className="card">
 
-          <div className="card-header d-flex align-items-center">
-            <h2 className="card-title m-0">Check IN Check OUT</h2>
-
-            {/* PUSH TO RIGHT */}
-            <div className="ms-auto">
-              <ExportToCSV data={assetData} fileName="Asset_List.csv" />
-            </div>
+        <div className="card container-fluid">
+          <div className="d-flex justify-content-between align-items-center m-2">
+            <h2 className="mb-0">Asset List</h2>
+            <ExportToCSV
+              data={assetData}
+              className="btn btn-success btn-sm rounded px-3"
+            />
           </div>
 
-          {loading ? (
-            <div className="flex justify-content-center p-6">
-              <ProgressSpinner />
+          <LoadingOverlay
+            active={loading}
+            spinner={<PropagateLoader color="#336B93" size={30} />}
+          >
+            <table className="table table-striped table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Asset ID</th>
+                  <th>Asset Name</th>
+                  <th>Manufacturer</th>
+                  <th>Description</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentRecords.map((asset, index) => (
+                  <tr key={asset.Id}>
+                    <td>{indexOfFirst + index + 1}</td>
+                    <td>{asset.Id}</td>
+                    <td>{asset.Name}</td>
+                    <td>{asset.Manufacturer}</td>
+                    <td>{asset.Description}</td>
+                    <td className="text-center">
+                      {asset.ReturnDate === null ? (
+                        <button
+                          className="btn btn-warning btn-sm me-2"
+                          title="Check In"
+                          onClick={() => handleCheckIn(asset)}
+                        >
+                          <i className="pi pi-sign-in"></i>
+                        </button>
+                      ) : (
+                        <button
+                          className="btn btn-success btn-sm me-2"
+                          title="Check Out"
+                          onClick={() => handleCheckOut(asset)}
+                        >
+                          <i className="pi pi-sign-out"></i>
+                        </button>
+                      )}
+
+                      <button
+                        className="btn btn-info btn-sm"
+                        title="View"
+                        onClick={() => handleViewHistory(asset)}
+                      >
+                        <i className="pi pi-eye"></i>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="d-flex justify-content-between align-items-center">
+              <span>
+                Showing {assetData.length === 0 ? 0 : indexOfFirst + 1} to{" "}
+                {Math.min(indexOfLast, assetData.length)} of {assetData.length} entries
+              </span>
+
+              <ul className="pagination mb-0">
+                <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                  <button
+                    className="page-link"
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  >
+                    <i className="pi pi-angle-left"></i>
+                  </button>
+                </li>
+
+                <li className="page-item active">
+                  <span className="page-link">{currentPage}</span>
+                </li>
+
+                <li
+                  className={`page-item ${
+                    currentPage === totalPages || totalPages === 0 ? "disabled" : ""
+                  }`}
+                >
+                  <button
+                    className="page-link"
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(prev + 1, totalPages || 1))
+                    }
+                  >
+                    <i className="pi pi-angle-right"></i>
+                  </button>
+                </li>
+              </ul>
             </div>
-          ) : (
-            <DataTable
-              value={assetData}
-              paginator
-              rows={10}
-              rowsPerPageOptions={[10, 25, 50]}
-              stripedRows
-              scrollable
-              scrollHeight="calc(100vh - 260px)"
-              responsiveLayout="scroll"
-              globalFilter={globalFilter}
-              header={tableHeader}
-              emptyMessage="No assets found"
-              className="p-datatable-sm"
-            >
-              <Column field="Id" header="Asset ID" sortable style={{ width: "8rem" }} />
-              <Column field="Name" header="Asset Name" sortable style={{ width: "20rem" }} />
-              <Column field="Manufacturer" header="Manufacturer" style={{ width: "14rem" }} />
-              <Column field="Description" header="Description" style={{ width: "24rem" }} />
-              <Column header="Actions" body={actionTemplate} style={{ width: "10rem" }} />
-            </DataTable>
-          )}
+          </LoadingOverlay>
+        </div>
 
-          {/* CHECK IN / OUT MODAL */}
-          {viewModal && (
-            <PopUp
-              show={viewModal}
-              handleClose={handleCloseModal}
-              asset={currentAsset}
-              actionType={actionType}
-              handleSubmit={handleSubmit}
-            />
-          )}
+        {/* ================= CHECK IN / OUT POPUP ================= */}
+        {viewModal && (
+          <PopUp
+            show={viewModal}
+            handleClose={handleCloseModal}
+            asset={currentAsset}
+            actionType={actionType}
+            handleSubmit={handleSubmit}
+          />
+        )}
 
-          {/* HISTORY DIALOG */}
-          <Dialog
-            header={
-              <div className="flex align-items-center flex-grow-1">
-                {/* LEFT */}
-                <span className="font-semibold text-lg">
-                  History : {historyAssetName}
-                </span>
+        {/* ================= HISTORY MODAL ================= */}
+        {historyModal && (
+          <div className="modal show d-block" tabIndex="-1">
+            <div className="modal-dialog modal-xl">
+              <div className="modal-content">
 
-                {/* RIGHT */}
-                <div className="ms-auto">
-                  <ExportToCSV
-                    data={buildHistoryExportData(historyData, historyAssetName)}
-                    fileName={`History_${historyAssetName}.csv`}
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    History : {historyAssetName}
+                  </h5>
+                  <button
+                    className="btn-close"
+                    onClick={() => setHistoryModal(false)}
                   />
                 </div>
-              </div>
-            }
-            visible={historyModal}
-            style={{ width: "75vw" }}
-            onHide={() => setHistoryModal(false)}
-          >
-            {historyData.length === 0 ? (
-              <p>No history found</p>
-            ) : (
-              historyData.map((item, index) => (
-                <div
-                  key={index}
-                  style={{
-                    display: "flex",
-                    gap: "2rem",
-                    borderBottom: "1px solid #e5e7eb",
-                    paddingBottom: "1rem",
-                    marginBottom: "1rem"
-                  }}
-                >
-                  <div style={{ width: "50%" }}>
-                    <h4 style={{ color: "#0d6efd" }}>Check Out</h4>
-                    <p><b>Assignee:</b> {item.CheckOut?.AssigneeName}</p>
-                    <p><b>Purpose:</b> {item.CheckOut?.Purpose}</p>
-                    <p><b>Date:</b> {item.CheckOut?.CheckOutDateTime}</p>
-                    <p><b>Out From:</b> {item.CheckOut?.OutFrom}</p>
-                    <p><b>Sent To:</b> {item.CheckOut?.SentTo}</p>
-                    <p><b>Approved By:</b> {item.CheckOut?.ApprovedBy}</p>
-                    {renderBase64Image(item.CheckOut?.CheckOutImage)}
-                  </div>
 
-                  <div style={{ width: "50%" }}>
-                    <h4 style={{ color: "#198754" }}>Check In</h4>
-                    <p><b>Returned By:</b> {item.CheckIn?.ReturnedBy}</p>
-                    <p><b>Return Date:</b> {item.CheckIn?.ReturnDate}</p>
-                    {renderBase64Image(item.CheckIn?.ReturnImage)}
-                  </div>
+                <div className="modal-body">
+                  {historyData.length === 0 ? (
+                    <p className="text-center">No history found</p>
+                  ) : (
+                    historyData.map((item, index) => (
+                      <div key={index} className="row mb-4 border-bottom pb-3">
+
+                        {/* 🔵 CHECK OUT */}
+                        <div className="col-md-6 border-end">
+                          <h6 className="text-primary mb-2">Check Out</h6>
+                          <p><b>Assignee:</b> {item.CheckOut?.AssigneeName}</p>
+                          <p><b>Purpose:</b> {item.CheckOut?.Purpose}</p>
+                          <p><b>Date:</b> {item.CheckOut?.CheckOutDateTime}</p>
+                          <p><b>Out From:</b> {item.CheckOut?.OutFrom}</p>
+                          <p><b>Sent To:</b> {item.CheckOut?.SentTo}</p>
+                          <p><b>Approved By:</b> {item.CheckOut?.ApprovedBy}</p>
+
+                          <p><b>CheckOut Image:</b></p>
+                          {renderBase64Image(item.CheckOut?.CheckOutImage)}
+                        </div>
+
+                        {/* 🟢 CHECK IN */}
+                        <div className="col-md-6">
+                          <h6 className="text-success mb-2">Check In</h6>
+                          <p><b>Returned By:</b> {item.CheckIn?.ReturnedBy}</p>
+                          <p><b>Return Date:</b> {item.CheckIn?.ReturnDate}</p>
+
+                          <p><b>Return Image:</b></p>
+                          {renderBase64Image(item.CheckIn?.ReturnImage)}
+                        </div>
+
+                      </div>
+                    ))
+                  )}
                 </div>
-              ))
-            )}
-          </Dialog>
-        </div>
+
+              </div>
+            </div>
+          </div>
+        )}
+
       </section>
     </div>
   );
 };
 
-export default CheckInCheckOut;
+function mapStateToProps(state) {
+  return {
+    propId: state.Commonreducer.puidn,
+  };
+}
+
+export default connect(mapStateToProps)(CheckInCheckOut);
+

@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import {
-  getSalaryAllowancesByProperty,
-  getSalaryAllowancesByClient,
+  getSalaryAllowancesByProperties,
   getAllowancesDeductions,
   createSalaryAllowance,
   updateSalaryAllowance,
   getADPercentages,
 } from "../../Services/PayrollService";
-import { getPropertyById } from "../../Services/PropertyService";
+// import { getPropertyById } from "../../Services/PropertyService";
 import { getEmployeesByOffice } from "../../Services/PayrollService";
-import { getAllClients } from "../../Services/ClientService";
+import {
+  getAllClients,
+  getClientByPropertyId,
+  getPropertiesByClientId,
+} from "../../Services/ClientService";
 
 export default function SGNEW() {
   const propertyId = useSelector((state) => state.Commonreducer.puidn);
@@ -23,13 +26,13 @@ export default function SGNEW() {
   const [deductionAmounts, setDeductionAmounts] = useState({});
   const [deductionAllowanceMap, setDeductionAllowanceMap] = useState({});
   const [allowanceSelected, setAllowanceSelected] = useState({});
-  const [calculatedAD, setCalculatedAD] = useState({});
-  const [adFormula, setAdFormula] = useState({});
   const [selectedSG, setSelectedSG] = useState("");
+  const [previewSG, setPreviewSG] = useState(null);
   const [odDoubleFlags, setOdDoubleFlags] = useState({});
   const [multiplyValues, setMultiplyValues] = useState({});
   const [adValueType, setAdValueType] = useState({});
   const [editablePercentages, setEditablePercentages] = useState({});
+  const [adFormula, setAdFormula] = useState({});
   const [designation, setDesignation] = useState("");
   const [excludeEmployees, setExcludeEmployees] = useState(false);
   const [employees, setEmployees] = useState([]);
@@ -44,83 +47,195 @@ export default function SGNEW() {
     PF: false,
     ESI: false,
   });
-  const esiPreviewLock = React.useRef(false);
   const [otBaseType, setOtBaseType] = useState("Base");
-  const [previewSG, setPreviewSG] = useState(null);
   const isLoadingSG = React.useRef(false);
-  const [sgScope, setSgScope] = useState("");
-  const [clientList, setClientList] = useState([]);
-  const [selectedClientId, setSelectedClientId] = useState(null);
+  const [unitList, setUnitList] = useState([]);
+  const [selectedUnitId, setSelectedUnitId] = useState(null);
+
+  const [propertyList, setPropertyList] = useState([]);
+  const [selectedPropertyId, setSelectedPropertyId] = useState([]);
+  const [showPropertyDropdown, setShowPropertyDropdown] = useState(false);
 
   const [form, setForm] = useState({
     salaryGroupName: "",
     baseSalary: "",
-    totalWorkingDays: "",
-    shiftHours: "",
-    salaryCycleFrom: "",
-    salaryCycleTo: "",
+    totalWorkingDays: "0",
+    shiftHours: "0",
+    salaryCycleFrom: "0",
+    salaryCycleTo: "0",
     monthlySundays: "",
     excludeSunday: false,
   });
 
-  const [propertyDefaults, setPropertyDefaults] = useState({
-    totalWorkingDays: "",
-    shiftHours: "",
-  });
-
   useEffect(() => {
-    const fetchClients = async () => {
+    const loadUnits = async () => {
       try {
-        const res = await getAllClients();
-        setClientList(res || []);
+        // Property context → load single unit
+        if (Number(propertyId) > 0) {
+          const res = await getClientByPropertyId(propertyId);
+          setUnitList(res ? [res] : []);
+          setSelectedUnitId(res?.ClientID || null);
+        } else {
+          const res = await getAllClients();
+          setUnitList(res || []);
+        }
       } catch (err) {
-        console.log("Failed to load clients", err);
+        console.log("Failed to load units", err);
       }
     };
 
-    fetchClients();
-  }, []);
+    loadUnits();
+  }, [propertyId]);
 
   useEffect(() => {
-    if (sgScope === "CLIENT" && selectedClientId) {
-      loadSG();
+    const loadProperties = async () => {
+      try {
+        if (!selectedUnitId) {
+          setPropertyList([]);
+          setSelectedPropertyId([]);
+          return;
+        }
 
-      // 🔥 HARD RESET when switching client
-      setSelectedSG("");
-      resetSalaryGroupForm();
-    }
-  }, [selectedClientId, sgScope]);
+        const res = await getPropertiesByClientId(selectedUnitId);
+
+        setPropertyList(res || []);
+
+        // 🔥 select ALL properties by default
+        setSelectedPropertyId((res || []).map((p) => p.PropertyId));
+      } catch (err) {
+        console.log("Failed to load properties by unit", err);
+      }
+    };
+
+    loadProperties();
+  }, [selectedUnitId]);
 
   useEffect(() => {
-    // IMPORTANT: treat 0 / "0" as NO property
-    if (propertyId && Number(propertyId) > 0) {
-      setSgScope("PROPERTY");
+    if (!selectedPropertyId || selectedPropertyId.length === 0) {
+      setSalaryGroups([]);
       return;
     }
 
-    // 🔥 PROPERTY CLEARED — REAL RESET
-    setSgScope("");
-    setSelectedClientId(null);
-    setSalaryGroups([]);
-    setSelectedSG("");
-
-    resetFormCompletely(); // ✅ NOT resetSalaryGroupForm
-  }, [propertyId]);
-
-  useEffect(() => {
-    if (!propertyId) return;
-    loadPropertyInfo();
-    loadSG();
-  }, [propertyId]);
+    loadSG(selectedPropertyId);
+  }, [selectedPropertyId]);
 
   useEffect(() => {
     loadAD(); // GLOBAL – always load
+    loadADPercentages();
   }, []);
 
   useEffect(() => {
-    if (!propertyId) return;
+    const close = () => setShowPropertyDropdown(false);
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, []);
 
-    // 🔥 FULL HARD RESET ON PROPERTY CHANGE
+  useEffect(() => {
+    if (!activeStatutory.PF) return;
+    if (adValueType.PF !== "PERCENT") return;
+
+    const percent =
+      Number(editablePercentages.PF) ||
+      getEffectivePercentage("PF")?.Percentage ||
+      0;
+
+    if (!percent) return;
+
+    let baseAmount = 0;
+    let formulaParts = [];
+
+    if (deductionAllowanceMap.PF?.BaseSalary) {
+      baseAmount += Number(form.baseSalary) || 0;
+      formulaParts.push("Base");
+    }
+
+    Object.entries(deductionAllowanceMap.PF || {}).forEach(([k, v]) => {
+      if (k !== "BaseSalary" && v) {
+        baseAmount += Number(allowanceAmounts[k]) || 0;
+        formulaParts.push(k);
+      }
+    });
+
+    if (!baseAmount) return;
+
+    const amount = Math.round(baseAmount * (percent / 100));
+
+    setDeductionAmounts((prev) => ({
+      ...prev,
+      PF: amount,
+    }));
+
+    setAdFormula((prev) => ({
+      ...prev,
+      PF:
+        formulaParts.length > 1
+          ? `(${formulaParts.join(" + ")}) * ${percent / 100}`
+          : `${formulaParts[0]} * ${percent / 100}`,
+    }));
+  }, [
+    activeStatutory.PF,
+    adValueType.PF,
+    editablePercentages.PF,
+    deductionAllowanceMap.PF,
+    form.baseSalary,
+    allowanceAmounts.HRA,
+  ]);
+
+  useEffect(() => {
+    if (!activeStatutory.ESI) return;
+    if (adValueType.ESI !== "PERCENT") return;
+
+    const percent =
+      Number(editablePercentages.ESI) ||
+      getEffectivePercentage("ESI")?.Percentage ||
+      0;
+
+    if (!percent) return;
+
+    let baseAmount = 0;
+    let formulaParts = [];
+
+    if (deductionAllowanceMap.ESI?.BaseSalary) {
+      baseAmount += Number(form.baseSalary) || 0;
+      formulaParts.push("Base");
+    }
+
+    Object.entries(deductionAllowanceMap.ESI || {}).forEach(([k, v]) => {
+      if (k !== "BaseSalary" && v) {
+        baseAmount += Number(allowanceAmounts[k]) || 0;
+        formulaParts.push(k);
+      }
+    });
+
+    if (!baseAmount) return;
+
+    const amount = Math.round(baseAmount * (percent / 100));
+
+    setDeductionAmounts((prev) => ({
+      ...prev,
+      ESI: amount,
+    }));
+
+    setAdFormula((prev) => ({
+      ...prev,
+      ESI:
+        formulaParts.length > 1
+          ? `(${formulaParts.join(" + ")}) * ${percent / 100}`
+          : `${formulaParts[0]} * ${percent / 100}`,
+    }));
+  }, [
+    activeStatutory.ESI,
+    adValueType.ESI,
+    editablePercentages.ESI,
+    deductionAllowanceMap.ESI,
+    form.baseSalary,
+    allowanceAmounts,
+  ]);
+
+  useEffect(() => {
+    if (!selectedPropertyId || selectedPropertyId.length === 0) return;
+
+    // 🔥 FULL HARD RESET ON UNIT CHANGE
     setSelectedSG("");
     setDesignation("");
     setExcludeEmployees(false);
@@ -131,12 +246,8 @@ export default function SGNEW() {
     setDeductionAmounts({});
     setAdValueType({});
     setEditablePercentages({});
-    setCalculatedAD({});
     setAdFormula({});
     setActiveDeduction(null);
-
-    // 🔥 ALSO CLEAR API PERCENT CACHE
-    setAdPercentages([]);
 
     // 🔥 RESET FORM
     setForm((prev) => ({
@@ -149,12 +260,7 @@ export default function SGNEW() {
       excludeSunday: prev.excludeSunday,
       monthlySundays: prev.monthlySundays,
     }));
-  }, [propertyId]);
-
-  useEffect(() => {
-    if (!propertyId) return;
-    loadADPercentages();
-  }, [propertyId]);
+  }, [selectedUnitId]);
 
   useEffect(() => {
     if (!activeDeduction) return;
@@ -169,22 +275,10 @@ export default function SGNEW() {
   }, [activeDeduction, deductionAllowanceMap]);
 
   useEffect(() => {
-    // PF should ALWAYS react to allowance changes
-    if (activeStatutory.PF) {
-      setDeductionAmounts((prev) => ({ ...prev }));
-    }
-
-    // ESI should NOT react while in preview
-    if (activeStatutory.ESI && calculatedAD.ESI !== false) {
-      setDeductionAmounts((prev) => ({ ...prev }));
-    }
-  }, [allowanceAmounts, deductionAllowanceMap, activeStatutory, calculatedAD]);
-
-  useEffect(() => {
     if (!selectedSG) return;
     if (!salaryGroups.length || !adList.length) return;
 
-    const sg = salaryGroups.find((s) => s.SalaryGroup_ID == selectedSG);
+    const sg = salaryGroups.find((s) => s.SalaryGroup === selectedSG);
     if (!sg) return;
 
     let newDeductions = {};
@@ -231,369 +325,69 @@ export default function SGNEW() {
     }
 
     setAdFormula((prev) => ({ ...prev, ...newFormulas }));
-  }, [form.baseSalary, adValueType, adPercentages, propertyId]);
+  }, [form.baseSalary, adValueType, adPercentages]);
 
   useEffect(() => {
-    if (isLoadingSG.current) return;
-    if (esiPreviewLock.current) return;
-    const base = Number(form.baseSalary) || 0;
-    if (!base) return;
-
-    // 🔥 AUTO-ENABLE PF / ESI PREVIEW IN CREATE MODE
-    if (base > 0) {
-      if (
-        activeStatutory.ESI &&
-        deductionAllowanceMap.ESI?.BaseSalary === true &&
-        calculatedAD.ESI !== false // 🔥 DO NOT override preview
-      ) {
-        activateDeductionWithBase("ESI");
-      }
+    if (!selectedUnitId) {
+      setEmployees([]);
+      setDesignations([]);
+      return;
     }
 
-    let newAllowanceAmounts = {};
-    let newDeductionAmounts = {};
-    let newFormulas = {};
-
-    if (!isLoadingSG.current) {
-      ["PF", "ESI"].forEach((d) => {
-        if (!adValueType[d]) {
-          setAdValueType((prev) => ({
-            ...prev,
-            [d]: "PERCENT",
-          }));
-        }
-      });
-    }
-
-    /* ===============================
-     🔹 ALLOWANCES (percentage based)
-     =============================== */
-    allowances.concat(otherAllowances).forEach((a) => {
-      const name = a.Name;
-
-      if (adValueType[name] !== "PERCENT") return;
-
-      const percentage = Number(editablePercentages[name]);
-      if (!percentage) return;
-
-      const amount = Math.round(base * (percentage / 100));
-
-      newAllowanceAmounts[name] = amount;
-      newFormulas[name] = `Base * ${percentage / 100}`;
-    });
-
-    /* ===============================
-     🔹 PF & ESI (STATUTORY – ALWAYS)
-     =============================== */
-    ["PF", "ESI"].forEach((d) => {
-      // 🔥 DO NOT recalc if in preview mode
-      if (calculatedAD[d] === false) return;
-
-      const percentObj = getEffectivePercentage(d);
-      const percentage =
-        editablePercentages[d] !== "" &&
-        editablePercentages[d] !== undefined &&
-        editablePercentages[d] !== null
-          ? Number(editablePercentages[d])
-          : Number(percentObj?.Percentage || 0);
-
-      if (!percentage) return;
-
-      let total = base;
-      let formulaParts = ["Base"];
-
-      Object.keys(deductionAllowanceMap[d] || {}).forEach((key) => {
-        if (!deductionAllowanceMap[d][key]) return;
-        if (key === "BaseSalary") return;
-
-        const val = Number(allowanceAmounts[key]) || 0;
-        total += val;
-        formulaParts.push(key);
-      });
-
-      newDeductionAmounts[d] = Math.round(total * (percentage / 100));
-      newFormulas[d] =
-        formulaParts.length === 1
-          ? `Base * ${percentage / 100}`
-          : `(${formulaParts.join(" + ")}) * ${percentage / 100}`;
-    });
-
-    /* ===============================
-     🔹 OTHER DEDUCTIONS (RADIO ONLY)
-     =============================== */
-    if (
-      activeDeduction &&
-      !["PF", "ESI"].includes(activeDeduction) &&
-      adValueType[activeDeduction] === "PERCENT"
-    ) {
-      const percentage = Number(editablePercentages[activeDeduction]) || 0;
-      if (percentage) {
-        let total = base;
-        let formulaParts = ["Base"];
-
-        Object.keys(allowanceSelected).forEach((key) => {
-          if (!allowanceSelected[key]) return;
-          if (key === "BaseSalary") return;
-
-          const val = Number(allowanceAmounts[key]) || 0;
-          total += val;
-          formulaParts.push(key);
-        });
-
-        const amount = Math.round(total * (percentage / 100));
-
-        newDeductionAmounts[activeDeduction] = amount;
-        newFormulas[activeDeduction] =
-          formulaParts.length === 1
-            ? `Base * ${percentage / 100}`
-            : `(${formulaParts.join(" + ")}) * ${percentage / 100}`;
-      }
-    }
-
-    setAllowanceAmounts((prev) => ({ ...prev, ...newAllowanceAmounts }));
-    setDeductionAmounts((prev) => ({ ...prev, ...newDeductionAmounts }));
-    setAdFormula((prev) => ({ ...prev, ...newFormulas }));
-  }, [
-    form.baseSalary,
-    editablePercentages,
-    allowanceAmounts,
-    allowanceSelected,
-    deductionAllowanceMap,
-    activeStatutory,
-    activeDeduction,
-    adValueType,
-  ]);
-
-  useEffect(() => {
-    if (isLoadingSG.current) return;
-    if (!activeStatutory.PF) return;
-
-    const base = Number(form.baseSalary) || 0;
-    if (!base) return;
-
-    const percentObj = getEffectivePercentage("PF");
-    const percentage =
-      editablePercentages.PF !== "" && editablePercentages.PF != null
-        ? Number(editablePercentages.PF)
-        : Number(percentObj?.Percentage || 0);
-
-    if (!percentage) return;
-
-    let total = base;
-
-    Object.keys(deductionAllowanceMap.PF || {}).forEach((key) => {
-      if (!deductionAllowanceMap.PF[key]) return;
-      if (key === "BaseSalary") return;
-
-      total += Number(allowanceAmounts[key]) || 0;
-    });
-
-    setDeductionAmounts((prev) => ({
-      ...prev,
-      PF: Math.round((total * percentage) / 100),
-    }));
-
-    setAdFormula((prev) => ({
-      ...prev,
-      PF: `(${[
-        "Base",
-        ...Object.keys(deductionAllowanceMap.PF || {}).filter(
-          (k) => deductionAllowanceMap.PF[k] && k !== "BaseSalary"
-        ),
-      ].join(" + ")}) * ${percentage / 100}`,
-    }));
-  }, [
-    allowanceAmounts,
-    deductionAllowanceMap.PF,
-    activeStatutory.PF,
-    editablePercentages.PF,
-    form.baseSalary,
-  ]);
-
-  useEffect(() => {
-    if (!propertyId) return;
+    if (!selectedPropertyId || selectedPropertyId.length === 0) return;
 
     const fetchEmployees = async () => {
       try {
         setLoadingEmployees(true);
-        const res = await getEmployeesByOffice(propertyId);
-        setEmployees(res || []);
 
-        // extract unique designations
+        const allResults = await Promise.all(
+          selectedPropertyId.map((pid) => getEmployeesByOffice(pid)),
+        );
+
+        const mergedEmployees = allResults.flat().filter(Boolean);
+        setEmployees(mergedEmployees);
+
         const uniqueDesignations = [
           ...new Set(
-            (res || []).map((e) => e.EmployeeList?.Designation).filter(Boolean)
+            mergedEmployees
+              .map((e) => e.EmployeeList?.Designation)
+              .filter(Boolean),
           ),
         ];
 
         setDesignations(uniqueDesignations);
-      } catch (err) {
-        console.log("Failed to load employees", err);
       } finally {
         setLoadingEmployees(false);
       }
     };
 
     fetchEmployees();
-  }, [propertyId]);
-
-  useEffect(() => {
-    if (isLoadingSG.current) return;
-    const base = Number(form.baseSalary) || 0;
-    if (!base) return;
-
-    let newDeductions = {};
-    let newFormulas = {};
-
-    deductions.concat(otherDeductions).forEach((d) => {
-      const name = d.Name;
-
-      /* ================= PF LIMIT LOGIC (SAFE INSERT) ================= */
-      const gross =
-        base +
-        Object.keys(allowanceAmounts)
-          .filter((key) => Number(allowanceAmounts[key]) > 0)
-          .reduce((sum, key) => sum + Number(allowanceAmounts[key]), 0);
-      const pfCap = Number(pfLimit) || 0;
-
-      if (
-        name === "PF" &&
-        adValueType[name] === "PERCENT" &&
-        pfCap > 0 &&
-        gross >= pfCap
-      ) {
-        const percentage =
-          Number(editablePercentages[name]) ||
-          getEffectivePercentage(name)?.Percentage ||
-          0;
-
-        newDeductions[name] = Math.round((pfCap * percentage) / 100);
-
-        // ❌ NO FORMULA when PF limit is applied
-        newFormulas[name] = null;
-
-        return; // 🚨 stop PF from falling into normal logic
-      }
-      /* ================================================================ */
-
-      /* ================= ESI LIMIT LOGIC ================= */
-      const esiCap = Number(esiLimit) || 0;
-
-      if (
-        name === "ESI" &&
-        adValueType[name] === "PERCENT" &&
-        esiCap > 0 &&
-        gross >= esiCap
-      ) {
-        const percentage =
-          Number(editablePercentages[name]) ||
-          getEffectivePercentage(name)?.Percentage ||
-          0;
-
-        newDeductions[name] = Math.round((esiCap * percentage) / 100);
-
-        // ❌ NO FORMULA when ESI limit is applied
-        newFormulas[name] = null;
-
-        return; // 🚨 stop ESI from falling into normal logic
-      }
-      /* ================================================== */
-
-      // ❌ Fixed deductions never recalc
-      if (adValueType[name] === "FIXED") return;
-
-      // 🔥 CASE 1: API FORMULA EXISTS (e.g. ESI)
-      if (adFormula[name] && !allowanceSelected) {
-        let total = base;
-
-        // add allowance dependencies if any
-        const usedAllowances = deductionAllowanceMap[name] || {};
-        Object.keys(usedAllowances).forEach((a) => {
-          if (usedAllowances[a]) {
-            total += Number(allowanceAmounts[a]) || 0;
-          }
-        });
-
-        const match = adFormula[name].match(/([\d.]+)$/);
-        if (!match) return;
-
-        const multiplier = Number(match[1]);
-        newDeductions[name] = Math.round(total * multiplier);
-        return;
-      }
-
-      // 🔹 CASE 2: SIMPLE % DEDUCTION (Base only)
-      // ❌ DO NOT override PF / ESI when active & allowance-based
-      // 🔥 NEVER override PF / ESI base+allowance calculation
-      if (["PF", "ESI"].includes(name)) {
-        return;
-      }
-
-      const percentObj = getEffectivePercentage(name);
-      if (!percentObj) return;
-
-      const percentage = percentObj.Percentage;
-      newDeductions[name] = Math.round(base * (percentage / 100));
-      newFormulas[name] = `Base * ${percentage / 100}`;
-
-      // ensure dropdown shows %
-      if (!adValueType[name]) {
-        setAdValueType((prev) => ({
-          ...prev,
-          [name]: "PERCENT",
-        }));
-      }
-    });
-
-    setDeductionAmounts((prev) => {
-      const merged = { ...prev };
-
-      Object.keys(newDeductions).forEach((key) => {
-        // 🔥 DO NOT overwrite preview deductions
-        if (calculatedAD[key] === false) return;
-
-        merged[key] = newDeductions[key];
-      });
-
-      return merged;
-    });
-    setAdFormula((prev) => ({ ...prev, ...newFormulas }));
-  }, [
-    form.baseSalary,
-    allowanceAmounts,
-    deductionAllowanceMap,
-    adValueType,
-    adPercentages,
-    pfLimit,
-    esiLimit,
-  ]);
+  }, [selectedUnitId, selectedPropertyId]);
 
   const getEffectivePercentage = (adName) => {
     if (!adPercentages.length) return null;
 
-    const pid = Number(propertyId); // 🔥 FORCE NUMBER
+    const propertyIds = Array.isArray(selectedPropertyId)
+      ? selectedPropertyId
+      : [];
 
-    // 1️⃣ Property-specific (highest priority)
-    const propertySpecific = adPercentages.find(
-      (p) =>
-        p.AD_Name === adName &&
-        Number(p.PropertyId) === pid &&
-        p.IsGlobal === false &&
-        p.IsActive
+    for (const pid of propertyIds) {
+      const match = adPercentages.find(
+        (p) =>
+          p.AD_Name === adName &&
+          Number(p.PropertyId) === Number(pid) &&
+          p.IsGlobal === false &&
+          p.IsActive,
+      );
+
+      if (match) return match;
+    }
+
+    return (
+      adPercentages.find(
+        (p) => p.AD_Name === adName && p.IsGlobal && p.IsActive,
+      ) || null
     );
-
-    if (propertySpecific) return propertySpecific;
-
-    // 2️⃣ Global fallback
-    const globalPercent = adPercentages.find(
-      (p) => p.AD_Name === adName && p.IsGlobal === true && p.IsActive
-    );
-
-    return globalPercent || null;
-  };
-
-  const hasApiPercent = (name) => {
-    return !!getEffectivePercentage(name);
   };
 
   const buildADModel = () => {
@@ -659,7 +453,7 @@ export default function SGNEW() {
           calculated = 0;
         } else {
           // percentage-based deduction
-          if (!calculatedAD[name]) return;
+          if (calculated <= 0) return;
           calculated = Number(deductionAmounts[name]) || 0;
           if (calculated <= 0) return;
         }
@@ -694,7 +488,7 @@ export default function SGNEW() {
 
   const loadADPercentages = async () => {
     try {
-      const res = await getADPercentages(propertyId); // ✅ PASS propertyId
+      const res = await getADPercentages();
       setAdPercentages(res);
     } catch (err) {
       console.log("Failed to fetch AD Percentages:", err);
@@ -716,53 +510,17 @@ export default function SGNEW() {
   const otherAllowances = cleanList.filter((x) => x.Type === "OA");
   const otherDeductions = cleanList.filter((x) => x.Type === "OD");
 
-  const loadSG = async () => {
+  const loadSG = async (propertyIds) => {
     try {
-      let res = [];
-
-      if (sgScope === "PROPERTY" && propertyId) {
-        res = await getSalaryAllowancesByProperty(propertyId);
+      if (!propertyIds || propertyIds.length === 0) {
+        setSalaryGroups([]);
+        return;
       }
 
-      if (sgScope === "CLIENT" && selectedClientId) {
-        res = await getSalaryAllowancesByClient(selectedClientId);
-      }
-
+      const res = await getSalaryAllowancesByProperties(propertyIds);
       setSalaryGroups(res || []);
     } catch (err) {
-      console.log("Failed to fetch SG:", err);
-    }
-  };
-
-  const loadPropertyInfo = async () => {
-    try {
-      const res = await getPropertyById(propertyId);
-
-      const twd = res.TotalWorkingDays || "";
-      const sh = res.ShiftHours || "";
-
-      // store defaults
-      setPropertyDefaults({
-        totalWorkingDays: twd,
-        shiftHours: sh,
-        salaryCycleFrom: res.Salarycycledayfrom ?? "",
-        salaryCycleTo: res.Salarycycledayto ?? "",
-        excludeSunday: !!res.Excludesunday,
-        monthlySundays: res.MonthSunday ?? "",
-      });
-
-      // update form initially
-      setForm((prev) => ({
-        ...prev,
-        totalWorkingDays: twd,
-        shiftHours: sh,
-        salaryCycleFrom: res.Salarycycledayfrom ?? "",
-        salaryCycleTo: res.Salarycycledayto ?? "",
-        excludeSunday: !!res.Excludesunday,
-        monthlySundays: res.MonthSunday ?? "",
-      }));
-    } catch (err) {
-      return null;
+      console.log("Failed to fetch Salary Groups by properties", err);
     }
   };
 
@@ -775,7 +533,6 @@ export default function SGNEW() {
     setDeductionAmounts({});
     setAdValueType({});
     setEditablePercentages({});
-    setCalculatedAD({});
     setAdFormula({});
     setAllowanceSelected({});
     setDeductionAllowanceMap({});
@@ -891,10 +648,6 @@ export default function SGNEW() {
 
         // 🔥 ALSO MARK DEDUCTION AS VALID
         if (ad.Type === "D" || ad.Type === "OD") {
-          setCalculatedAD((prev) => ({
-            ...prev,
-            [name]: false,
-          }));
         }
       }
     });
@@ -915,13 +668,6 @@ export default function SGNEW() {
       ESI: !!deductionAllowanceRestoreMap.ESI,
     });
 
-    // 🔥 Mark them calculated so amounts show
-    setCalculatedAD((prev) => ({
-      ...prev,
-      PF: !!deductionAllowanceRestoreMap.PF,
-      ESI: !!deductionAllowanceRestoreMap.ESI,
-    }));
-
     // 🔥 RESTORE allowanceSelected for PF / ESI so formula works
     let restoredSelected = {};
 
@@ -938,7 +684,6 @@ export default function SGNEW() {
     // 4. Set UI states
     setAllowanceAmounts(newAllowances);
     setDeductionAmounts(newDeductions);
-    setCalculatedAD((prev) => ({ ...prev, ...calcFlags }));
     setAdFormula(formulas);
 
     setAllowanceSelected((prev) => ({
@@ -959,62 +704,88 @@ export default function SGNEW() {
 
   const handleSave = async () => {
     // ✅ VALIDATION FIRST
-    if (sgScope === "CLIENT" && !selectedClientId) {
-      alert("Please select a client");
+    if (!selectedPropertyId || selectedPropertyId.length === 0) {
+      alert("Please select at least one Property");
       return;
     }
+
     try {
       const adModel = buildADModel();
 
-      const isUpdate = salaryGroups.some(
-        (sg) => sg.SalaryGroup === form.salaryGroupName
+      // 🔑 detect update by SG name
+      const existingSG = salaryGroups.find(
+        (sg) => sg.SalaryGroup === form.salaryGroupName,
       );
 
-      const model = {
-        SalaryGroup_ID: isUpdate
-          ? salaryGroups.find((sg) => sg.SalaryGroup === form.salaryGroupName)
-              .SalaryGroup_ID
-          : 0,
+      const isUpdate = !!existingSG;
 
-        SalaryGroup: form.salaryGroupName,
-        BaseSalary: Number(form.baseSalary),
-        ...(sgScope === "PROPERTY" && { Property_ID: propertyId }),
-        ...(sgScope === "CLIENT" && { ClientId: selectedClientId }),
-        PFLimit: pfLimit ? Number(pfLimit) : null,
-        ESILimit: esiLimit ? Number(esiLimit) : null,
-        TotalWorkingDays: Number(form.totalWorkingDays),
-        ShiftHours: Number(form.shiftHours),
-        Salarystartfrom: form.salaryCycleFrom
-          ? Number(form.salaryCycleFrom)
-          : null,
-        Salaryendto: form.salaryCycleTo ? Number(form.salaryCycleTo) : null,
-        ExcludeSunday: form.excludeSunday,
-        MonthSundays:
-          form.monthlySundays !== "" ? Number(form.monthlySundays) : null,
-        Designations: designation ? [designation] : [],
-        ExcludedEmployeeIds: excludeEmployees ? excludedEmployeeIds : [],
-        AllowancesDeductions: adModel,
-        CreatedBy: 1,
-        UpdatedBy: 1,
-        IsActive: true,
-      };
+      const model = isUpdate
+        ? {
+            // 🔁 PUT payload
+            SalaryGroup_IDs: existingSG.SalaryGroup_IDs,
+            Property_IDs: selectedPropertyId,
+            SalaryGroup: form.salaryGroupName,
+            BaseSalary: Number(form.baseSalary),
+
+            PFLimit: pfLimit ? Number(pfLimit) : null,
+            ESILimit: esiLimit ? Number(esiLimit) : null,
+            TotalWorkingDays: Number(form.totalWorkingDays),
+            ShiftHours: Number(form.shiftHours),
+            Salarystartfrom: Number(form.salaryCycleFrom) || 0,
+            Salaryendto: Number(form.salaryCycleTo) || 0,
+            ExcludeSunday: form.excludeSunday,
+            MonthSundays:
+              form.monthlySundays !== "" ? Number(form.monthlySundays) : null,
+
+            Designations: designation ? [designation] : [],
+            ExcludedEmployeeIds: excludeEmployees ? excludedEmployeeIds : [],
+            AllowancesDeductions: adModel,
+            CreatedBy: 1,
+            UpdatedBy: 1,
+            IsActive: true,
+          }
+        : {
+            // ➕ POST payload
+            SalaryGroup_ID: 0,
+            PropertyIds: selectedPropertyId,
+            SalaryGroup: form.salaryGroupName,
+            BaseSalary: Number(form.baseSalary),
+
+            PFLimit: pfLimit ? Number(pfLimit) : null,
+            ESILimit: esiLimit ? Number(esiLimit) : null,
+            TotalWorkingDays: Number(form.totalWorkingDays),
+            ShiftHours: Number(form.shiftHours),
+            Salarystartfrom: Number(form.salaryCycleFrom) || 0,
+            Salaryendto: Number(form.salaryCycleTo) || 0,
+            ExcludeSunday: form.excludeSunday,
+            MonthSundays:
+              form.monthlySundays !== "" ? Number(form.monthlySundays) : null,
+
+            Designations: designation ? [designation] : [],
+            ExcludedEmployeeIds: excludeEmployees ? excludedEmployeeIds : [],
+            AllowancesDeductions: adModel,
+            CreatedBy: 1,
+            UpdatedBy: 1,
+            IsActive: true,
+          };
 
       if (isUpdate) {
-        const id = model.SalaryGroup_ID;
-        await updateSalaryAllowance(id, model);
+        // ✅ UPDATED: no separate ID param
+        await updateSalaryAllowance(model);
         alert("Salary group updated!");
       } else {
         await createSalaryAllowance(model);
         alert("Salary group created!");
       }
 
-      // IMPORTANT FIX
-      await loadSG(); // <-- reload SG list so formulas update immediately
-      // reset ONLY when save succeeds
-      resetSalaryGroupForm();
+      // 🔄 reload SG list for selected properties
+      await loadSG(selectedPropertyId);
+
+      // 🔥 full reset
+      resetAll();
     } catch (err) {
       alert("Save failed! Check console.");
-      console.log(err);
+      console.error(err);
     }
   };
 
@@ -1024,18 +795,9 @@ export default function SGNEW() {
     .reduce((sum, key) => sum + Number(allowanceAmounts[key]), 0);
 
   // SUM OF ALL DEDUCTIONS (D + OD)
-  const totalDeduction = Object.keys(deductionAmounts).reduce((sum, key) => {
-    const val = Number(deductionAmounts[key]) || 0;
-
-    const isReal = calculatedAD[key] === true;
-    const isFixed = adValueType[key] === "FIXED";
-
-    if (isReal || isFixed) {
-      return sum + val;
-    }
-
-    return sum;
-  }, 0);
+  const totalDeduction = Object.values(deductionAmounts)
+    .filter((v) => typeof v === "number" && v > 0)
+    .reduce((a, b) => a + b, 0);
 
   // GROSS = BASE + ALLOWANCES
   const totalGross = (Number(form.baseSalary) || 0) + totalAllowance;
@@ -1089,12 +851,12 @@ export default function SGNEW() {
     setForm({
       salaryGroupName: "",
       baseSalary: "",
-      totalWorkingDays: propertyDefaults.totalWorkingDays,
-      shiftHours: propertyDefaults.shiftHours,
-      salaryCycleFrom: propertyDefaults.salaryCycleFrom ?? "",
-      salaryCycleTo: propertyDefaults.salaryCycleTo ?? "",
-      excludeSunday: propertyDefaults.excludeSunday ?? false,
-      monthlySundays: propertyDefaults.monthlySundays ?? "",
+      totalWorkingDays: "0",
+      shiftHours: "0",
+      salaryCycleFrom: "0",
+      salaryCycleTo: "0",
+      excludeSunday: false,
+      monthlySundays: "",
     });
 
     setAdValueType({});
@@ -1103,7 +865,6 @@ export default function SGNEW() {
     setAllowanceAmounts({});
     setDeductionAmounts({});
     setActiveDeduction(null);
-    setCalculatedAD({});
     setAdFormula({});
     setSelectedSG("");
     setOdDoubleFlags({});
@@ -1123,66 +884,29 @@ export default function SGNEW() {
     setOtBaseType("Base");
   };
 
-  const resetFormCompletely = () => {
-    setForm({
-      salaryGroupName: "",
-      baseSalary: "",
-      totalWorkingDays: "",
-      shiftHours: "",
-      salaryCycleFrom: "",
-      salaryCycleTo: "",
-      excludeSunday: false,
-      monthlySundays: "",
-    });
+  const resetAll = () => {
+    // 🔥 Always reset salary group form & SG state
+    resetSalaryGroupForm();
+    setSelectedSG("");
+    setPreviewSG(null);
 
-    setPropertyDefaults({
-      totalWorkingDays: "",
-      shiftHours: "",
-      salaryCycleFrom: "",
-      salaryCycleTo: "",
-      excludeSunday: false,
-      monthlySundays: "",
-    });
+    // 🔥 ALWAYS reset page-level property selection
+    setSelectedPropertyId([]);
+    setShowPropertyDropdown(false);
+
+    // 🔥 Reset unit ONLY when NOT coming from navbar
+    if (!Number(propertyId) || Number(propertyId) <= 0) {
+      setSelectedUnitId(null);
+      setPropertyList([]);
+    }
   };
 
   const allowOnlyNumbers = (e) => {
     const value = e.target.value;
 
-    if (/^\d*\.?\d*$/.test(value)) {
+    if (value === "" || /^\d*\.?\d*$/.test(value)) {
       setForm({ ...form, [e.target.name]: value });
     }
-  };
-
-  const handleRefreshSelections = () => {
-    // 🔹 Reset ONLY non-statutory deduction selection
-    setActiveDeduction(null);
-
-    // 🔹 Preserve BaseSalary selection (PF / ESI depend on it)
-    setAllowanceSelected((prev) => ({
-      BaseSalary: true,
-    }));
-
-    // 🔹 Preserve PF / ESI allowance mappings, reset others
-    setDeductionAllowanceMap((prev) => ({
-      PF: {
-        ...(prev.PF || {}),
-        BaseSalary: prev.PF?.BaseSalary ?? true,
-      },
-      ESI: {
-        ...(prev.ESI || {}),
-        BaseSalary: prev.ESI?.BaseSalary ?? true,
-      },
-    }));
-
-    // 🔹 Reset OD / other deduction helpers
-    setOdDoubleFlags({});
-    setMultiplyValues({});
-
-    // ❌ DO NOT touch:
-    // - allowanceAmounts
-    // - deductionAmounts
-    // - adFormula
-    // - editablePercentages
   };
 
   const filteredEmployees = designation
@@ -1215,12 +939,6 @@ export default function SGNEW() {
     setEditablePercentages((prev) => ({
       ...prev,
       [deductionName]: prev[deductionName] ?? percentObj?.Percentage ?? 0,
-    }));
-
-    // 4️⃣ Mark as calculated
-    setCalculatedAD((prev) => ({
-      ...prev,
-      [deductionName]: true,
     }));
   };
 
@@ -1268,84 +986,120 @@ export default function SGNEW() {
             }}
           />
 
-          {/* Select Type */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <label
-              style={{
-                fontSize: 15,
-                fontWeight: 600,
-                color: "#334155",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Select Type :
-            </label>
-
-            <select
-              className="form-control"
-              value={sgScope}
-              onChange={(e) => {
-                const value = e.target.value;
-                setSgScope(value);
-
-                if (value === "PROPERTY") {
-                  setSelectedClientId(null);
-                }
-              }}
-              style={{
-                width: 160,
-                height: 30,
-                fontSize: 14,
-                padding: "2px 8px",
-                borderRadius: 6,
-                border: "1px solid #cbd5f5",
-              }}
-            >
-              <option value="" disabled>
-                -- Select Type --
-              </option>
-
-              {propertyId && <option value="PROPERTY">Property</option>}
-              <option value="CLIENT">Client</option>
-            </select>
-          </div>
-
-          {/* Select Client */}
-          {sgScope === "CLIENT" && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <label
-                style={{
-                  fontSize: 15,
-                  fontWeight: 600,
-                  color: "#334155",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Select Client :
-              </label>
-
+          <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
+            {/* Select Unit */}
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <label style={{ fontWeight: 600 }}>Select Unit :</label>
               <select
                 className="form-control"
-                value={selectedClientId || ""}
-                onChange={(e) => setSelectedClientId(e.target.value)}
-                style={{
-                  width: 260,
-                  height: 30,
-                  fontSize: 14,
-                  padding: "2px 8px",
-                  borderRadius: 6,
-                  border: "1px solid #cbd5f5",
+                value={selectedUnitId || ""}
+                disabled={Number(propertyId) > 0}
+                onChange={(e) => {
+                  setSelectedUnitId(Number(e.target.value));
+                  setSelectedPropertyId([]);
+                  setSalaryGroups([]);
+                  resetSalaryGroupForm();
                 }}
+                style={{ width: 260 }}
               >
-                <option value="">-- Select Client --</option>
-                {clientList.map((c) => (
-                  <option key={c.ClientID} value={c.ClientID}>
-                    {c.ClientName}
+                <option value="">-- Select Unit --</option>
+                {unitList.map((u) => (
+                  <option key={u.ClientID} value={u.ClientID}>
+                    {u.ClientName}
                   </option>
                 ))}
               </select>
             </div>
-          )}
+
+            {/* Select Property */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                position: "relative",
+                minWidth: 420,
+              }}
+            >
+              <label style={{ fontWeight: 600, whiteSpace: "nowrap" }}>
+                Select Property :
+              </label>
+
+              {/* Dropdown trigger */}
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (propertyList.length > 0) {
+                    setShowPropertyDropdown((prev) => !prev);
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  padding: "6px 10px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: 6,
+                  background: propertyList.length ? "#fff" : "#f9fafb",
+                  cursor: propertyList.length ? "pointer" : "not-allowed",
+                  fontSize: 13,
+                }}
+              >
+                {selectedPropertyId.length === 0
+                  ? "Select properties"
+                  : `${selectedPropertyId.length} property selected`}
+              </div>
+
+              {/* Dropdown panel */}
+              {showPropertyDropdown && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    left: 0,
+                    marginTop: 6,
+                    width: "100%",
+                    maxHeight: 220,
+                    overflowY: "auto",
+                    background: "#fff",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: 8,
+                    padding: 10,
+                    zIndex: 1000,
+                    boxShadow: "0 6px 14px rgba(0,0,0,0.15)",
+                  }}
+                >
+                  {propertyList.map((p) => (
+                    <label
+                      key={p.PropertyId}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        fontSize: 13,
+                        marginBottom: 6,
+                        cursor: "pointer",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedPropertyId.includes(p.PropertyId)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+
+                          setSelectedPropertyId((prev) =>
+                            checked
+                              ? [...prev, p.PropertyId]
+                              : prev.filter((id) => id !== p.PropertyId),
+                          );
+                        }}
+                      />
+                      {p.PropertyName}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* ROW 1: TITLE + SG NAME + SELECT SG */}
@@ -1360,12 +1114,7 @@ export default function SGNEW() {
           {/* TITLE */}
           <div
             onClick={() => {
-              // 🔥 FULL RESET TO CREATE MODE
-              setSelectedSG("");
-              setDesignation("");
-              setExcludeEmployees(false);
-              setExcludedEmployeeIds([]);
-              resetSalaryGroupForm();
+              resetAll();
             }}
             style={{
               display: "inline-block",
@@ -1448,26 +1197,23 @@ export default function SGNEW() {
               }}
               value={selectedSG}
               onChange={(e) => {
-                const id = e.target.value;
-                setSelectedSG(id);
+                const name = e.target.value;
+                setSelectedSG(name);
 
-                if (id === "") {
-                  // 🔥 FULL RESET (same as clicking CREATE SALARY GROUP)
+                if (!name) {
                   resetSalaryGroupForm();
-                  setDesignation("");
-                  setExcludeEmployees(false);
-                  setExcludedEmployeeIds([]);
-                } else {
-                  handleDropdownSelect(
-                    salaryGroups.find((s) => s.SalaryGroup_ID == id)
-                  );
+                  return;
                 }
+
+                handleDropdownSelect(
+                  salaryGroups.find((s) => s.SalaryGroup === name),
+                );
               }}
             >
               <option value="">-- Select Existing SG --</option>
 
               {salaryGroups.map((sg) => (
-                <option key={sg.SalaryGroup_ID} value={sg.SalaryGroup_ID}>
+                <option key={sg.SalaryGroup} value={sg.SalaryGroup}>
                   {sg.SalaryGroup}
                 </option>
               ))}
@@ -1660,7 +1406,7 @@ export default function SGNEW() {
                         <input
                           type="checkbox"
                           checked={excludedEmployeeIds.includes(
-                            emp.FacilityMember?.FacilityMemberId
+                            emp.FacilityMember?.FacilityMemberId,
                           )}
                           onChange={(e) => {
                             const empId = emp.FacilityMember?.FacilityMemberId;
@@ -1676,7 +1422,7 @@ export default function SGNEW() {
                             setExcludedEmployeeIds((prev) =>
                               e.target.checked
                                 ? [...prev, empId]
-                                : prev.filter((id) => id !== empId)
+                                : prev.filter((id) => id !== empId),
                             );
                           }}
                         />
@@ -1695,7 +1441,7 @@ export default function SGNEW() {
                             setExcludedEmployeeIds((prev) =>
                               prev.includes(empId)
                                 ? prev.filter((id) => id !== empId)
-                                : [...prev, empId]
+                                : [...prev, empId],
                             );
                           }}
                         >
@@ -1714,7 +1460,7 @@ export default function SGNEW() {
 
                             const sgId = emp.FacilityMember?.SG_Link_ID;
                             const sg = salaryGroups.find(
-                              (s) => Number(s.SalaryGroup_ID) === Number(sgId)
+                              (s) => Number(s.SalaryGroup_ID) === Number(sgId),
                             );
 
                             if (sg) setPreviewSG(sg);
@@ -1928,24 +1674,72 @@ export default function SGNEW() {
                 onChange={(e) => {
                   const checked = e.target.checked;
 
-                  setActiveStatutory((prev) => ({ ...prev, PF: checked }));
-
-                  setDeductionAllowanceMap((prev) => ({
-                    ...prev,
-                    PF: { BaseSalary: checked },
-                  }));
-
-                  setCalculatedAD((prev) => ({
-                    ...prev,
-                    PF: checked,
-                  }));
-
                   if (checked) {
+                    // ✅ TURN PF ON
+                    setActiveStatutory((prev) => ({ ...prev, PF: true }));
+
+                    setDeductionAllowanceMap((prev) => ({
+                      ...prev,
+                      PF: {
+                        ...(prev.PF || {}),
+                        BaseSalary: true,
+                      },
+                    }));
+
                     activateDeductionWithBase("PF");
-                    setDeductionAmounts((prev) => ({ ...prev }));
+                  } else {
+                    // 1️⃣ Update BaseSalary mapping only
+                    setDeductionAllowanceMap((prev) => {
+                      const pfMap = { ...(prev.PF || {}) };
+                      delete pfMap.BaseSalary;
+
+                      // 2️⃣ Check if ANY allowance still uses PF
+                      const hasAnyPFAllowance = Object.keys(pfMap).some(
+                        (k) => pfMap[k] === true,
+                      );
+
+                      // 3️⃣ If none left → fully remove PF
+                      if (!hasAnyPFAllowance) {
+                        setActiveStatutory((prev) => ({ ...prev, PF: false }));
+
+                        // clear PF states
+                        setAdValueType((prev) => {
+                          const copy = { ...prev };
+                          delete copy.PF;
+                          return copy;
+                        });
+
+                        setEditablePercentages((prev) => {
+                          const copy = { ...prev };
+                          delete copy.PF;
+                          return copy;
+                        });
+
+                        setDeductionAmounts((prev) => {
+                          const copy = { ...prev };
+                          delete copy.PF;
+                          return copy;
+                        });
+
+                        setAdFormula((prev) => {
+                          const copy = { ...prev };
+                          delete copy.PF;
+                          return copy;
+                        });
+
+                        const newMap = { ...prev };
+                        delete newMap.PF;
+                        return newMap;
+                      }
+
+                      // 4️⃣ Otherwise keep PF alive (HRA still checked)
+                      return {
+                        ...prev,
+                        PF: pfMap,
+                      };
+                    });
                   }
                 }}
-                style={{ transform: "scale(1.1)", justifySelf: "center" }}
               />
 
               {/* ESI checkbox */}
@@ -1955,49 +1749,62 @@ export default function SGNEW() {
                 onChange={(e) => {
                   const checked = e.target.checked;
 
-                  // ✅ ONLY control allowance dependency
-                  setDeductionAllowanceMap((prev) => ({
-                    ...prev,
-                    ESI: { BaseSalary: checked },
-                  }));
+                  if (checked) {
+                    setActiveStatutory((prev) => ({ ...prev, ESI: true }));
 
-                  if (!checked) {
-                    // 🔒 LOCK preview so effects cannot revert it
-                    esiPreviewLock.current = true;
-
-                    setActiveStatutory((prev) => ({ ...prev, ESI: false }));
-                    setCalculatedAD((prev) => ({ ...prev, ESI: false }));
-
-                    setAdValueType((prev) => ({
+                    setDeductionAllowanceMap((prev) => ({
                       ...prev,
-                      ESI: "PERCENT",
+                      ESI: {
+                        ...(prev.ESI || {}),
+                        BaseSalary: true,
+                      },
                     }));
 
-                    const percentObj = getEffectivePercentage("ESI");
-                    const percentage =
-                      editablePercentages.ESI !== undefined &&
-                      editablePercentages.ESI !== null &&
-                      editablePercentages.ESI !== ""
-                        ? Number(editablePercentages.ESI)
-                        : Number(percentObj?.Percentage || 0);
+                    activateDeductionWithBase("ESI");
+                  } else {
+                    setDeductionAllowanceMap((prev) => {
+                      const esiMap = { ...(prev.ESI || {}) };
+                      delete esiMap.BaseSalary;
 
-                    const base = Number(form.baseSalary) || 0;
+                      const hasAnyESI = Object.values(esiMap).some(
+                        (v) => v === true,
+                      );
 
-                    setDeductionAmounts((prev) => ({
-                      ...prev,
-                      ESI: Math.round(base * (percentage / 100)),
-                    }));
+                      if (!hasAnyESI) {
+                        setActiveStatutory((p) => ({ ...p, ESI: false }));
 
-                    setAdFormula((prev) => ({
-                      ...prev,
-                      ESI: `Base * ${percentage / 100}`,
-                    }));
+                        setAdValueType((p) => {
+                          const c = { ...p };
+                          delete c.ESI;
+                          return c;
+                        });
 
-                    return;
+                        setEditablePercentages((p) => {
+                          const c = { ...p };
+                          delete c.ESI;
+                          return c;
+                        });
+
+                        setDeductionAmounts((p) => {
+                          const c = { ...p };
+                          delete c.ESI;
+                          return c;
+                        });
+
+                        setAdFormula((p) => {
+                          const c = { ...p };
+                          delete c.ESI;
+                          return c;
+                        });
+
+                        const newMap = { ...prev };
+                        delete newMap.ESI;
+                        return newMap;
+                      }
+
+                      return { ...prev, ESI: esiMap };
+                    });
                   }
-
-                  activateDeductionWithBase("ESI");
-                  esiPreviewLock.current = false; // 🔓 allow auto logic again
                 }}
                 style={{ transform: "scale(1.1)", justifySelf: "center" }}
               />
@@ -2006,12 +1813,9 @@ export default function SGNEW() {
               <div />
             </div>
             {allowances.map((a) => {
-              const isPreviewPercent =
-                !adValueType[a.Name] && hasApiPercent(a.Name);
-
               const isPercentMode = adValueType[a.Name] === "PERCENT";
 
-              const disableAmount = isPreviewPercent || isPercentMode;
+              const disableAmount = isPercentMode;
 
               return (
                 <div
@@ -2088,19 +1892,9 @@ export default function SGNEW() {
                         width: 32,
                         height: 28,
                         fontSize: 12,
-                        color:
-                          !adValueType[a.Name] && hasApiPercent(a.Name)
-                            ? "#94a3b8" // 🔥 light preview %
-                            : "#000",
+                        color: "#000",
                       }}
                     >
-                      {/* PREVIEW PLACEHOLDER (NOT A REAL OPTION) */}
-                      {!adValueType[a.Name] && hasApiPercent(a.Name) && (
-                        <option value="" hidden>
-                          %
-                        </option>
-                      )}
-
                       <option value="FIXED">#</option>
                       <option value="PERCENT">%</option>
                     </select>
@@ -2145,17 +1939,6 @@ export default function SGNEW() {
                         handleAllowanceAmount(a.Name, e.target.value)
                       }
                     />
-                    <span
-                      style={{
-                        fontSize: 12,
-                        color: "#555",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {adValueType[a.Name] === "PERCENT" && adFormula[a.Name]
-                        ? `= ${adFormula[a.Name]}`
-                        : ""}
-                    </span>
                   </div>
                   {/* PF Checkbox */}
                   <input
@@ -2164,25 +1947,73 @@ export default function SGNEW() {
                     onChange={(e) => {
                       const checked = e.target.checked;
 
-                      if (checked) {
-                        activateDeductionWithBase("PF");
-                      }
-
-                      setDeductionAllowanceMap((prev) => ({
-                        ...prev,
-                        PF: {
+                      setDeductionAllowanceMap((prev) => {
+                        const pfMap = {
                           ...(prev.PF || {}),
+                          BaseSalary: prev.PF?.BaseSalary ?? false,
                           [a.Name]: checked,
-                        },
-                      }));
+                        };
 
-                      // 🔥 ALWAYS sync allowanceSelected when editing PF
+                        // 🔑 does PF still have ANY allowance?
+                        const hasAnyPFAllowance = Object.values(pfMap).some(
+                          (v) => v === true,
+                        );
+
+                        // ❌ last PF allowance removed → kill PF completely
+                        if (!hasAnyPFAllowance) {
+                          setActiveStatutory((p) => ({ ...p, PF: false }));
+
+                          setAdValueType((p) => {
+                            const c = { ...p };
+                            delete c.PF;
+                            return c;
+                          });
+
+                          setEditablePercentages((p) => {
+                            const c = { ...p };
+                            delete c.PF;
+                            return c;
+                          });
+
+                          setDeductionAmounts((p) => {
+                            const c = { ...p };
+                            delete c.PF;
+                            return c;
+                          });
+
+                          setAdFormula((p) => {
+                            const c = { ...p };
+                            delete c.PF;
+                            return c;
+                          });
+
+                          const newMap = { ...prev };
+                          delete newMap.PF;
+                          return newMap;
+                        }
+
+                        // ✅ PF still valid
+                        setActiveStatutory((p) => ({ ...p, PF: true }));
+
+                        // 🔥 initialize PF only when it becomes active
+                        if (checked && !prev.PF) {
+                          activateDeductionWithBase("PF");
+                        }
+
+                        return {
+                          ...prev,
+                          PF: pfMap,
+                        };
+                      });
+
+                      // 🔥 sync allowanceSelected (UI only)
                       setAllowanceSelected((prev) => ({
                         ...prev,
+                        BaseSalary: true,
                         [a.Name]: checked,
                       }));
 
-                      // 🔥 ENSURE fixed allowance value is present
+                      // 🔥 ensure fixed allowance amount exists
                       if (checked && adValueType[a.Name] === "FIXED") {
                         setAllowanceAmounts((prev) => ({
                           ...prev,
@@ -2199,25 +2030,64 @@ export default function SGNEW() {
                     onChange={(e) => {
                       const checked = e.target.checked;
 
-                      if (checked) {
-                        activateDeductionWithBase("ESI");
-                      }
-
-                      setDeductionAllowanceMap((prev) => ({
-                        ...prev,
-                        ESI: {
+                      setDeductionAllowanceMap((prev) => {
+                        const esiMap = {
                           ...(prev.ESI || {}),
+                          BaseSalary: prev.ESI?.BaseSalary ?? false,
                           [a.Name]: checked,
-                        },
-                      }));
+                        };
 
-                      // 🔥 ALWAYS sync allowanceSelected for ESI (same as PF)
+                        const hasAnyESI = Object.values(esiMap).some(
+                          (v) => v === true,
+                        );
+
+                        if (!hasAnyESI) {
+                          setActiveStatutory((p) => ({ ...p, ESI: false }));
+
+                          setAdValueType((p) => {
+                            const c = { ...p };
+                            delete c.ESI;
+                            return c;
+                          });
+
+                          setEditablePercentages((p) => {
+                            const c = { ...p };
+                            delete c.ESI;
+                            return c;
+                          });
+
+                          setDeductionAmounts((p) => {
+                            const c = { ...p };
+                            delete c.ESI;
+                            return c;
+                          });
+
+                          setAdFormula((p) => {
+                            const c = { ...p };
+                            delete c.ESI;
+                            return c;
+                          });
+
+                          const newMap = { ...prev };
+                          delete newMap.ESI;
+                          return newMap;
+                        }
+
+                        if (checked && !prev.ESI) {
+                          activateDeductionWithBase("ESI");
+                        }
+
+                        setActiveStatutory((p) => ({ ...p, ESI: true }));
+
+                        return { ...prev, ESI: esiMap };
+                      });
+
                       setAllowanceSelected((prev) => ({
                         ...prev,
+                        BaseSalary: true,
                         [a.Name]: checked,
                       }));
 
-                      // 🔥 ENSURE fixed allowance value is present for ESI
                       if (checked && adValueType[a.Name] === "FIXED") {
                         setAllowanceAmounts((prev) => ({
                           ...prev,
@@ -2259,12 +2129,9 @@ export default function SGNEW() {
             }}
           >
             {otherAllowances.map((a) => {
-              const isPreviewPercent =
-                !adValueType[a.Name] && hasApiPercent(a.Name);
-
               const isPercentMode = adValueType[a.Name] === "PERCENT";
 
-              const disableAmount = isPreviewPercent || isPercentMode;
+              const disableAmount = isPercentMode;
 
               return (
                 <div
@@ -2413,7 +2280,7 @@ export default function SGNEW() {
                       </select>
                     </div>
                   ) : (
-                    /* NORMAL Allowances */
+                    /* OTHER Allowances */
                     <div
                       style={{
                         display: "flex",
@@ -2455,19 +2322,9 @@ export default function SGNEW() {
                           width: 32,
                           height: 28,
                           fontSize: 12,
-                          color:
-                            !adValueType[a.Name] && hasApiPercent(a.Name)
-                              ? "#94a3b8" // 🔥 light preview %
-                              : "#000",
+                          color: "#000",
                         }}
                       >
-                        {/* PREVIEW PLACEHOLDER (NOT A REAL OPTION) */}
-                        {!adValueType[a.Name] && hasApiPercent(a.Name) && (
-                          <option value="" hidden>
-                            %
-                          </option>
-                        )}
-
                         <option value="FIXED">#</option>
                         <option value="PERCENT">%</option>
                       </select>
@@ -2521,25 +2378,72 @@ export default function SGNEW() {
                     onChange={(e) => {
                       const checked = e.target.checked;
 
-                      if (checked) {
-                        activateDeductionWithBase("PF");
-                      }
-
-                      setDeductionAllowanceMap((prev) => ({
-                        ...prev,
-                        PF: {
+                      setDeductionAllowanceMap((prev) => {
+                        const pfMap = {
                           ...(prev.PF || {}),
+                          BaseSalary: prev.PF?.BaseSalary ?? false,
                           [a.Name]: checked,
-                        },
-                      }));
+                        };
 
-                      // 🔥 ALWAYS sync allowanceSelected when editing PF
+                        // 🔑 check if ANY PF source still exists
+                        const hasAnyPFSource = Object.values(pfMap).some(
+                          (v) => v === true,
+                        );
+
+                        // ❌ last PF source removed → kill PF fully
+                        if (!hasAnyPFSource) {
+                          setActiveStatutory((p) => ({ ...p, PF: false }));
+
+                          setAdValueType((p) => {
+                            const c = { ...p };
+                            delete c.PF;
+                            return c;
+                          });
+
+                          setEditablePercentages((p) => {
+                            const c = { ...p };
+                            delete c.PF;
+                            return c;
+                          });
+
+                          setDeductionAmounts((p) => {
+                            const c = { ...p };
+                            delete c.PF;
+                            return c;
+                          });
+
+                          setAdFormula((p) => {
+                            const c = { ...p };
+                            delete c.PF;
+                            return c;
+                          });
+
+                          const newMap = { ...prev };
+                          delete newMap.PF;
+                          return newMap;
+                        }
+
+                        // ✅ PF still valid
+                        if (checked && !prev.PF) {
+                          activateDeductionWithBase("PF");
+                        }
+
+                        setActiveStatutory((p) => ({ ...p, PF: true }));
+
+                        return {
+                          ...prev,
+                          PF: pfMap,
+                        };
+                      });
+
+                      // 🔥 UI sync
                       setAllowanceSelected((prev) => ({
                         ...prev,
+                        BaseSalary: true,
                         [a.Name]: checked,
                       }));
 
-                      // 🔥 ENSURE fixed allowance value is present
+                      // 🔥 ensure fixed OA value exists
                       if (checked && adValueType[a.Name] === "FIXED") {
                         setAllowanceAmounts((prev) => ({
                           ...prev,
@@ -2547,7 +2451,6 @@ export default function SGNEW() {
                         }));
                       }
                     }}
-                    style={{ transform: "scale(1.1)", justifySelf: "center" }}
                   />
 
                   <input
@@ -2556,25 +2459,64 @@ export default function SGNEW() {
                     onChange={(e) => {
                       const checked = e.target.checked;
 
-                      if (checked) {
-                        activateDeductionWithBase("ESI");
-                      }
-
-                      setDeductionAllowanceMap((prev) => ({
-                        ...prev,
-                        ESI: {
+                      setDeductionAllowanceMap((prev) => {
+                        const esiMap = {
                           ...(prev.ESI || {}),
+                          BaseSalary: prev.ESI?.BaseSalary ?? false,
                           [a.Name]: checked,
-                        },
-                      }));
+                        };
 
-                      // 🔥 ALWAYS sync allowanceSelected for ESI (same as PF)
+                        const hasAnyESI = Object.values(esiMap).some(
+                          (v) => v === true,
+                        );
+
+                        if (!hasAnyESI) {
+                          setActiveStatutory((p) => ({ ...p, ESI: false }));
+
+                          setAdValueType((p) => {
+                            const c = { ...p };
+                            delete c.ESI;
+                            return c;
+                          });
+
+                          setEditablePercentages((p) => {
+                            const c = { ...p };
+                            delete c.ESI;
+                            return c;
+                          });
+
+                          setDeductionAmounts((p) => {
+                            const c = { ...p };
+                            delete c.ESI;
+                            return c;
+                          });
+
+                          setAdFormula((p) => {
+                            const c = { ...p };
+                            delete c.ESI;
+                            return c;
+                          });
+
+                          const newMap = { ...prev };
+                          delete newMap.ESI;
+                          return newMap;
+                        }
+
+                        if (checked && !prev.ESI) {
+                          activateDeductionWithBase("ESI");
+                        }
+
+                        setActiveStatutory((p) => ({ ...p, ESI: true }));
+
+                        return { ...prev, ESI: esiMap };
+                      });
+
                       setAllowanceSelected((prev) => ({
                         ...prev,
+                        BaseSalary: true,
                         [a.Name]: checked,
                       }));
 
-                      // 🔥 ENSURE fixed allowance value is present for ESI
                       if (checked && adValueType[a.Name] === "FIXED") {
                         setAllowanceAmounts((prev) => ({
                           ...prev,
@@ -2673,7 +2615,9 @@ export default function SGNEW() {
                 fontSize: 12,
                 fontWeight: 600,
               }}
-              onClick={handleRefreshSelections}
+              onClick={() => {
+                resetAll();
+              }}
             >
               Refresh
             </button>
@@ -2687,7 +2631,7 @@ export default function SGNEW() {
           >
             {deductions.map((d) => {
               // compute REAL vs PREVIEW for this deduction
-              const isReal = !!calculatedAD[d.Name];
+              const isReal = adValueType[d.Name] === "FIXED";
               const valueType =
                 adValueType[d.Name] ||
                 (getEffectivePercentage(d.Name) ? "PERCENT" : "FIXED");
@@ -2709,12 +2653,8 @@ export default function SGNEW() {
                   {d.Name === "PF" || d.Name === "ESI" ? (
                     <input
                       type="radio"
-                      /* ❌ NO name attribute → no mutual exclusion */
-                      checked={
-                        d.Name === "PF" || d.Name === "ESI"
-                          ? !!deductionAllowanceMap[d.Name]?.BaseSalary
-                          : activeDeduction === d.Name
-                      }
+                      name="statutoryDeduction" // ✅ ADD THIS LINE
+                      checked={!!deductionAllowanceMap[d.Name]?.BaseSalary}
                       onChange={() => {
                         // 🔥 PF / ESI are always ON once selected
                         setActiveStatutory((prev) => ({
@@ -2735,17 +2675,6 @@ export default function SGNEW() {
                         setAdValueType((prev) => ({
                           ...prev,
                           [d.Name]: "PERCENT",
-                        }));
-
-                        setCalculatedAD((prev) => ({
-                          ...prev,
-                          [d.Name]: true,
-                        }));
-
-                        // 🔥 Trigger recalculation safely
-                        setDeductionAmounts((prev) => ({
-                          ...prev,
-                          [d.Name]: prev[d.Name] || 0,
                         }));
                       }}
                       style={{ transform: "scale(1.1)" }}
@@ -2772,11 +2701,6 @@ export default function SGNEW() {
                         setAdValueType((prev) => ({
                           ...prev,
                           [name]: "PERCENT",
-                        }));
-
-                        setCalculatedAD((prev) => ({
-                          ...prev,
-                          [name]: true,
                         }));
 
                         setDeductionAmounts((prev) => ({
@@ -2807,11 +2731,6 @@ export default function SGNEW() {
                         }));
 
                         if (type === "FIXED") {
-                          setCalculatedAD((prev) => ({
-                            ...prev,
-                            [d.Name]: false,
-                          }));
-
                           setEditablePercentages((prev) => ({
                             ...prev,
                             [d.Name]: "",
@@ -2832,14 +2751,7 @@ export default function SGNEW() {
                       <option value="PERCENT">%</option>
                       <option value="FIXED">#</option>
                     </select>
-                    {(d.Name === "PF"
-                      ? !!deductionAllowanceMap.PF?.BaseSalary &&
-                        adValueType.PF === "PERCENT"
-                      : d.Name === "ESI"
-                      ? !!deductionAllowanceMap.ESI?.BaseSalary &&
-                        adValueType.ESI === "PERCENT"
-                      : activeDeduction === d.Name &&
-                        adValueType[d.Name] === "PERCENT") && (
+                    {adValueType[d.Name] === "PERCENT" && (
                       <input
                         type="number"
                         style={{ width: 55, height: 28, fontSize: 12 }}
@@ -2857,7 +2769,6 @@ export default function SGNEW() {
                     <input
                       type="number"
                       className="form-control"
-                      disabled={isPercentage} // ⭐ THIS IS THE KEY LINE
                       style={{
                         width: 120,
                         height: "28px",
@@ -2868,10 +2779,7 @@ export default function SGNEW() {
                         cursor: isPercentage ? "not-allowed" : "text",
                         border: "1px solid #e5e7eb",
 
-                        color:
-                          isReal || adValueType[d.Name] === "FIXED"
-                            ? "#000"
-                            : "rgba(0,0,0,0.3)",
+                        color: "#000",
                       }}
                       value={deductionAmounts[d.Name] ?? ""}
                       onChange={(e) =>
@@ -2881,19 +2789,18 @@ export default function SGNEW() {
                         }))
                       }
                     />
-
-                    {/* FORMULA TEXT */}
-                    <span
-                      style={{
-                        fontSize: 12,
-                        color: "#555",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {adValueType[d.Name] === "PERCENT" && adFormula[d.Name]
-                        ? `= ${adFormula[d.Name]}`
-                        : ""}
-                    </span>
+                    {adValueType[d.Name] === "PERCENT" && adFormula[d.Name] && (
+                      <span
+                        style={{
+                          marginLeft: 8,
+                          fontSize: 12,
+                          color: "#475569", // subtle gray
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        = {adFormula[d.Name]}
+                      </span>
+                    )}
                   </div>
 
                   {/* FX BUTTON */}
@@ -3017,7 +2924,7 @@ export default function SGNEW() {
             }}
           >
             {otherDeductions.map((d) => {
-              const isReal = !!calculatedAD[d.Name];
+              const isReal = adValueType[d.Name] === "FIXED";
               const valueType =
                 adValueType[d.Name] ||
                 (getEffectivePercentage(d.Name) ? "PERCENT" : "FIXED");
@@ -3062,11 +2969,6 @@ export default function SGNEW() {
                         ...prev,
                         [name]: "PERCENT",
                       }));
-
-                      setCalculatedAD((prev) => ({
-                        ...prev,
-                        [name]: true,
-                      }));
                     }}
                     style={{ transform: "scale(1.1)" }}
                   />
@@ -3089,11 +2991,6 @@ export default function SGNEW() {
                         }));
 
                         if (type === "FIXED") {
-                          setCalculatedAD((prev) => ({
-                            ...prev,
-                            [d.Name]: false,
-                          }));
-
                           setEditablePercentages((prev) => ({
                             ...prev,
                             [d.Name]: "",
@@ -3133,7 +3030,6 @@ export default function SGNEW() {
                     <input
                       type="number"
                       className="form-control"
-                      disabled={isPercentage} // ⭐ THIS IS THE KEY LINE
                       style={{
                         width: 120,
                         height: "28px",
@@ -3144,10 +3040,7 @@ export default function SGNEW() {
                         cursor: isPercentage ? "not-allowed" : "text",
                         border: "1px solid #e5e7eb",
 
-                        color:
-                          isReal || adValueType[d.Name] === "FIXED"
-                            ? "#000"
-                            : "rgba(0,0,0,0.3)",
+                        color: "#000",
                       }}
                       value={deductionAmounts[d.Name] ?? ""}
                       onChange={(e) => {
@@ -3165,12 +3058,6 @@ export default function SGNEW() {
                           [d.Name]: "FIXED",
                         }));
 
-                        // 3️⃣ MARK AS REAL (not preview)
-                        setCalculatedAD((prev) => ({
-                          ...prev,
-                          [d.Name]: true,
-                        }));
-
                         // 4️⃣ REMOVE formula (fixed has none)
                         setAdFormula((prev) => ({
                           ...prev,
@@ -3178,19 +3065,6 @@ export default function SGNEW() {
                         }));
                       }}
                     />
-
-                    {/* FORMULA TEXT */}
-                    <span
-                      style={{
-                        fontSize: 12,
-                        color: "#555",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {adValueType[d.Name] === "PERCENT" && adFormula[d.Name]
-                        ? `= ${adFormula[d.Name]}`
-                        : ""}
-                    </span>
                   </div>
 
                   {/* PER DAY checkbox (only for selected items) */}
@@ -3319,7 +3193,7 @@ export default function SGNEW() {
 
                 {/* OTHER ALLOWANCES */}
                 {previewSG.AllowancesDeductions.filter(
-                  (a) => a.Type === "A" || a.Type === "OA"
+                  (a) => a.Type === "A" || a.Type === "OA",
                 ).map((a) => (
                   <div
                     key={a.AD_Id}
@@ -3351,11 +3225,11 @@ export default function SGNEW() {
                     {(
                       Number(previewSG.BaseSalary) +
                       previewSG.AllowancesDeductions.filter(
-                        (a) => a.Type === "A" || a.Type === "OA"
+                        (a) => a.Type === "A" || a.Type === "OA",
                       ).reduce(
                         (sum, a) =>
                           sum + (a.FixedAmount || a.CalculatedAmount || 0),
-                        0
+                        0,
                       )
                     ).toFixed(2)}
                   </span>
@@ -3383,7 +3257,7 @@ export default function SGNEW() {
                 </div>
 
                 {previewSG.AllowancesDeductions.filter(
-                  (a) => a.Type === "D" || a.Type === "OD"
+                  (a) => a.Type === "D" || a.Type === "OD",
                 ).map((a) => (
                   <div
                     key={a.AD_Id}
@@ -3413,12 +3287,12 @@ export default function SGNEW() {
                   <span>
                     ₹{" "}
                     {previewSG.AllowancesDeductions.filter(
-                      (a) => a.Type === "D" || a.Type === "OD"
+                      (a) => a.Type === "D" || a.Type === "OD",
                     )
                       .reduce(
                         (sum, a) =>
                           sum + (a.FixedAmount || a.CalculatedAmount || 0),
-                        0
+                        0,
                       )
                       .toFixed(2)}
                   </span>

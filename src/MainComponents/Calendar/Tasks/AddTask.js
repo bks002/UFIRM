@@ -222,6 +222,12 @@ class AddTask extends Component {
     );
   };
 
+  hasAtLeastOneQuestion = () => {
+    return this.state.quesValues.some(
+      (q) => q.QuestionName && q.QuestionName.trim() !== "",
+    );
+  };
+
   removeQuesFields = (i) => {
     const quesValues = [...this.state.quesValues];
     quesValues.splice(i, 1);
@@ -306,6 +312,14 @@ class AddTask extends Component {
 
   handleSave = async () => {
     if (this.state.isSaving) return;
+    if (!this.hasAtLeastOneQuestion()) {
+      appCommon.showtextalert(
+        "Please add at least one question before saving.",
+        "",
+        "warning",
+      );
+      return;
+    }
 
     this.setState({ isSaving: true });
 
@@ -489,6 +503,16 @@ class AddTask extends Component {
 /* Optional: slightly clearer hover feedback */
 .card-header .nav-tabs .nav-link:hover {
   background: rgba(255, 255, 255, 0.12);
+}
+  select option[value=""] {
+  color: #9aa0a6;
+}
+  .placeholder-select {
+  color: #9aa0a6 !important;
+}
+
+.placeholder-select option {
+  color: #000; /* dropdown items stay normal */
 }
 `}
         </style>
@@ -731,6 +755,7 @@ class AddTask extends Component {
                             <input
                               type="checkbox"
                               checked={this.state.check}
+                              disabled
                               onChange={(e) =>
                                 this.setState({ check: e.target.checked })
                               }
@@ -749,6 +774,7 @@ class AddTask extends Component {
                           <select
                             className="form-control"
                             value={this.state.remindme}
+                            disabled
                             onChange={(e) =>
                               this.setState({ remindme: e.target.value })
                             }
@@ -811,12 +837,12 @@ class AddTask extends Component {
                       {/* Asset selection */}
                       <div className="row mb-3 align-items-center">
                         <div className="col-md-2">
-                          <label>Asset</label>
+                          <label>Asset Name</label>
                         </div>
                         <div className="col-md-10">
                           <select
-                            className="form-control"
-                            value={this.state.assetId}
+                            className={`form-control ${!this.state.assetId ? "placeholder-select" : ""}`}
+                            value={this.state.assetId || ""}
                             onChange={this.handleAssetChange}
                           >
                             <option value="">Select Asset</option>
@@ -985,7 +1011,11 @@ class AddTask extends Component {
                   <div className="modal-footer">
                     <button
                       className="btn btn-primary"
-                      disabled={!this.isTaskValid() || this.state.isSaving}
+                      disabled={
+                        !this.isTaskValid() ||
+                        !this.hasAtLeastOneQuestion() ||
+                        this.state.isSaving
+                      }
                       onClick={this.handleSave}
                     >
                       {this.state.isSaving ? "Saving..." : "Save"}
