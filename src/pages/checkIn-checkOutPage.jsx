@@ -8,13 +8,15 @@ import LoadingOverlay from "react-loading-overlay";
 import { getAssetCheckInOutHistoryByAssetId } 
   from "../Services/CheckInCheckOut";
 
+const ASSET_API_BASE = "https://api.urest.in:8096";
+
 /* ================= BASE64 IMAGE RENDER HELPER ================= */
-const renderBase64Image = (base64) => {
-  if (!base64) return <span>No Image</span>;
+const renderImageFromUrl = (url) => {
+  if (!url) return <span>No Image</span>;
 
   return (
     <img
-      src={`data:image/jpeg;base64,${base64}`}
+      src={url}
       alt="Asset"
       style={{
         width: "180px",
@@ -26,6 +28,7 @@ const renderBase64Image = (base64) => {
     />
   );
 };
+
 
 const CheckInCheckOut = (actions) => {
   const [assetData, setAssetData] = useState([]);
@@ -90,11 +93,11 @@ const CheckInCheckOut = (actions) => {
   const handleSubmit = async (formData) => {
     const url =
       actionType === "checkin"
-        ? "https://api.urest.in:8096/ManageCheckIn"
-        : "https://api.urest.in:8096/ManageCheckOut";
+        ? `${ASSET_API_BASE}/ManageCheckIn`
+        : `https://api.urest.in:8096/ManageCheckOut`;
 
     try {
-      await fetch(url, {
+      const response = await fetch(url, {
         method: actionType === "checkin" ? "PUT" : "POST",
         headers: {
           Accept: "application/json",
@@ -106,6 +109,13 @@ const CheckInCheckOut = (actions) => {
           ...formData,
         }),
       });
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(
+          `Failed ${actionType} (${response.status}): ${errorBody || "Unknown error"}`
+        );
+      }
 
       fetchData();
       handleCloseModal();
@@ -280,7 +290,8 @@ const CheckInCheckOut = (actions) => {
                           <p><b>Approved By:</b> {item.CheckOut?.ApprovedBy}</p>
 
                           <p><b>CheckOut Image:</b></p>
-                          {renderBase64Image(item.CheckOut?.CheckOutImage)}
+                          {renderImageFromUrl(item.CheckOut?.CheckOutImage)}
+
                         </div>
 
                         {/* 🟢 CHECK IN */}
@@ -290,7 +301,8 @@ const CheckInCheckOut = (actions) => {
                           <p><b>Return Date:</b> {item.CheckIn?.ReturnDate}</p>
 
                           <p><b>Return Image:</b></p>
-                          {renderBase64Image(item.CheckIn?.ReturnImage)}
+                          {renderImageFromUrl(item.CheckIn?.ReturnImage)}
+
                         </div>
 
                       </div>
@@ -315,4 +327,5 @@ function mapStateToProps(state) {
 }
 
 export default connect(mapStateToProps)(CheckInCheckOut);
+
 
