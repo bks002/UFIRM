@@ -931,3 +931,25 @@ export async function deleteMonthlyOTReport(
     throw error;
   }
 }
+
+// Get Employee Monthly Total OT
+export const getEmployeeMonthlyTotalOT = async (propertyId, month, year) => {
+  try {
+    const response = await axios.get(
+      `https://api.urest.in:8096/api/otreport/getEmployeeMonthlyTotalOT`,
+      {
+        params: {
+          propertyId,
+          month,
+          year,
+        },
+        withCredentials: false,
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch monthly OT report:", error);
+    throw error;
+  }
+};

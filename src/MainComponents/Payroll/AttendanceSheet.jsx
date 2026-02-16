@@ -9,11 +9,12 @@ import {
   updateAttendance,
   deleteMultipleAttendance,
   uploadAttendance,
+  getEmployeeMonthlyTotalOT
 } from "../../Services/PayrollService";
 
 import { getEmployeesByOffice } from "../../Services/PayrollService";
 import { getPropertyById } from "../../Services/PropertyService";
-import { getSalaryAllowancesByFacilityMember } from "../../Services/PayrollService";
+import { getSalaryAllowancesByFacilityMember, getSalaryAllowancesByProperties } from "../../Services/PayrollService";
 
 // Helper: Format month-year as "YYYY-MM"
 function getMonthYearString(month, year) {
@@ -34,6 +35,7 @@ export default function AttendanceSheet() {
   const [attendanceData, setAttendanceData] = useState([]);
   const [filteredAttendance, setFilteredAttendance] = useState([]);
   const [selectedEmpIds, setSelectedEmpIds] = useState(new Set());
+  const [salaryGroupsByProperty, setSalaryGroupsByProperty] = useState([]);
 
   // { empId: { totalDays, shiftHours } }
   const [employeeSGMap, setEmployeeSGMap] = useState({});
@@ -282,45 +284,119 @@ export default function AttendanceSheet() {
 
         setFilteredAttendance(filtered);
 
+        // Fetch OT hours
+        let otData = [];
+        try {
+          otData = await getEmployeeMonthlyTotalOT(propertyId, month, year);
+        } catch (err) {
+          console.error("OT load failed:", err);
+        }
+
         const mappedInputs = {};
-        filtered.forEach((att) => {
-          mappedInputs[att.EmpID] = {
-            workingDays: att.WorkingDays,
-            EL: att.EL ?? "",
-            CL: att.CL ?? "",
-            SL: att.SL ?? "",
-            weekDaysOff: att.WeekDaysOff,
-            otDays: att.OtDays || "",
-            otHours: att.OtHours || "",
+
+        employees.forEach((emp) => {
+          const empId = emp?.FacilityMember?.FacilityMemberId;
+          const empCode = emp?.Profile?.EmployeeCode;
+          const empSGId = emp?.FacilityMember?.SG_Link_ID;
+
+          if (!empId) return;
+
+          const saved = filtered.find(
+            (a) => a.EmpID === empId
+          );
+
+          const otMatch = otData.find(
+            (ot) => ot.EmployeeCode === empCode
+          );
+
+          // 🔥 Salary Group Match
+          const sgMatch = salaryGroupsByProperty.find(
+            (sg) =>
+              sg?.SalaryGroup_IDs?.some(
+                (id) => String(id) === String(empSGId)
+              )
+          );
+
+          const uniformAllowance = sgMatch?.AllowancesDeductions?.find(
+            (ad) => ad.Name === "Uniform"
+          );
+
+          const foodAllowance = sgMatch?.AllowancesDeductions?.find(
+            (ad) => ad.Name === "Food"
+          );
+
+          const uniformDefault =
+            uniformAllowance?.CalculatedAmount > 0
+              ? uniformAllowance.CalculatedAmount
+              : uniformAllowance?.FixedAmount ?? "";
+
+          const foodDefault =
+            foodAllowance?.CalculatedAmount > 0
+              ? foodAllowance.CalculatedAmount
+              : foodAllowance?.FixedAmount ?? "";
+
+          mappedInputs[empId] = {
+            workingDays: saved?.WorkingDays ?? "",
+            EL: saved?.EL ?? "",
+            CL: saved?.CL ?? "",
+            SL: saved?.SL ?? "",
+            weekDaysOff: saved?.WeekDaysOff ?? "",
+            otDays: saved?.OtDays ?? "",
+
+            // ✅ OT priority fix
+            otHours:
+              saved?.OtHours !== null &&
+                saved?.OtHours !== undefined &&
+                saved?.OtHours !== ""
+                ? saved.OtHours
+                : otMatch?.TotalOTHours ?? "",
+
             totalDays:
-              att.TotalWorkingDays ?? employeeSGMap[att.EmpID]?.totalDays ?? globalTotalDays,
+              saved?.TotalWorkingDays ??
+              employeeSGMap[empId]?.totalDays ??
+              globalTotalDays,
+
             manualTotalDays: false,
-            nhDays: att.NHDays ?? "",
-            fhDays: att.FHDays ?? "",
-            holidays: att.Holidays ?? "",
-            divideByDays: att.DivideByDays ?? "",
-            otMonthDays: att.OtMonthDays ?? "",
-            pfArrear: att.PFArrear ?? "",
-            otherArrear: att.OtherArrear ?? "",
-            incentive: att.Incentive ?? "",
-            advanceDed: att.AdvanceDed ?? "",
-            uniformDed: att.UniformDed ?? "",
-            bgvDed: att.BGVDed ?? "",
-            roomDed: att.RoomDed ?? "",
-            fineDed: att.FineDed ?? "",
-            joiningKits: att.JoiningKits ?? "",
-            otherDed: att.OtherDed ?? "",
-            foodDed: att.FoodDed ?? "",
-            status: att.Status ?? "",
+            nhDays: saved?.NHDays ?? "",
+            fhDays: saved?.FHDays ?? "",
+            holidays: saved?.Holidays ?? "",
+            divideByDays: saved?.DivideByDays ?? "",
+            otMonthDays: saved?.OtMonthDays ?? "",
+            pfArrear: saved?.PFArrear ?? "",
+            otherArrear: saved?.OtherArrear ?? "",
+            incentive: saved?.Incentive ?? "",
+            advanceDed: saved?.AdvanceDed ?? "",
+
+            // ✅ Uniform logic (attendance wins)
+            uniformDed:
+              saved?.UniformDed !== null &&
+                saved?.UniformDed !== undefined &&
+                saved?.UniformDed !== ""
+                ? saved.UniformDed
+                : uniformDefault,
+
+            bgvDed: saved?.BGVDed ?? "",
+            roomDed: saved?.RoomDed ?? "",
+            fineDed: saved?.FineDed ?? "",
+            joiningKits: saved?.JoiningKits ?? "",
+            otherDed: saved?.OtherDed ?? "",
+
+            // ✅ Food logic (attendance wins)
+            foodDed:
+              saved?.FoodDed !== null &&
+                saved?.FoodDed !== undefined &&
+                saved?.FoodDed !== ""
+                ? saved.FoodDed
+                : foodDefault,
+
+            status: saved?.Status ?? "",
           };
         });
 
         setDayInputs(mappedInputs);
         setSelectedEmpIds(new Set());
       } catch (err) {
-        // ✅ IMPORTANT PART
         if (err?.response?.status === 404) {
-          // No attendance exists → this is NOT an error
           setAttendanceData([]);
           setFilteredAttendance([]);
           setDayInputs({});
@@ -332,7 +408,33 @@ export default function AttendanceSheet() {
     }
 
     loadAttendance();
-  }, [propertyId, month, year, globalTotalDays, employeeSGMap]);
+  }, [
+    propertyId,
+    month,
+    year,
+    globalTotalDays,
+    employeeSGMap,
+    employees,
+    salaryGroupsByProperty // ✅ fixed dependency
+  ]);
+
+  // ---------------------------------------------------------
+  // Load Salary Allowances By Property
+  // ---------------------------------------------------------
+  useEffect(() => {
+    async function loadSalaryGroups() {
+      if (!propertyId) return;
+
+      try {
+        const data = await getSalaryAllowancesByProperties([propertyId]);
+        setSalaryGroupsByProperty(data || []);
+      } catch (err) {
+        console.error("Salary Allowances load error:", err);
+      }
+    }
+
+    loadSalaryGroups();
+  }, [propertyId]);
 
   // ---------------------------------------------------------
   // Checkbox toggle

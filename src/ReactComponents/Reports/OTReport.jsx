@@ -8,7 +8,6 @@ export default function OTReport() {
 
   const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [employees, setEmployees] = useState([]);
-  const [otData, setOtData] = useState({});
   const [loading, setLoading] = useState(false);
   const [otEntries, setOtEntries] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
@@ -94,7 +93,6 @@ export default function OTReport() {
       //   }
       // ]
 
-      const formattedTotals = {};
       const formattedEntries = {};
 
       if (Array.isArray(data)) {
@@ -107,22 +105,13 @@ export default function OTReport() {
           formattedEntries[empId] = {
             ...formattedEntries[empId],
             [day]: {
-              OTDays: item.OTDays || 0,
               OTHours: item.OTHours || 0,
             },
-          };
-
-          // Optional: if backend also returns totals separately
-          formattedTotals[empId] = {
-            TotalOTDays: item.TotalOTDays,
-            TotalOTHours: item.TotalOTHours,
-            ResultantOT: item.ResultantOT,
           };
         });
       }
 
       setOtEntries(formattedEntries);
-      setOtData(formattedTotals);
 
     } catch (error) {
       console.error("Failed to fetch OT data:", error);
@@ -131,14 +120,13 @@ export default function OTReport() {
     }
   };
 
-  const handleOTChange = (empId, day, field, value) => {
+  const handleOTChange = (empId, day, value) => {
     setOtEntries((prev) => ({
       ...prev,
       [empId]: {
         ...prev[empId],
         [day]: {
-          ...prev[empId]?.[day],
-          [field]: parseFloat(value) || 0,
+          OTHours: parseFloat(value) || 0,
         },
       },
     }));
@@ -156,11 +144,14 @@ export default function OTReport() {
         selectedEmployees.map(async (empId) => {
           const entries = otEntries[empId] || {};
 
-          const OTEntries = Object.keys(entries).map((day) => ({
-            OTDate: `${year}-${month.padStart(2, "0")}-${String(day).padStart(2, "0")}T00:00:00`,
-            OTDays: entries[day]?.OTDays || 0,
-            OTHours: entries[day]?.OTHours || 0,
-          }));
+          const OTEntries = Object.keys(entries)
+            .filter((day) => entries[day]?.OTHours > 0)
+            .map((day) => ({
+              OTDate: `${year}-${month.padStart(2, "0")}-${String(day).padStart(2, "0")}T00:00:00`,
+              OTHours: entries[day]?.OTHours || 0,
+            }));
+
+          if (OTEntries.length === 0) return;
 
           const model = {
             EmployeeID: empId,
@@ -169,10 +160,6 @@ export default function OTReport() {
             Year: parseInt(year),
             OTEntries,
           };
-
-          if (otData[empId]) {
-            return updateMonthlyOTReport(model);
-          }
 
           return saveMonthlyOTReport(model);
         })
@@ -245,21 +232,16 @@ export default function OTReport() {
     loadEmployees();
   }, [officeId]);
 
-  const calculateRowTotals = (empId) => {
+  const calculateRowTotalHours = (empId) => {
     const entries = otEntries[empId] || {};
 
     let totalHours = 0;
-    let totalDays = 0;
 
     Object.values(entries).forEach((entry) => {
       totalHours += parseFloat(entry?.OTHours || 0);
-      totalDays += parseFloat(entry?.OTDays || 0);
     });
 
-    return {
-      totalHours: totalHours.toFixed(1),
-      totalDays: totalDays.toFixed(1),
-    };
+    return totalHours.toFixed(1);
   };
 
   const handleExport = () => {
@@ -285,9 +267,7 @@ export default function OTReport() {
       ...dateColumns.map(
         ({ dayNumber, dayName }) => `${dayNumber} (${dayName})`
       ),
-      "Total OT Days",
       "Total OT Hours",
-      "Resultant OT",
     ];
 
     csvContent += headers.join(",") + "\n";
@@ -313,16 +293,13 @@ export default function OTReport() {
       // Daily values
       dateColumns.forEach(({ dayNumber }) => {
         const hrs = otEntries[empId]?.[dayNumber]?.OTHours || 0;
-        const days = otEntries[empId]?.[dayNumber]?.OTDays || 0;
-        row.push(`${hrs} hrs / ${days} days`);
+        row.push(`${hrs} hrs`);
       });
 
       // Totals
-      const { totalHours, totalDays } = calculateRowTotals(empId);
+      const totalHours = calculateRowTotalHours(empId);
 
-      row.push(`${totalDays} days`);
       row.push(`${totalHours} hrs`);
-      row.push(`${totalHours} hrs + ${totalDays} days`);
 
       csvContent += row.join(",") + "\n";
     });
@@ -459,9 +436,7 @@ export default function OTReport() {
               ))}
 
 
-              <th>Total OT Days</th>
               <th>Total OT Hours</th>
-              <th>Resultant OT</th>
             </tr>
           </thead>
 
@@ -469,7 +444,7 @@ export default function OTReport() {
             {!selectedMonth ? (
               <tr>
                 <td
-                  colSpan={6 + dateColumns.length + 3}
+                  colSpan={6 + dateColumns.length + 1}
                   style={{ textAlign: "center", color: "#718096" }}
                 >
                   Select a month to view OT report
@@ -478,7 +453,7 @@ export default function OTReport() {
             ) : employees.length === 0 ? (
               <tr>
                 <td
-                  colSpan={6 + dateColumns.length + 3}
+                  colSpan={6 + dateColumns.length + 1}
                   style={{ textAlign: "center", color: "#718096" }}
                 >
                   No employees found
@@ -535,7 +510,7 @@ export default function OTReport() {
                             placeholder="Hrs"
                             value={otEntries[empId]?.[dayNumber]?.OTHours || ""}
                             onChange={(e) =>
-                              handleOTChange(empId, dayNumber, "OTHours", e.target.value)
+                              handleOTChange(empId, dayNumber, e.target.value)
                             }
                             style={{
                               width: 75,
@@ -552,49 +527,12 @@ export default function OTReport() {
                                   : "#fff",
                             }}
                           />
-
-                          {/* DAYS */}
-                          <input
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            disabled={!selectedEmployees.includes(empId)}
-                            placeholder="Days"
-                            value={otEntries[empId]?.[dayNumber]?.OTDays || ""}
-                            onChange={(e) =>
-                              handleOTChange(empId, dayNumber, "OTDays", e.target.value)
-                            }
-                            style={{
-                              width: 75,
-                              fontSize: 12,
-                              padding: "3px 6px",
-                              borderRadius: 4,
-                              border: otEntries[empId]?.[dayNumber]?.OTDays
-                                ? "1px solid #38a169"
-                                : "1px solid #cbd5e0",
-                              background: !selectedEmployees.includes(empId)
-                                ? "#edf2f7"
-                                : otEntries[empId]?.[dayNumber]?.OTDays
-                                  ? "#f0fff4"
-                                  : "#fff",
-                            }}
-                          />
                         </div>
                       </td>
 
                     ))}
 
-                    {(() => {
-                      const { totalHours, totalDays } = calculateRowTotals(empId);
-
-                      return (
-                        <>
-                          <td>{totalDays} days</td>
-                          <td>{totalHours} hrs</td>
-                          <td>{totalHours} hrs + {totalDays} days</td>
-                        </>
-                      );
-                    })()}
+                    <td>{calculateRowTotalHours(empId)} hrs</td>
                   </tr>
                 );
               })

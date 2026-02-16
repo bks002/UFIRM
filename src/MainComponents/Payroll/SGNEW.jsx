@@ -398,6 +398,15 @@ export default function SGNEW() {
 
       // 🔥 Special case: OTAmount must bypass zero amount filtering
       if (name === "OTAmount") {
+
+        const isUsedInPF = !!deductionAllowanceMap.PF?.OTAmount;
+        const isUsedInESI = !!deductionAllowanceMap.ESI?.OTAmount;
+        const isSelected = !!allowanceSelected[name];
+
+        if (!isUsedInPF && !isUsedInESI && !isSelected) {
+          return; // ❌ DO NOT SEND OTAmount
+        }
+
         list.push({
           AD_Id: item.ID,
           Name: name,
@@ -412,9 +421,10 @@ export default function SGNEW() {
             ? Number(multiplyValues[name]) || 0
             : 0,
 
-          Isbasic: otBaseType === "Base" ? true : false,
+          Isbasic: otBaseType === "Base",
           Perday: false,
         });
+
         return;
       }
 

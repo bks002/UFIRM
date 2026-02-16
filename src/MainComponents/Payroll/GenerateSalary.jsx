@@ -256,10 +256,10 @@ export default function GenerateSalary() {
   }, [officeId, selectedMonth, selectedYear]);
 
   useEffect(() => {
-  // Whenever property changes → clear regen box + hide grid
-  setSelectedRegenEmployees([]);
-  setShowGrid(false);
-}, [officeId]);
+    // Whenever property changes → clear regen box + hide grid
+    setSelectedRegenEmployees([]);
+    setShowGrid(false);
+  }, [officeId]);
 
   useEffect(() => {
     setSelectedRegenEmployees([]);
@@ -383,6 +383,7 @@ export default function GenerateSalary() {
       "REPAYMENTSTARTDATE",
       "TENUREMONTHS",
       "LOANID",
+      "SHIFTHOURS",
       "LOANADVANCEAMOUNT"
     ]);
 
@@ -568,9 +569,8 @@ export default function GenerateSalary() {
       </style>
     </head>
     <body>
-      <div class="center-title">Wages Slip for the month ${row.Month || ""} ${
-      row.Year
-    }</div>
+      <div class="center-title">Wages Slip for the month ${row.Month || ""} ${row.Year
+      }</div>
       <div class="header-row">
         <div class="header-left">
           <div class="co-bold">UFIRM TECHNOLOGIES PVT. LTD.</div>
@@ -579,11 +579,9 @@ export default function GenerateSalary() {
         </div>
         <div class="header-right">
           <div class="est-header">Name and Address of Establishment in under which contract is carried on</div>
-          <div class="est-bold">${row.PropertyName || ""}${
-      row.AddressLine1 ? " - " + row.AddressLine1 : ""
-    }${row.Landmark ? ", " + row.Landmark : ""}${
-      row.Pincode ? ", PIN: " + row.Pincode : ""
-    }</div>
+          <div class="est-bold">${row.PropertyName || ""}${row.AddressLine1 ? " - " + row.AddressLine1 : ""
+      }${row.Landmark ? ", " + row.Landmark : ""}${row.Pincode ? ", PIN: " + row.Pincode : ""
+      }</div>
           <div>${row.ContactNumber ? "Contact: " + row.ContactNumber : ""}</div>
         </div>
       </div>
@@ -705,76 +703,79 @@ export default function GenerateSalary() {
           <td>${row.ESI || 0}</td>
         </tr>
         <tr class="no-horiz-border">
-          <td>DA</td>
-          <td class="v-bold">${row.DA || 0}</td>
+          <td>Separate Bonus</td>
+          <td class="v-bold">${row.SEPARATEBONUS || 0}</td>
           <td>Acmd.Ded</td>
           <td>${row.AccommodationDeduction || 0}</td>
         </tr>
         <tr class="no-horiz-border">
-          <td>Conv</td>
-          <td class="v-bold">${row.CONVEYACNE || 0}</td>
+          <td>DA</td>
+          <td class="v-bold">${row.DA || 0}</td>
           <td>IncomeTax</td>
           <td>${row.IncomeTax || 0}</td>
         </tr>
+        <tr class="no-horiz-border">
+          <td>Conv</td>
+          <td class="v-bold">${row.CONV || 0}</td>
+        </tr>
         <tr class="bold-top double-bottom">
           <td><b>Total Allowance</b></td>
-          <td class="v-bold"><b>${
-            (row.Basic || row.ProRatedSalary || 0) +
-            (row.HRA || 0) +
-            (row.LEAVEWAGES || 0) +
-            (row.CONVEYACNE || 0) +
-            (row.DA || 0) +
-            (row.Gratuity || 0) +
-            (row.Bonus || 0) +
-            (row.OTDaysAmount || 0) +
-            (row.OTHoursAmount || 0) +
-            (row.AdjAmt || row.Incentive || 0) +
-            (row.PFArrear || 0) +
-            (row.OthArrear || 0)
-          }</b></td>
+          <td class="v-bold"><b>${(row.Basic || row.ProRatedSalary || 0) +
+      (row.HRA || 0) +
+      (row.LEAVEWAGES || 0) +
+      (row.CONV || 0) +
+      (row.DA || 0) +
+      (row.Gratuity || 0) +
+      (row.Bonus || 0) +
+      (row.SEPARATEBONUS || 0) +
+      (row.OTDaysAmount || 0) +
+      (row.OTHoursAmount || 0) +
+      (row.AdjAmt || row.Incentive || 0) +
+      (row.PFArrear || 0) +
+      (row.OthArrear || 0)
+      }</b></td>
           <td ><b>Total Deduction</b></td>
-          <td><b>${
-            (row.PF || 0) +
-            (row.LwfEmployeeAmount || 0) +
-            (row.PftAmount || 0) +
-            (row.Fine || 0) +
-            (row.AdvanceAmount || 0) +
-            (row.OthDeduction || 0) +
-            (row.DocDeduction || 0) +
-            (row.FoodDeduction || 0) +
-            (row.MaintDeduction || 0) +
-            (row.ESI || 0) +
-            (row.AccommodationDeduction || 0) +
-            (row.IncomeTax || 0)
-          }</b></td>
+          <td><b>${(row.PF || 0) +
+      (row.LwfEmployeeAmount || 0) +
+      (row.PftAmount || 0) +
+      (row.Fine || 0) +
+      (row.AdvanceAmount || 0) +
+      (row.OthDeduction || 0) +
+      (row.DocDeduction || 0) +
+      (row.FoodDeduction || 0) +
+      (row.MaintDeduction || 0) +
+      (row.ESI || 0) +
+      (row.AccommodationDeduction || 0) +
+      (row.IncomeTax || 0)
+      }</b></td>
           <td><b></b></td>
           <td><b></b></td>
         </tr>
       </table>
-      <div class="net-salary">Net Salary: ₹ ${
-        (row.Basic || row.ProRatedSalary || 0) +
-        (row.LEAVEWAGES || 0) +
-        (row.HRA || 0) +
-        (row.OTDaysAmount || 0) +
-        (row.OTHoursAmount || 0) +
-        (row.AdjAmt || row.Incentive || 0) +
-        (row.PFArrear || 0) +
-        (row.OthArrear || 0) +
-        (row.Bonus || 0) +
-        (row.DA || 0) +
-        (row.CONVEYACNE || 0) -
-        ((row.PF || 0) +
-          (row.LwfEmployeeAmount || 0) +
-          (row.PftAmount || 0) +
-          (row.Fine || 0) +
-          (row.AdvanceAmount || 0) +
-          (row.OthDeduction || 0) +
-          (row.DocDeduction || 0) +
-          (row.FoodDeduction || 0) +
-          (row.MaintDeduction || 0) +
-          (row.ESI || 0) +
-          (row.AccommodationDeduction || 0) +
-          (row.IncomeTax || 0))
+      <div class="net-salary">Net Salary: ₹ ${(row.Basic || row.ProRatedSalary || 0) +
+      (row.LEAVEWAGES || 0) +
+      (row.HRA || 0) +
+      (row.OTDaysAmount || 0) +
+      (row.OTHoursAmount || 0) +
+      (row.AdjAmt || row.Incentive || 0) +
+      (row.PFArrear || 0) +
+      (row.OthArrear || 0) +
+      (row.Bonus || 0) +
+      (row.SEPARATEBONUS || 0) +
+      (row.DA || 0) +
+      (row.CONV || 0) -
+      ((row.PF || 0) +
+        (row.LwfEmployeeAmount || 0) +
+        (row.PftAmount || 0) +
+        (row.Fine || 0) +
+        (row.AdvanceAmount || 0) +
+        (row.OthDeduction || 0) +
+        (row.DocDeduction || 0) +
+        (row.FoodDeduction || 0) +
+        (row.MaintDeduction || 0) +
+        (row.ESI || 0) +
+        (row.AccommodationDeduction || 0) +
+        (row.IncomeTax || 0))
       }</div>
     </body>
   </html>
@@ -1183,7 +1184,7 @@ export default function GenerateSalary() {
                       <th rowSpan="2" style={thStyle}>Name</th>
                       <th rowSpan="2" style={thStyle}>Joining Date</th>
 
-                      <th colSpan={6} style={headerAttendance}>Attendance</th>
+                      <th colSpan={7} style={headerAttendance}>Attendance</th>
 
                       <th colSpan={allAllowanceHeaders.length} style={headerAllowance}>Allowance</th>
                       <th colSpan={allDeductionHeaders.length} style={headerDeduction}>Deduction</th>
@@ -1194,6 +1195,7 @@ export default function GenerateSalary() {
 
                     <tr style={{ background: "#f0f3fa" }}>
                       <th style={subTh}>Total Working Days</th>
+                      <th style={subTh}>Shift Hours</th>
                       <th style={subTh}>Working Days</th>
                       <th style={subTh}>Week Days Off</th>
                       <th style={subTh}>Leave Days</th>
@@ -1241,6 +1243,7 @@ export default function GenerateSalary() {
                             <td style={cell}>{row.DateOfJoining ? row.DateOfJoining.split("T")[0] : "-"}</td>
 
                             <td style={cellCenter}>{Number(row.AttendanceTotalWorkingDays || 0)}</td>
+                            <td style={cellCenter}>{Number(row.ShiftHours || 0)}</td>
                             <td style={cellCenter}>{Number(row.WorkingDays || 0)}</td>
                             <td style={cellCenter}>{Number(row.WeekDaysOff || 0)}</td>
                             <td style={cellCenter}>{Number(row.LeaveDays || 0)}</td>
