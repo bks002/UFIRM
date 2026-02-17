@@ -1022,9 +1022,9 @@ export default function SGNEW() {
           />
 
           <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
-            {/* Select Unit */}
+            {/* Select Client */}
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <label style={{ fontWeight: 600 }}>Select Unit :</label>
+              <label style={{ fontWeight: 600 }}>Select Client :</label>
               <select
                 className="form-control"
                 value={selectedUnitId || ""}
@@ -1046,7 +1046,7 @@ export default function SGNEW() {
               </select>
             </div>
 
-            {/* Select Property */}
+            {/* Select Unit */}
             <div
               style={{
                 display: "flex",
@@ -1057,7 +1057,7 @@ export default function SGNEW() {
               }}
             >
               <label style={{ fontWeight: 600, whiteSpace: "nowrap" }}>
-                Select Property :
+                Select Unit :
               </label>
 
               {/* Dropdown trigger */}

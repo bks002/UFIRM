@@ -108,6 +108,7 @@ import SGNEW from "../MainComponents/Payroll/SGNEW.jsx";
 import DMRReport from "../MainComponents/Reports/DMRReport.jsx";
 import AttendanceReportPage from "../MainComponents/Reports/AttendanceReport.jsx";
 import Report from "../MainComponents/Payroll/Report.jsx";
+import BranchMaster from "../MainComponents/FacilityMember/BranchMaster.jsx";
 
 var currentpropertyid;
 class MainNav extends React.Component {
@@ -708,6 +709,16 @@ class MainNav extends React.Component {
                           <Link to="/Account/App/Facility" className="nav-link">
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Facility Latlong </p>
+                          </Link>
+                        </li>
+
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/BranchMaster"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Branch Master</p>
                           </Link>
                         </li>
 
@@ -1596,6 +1607,7 @@ class MainNav extends React.Component {
               <UploaderPage />
             </Route>
             {/* <Route path="/Account/App/OTHours" component={OTHours} /> */}
+            <Route path="/Account/App/BranchMaster" component={BranchMaster} />
             <Route path="/Account/App/Linking" component={Linking} />
             <Route
               path="/Account/App/AttendanceSheet"

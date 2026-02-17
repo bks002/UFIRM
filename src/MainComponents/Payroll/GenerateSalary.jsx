@@ -17,51 +17,6 @@ const monthNames = [
   "July", "August", "September", "October", "November", "December"
 ];
 
-const allowanceKeys = [
-  "Basic",
-  "LEAVEWAGES",
-  "HRA",
-  "Gratuity",
-  "OTDaysAmount",
-  "OTHoursAmount",
-  "AdjAmt/Incentive",
-  "PFArrear",
-  "OthArrear",
-  "Bonus",
-  "DA",
-  "CONVEYACNE",
-  // "Contractor Allowance",
-  // "Housing Allowance",
-  // "Transport Allowance",
-  // "Medical Allowance",
-  // "Performance Bonus",
-  // "Overtime Allowance",
-  // "Freelancer Allowance",
-];
-
-const deductionKeys = [
-  "PF",
-  "PftAmount",
-  "LwfEmployeeAmount",
-  "Fine",
-  "AdvanceAmount",
-  "OthDeduction",
-  "DocDeduction",
-  "FoodDeduction",
-  "MaintDeduction",
-  "ESI",
-  "AccommodationDeduction",
-  "IncomeTax",
-  // "Pension Deduction",
-  // "Health Insurance Deduction",
-  // "Union Fees Deduction",
-  // "Garnishment Deduction",
-  // "Service Charge Deduction",
-  // "Miscellaneous Deduction",
-  // "Income Tax",
-  //"LoanAdvanceAmount",
-];
-
 const displayNameMap = {
   Basic: "Basic",
   LEAVEWAGES: "Leave Wages",
@@ -71,25 +26,33 @@ const displayNameMap = {
   OTHoursAmount: "OTHoursAmount",
   "AdjAmt/Incentive": "AdjAmt/Incentive",
   PFArrear: "PFArrear",
-  OTHALL: "OthAll",
+  OTHALL: "OTHALL",
   Bonus: "Bonus",
   DA: "DA",
-  CONVEYACNE: "Conv",
   PF: "PF",
   PftAmount: "PFT",
   LwfEmployeeAmount: "LWF",
   Fine: "Fine",
   AdvanceAmount: "Adv.",
-  UNIFORMDED: "UniDed",
+  UNIFORM: "Uniform",
   OthDeduction: "OthDed",
-  FoodDeduction: "Food",
+  FOOD: "Food",
   MaintDeduction: "Maint",
   AccommodationDeduction: "Acmd",
   IncomeTax: "IncomeTax",
   ABC: "ABC",
   SEPARATEBONUS: "SEPARATEBONUS",
   SEPARATELEAVE: "SEPARATELEAVE",
-  OTAmount: "OTAmount"
+  OTAmount: "OTAmount",
+  BGV: "BGV",
+  Room: "Room",
+  Joiningkits: "Joining Kits",
+  NHAmount: "NHAmount",
+  FHAmount: "FHAmount",
+  EduAll: "Education Allowance",
+  PerfAll: "Performance Allowance",
+  SplAll: "Special Allowance",
+  Wash: "Washing Allowance",
 };
 
 const boxStyle = {
@@ -131,7 +94,6 @@ export default function GenerateSalary() {
   const [selectedRegenEmployees, setSelectedRegenEmployees] = useState([]);
 
   // Master-driven names (from master API)
-  const [masterList, setMasterList] = useState([]); // raw objects from master API
   const [masterAllowanceNames, setMasterAllowanceNames] = useState([]); // names (strings)
   const [masterDeductionNames, setMasterDeductionNames] = useState([]);
 
@@ -203,7 +165,6 @@ export default function GenerateSalary() {
       try {
         const list = await getAllowancesDeductions(); // expects [{ ID, Type, Name, ...}, ...]
         const arr = list || [];
-        setMasterList(arr);
 
         const allowances = arr.filter((x) => x.Type === "A" || x.Type === "OA").map((x) => x.Name);
         const deductions = arr.filter((x) => x.Type === "D" || x.Type === "OD").map((x) => x.Name);
@@ -217,7 +178,6 @@ export default function GenerateSalary() {
         setMasterDeductionNames(Array.from(new Set(deductions)));
       } catch (err) {
         console.error("Failed to load master allowance/deduction list:", err);
-        setMasterList([]);
         setMasterAllowanceNames([]);
         setMasterDeductionNames([]);
       }
@@ -257,11 +217,6 @@ export default function GenerateSalary() {
 
   useEffect(() => {
     // Whenever property changes → clear regen box + hide grid
-    setSelectedRegenEmployees([]);
-    setShowGrid(false);
-  }, [officeId]);
-
-  useEffect(() => {
     setSelectedRegenEmployees([]);
     setShowGrid(false);
   }, [officeId]);
@@ -348,6 +303,10 @@ export default function GenerateSalary() {
 
     // Always include 'Basic' if present in row or master
     if (rowKeys.includes("Basic")) foundKeys.push("Basic");
+    // Always include OTHALL if present and > 0
+    if (Number(row.OTHALL || 0) > 0) {
+      foundKeys.push("OTHALL");
+    }
     else {
       // also check normalized matches (sometimes salary might have basic in different case)
       const bMatch = rowKeys.find((k) => normalizeKeyName(k) === normalizeKeyName("Basic"));
@@ -424,7 +383,7 @@ export default function GenerateSalary() {
 
     // Also include numeric keys present in row that look like deductions but not already included
     // Common deduction candidates by key substring
-    const deductionCandidates = ["PF", "ESI", "PFT", "LWF", "FOOD", "ACCOMMODATION", "UNIFORM", "ABC", "ABC"]; // substring hints
+    const deductionCandidates = ["PF", "ESI", "PFT", "LWF", "FOOD", "ACCOMMODATION", "UNIFORM", "ABC"]; // substring hints
     for (const k of rowKeys) {
       if (found.includes(k)) continue;
 
@@ -460,11 +419,6 @@ export default function GenerateSalary() {
     return deductionKeysForRow.reduce((s, k) => s + Number(row[k] || 0), 0);
   }
 
-  // Attendance helpers
-  function computeTotalWorkingDays(row) {
-    return Number(row.AttendanceTotalWorkingDays || 0) || Number(row.WorkingDays || 0) || Number(row.SGTotalWorkingDays || 0) || 0;
-  }
-
   // ----------------------------
   // Payslip HTML generation (uses per-row computed lists)
   // ----------------------------
@@ -473,58 +427,6 @@ export default function GenerateSalary() {
     const deductionKeysForRow = getRowDeductionKeys(row);
     const totalAllowance = computeTotalAllowance(row, allowanceKeysForRow);
     const totalDeduction = computeTotalDeduction(row, deductionKeysForRow);
-    const netSalary = totalAllowance - totalDeduction;
-
-    // build allowance rows HTML (only non-zero except Basic)
-    const allowanceRowsHtml = allowanceKeysForRow
-      .filter((k) => k === "Basic" || Number(row[k] || 0) > 0)
-      .map((key) => {
-        const label = displayNameMap[key] || key;
-        const value = Number(row[key] || 0);
-        return `
-          <tr class="no-horiz-border">
-            <td>${label}</td>
-            <td class="v-bold">${value}</td>
-            <td></td><td></td><td></td><td></td>
-          </tr>
-        `;
-      })
-      .join("");
-
-    // build deduction rows html
-    const deductionRowsHtml = deductionKeysForRow
-      .filter((k) => Number(row[k] || 0) > 0)
-      .map((key) => {
-        const label = displayNameMap[key] || key;
-        const value = Number(row[key] || 0);
-        return `
-          <tr class="no-horiz-border">
-            <td></td>
-            <td></td>
-            <td>${label}</td>
-            <td class="v-light">${value}</td>
-            <td></td><td></td>
-          </tr>
-        `;
-      })
-      .join("");
-
-    // attendance rows: show only non-zero except Total Working Days & WorkingDays always shown
-    const totalWorkingDays = computeTotalWorkingDays(row);
-    const workingDays = Number(row.WorkingDays || 0);
-    const weekDaysOff = Number(row.WeekDaysOff || 0);
-    const leaveDays = Number(row.LeaveDays || 0);
-    const otDays = Number(row.OTDays || 0);
-    const otHours = Number(row.OTHours || 0);
-
-    const attendanceList = [
-      { label: "Total Working Days", value: totalWorkingDays },
-      { label: "Working Days", value: workingDays },
-      ...(weekDaysOff > 0 ? [{ label: "Week Days Off", value: weekDaysOff }] : []),
-      ...(leaveDays > 0 ? [{ label: "Leave Days", value: leaveDays }] : []),
-      ...(otDays > 0 ? [{ label: "OT Days", value: otDays }] : []),
-      ...(otHours > 0 ? [{ label: "OT Hours", value: otHours }] : []),
-    ];
 
     return `
   <html>
@@ -535,8 +437,8 @@ export default function GenerateSalary() {
         .header-left { text-align: left; line-height: 1.5;}
         .co-bold { font-size: 17px; font-weight: bold; letter-spacing: 1px;}
         .header-right { text-align: right; font-size: 13px; max-width: 270px; line-height: 1.5;}
-        .est-header { font-size: 13px; font-weight: normal;}
-        .est-bold { font-weight: bold; font-size: 15px; }
+        .est-header { font-size: 14px; font-weight: 700;}
+        .est-address { font-size: 15px; font-weight: normal; }
         .center-title { text-align: center; font-size: 20px; font-weight: bold; margin: 15px 0 12px 0;}
         .info-table { width: 100%; margin-bottom: 7px;}
         .info-table td { padding: 3px 7px; border: none; font-size: 15px;}
@@ -561,10 +463,16 @@ export default function GenerateSalary() {
         /* double line for last row */
         .double-bottom td { border-bottom: 2.8px double #111 !important; padding-bottom: 9px;}
         .bold-top {
-  border-top: 2.8px double #111 !important;
-}
+        border-top: 2.8px double #111 !important;
+        }
         .net-salary {
           color: #169c12; font-size: 19px; font-weight: bold; margin-top: 18px; text-align:center; letter-spacing:0.5px;
+        }
+        .leave-title {
+          border-top: 2.8px solid #111 !important;
+          border-bottom: 2.8px solid #111 !important;
+          padding-top: 6px;
+          padding-bottom: 6px;
         }
       </style>
     </head>
@@ -578,12 +486,21 @@ export default function GenerateSalary() {
           <div>NOIDA, UP</div>
         </div>
         <div class="header-right">
-          <div class="est-header">Name and Address of Establishment in under which contract is carried on</div>
-          <div class="est-bold">${row.PropertyName || ""}${row.AddressLine1 ? " - " + row.AddressLine1 : ""
-      }${row.Landmark ? ", " + row.Landmark : ""}${row.Pincode ? ", PIN: " + row.Pincode : ""
-      }</div>
-          <div>${row.ContactNumber ? "Contact: " + row.ContactNumber : ""}</div>
+        <div class="est-header">
+          Name and Address of Establishment in under which contract is carried on:
         </div>
+
+        <div class="est-address">
+          ${row.PropertyName || ""}
+          ${row.AddressLine1 ? " - " + row.AddressLine1 : ""}
+          ${row.Landmark ? ", " + row.Landmark : ""}
+        </div>
+
+        <div>
+          ${row.ContactNumber ? "Contact: " + row.ContactNumber : ""}
+          ${row.Pincode ? "PIN:" + row.Pincode : ""}
+        </div>
+      </div>
       </div>
       <table class="info-table">
   <tr>
@@ -641,26 +558,26 @@ export default function GenerateSalary() {
           <td>${row.WorkingDays || ""}</td>
         </tr>
         <tr class="no-horiz-border">
-          <td>Leave Wages</td>
-          <td class="v-bold">${row.LEAVEWAGES || 0}</td>
-          <td >PFT</td>
-          <td class="v-light">${row.PftAmount || 0}</td>
-          <td >Leave Days</td>
-          <td>${row.LeaveDays || 0}</td>
+          <td>DA</td>
+          <td class="v-bold">${row.DA || 0}</td>
+          <td>ESI</td>
+          <td class="v-light">${row.ESI || 0}</td>
+          <td>Ho.Days</td>
+          <td>${row.HoDays || 0}</td>
         </tr>
         <tr class="no-horiz-border">
           <td>HRA</td>
           <td class="v-bold">${row.HRA || 0}</td>
           <td>LWF</td>
           <td class="v-light">${row.LwfEmployeeAmount || 0}</td>
-          <td>Week Offs</td>
+          <td>Weekly Offs</td>
           <td>${row.WeekDaysOff || 0}</td>
         </tr>
         <tr class="no-horiz-border">
           <td>Gratuity</td>
           <td class="v-bold">${row.Gratuity || 0}</td>
-          <td>Fine</td>
-          <td class="v-light">${row.Fine || 0}</td>
+          <td >PFT</td>
+          <td class="v-light">${row.PftAmount || 0}</td>
           <td>OTDays</td>
           <td>${row.OTDays || 0}</td>
         </tr>
@@ -676,107 +593,119 @@ export default function GenerateSalary() {
           <td>OTHoursAmount</td>
           <td class="v-bold">${row.OTHoursAmount || 0}</td>
           <td>OthDed</td>
-          <td>${row.OthDeduction || 0}</td>
+          <td class="v-light">${row.OthDeduction || 0}</td>
+          <td>Duty Days</td>
+          <td>${row.DutyDays || 0}</td>
         </tr>
         <tr class="no-horiz-border">
           <td>AdjAmt/Incentive</td>
           <td class="v-bold">${row.AdjAmt || row.Incentive || 0}</td>
           <td>DocDed</td>
-          <td>${row.DocDeduction || 0}</td>
+          <td class="v-light">${row.DocDeduction || 0}</td>
+          <td>Sal Days</td>
+          <td>${row.SalDays || 0}</td>
         </tr>
         <tr class="no-horiz-border">
           <td>PFArrear</td>
           <td class="v-bold">${row.PFArrear || 0}</td>
           <td>Food</td>
-          <td>${row.FoodDeduction || 0}</td>
+          <td class="v-light">${row.FOOD || 0}</td>
+          <td>NH Days</td>
+          <td>${row.NHDays || 0}</td>
         </tr>
         <tr class="no-horiz-border">
           <td>OthArrear</td>
           <td class="v-bold">${row.OthArrear || 0}</td>
           <td>Maint.</td>
-          <td>${row.MaintDeduction || 0}</td>
-        </tr>
+          <td class="v-light">${row.MaintDeduction || 0}</td>
+          <td class="leave-title">FH Days</td>
+          <td class="leave-title">${row.FHDays || 0}</td>
+        </tr>  
         <tr class="no-horiz-border">
           <td>Bonus</td>
           <td class="v-bold">${row.Bonus || 0}</td>
-          <td>ESI</td>
-          <td>${row.ESI || 0}</td>
+          <td>Fine</td>
+          <td class="v-light">${row.Fine || 0}</td>
+          <td class="leave-title"><b>LEAVE STATUS</b></td>
+          <td class="leave-title"></td>
         </tr>
         <tr class="no-horiz-border">
           <td>Separate Bonus</td>
           <td class="v-bold">${row.SEPARATEBONUS || 0}</td>
           <td>Acmd.Ded</td>
-          <td>${row.AccommodationDeduction || 0}</td>
+          <td class="v-light">${row.AccommodationDeduction || 0}</td>
+          <td>EL</td>
+          <td>${row.EL || 0}</td>
         </tr>
         <tr class="no-horiz-border">
-          <td>DA</td>
-          <td class="v-bold">${row.DA || 0}</td>
+          <td>Leave Wages</td>
+          <td class="v-bold">${row.LEAVEWAGES || 0}</td>
           <td>IncomeTax</td>
-          <td>${row.IncomeTax || 0}</td>
+          <td class="v-light">${row.IncomeTax || 0}</td>
+          <td>CL</td>
+          <td>${row.CL || 0}</td>
         </tr>
         <tr class="no-horiz-border">
           <td>Conv</td>
           <td class="v-bold">${row.CONV || 0}</td>
+          <td>Uniform</td>
+          <td class="v-light">${row.UNIFORM || 0}</td>
+          <td>SL</td>
+          <td>${row.SL || 0}</td>
+        </tr>
+        <tr class="no-horiz-border">
+          <td>OthAll</td>
+          <td class="v-bold">${row.OTHALL || 0}</td>
+          <td>BGV</td>
+          <td>${row.BGV || 0}</td>
+        </tr>
+          <tr class="no-horiz-border">
+          <td>NHAmount</td>
+          <td class="v-bold">${row.NHAmount || 0}</td>
+          <td>Room</td>
+          <td>${row.Room || 0}</td>
+        </tr>
+        <tr class="no-horiz-border">
+          <td>FHAmount</td>
+          <td class="v-bold">${row.FHAmount || 0}</td>
+          <td>Joining Kits</td>
+          <td>${row.Joiningkits || 0}</td>
+        </tr>
+        <tr class="no-horiz-border">
+          <td>Education Allowance</td>
+          <td class="v-bold">${row.EduAll || 0}</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr class="no-horiz-border">
+          <td>Performance Allowance</td>
+          <td class="v-bold">${row.PerfAll || 0}</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr class="no-horiz-border">
+          <td>Special Allowance</td>
+          <td class="v-bold">${row.SplAll || 0}</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr class="no-horiz-border">
+          <td>Washing Allowance</td>
+          <td class="v-bold">${row.Wash || 0}</td>
+          <td></td>
+          <td></td>
         </tr>
         <tr class="bold-top double-bottom">
           <td><b>Total Allowance</b></td>
-          <td class="v-bold"><b>${(row.Basic || row.ProRatedSalary || 0) +
-      (row.HRA || 0) +
-      (row.LEAVEWAGES || 0) +
-      (row.CONV || 0) +
-      (row.DA || 0) +
-      (row.Gratuity || 0) +
-      (row.Bonus || 0) +
-      (row.SEPARATEBONUS || 0) +
-      (row.OTDaysAmount || 0) +
-      (row.OTHoursAmount || 0) +
-      (row.AdjAmt || row.Incentive || 0) +
-      (row.PFArrear || 0) +
-      (row.OthArrear || 0)
-      }</b></td>
+          <td class="v-bold"><b>${totalAllowance}</b></td>
           <td ><b>Total Deduction</b></td>
-          <td><b>${(row.PF || 0) +
-      (row.LwfEmployeeAmount || 0) +
-      (row.PftAmount || 0) +
-      (row.Fine || 0) +
-      (row.AdvanceAmount || 0) +
-      (row.OthDeduction || 0) +
-      (row.DocDeduction || 0) +
-      (row.FoodDeduction || 0) +
-      (row.MaintDeduction || 0) +
-      (row.ESI || 0) +
-      (row.AccommodationDeduction || 0) +
-      (row.IncomeTax || 0)
-      }</b></td>
+          <td><b>${totalDeduction}</b></td>
           <td><b></b></td>
           <td><b></b></td>
         </tr>
       </table>
-      <div class="net-salary">Net Salary: ₹ ${(row.Basic || row.ProRatedSalary || 0) +
-      (row.LEAVEWAGES || 0) +
-      (row.HRA || 0) +
-      (row.OTDaysAmount || 0) +
-      (row.OTHoursAmount || 0) +
-      (row.AdjAmt || row.Incentive || 0) +
-      (row.PFArrear || 0) +
-      (row.OthArrear || 0) +
-      (row.Bonus || 0) +
-      (row.SEPARATEBONUS || 0) +
-      (row.DA || 0) +
-      (row.CONV || 0) -
-      ((row.PF || 0) +
-        (row.LwfEmployeeAmount || 0) +
-        (row.PftAmount || 0) +
-        (row.Fine || 0) +
-        (row.AdvanceAmount || 0) +
-        (row.OthDeduction || 0) +
-        (row.DocDeduction || 0) +
-        (row.FoodDeduction || 0) +
-        (row.MaintDeduction || 0) +
-        (row.ESI || 0) +
-        (row.AccommodationDeduction || 0) +
-        (row.IncomeTax || 0))
-      }</div>
+      <div class="net-salary">Net Salary: ₹ ${totalAllowance - totalDeduction}
+    </div>
     </body>
   </html>
   `;
@@ -1294,7 +1223,7 @@ export default function GenerateSalary() {
 
       {viewPayslipOpen && (
         <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "rgba(0,0,0,0.45)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#fff", padding: 24, borderRadius: 10, minWidth: 400, maxWidth: "90vw", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 0 20px rgba(0,0,0,0.3)" }}>
+          <div style={{ background: "#fff", padding: 24, borderRadius: 10, width: "95vw", maxWidth: "1100px", maxHeight: "95vh", overflowY: "auto", boxShadow: "0 0 20px rgba(0,0,0,0.3)" }}>
             <button style={{ float: "right", border: "none", background: "transparent", fontSize: 20, cursor: "pointer" }} onClick={() => setViewPayslipOpen(false)}>×</button>
             <div dangerouslySetInnerHTML={{ __html: viewPayslipHtml }} />
           </div>
