@@ -433,9 +433,9 @@ export default function GenerateSalary() {
     <head>
       <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; color: #000; font-size: 15px; }
-        .header-row { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;}
+        .header-row { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;}
         .header-left { text-align: left; line-height: 1.5;}
-        .co-bold { font-size: 17px; font-weight: bold; letter-spacing: 1px;}
+        .co-bold { font-size: 17px; font-weight: 800; letter-spacing: 1px;}
         .header-right { text-align: right; font-size: 13px; max-width: 270px; line-height: 1.5;}
         .est-header { font-size: 14px; font-weight: 700;}
         .est-address { font-size: 15px; font-weight: normal; }
@@ -451,6 +451,7 @@ export default function GenerateSalary() {
           background: #fff; font-weight: bold; border-top: 2.8px double #111; border-bottom: 2.8px double #111;
           border-left: none; border-right: none;
           text-align: left;
+          padding: 10px 9px;
         }
         table.pay-slip-table td {
           font-size: 15px; border: none; padding: 9px 9px;
@@ -464,6 +465,8 @@ export default function GenerateSalary() {
         .double-bottom td { border-bottom: 2.8px double #111 !important; padding-bottom: 9px;}
         .bold-top {
         border-top: 2.8px double #111 !important;
+        font-size: 17px;
+        font-weight: 600;
         }
         .net-salary {
           color: #169c12; font-size: 19px; font-weight: bold; margin-top: 18px; text-align:center; letter-spacing:0.5px;
@@ -477,31 +480,39 @@ export default function GenerateSalary() {
       </style>
     </head>
     <body>
-      <div class="center-title">Wages Slip for the month ${row.Month || ""} ${row.Year
-      }</div>
       <div class="header-row">
         <div class="header-left">
+          <div style="margin-bottom:6px;">
+            <img src="/Urest-logo.png" style="height:55px;" />
+          </div>
           <div class="co-bold">UFIRM TECHNOLOGIES PVT. LTD.</div>
           <div>H-64, SEC-63</div>
           <div>NOIDA, UP</div>
         </div>
+        <div style="text-align:center; flex:1; font-size:20px; font-weight:800;">
+          SALARY SLIP
+          <div style="font-size:14px; font-weight:500; margin-top:4px;">
+            For the month ${row.Month} ${row.Year}
+          </div>
+        </div>
+
         <div class="header-right">
-        <div class="est-header">
-          Name and Address of Establishment in under which contract is carried on:
-        </div>
-
-        <div class="est-address">
-          ${row.PropertyName || ""}
-          ${row.AddressLine1 ? " - " + row.AddressLine1 : ""}
-          ${row.Landmark ? ", " + row.Landmark : ""}
-        </div>
-
-        <div>
-          ${row.ContactNumber ? "Contact: " + row.ContactNumber : ""}
-          ${row.Pincode ? "PIN:" + row.Pincode : ""}
+          <div class="est-header">
+            Name and Address of Establishment in under which contract is carried on:
+          </div>
+          <div class="est-address">
+            ${row.PropertyName || ""}
+            ${row.AddressLine1 ? " - " + row.AddressLine1 : ""}
+            ${row.Landmark ? ", " + row.Landmark : ""}
+          </div>
+          <div>
+            ${row.ContactNumber ? "Contact: " + row.ContactNumber : ""}
+            ${row.Pincode ? " PIN:" + row.Pincode : ""}
+          </div>
         </div>
       </div>
       </div>
+      <div style="border-top: 2px solid #111; margin: 8px 0 10px 0;"></div>
       <table class="info-table">
   <tr>
     <td><b>Employee Name:</b></td>
@@ -700,12 +711,30 @@ export default function GenerateSalary() {
           <td class="v-bold"><b>${totalAllowance}</b></td>
           <td ><b>Total Deduction</b></td>
           <td><b>${totalDeduction}</b></td>
-          <td><b></b></td>
-          <td><b></b></td>
+          <td style="text-align:right; font-weight:800; font-size:20px;">
+            Net Salary :
+          </td>
+          <td style="text-align:right; font-weight:800; font-size:22px;">
+            ₹ ${totalAllowance - totalDeduction}
+          </td>
+        </tr>
+        <tr>
+          <td colspan="6" style="padding-top:12px; font-size:14px;">
+            This is a computer generated advice and does not require a signature.
+          </td>
+        </tr>
+        <tr>
+          <td colspan="6" style="padding-top:8px;">
+            <div style="border-bottom:3px solid #111; border-image: repeating-linear-gradient(
+              to right,
+              #111,
+              #111 12px,
+              transparent 12px,
+              transparent 22px
+            ) 1;"></div>
+          </td>
         </tr>
       </table>
-      <div class="net-salary">Net Salary: ₹ ${totalAllowance - totalDeduction}
-    </div>
     </body>
   </html>
   `;

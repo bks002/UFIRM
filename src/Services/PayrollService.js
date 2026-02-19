@@ -953,3 +953,74 @@ export const getEmployeeMonthlyTotalOT = async (propertyId, month, year) => {
     throw error;
   }
 };
+
+export const getEmployeesByOffices = async (officeIds = []) => {
+  if (!officeIds.length) return [];
+
+  try {
+    const response = await axios.post(
+      `${EMPLOYEE_API_BASE_URL}/getByOffices`,
+      {
+        OfficeIds: officeIds,
+      },
+      {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: false,
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch employees by offices", error);
+    throw error;
+  }
+};
+
+export const getAttendanceByProperties = async (
+  propertyIds = [],
+  monthYear
+) => {
+  if (!propertyIds.length || !monthYear) return [];
+
+  try {
+    const response = await axios.post(
+      `${APIBASE_URL}/attendance-summary/by-properties`,
+      {
+        PropertyIds: propertyIds,
+        MonthYear: monthYear,
+      },
+      {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: false,
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch attendance summary", error);
+    throw error;
+  }
+};
+
+export const saveAttendanceBatch = async (monthyear, employees = []) => {
+  if (!monthyear || !employees.length) return;
+
+  try {
+    const response = await axios.post(
+      `${APIBASE_URL}/attendance-summary/batch`,
+      {
+        monthyear,
+        Employees: employees,
+      },
+      {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: false,
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Failed to save attendance batch", error);
+    throw error;
+  }
+};

@@ -4,17 +4,22 @@ import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 
 import {
-  getAttendanceByProperty,
-  createAttendance,
-  updateAttendance,
+  getAttendanceByProperties,
+  saveAttendanceBatch,
   deleteMultipleAttendance,
   uploadAttendance,
-  getEmployeeMonthlyTotalOT
+  getEmployeeMonthlyTotalOT,
+  getEmployeesByOffices,
+  updateAttendance,
 } from "../../Services/PayrollService";
 
-import { getEmployeesByOffice } from "../../Services/PayrollService";
-import { getPropertyById } from "../../Services/PropertyService";
-import { getSalaryAllowancesByFacilityMember, getSalaryAllowancesByProperties } from "../../Services/PayrollService";
+import {
+  getAllClients,
+  getClientByPropertyId,
+  getPropertiesByClientId,
+} from "../../Services/ClientService";
+
+import { getSalaryAllowancesByFacilityMember } from "../../Services/PayrollService";
 
 // Helper: Format month-year as "YYYY-MM"
 function getMonthYearString(month, year) {
@@ -28,14 +33,22 @@ function getDaysInMonth(month, year) {
 }
 
 export default function AttendanceSheet() {
-  const officeId = useSelector((state) => state.Commonreducer.puidn);
-  const propertyId = officeId;
+  const reduxPropertyId = useSelector((state) => state.Commonreducer.puidn);
+  const [selectedPropertyId, setSelectedPropertyId] = useState([]);
+  const propertyId =
+    selectedPropertyId.length === 1
+      ? selectedPropertyId[0]
+      : reduxPropertyId || null;
 
   const [employees, setEmployees] = useState([]);
-  const [attendanceData, setAttendanceData] = useState([]);
   const [filteredAttendance, setFilteredAttendance] = useState([]);
   const [selectedEmpIds, setSelectedEmpIds] = useState(new Set());
-  const [salaryGroupsByProperty, setSalaryGroupsByProperty] = useState([]);
+
+  const [unitList, setUnitList] = useState([]);
+  const [selectedUnitId, setSelectedUnitId] = useState(null);
+
+  const [propertyList, setPropertyList] = useState([]);
+  const [showPropertyDropdown, setShowPropertyDropdown] = useState(false);
 
   // { empId: { totalDays, shiftHours } }
   const [employeeSGMap, setEmployeeSGMap] = useState({});
@@ -44,6 +57,11 @@ export default function AttendanceSheet() {
 
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
+
+  useEffect(() => {
+    const days = getDaysInMonth(month, year);
+    setGlobalTotalDays(days);
+  }, [month, year]);
 
   const totalDaysInSelectedMonth = getDaysInMonth(month, year);
 
@@ -129,21 +147,35 @@ export default function AttendanceSheet() {
 
       alert(res?.Message || "Attendance uploaded successfully!");
 
-      // 🔥 Reload attendance
-      const refreshed = await getAttendanceByProperty(propertyId);
-      const safeData = refreshed || [];
+      // 🔥 Reload attendance (multi-property safe)
+      let propertyIds = [];
 
-      setAttendanceData(safeData);
+      if (selectedPropertyId.length > 0) {
+        propertyIds = selectedPropertyId;
+      } else if (reduxPropertyId) {
+        propertyIds = [reduxPropertyId];
+      } else if (propertyList.length > 0) {
+        propertyIds = propertyList.map(p => p.PropertyId);
+      }
 
-      const filtered = safeData.filter(
-        (item) => item.monthyear === monthyear
-      );
+      // 🔥 Reload attendance (multi-property safe)
 
-      setFilteredAttendance(filtered);
+      let flat = [];   // 👈 declare outside first
+
+      if (propertyIds.length) {
+        const refreshed = await getAttendanceByProperties(
+          propertyIds,
+          monthyear
+        );
+
+        flat = refreshed?.flatMap((p) => p.Employees || []) || [];
+        setFilteredAttendance(flat);
+      }
 
       // 🔥 Rebuild dayInputs from uploaded data
       const mappedInputs = {};
-      filtered.forEach((att) => {
+      flat.forEach((att) => {
+
         mappedInputs[att.EmpID] = {
           workingDays: att.WorkingDays,
           EL: att.EL ?? "",
@@ -184,50 +216,80 @@ export default function AttendanceSheet() {
     e.target.value = null;
   }
 
-  // -------------------------------------------------------------------
-  // Load PropertyMaster TotalWorkingDays
-  // -------------------------------------------------------------------
+
   useEffect(() => {
-    async function loadPropertyWorkingDays() {
-      if (!propertyId) return;
-
+    const loadUnits = async () => {
       try {
-        const prop = await getPropertyById(propertyId);
-        const twd = prop?.TotalWorkingDays || getDaysInMonth(month, year);
-
-        setGlobalTotalDays(twd);
-
-        // Apply property default only to employees who do NOT have manual edit
-        setDayInputs((prev) => {
-          const updated = {};
-          for (const empId of Object.keys(prev)) {
-            if (prev[empId].manualTotalDays) {
-              updated[empId] = prev[empId];
-            } else {
-              updated[empId] = {
-                ...prev[empId],
-                totalDays: prev[empId].totalDays || twd,
-              };
-            }
-          }
-          return updated;
-        });
-      } catch {
-        setGlobalTotalDays(getDaysInMonth(month, year));
+        if (Number(reduxPropertyId) > 0) {
+          const res = await getClientByPropertyId(reduxPropertyId);
+          setUnitList(res ? [res] : []);
+          setSelectedUnitId(res?.ClientID || null);
+        } else {
+          const res = await getAllClients();
+          setUnitList(res || []);
+        }
+      } catch (err) {
+        console.log("Failed to load units", err);
       }
-    }
+    };
 
-    loadPropertyWorkingDays();
-  }, [propertyId]);
+    loadUnits();
+  }, [reduxPropertyId]);
+
+  useEffect(() => {
+    const loadProperties = async () => {
+      try {
+        if (!selectedUnitId) {
+          setPropertyList([]);
+          setSelectedPropertyId([]);
+          return;
+        }
+
+        const res = await getPropertiesByClientId(selectedUnitId);
+        const properties = res || [];
+
+        setPropertyList(properties);
+
+        // ✅ Select ALL properties by default
+        const allIds = properties.map((p) => p.PropertyId);
+        setSelectedPropertyId(allIds);
+      } catch (err) {
+        console.log("Failed to load properties", err);
+      }
+    };
+
+    loadProperties();
+  }, [selectedUnitId]);
 
   // ---------------------------------------------------------
   // Load Employees
   // ---------------------------------------------------------
   useEffect(() => {
-    if (officeId) {
-      getEmployeesByOffice(officeId).then((data) => setEmployees(data || []));
-    }
-  }, [officeId]);
+    const loadEmployees = async () => {
+      try {
+        let officeIds = [];
+
+        if (selectedPropertyId.length > 0) {
+          officeIds = selectedPropertyId;
+        } else if (reduxPropertyId) {
+          officeIds = [reduxPropertyId];
+        }
+
+        if (!officeIds.length) {
+          setEmployees([]);
+          return;
+        }
+
+        const data = await getEmployeesByOffices(officeIds);
+        setEmployees(data || []);
+      } catch (err) {
+        console.error("Employee load failed", err);
+        setEmployees([]);
+      }
+    };
+
+    loadEmployees();
+  }, [selectedPropertyId, reduxPropertyId]);
 
   // ---------------------------------------------------------
   // Load Salary Group per employee
@@ -268,26 +330,42 @@ export default function AttendanceSheet() {
     setCurrentPage(1);
 
     async function loadAttendance() {
-      if (!propertyId) return;
-
       try {
-        const data = await getAttendanceByProperty(propertyId);
+        // 🔹 Decide which properties to use
+        const propertyIds =
+          selectedPropertyId.length > 0
+            ? selectedPropertyId
+            : reduxPropertyId
+              ? [reduxPropertyId]
+              : [];
 
-        const safeData = data || [];
-        setAttendanceData(safeData);
+        if (!propertyIds.length) return;
 
         const currMonthYear = getMonthYearString(month, year);
 
-        const filtered = safeData.filter(
-          (item) => item.monthyear === currMonthYear
+        // 🔹 NEW MULTI PROPERTY API
+        const response = await getAttendanceByProperties(
+          propertyIds,
+          currMonthYear
         );
 
-        setFilteredAttendance(filtered);
+        // 🔥 Flatten structure
+        const safeData =
+          response?.flatMap((p) => p.Employees || []) || [];
 
-        // Fetch OT hours
+        setFilteredAttendance(safeData);
+        const filtered = safeData;
+
+        // 🔹 Fetch OT hours (still single property based if needed)
         let otData = [];
         try {
-          otData = await getEmployeeMonthlyTotalOT(propertyId, month, year);
+          if (propertyIds.length === 1) {
+            otData = await getEmployeeMonthlyTotalOT(
+              propertyIds[0],
+              month,
+              year
+            );
+          }
         } catch (err) {
           console.error("OT load failed:", err);
         }
@@ -297,7 +375,6 @@ export default function AttendanceSheet() {
         employees.forEach((emp) => {
           const empId = emp?.FacilityMember?.FacilityMemberId;
           const empCode = emp?.Profile?.EmployeeCode;
-          const empSGId = emp?.FacilityMember?.SG_Link_ID;
 
           if (!empId) return;
 
@@ -305,35 +382,9 @@ export default function AttendanceSheet() {
             (a) => a.EmpID === empId
           );
 
-          const otMatch = otData.find(
+          const otMatch = otData?.find(
             (ot) => ot.EmployeeCode === empCode
           );
-
-          // 🔥 Salary Group Match
-          const sgMatch = salaryGroupsByProperty.find(
-            (sg) =>
-              sg?.SalaryGroup_IDs?.some(
-                (id) => String(id) === String(empSGId)
-              )
-          );
-
-          const uniformAllowance = sgMatch?.AllowancesDeductions?.find(
-            (ad) => ad.Name === "Uniform"
-          );
-
-          const foodAllowance = sgMatch?.AllowancesDeductions?.find(
-            (ad) => ad.Name === "Food"
-          );
-
-          const uniformDefault =
-            uniformAllowance?.CalculatedAmount > 0
-              ? uniformAllowance.CalculatedAmount
-              : uniformAllowance?.FixedAmount ?? "";
-
-          const foodDefault =
-            foodAllowance?.CalculatedAmount > 0
-              ? foodAllowance.CalculatedAmount
-              : foodAllowance?.FixedAmount ?? "";
 
           mappedInputs[empId] = {
             workingDays: saved?.WorkingDays ?? "",
@@ -342,20 +393,16 @@ export default function AttendanceSheet() {
             SL: saved?.SL ?? "",
             weekDaysOff: saved?.WeekDaysOff ?? "",
             otDays: saved?.OtDays ?? "",
-
-            // ✅ OT priority fix
             otHours:
               saved?.OtHours !== null &&
                 saved?.OtHours !== undefined &&
                 saved?.OtHours !== ""
                 ? saved.OtHours
                 : otMatch?.TotalOTHours ?? "",
-
             totalDays:
               saved?.TotalWorkingDays ??
               employeeSGMap[empId]?.totalDays ??
               globalTotalDays,
-
             manualTotalDays: false,
             nhDays: saved?.NHDays ?? "",
             fhDays: saved?.FHDays ?? "",
@@ -366,29 +413,13 @@ export default function AttendanceSheet() {
             otherArrear: saved?.OtherArrear ?? "",
             incentive: saved?.Incentive ?? "",
             advanceDed: saved?.AdvanceDed ?? "",
-
-            // ✅ Uniform logic (attendance wins)
-            uniformDed:
-              saved?.UniformDed !== null &&
-                saved?.UniformDed !== undefined &&
-                saved?.UniformDed !== ""
-                ? saved.UniformDed
-                : uniformDefault,
-
+            uniformDed: saved?.UniformDed ?? "",
             bgvDed: saved?.BGVDed ?? "",
             roomDed: saved?.RoomDed ?? "",
             fineDed: saved?.FineDed ?? "",
             joiningKits: saved?.JoiningKits ?? "",
             otherDed: saved?.OtherDed ?? "",
-
-            // ✅ Food logic (attendance wins)
-            foodDed:
-              saved?.FoodDed !== null &&
-                saved?.FoodDed !== undefined &&
-                saved?.FoodDed !== ""
-                ? saved.FoodDed
-                : foodDefault,
-
+            foodDed: saved?.FoodDed ?? "",
             status: saved?.Status ?? "",
           };
         });
@@ -397,7 +428,6 @@ export default function AttendanceSheet() {
         setSelectedEmpIds(new Set());
       } catch (err) {
         if (err?.response?.status === 404) {
-          setAttendanceData([]);
           setFilteredAttendance([]);
           setDayInputs({});
           setSelectedEmpIds(new Set());
@@ -409,32 +439,12 @@ export default function AttendanceSheet() {
 
     loadAttendance();
   }, [
-    propertyId,
+    selectedPropertyId,
+    reduxPropertyId,
     month,
     year,
     globalTotalDays,
-    employeeSGMap,
-    employees,
-    salaryGroupsByProperty // ✅ fixed dependency
   ]);
-
-  // ---------------------------------------------------------
-  // Load Salary Allowances By Property
-  // ---------------------------------------------------------
-  useEffect(() => {
-    async function loadSalaryGroups() {
-      if (!propertyId) return;
-
-      try {
-        const data = await getSalaryAllowancesByProperties([propertyId]);
-        setSalaryGroupsByProperty(data || []);
-      } catch (err) {
-        console.error("Salary Allowances load error:", err);
-      }
-    }
-
-    loadSalaryGroups();
-  }, [propertyId]);
 
   // ---------------------------------------------------------
   // Checkbox toggle
@@ -532,96 +542,126 @@ export default function AttendanceSheet() {
     setSaving(true);
 
     const currMonthYear = getMonthYearString(month, year);
-    const promises = [];
-
-    // ✅ helper to safely convert numbers
-    const n = (v) => (v === "" || v === null || v === undefined ? 0 : Number(v));
-
-    selectedEmpIds.forEach((empId) => {
-      const emp = employees.find(
-        (e) => e?.FacilityMember?.FacilityMemberId === empId
-      );
-
-      const empName =
-        emp?.Profile?.EmployeeName ||
-        emp?.EmployeeList?.Designation ||
-        emp?.FacilityMember?.Name ||
-        "Unknown";
-
-      const inp = dayInputs[empId];
-
-      // ✅ compute once, reuse everywhere
-      const EL = n(inp.EL);
-      const CL = n(inp.CL);
-      const SL = n(inp.SL);
-      const LeaveDays = EL + CL + SL;
-
-      const model = {
-        EmpID: empId,
-        EmployeeName: empName,
-        PropertyID: propertyId,
-        monthyear: currMonthYear,
-        IsActive: true,
-        CreatedOn: new Date().toISOString(),
-
-        WorkingDays: n(inp.workingDays),
-        WeekDaysOff: n(inp.weekDaysOff),
-
-        EL,
-        CL,
-        SL,
-        LeaveDays,
-
-        NHDays: n(inp.nhDays),
-        FHDays: n(inp.fhDays),
-        Holidays: n(inp.holidays),
-        DivideByDays: n(inp.divideByDays),
-        OtMonthDays: n(inp.otMonthDays),
-
-        PFArrear: n(inp.pfArrear),
-        OtherArrear: n(inp.otherArrear),
-        Incentive: n(inp.incentive),
-
-        AdvanceDed: n(inp.advanceDed),
-        UniformDed: n(inp.uniformDed),
-        BGVDed: n(inp.bgvDed),
-        RoomDed: n(inp.roomDed),
-        FineDed: n(inp.fineDed),
-        JoiningKits: n(inp.joiningKits),
-        OtherDed: n(inp.otherDed),
-        FoodDed: n(inp.foodDed),
-
-        OtDays: n(inp.otDays),
-        OtHours: n(inp.otHours),
-        TotalWorkingDays: n(inp.totalDays),
-
-        Status: inp.status || "",
-      };
-
-      const existing = attendanceData.find(
-        (a) => a.EmpID === empId && a.monthyear === currMonthYear
-      );
-
-      if (existing)
-        promises.push(updateAttendance(empId, currMonthYear, model));
-      else promises.push(createAttendance(model));
-    });
+    const n = (v) =>
+      v === "" || v === null || v === undefined ? 0 : Number(v);
 
     try {
-      await Promise.all(promises);
+      const updatePromises = [];
+      const newEmployees = [];
+
+      selectedEmpIds.forEach((empId) => {
+        const emp = employees.find(
+          (e) => e?.FacilityMember?.FacilityMemberId === empId
+        );
+
+        if (!emp) return;
+
+        const empName =
+          emp?.Profile?.EmployeeName ||
+          emp?.EmployeeList?.Designation ||
+          emp?.FacilityMember?.Name ||
+          "Unknown";
+
+        const inp = dayInputs[empId] || {};
+
+        const EL = n(inp.EL);
+        const CL = n(inp.CL);
+        const SL = n(inp.SL);
+
+        const model = {
+          EmpID: empId,
+          EmployeeName: empName,
+          PropertyID: emp?.FacilityMember?.PropertyId,
+          monthyear: currMonthYear,
+          IsActive: true,
+          CreatedOn: new Date().toISOString(),
+
+          WorkingDays: n(inp.workingDays),
+          LeaveDays: EL + CL + SL,
+          WeekDaysOff: n(inp.weekDaysOff),
+
+          EL,
+          CL,
+          SL,
+
+          NHDays: n(inp.nhDays),
+          FHDays: n(inp.fhDays),
+          Holidays: n(inp.holidays),
+          DivideByDays: n(inp.divideByDays),
+          OtMonthDays: n(inp.otMonthDays),
+
+          PFArrear: n(inp.pfArrear),
+          OtherArrear: n(inp.otherArrear),
+          Incentive: n(inp.incentive),
+
+          AdvanceDed: n(inp.advanceDed),
+          UniformDed: n(inp.uniformDed),
+          BGVDed: n(inp.bgvDed),
+          RoomDed: n(inp.roomDed),
+          FineDed: n(inp.fineDed),
+          JoiningKits: n(inp.joiningKits),
+          OtherDed: n(inp.otherDed),
+          FoodDed: n(inp.foodDed),
+
+          OtDays: n(inp.otDays),
+          OtHours: n(inp.otHours),
+          TotalWorkingDays: n(inp.totalDays),
+          Status: inp.status || "",
+        };
+
+        const existing = filteredAttendance.find(
+          (a) =>
+            String(a.EmpID) === String(empId) &&
+            String(a.monthyear) === String(currMonthYear)
+        );
+
+        if (existing) {
+          // 🔹 UPDATE using PUT
+          updatePromises.push(
+            updateAttendance(empId, currMonthYear, model)
+          );
+        } else {
+          // 🔹 CREATE using batch
+          newEmployees.push(model);
+        }
+      });
+
+      // 🔹 Execute updates
+      if (updatePromises.length > 0) {
+        await Promise.all(updatePromises);
+      }
+
+      // 🔹 Execute batch create for new ones
+      if (newEmployees.length > 0) {
+        await saveAttendanceBatch(currMonthYear, newEmployees);
+      }
 
       alert("Attendance saved successfully!");
 
-      const refreshed = await getAttendanceByProperty(propertyId);
-      setAttendanceData(refreshed || []);
+      // 🔥 Reload using multi-property API
+      const propertyIds =
+        selectedPropertyId.length > 0
+          ? selectedPropertyId
+          : reduxPropertyId
+            ? [reduxPropertyId]
+            : [];
 
-      setFilteredAttendance(
-        (refreshed || []).filter((item) => item.monthyear === currMonthYear)
-      );
+      if (propertyIds.length) {
+        const refreshed = await getAttendanceByProperties(
+          propertyIds,
+          currMonthYear
+        );
+
+        const flat = refreshed?.flatMap(
+          (p) => p.Employees || []
+        ) || [];
+
+        setFilteredAttendance(flat);
+      }
 
       setSelectedEmpIds(new Set());
     } catch (err) {
-      console.error("Save attendance error:", err);
+      console.error("Batch save failed:", err);
       alert("Failed to save attendance.");
     } finally {
       setSaving(false);
@@ -639,17 +679,8 @@ export default function AttendanceSheet() {
 
     try {
       await deleteMultipleAttendance(
-        Array.from(selectedEmpIds).join(","),
+        Array.from(selectedEmpIds),
         getMonthYearString(month, year)
-      );
-
-      // Clean UI after delete
-      setAttendanceData((prev) =>
-        prev.filter(
-          (a) =>
-            !selectedEmpIds.has(a.EmpID) ||
-            a.monthyear !== getMonthYearString(month, year)
-        )
       );
 
       setDayInputs((prev) => {
@@ -682,6 +713,7 @@ export default function AttendanceSheet() {
       "CL",
       "SL",
       "Leave Days",
+      "Payable Days",
       "Week Days Off",
       "OT Days",
       "OT Hours",
@@ -701,12 +733,10 @@ export default function AttendanceSheet() {
       "Joining Kits",
       "Other Ded",
       "Food Ded",
-      "Payable Days",
-      "Total Working Days",
       "Status",
     ].join(",") + "\n";
 
-    const rows = paginatedEmployees.map((emp, idx) => {
+    const rows = employees.map((emp, idx) => {
       const empId =
         emp?.FacilityMember?.FacilityMemberId ?? emp?.EmpID ?? idx;
 
@@ -742,13 +772,14 @@ export default function AttendanceSheet() {
         CL,
         SL,
         leaveDays,
+        inp.divideByDays ?? saved.DivideByDays ?? "",
         inp.weekDaysOff ?? saved.WeekDaysOff ?? "",
         inp.otDays ?? saved.OtDays ?? "",
         inp.otHours ?? saved.OtHours ?? "",
         inp.nhDays ?? saved.NHDays ?? "",
         inp.fhDays ?? saved.FHDays ?? "",
         inp.holidays ?? saved.Holidays ?? "",
-        inp.divideByDays ?? saved.DivideByDays ?? "",
+        inp.totalDays ?? saved.TotalWorkingDays ?? "",
         inp.otMonthDays ?? saved.OtMonthDays ?? "",
         inp.pfArrear ?? saved.PFArrear ?? "",
         inp.otherArrear ?? saved.OtherArrear ?? "",
@@ -761,8 +792,6 @@ export default function AttendanceSheet() {
         inp.joiningKits ?? saved.JoiningKits ?? "",
         inp.otherDed ?? saved.OtherDed ?? "",
         inp.foodDed ?? saved.FoodDed ?? "",
-        inp.totalDays ?? saved.TotalWorkingDays ?? "",
-        inp.totalDays ?? saved.TotalWorkingDays ?? "",
         inp.status ?? saved.Status ?? "",
       ];
 
@@ -853,6 +882,118 @@ export default function AttendanceSheet() {
         boxSizing: "border-box",
       }}
     >
+      {/* ===== Attendance Scope Selection ===== */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 24,
+          padding: "8px 14px",
+          marginBottom: 20,
+          background: "#f9fafb",
+          borderRadius: 8,
+          border: "1px solid #e5e7eb",
+        }}
+      >
+        {/* Select Client */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <label style={{ fontWeight: 600 }}>Select Client :</label>
+          <select
+            value={selectedUnitId || ""}
+            onChange={(e) => {
+              setSelectedUnitId(Number(e.target.value));
+              setSelectedPropertyId([]);
+            }}
+            style={{ width: 240 }}
+          >
+            <option value="">-- Select Client --</option>
+            {unitList.map((u) => (
+              <option key={u.ClientID} value={u.ClientID}>
+                {u.ClientName}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Select Unit */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            position: "relative",
+            minWidth: 260,
+          }}
+        >
+          <label style={{ fontWeight: 600, whiteSpace: "nowrap" }}>
+            Select Unit :
+          </label>
+
+          {/* Display Box */}
+          <div
+            onClick={() => setShowPropertyDropdown(!showPropertyDropdown)}
+            style={{
+              border: "1px solid #cbd5e0",
+              padding: "6px 10px",
+              borderRadius: 6,
+              background: "#fff",
+              cursor: "pointer",
+            }}
+          >
+            {selectedPropertyId.length === propertyList.length
+              ? "All Units Selected"
+              : selectedPropertyId.length === 1
+                ? propertyList.find(
+                  (p) => p.PropertyId === selectedPropertyId[0]
+                )?.PropertyName
+                : `${selectedPropertyId.length} Units Selected`}
+          </div>
+
+          {/* Dropdown */}
+          {showPropertyDropdown && (
+            <div
+              style={{
+                position: "absolute",
+                top: "100%",
+                left: 0,
+                right: 0,
+                background: "#fff",
+                border: "1px solid #cbd5e0",
+                borderRadius: 6,
+                padding: 8,
+                maxHeight: 220,
+                overflowY: "auto",
+                zIndex: 10,
+              }}
+            >
+              {propertyList.map((p) => (
+                <div key={p.PropertyId}>
+                  <input
+                    type="checkbox"
+                    checked={selectedPropertyId.includes(p.PropertyId)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedPropertyId((prev) => [
+                          ...prev,
+                          p.PropertyId,
+                        ]);
+                      } else {
+                        setSelectedPropertyId((prev) =>
+                          prev.filter((id) => id !== p.PropertyId)
+                        );
+                      }
+                    }}
+                  />
+                  <span style={{ marginLeft: 8 }}>
+                    {p.PropertyName}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Header */}
       <div
         style={{
@@ -1069,7 +1210,7 @@ export default function AttendanceSheet() {
 
               {/* Leave group */}
               <th colSpan={3} style={thStyle}>Leave</th>
-
+              <th rowSpan={2} style={{ ...thStyle, width: 180 }}>Payable Days</th>
               <th rowSpan={2} style={{ ...thStyle, width: 130 }}>Weekly Off</th>
               <th rowSpan={2} style={{ ...thStyle, width: 100 }}>OT Days</th>
               <th rowSpan={2} style={{ ...thStyle, width: 110 }}>OT Hours</th>
@@ -1089,7 +1230,6 @@ export default function AttendanceSheet() {
               <th rowSpan={2} style={{ ...thStyle, width: 130 }}>Joining Kits</th>
               <th rowSpan={2} style={{ ...thStyle, width: 130 }}>Other Ded</th>
               <th rowSpan={2} style={{ ...thStyle, width: 130 }}>Food Ded</th>
-              <th rowSpan={2} style={{ ...thStyle, width: 180 }}>Payable Days / Total Days</th>
               <th rowSpan={2} style={{ ...thStyle, width: 100 }}>Status</th>
             </tr>
 
@@ -1214,6 +1354,18 @@ export default function AttendanceSheet() {
                     <input
                       type="text"
                       disabled={!isChecked}
+                      value={inp.divideByDays ?? ""}
+                      onChange={(e) =>
+                        handleInputChange(empId, "divideByDays", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
+
+                  <td style={tdStyle}>
+                    <input
+                      type="text"
+                      disabled={!isChecked}
                       value={inp.weekDaysOff}
                       onChange={(e) =>
                         handleInputChange(empId, "weekDaysOff", e.target.value)
@@ -1290,9 +1442,9 @@ export default function AttendanceSheet() {
                     <input
                       type="text"
                       disabled={!isChecked}
-                      value={inp.divideByDays}
+                      value={inp.totalDays}
                       onChange={(e) =>
-                        handleInputChange(empId, "divideByDays", e.target.value)
+                        handleInputChange(empId, "totalDays", e.target.value)
                       }
                       style={inputStyle}
                     />
@@ -1449,18 +1601,6 @@ export default function AttendanceSheet() {
                       value={inp.foodDed}
                       onChange={(e) =>
                         handleInputChange(empId, "foodDed", e.target.value)
-                      }
-                      style={inputStyle}
-                    />
-                  </td>
-
-                  <td style={tdStyle}>
-                    <input
-                      type="text"
-                      disabled={!isChecked}
-                      value={inp.totalDays}
-                      onChange={(e) =>
-                        handleInputChange(empId, "totalDays", e.target.value)
                       }
                       style={inputStyle}
                     />
