@@ -13,6 +13,7 @@ import { Toast } from "primereact/toast";
 
 // Services
 import {
+  getAllProperties,
   getPropertyById,
   createProperty,
   updateProperty,
@@ -78,53 +79,66 @@ export default function PropertyMaster() {
   const loadData = async () => {
     setLoading(true);
 
+    // 1️⃣ Property loading logic
     try {
-      const result = await getPropertyById(PropertyId);
-      const clientList = await getAllClients();
-      const serviceList = await getAllServices();
-      const cityList = await getAllCities();
-      const propertyTypeList = await getAllPropertyTypes();
+      if (PropertyId && PropertyId > 0) {
+        // If navbar selected → load that one property
+        const result = await getPropertyById(PropertyId);
+        setProperties([result]);
+      } else {
+        // If navbar NOT selected → load ALL active properties
+        const allProperties = await getAllProperties();
+        setProperties(allProperties);
+      }
+    } catch (err) {
+      console.log("Property fetch failed", err);
+    }
 
-      // Clients dropdown
+    // 2️⃣ Clients (ALWAYS fetch)
+    try {
+      const clientList = await getAllClients();
       setClients(
         clientList.map((c) => ({
           label: c.ClientName,
           value: c.ClientID,
         }))
       );
+    } catch {
+      console.log("Client fetch failed");
+    }
 
-      // Services dropdown
+    // 3️⃣ Services
+    try {
+      const serviceList = await getAllServices();
       setServices(
         serviceList.map((s) => ({
           label: s.ServiceName,
           value: s.ServiceId,
         }))
       );
+    } catch { }
 
-      // Property Types dropdown
-      setPropertyTypes(
-        propertyTypeList.map((pt) => ({
-          label: pt.PropertyType,
-          value: pt.PropertyTypeId,
-        }))
-      );
-
-      // Cities dropdown
+    // 4️⃣ Cities
+    try {
+      const cityList = await getAllCities();
       setCities(
         cityList.map((ct) => ({
           label: ct.CityName,
           value: ct.CityId,
         }))
       );
+    } catch { }
 
-      setProperties([result]);
-    } catch (err) {
-      toast.current?.show({
-        severity: "error",
-        summary: "Error",
-        detail: "Failed to load data",
-      });
-    }
+    // 5️⃣ Property Types
+    try {
+      const propertyTypeList = await getAllPropertyTypes();
+      setPropertyTypes(
+        propertyTypeList.map((pt) => ({
+          label: pt.PropertyType,
+          value: pt.PropertyTypeId,
+        }))
+      );
+    } catch { }
 
     setLoading(false);
   };
@@ -512,6 +526,24 @@ export default function PropertyMaster() {
               <div className="card p-3 shadow-sm">
                 <h5 className="mb-3">Operational & Payroll</h5>
 
+                <label>Client</label>
+                <Dropdown
+                  className="w-100 mb-2"
+                  value={form.ClientID}
+                  options={clients}
+                  onChange={(e) => setForm({ ...form, ClientID: e.value })}
+                />
+
+                <label>Services</label>
+                <MultiSelect
+                  className="w-100"
+                  value={form.ServiceIds}
+                  options={services}
+                  filter
+                  display="chip"
+                  onChange={(e) => setForm({ ...form, ServiceIds: e.value })}
+                />
+
                 <label>Latitude</label>
                 <InputText
                   className="w-100 mb-2"
@@ -600,24 +632,6 @@ export default function PropertyMaster() {
                   onChange={(e) =>
                     setForm({ ...form, MonthSundays: Number(e.target.value) })
                   }
-                />
-
-                <label>Client</label>
-                <Dropdown
-                  className="w-100 mb-2"
-                  value={form.ClientID}
-                  options={clients}
-                  onChange={(e) => setForm({ ...form, ClientID: e.value })}
-                />
-
-                <label>Services</label>
-                <MultiSelect
-                  className="w-100"
-                  value={form.ServiceIds}
-                  options={services}
-                  filter
-                  display="chip"
-                  onChange={(e) => setForm({ ...form, ServiceIds: e.value })}
                 />
               </div>
             </div>
@@ -742,8 +756,8 @@ export default function PropertyMaster() {
                 {viewData.ServiceIds?.length === 0
                   ? "—"
                   : viewData.ServiceIds.map(
-                      (id) => services.find((s) => s.value === id)?.label
-                    ).join(", ")}
+                    (id) => services.find((s) => s.value === id)?.label
+                  ).join(", ")}
               </div>
             </div>
           )}

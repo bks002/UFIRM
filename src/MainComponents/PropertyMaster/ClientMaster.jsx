@@ -7,6 +7,7 @@ import {
     updateClient,
     deleteClient
 } from "../../Services/ClientService";
+import { getAllProperties } from "../../Services/PropertyService";
 
 export default function ClientMaster() {
     const [clients, setClients] = useState([]);
@@ -15,6 +16,10 @@ export default function ClientMaster() {
 
     const [dialogVisible, setDialogVisible] = useState(false);
     const [editId, setEditId] = useState(null);
+
+    const [viewVisible, setViewVisible] = useState(false);
+    const [selectedClient, setSelectedClient] = useState(null);
+    const [properties, setProperties] = useState([]);
 
     const [formData, setFormData] = useState({
         clientName: "",
@@ -55,6 +60,11 @@ export default function ClientMaster() {
         loadClients();
     }, []);
 
+    useEffect(() => {
+        loadClients();
+        loadProperties();
+    }, []);
+
     // ------------------------------------------
     // Open Create Dialog
     // ------------------------------------------
@@ -68,6 +78,27 @@ export default function ClientMaster() {
         });
         setEditId(null);
         setDialogVisible(true);
+    };
+
+    const loadProperties = async () => {
+        try {
+            const data = await getAllProperties();
+
+            const mapped = data.map((p) => ({
+                propertyId: p.PropertyId,
+                name: p.Name,
+                clientId: p.ClientID
+            }));
+
+            setProperties(mapped);
+        } catch (error) {
+            console.error("Failed to load properties", error);
+        }
+    };
+
+    const openViewDialog = (client) => {
+        setSelectedClient(client);
+        setViewVisible(true);
     };
 
     // ------------------------------------------
@@ -147,6 +178,10 @@ export default function ClientMaster() {
             (c.email || "").toLowerCase().includes(keyword)
         );
     });
+
+    const clientProperties = properties.filter(
+        (p) => p.clientId === selectedClient?.clientID
+    );
 
     const dialogFooter = (
         <>
@@ -243,9 +278,15 @@ export default function ClientMaster() {
                                             <td>{item.phone}</td>
                                             <td>{item.address}</td>
 
-                                            
+
 
                                             <td className="text-center">
+                                                <button
+                                                    className="btn btn-sm btn-info me-2"
+                                                    onClick={() => openViewDialog(item)}
+                                                >
+                                                    <i className="fa fa-eye" />
+                                                </button>
                                                 <button
                                                     className="btn btn-sm btn-primary me-2"
                                                     onClick={() => openEditDialog(item)}
@@ -346,6 +387,57 @@ export default function ClientMaster() {
                         </div>
                     </form>
                 </Dialog>
+                <Dialog
+                    header="Client Details"
+                    visible={viewVisible}
+                    modal
+                    draggable={false}
+                    resizable={false}
+                    style={{ width: "500px" }}
+                    onHide={() => setViewVisible(false)}
+                >
+                    {selectedClient && (
+                        <div className="p-2">
+                            <div className="mb-2">
+                                <strong>Client Name:</strong> {selectedClient.clientName}
+                            </div>
+
+                            <div className="mb-2">
+                                <strong>Contact Person:</strong> {selectedClient.contactPerson}
+                            </div>
+
+                            <div className="mb-2">
+                                <strong>Email:</strong> {selectedClient.email}
+                            </div>
+
+                            <div className="mb-2">
+                                <strong>Phone:</strong> {selectedClient.phone}
+                            </div>
+
+                            <div className="mb-2">
+                                <strong>Address:</strong> {selectedClient.address}
+                            </div>
+
+                            <hr />
+
+                            <div className="mb-2">
+                                <strong>Properties:</strong>
+                                {clientProperties.length > 0 ? (
+                                    <ul className="mt-2">
+                                        {clientProperties.map((prop) => (
+                                            <li key={prop.propertyId}>{prop.name}</li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <div className="text-muted mt-2">
+                                        No Properties Assigned.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </Dialog>
+
             </div>
         </div>
     );
