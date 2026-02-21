@@ -4,14 +4,21 @@ import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 
 import {
-  getAttendanceByProperty,
-  createAttendance,
-  updateAttendance,
+  getAttendanceByProperties,
+  saveAttendanceBatch,
   deleteMultipleAttendance,
+  uploadAttendance,
+  getEmployeeMonthlyTotalOT,
+  getEmployeesByOffices,
+  updateAttendance,
 } from "../../Services/PayrollService";
 
-import { getEmployeesByOffice } from "../../Services/PayrollService";
-import { getPropertyById } from "../../Services/PropertyService";
+import {
+  getAllClients,
+  getClientByPropertyId,
+  getPropertiesByClientId,
+} from "../../Services/ClientService";
+
 import { getSalaryAllowancesByFacilityMember } from "../../Services/PayrollService";
 
 // Helper: Format month-year as "YYYY-MM"
@@ -26,13 +33,22 @@ function getDaysInMonth(month, year) {
 }
 
 export default function AttendanceSheet() {
-  const officeId = useSelector((state) => state.Commonreducer.puidn);
-  const propertyId = officeId;
+  const reduxPropertyId = useSelector((state) => state.Commonreducer.puidn);
+  const [selectedPropertyId, setSelectedPropertyId] = useState([]);
+  const propertyId =
+    selectedPropertyId.length === 1
+      ? selectedPropertyId[0]
+      : reduxPropertyId || null;
 
   const [employees, setEmployees] = useState([]);
-  const [attendanceData, setAttendanceData] = useState([]);
   const [filteredAttendance, setFilteredAttendance] = useState([]);
   const [selectedEmpIds, setSelectedEmpIds] = useState(new Set());
+
+  const [unitList, setUnitList] = useState([]);
+  const [selectedUnitId, setSelectedUnitId] = useState(null);
+
+  const [propertyList, setPropertyList] = useState([]);
+  const [showPropertyDropdown, setShowPropertyDropdown] = useState(false);
 
   // { empId: { totalDays, shiftHours } }
   const [employeeSGMap, setEmployeeSGMap] = useState({});
@@ -41,6 +57,11 @@ export default function AttendanceSheet() {
 
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
+
+  useEffect(() => {
+    const days = getDaysInMonth(month, year);
+    setGlobalTotalDays(days);
+  }, [month, year]);
 
   const totalDaysInSelectedMonth = getDaysInMonth(month, year);
 
@@ -87,50 +108,188 @@ export default function AttendanceSheet() {
     "Dec",
   ];
 
-  // -------------------------------------------------------------------
-  // Load PropertyMaster TotalWorkingDays
-  // -------------------------------------------------------------------
-  useEffect(() => {
-    async function loadPropertyWorkingDays() {
-      if (!propertyId) return;
+  const baseExtraFields = {
+    EL: "",
+    CL: "",
+    SL: "",
+    nhDays: "",
+    fhDays: "",
+    holidays: "",
+    divideByDays: "",
+    otMonthDays: "",
+    pfArrear: "",
+    otherArrear: "",
+    incentive: "",
+    advanceDed: "",
+    uniformDed: "",
+    bgvDed: "",
+    roomDed: "",
+    fineDed: "",
+    joiningKits: "",
+    otherDed: "",
+    foodDed: "",
+    status: "",
+  };
 
-      try {
-        const prop = await getPropertyById(propertyId);
-        const twd = prop?.TotalWorkingDays || getDaysInMonth(month, year);
+  const fileInputRef = React.useRef(null);
+  async function handleImportClick() {
+    fileInputRef.current.click();
+  }
 
-        setGlobalTotalDays(twd);
+  async function handleFileChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
 
-        // Apply property default only to employees who do NOT have manual edit
-        setDayInputs((prev) => {
-          const updated = {};
-          for (const empId of Object.keys(prev)) {
-            if (prev[empId].manualTotalDays) {
-              updated[empId] = prev[empId];
-            } else {
-              updated[empId] = {
-                ...prev[empId],
-                totalDays: prev[empId].totalDays || twd,
-              };
-            }
-          }
-          return updated;
-        });
-      } catch {
-        setGlobalTotalDays(getDaysInMonth(month, year));
+    try {
+      const monthyear = getMonthYearString(month, year);
+
+      const res = await uploadAttendance(file, propertyId, monthyear);
+
+      alert(res?.Message || "Attendance uploaded successfully!");
+
+      // 🔥 Reload attendance (multi-property safe)
+      let propertyIds = [];
+
+      if (selectedPropertyId.length > 0) {
+        propertyIds = selectedPropertyId;
+      } else if (reduxPropertyId) {
+        propertyIds = [reduxPropertyId];
+      } else if (propertyList.length > 0) {
+        propertyIds = propertyList.map(p => p.PropertyId);
       }
+
+      // 🔥 Reload attendance (multi-property safe)
+
+      let flat = [];   // 👈 declare outside first
+
+      if (propertyIds.length) {
+        const refreshed = await getAttendanceByProperties(
+          propertyIds,
+          monthyear
+        );
+
+        flat = refreshed?.flatMap((p) => p.Employees || []) || [];
+        setFilteredAttendance(flat);
+      }
+
+      // 🔥 Rebuild dayInputs from uploaded data
+      const mappedInputs = {};
+      flat.forEach((att) => {
+
+        mappedInputs[att.EmpID] = {
+          workingDays: att.WorkingDays,
+          EL: att.EL ?? "",
+          CL: att.CL ?? "",
+          SL: att.SL ?? "",
+          weekDaysOff: att.WeekDaysOff,
+          otDays: att.OtDays || "",
+          otHours: att.OtHours || "",
+          totalDays: att.TotalWorkingDays ?? globalTotalDays,
+          manualTotalDays: false,
+          nhDays: att.NHDays ?? "",
+          fhDays: att.FHDays ?? "",
+          holidays: att.Holidays ?? "",
+          divideByDays: att.DivideByDays ?? "",
+          otMonthDays: att.OtMonthDays ?? "",
+          pfArrear: att.PFArrear ?? "",
+          otherArrear: att.OtherArrear ?? "",
+          incentive: att.Incentive ?? "",
+          advanceDed: att.AdvanceDed ?? "",
+          uniformDed: att.UniformDed ?? "",
+          bgvDed: att.BGVDed ?? "",
+          roomDed: att.RoomDed ?? "",
+          fineDed: att.FineDed ?? "",
+          joiningKits: att.JoiningKits ?? "",
+          otherDed: att.OtherDed ?? "",
+          foodDed: att.FoodDed ?? "",
+          status: att.Status ?? "",
+        };
+      });
+
+      setDayInputs(mappedInputs);
+      setSelectedEmpIds(new Set());
+    } catch (err) {
+      console.error("Upload failed:", err);
+      alert("Upload failed.");
     }
 
-    loadPropertyWorkingDays();
-  }, [propertyId]);
+    e.target.value = null;
+  }
+
+
+  useEffect(() => {
+    const loadUnits = async () => {
+      try {
+        if (Number(reduxPropertyId) > 0) {
+          const res = await getClientByPropertyId(reduxPropertyId);
+          setUnitList(res ? [res] : []);
+          setSelectedUnitId(res?.ClientID || null);
+        } else {
+          const res = await getAllClients();
+          setUnitList(res || []);
+        }
+      } catch (err) {
+        console.log("Failed to load units", err);
+      }
+    };
+
+    loadUnits();
+  }, [reduxPropertyId]);
+
+  useEffect(() => {
+    const loadProperties = async () => {
+      try {
+        if (!selectedUnitId) {
+          setPropertyList([]);
+          setSelectedPropertyId([]);
+          return;
+        }
+
+        const res = await getPropertiesByClientId(selectedUnitId);
+        const properties = res || [];
+
+        setPropertyList(properties);
+
+        // ✅ Select ALL properties by default
+        const allIds = properties.map((p) => p.PropertyId);
+        setSelectedPropertyId(allIds);
+      } catch (err) {
+        console.log("Failed to load properties", err);
+      }
+    };
+
+    loadProperties();
+  }, [selectedUnitId]);
 
   // ---------------------------------------------------------
   // Load Employees
   // ---------------------------------------------------------
   useEffect(() => {
-    if (officeId) {
-      getEmployeesByOffice(officeId).then((data) => setEmployees(data || []));
-    }
-  }, [officeId]);
+    const loadEmployees = async () => {
+      try {
+        let officeIds = [];
+
+        if (selectedPropertyId.length > 0) {
+          officeIds = selectedPropertyId;
+        } else if (reduxPropertyId) {
+          officeIds = [reduxPropertyId];
+        }
+
+        if (!officeIds.length) {
+          setEmployees([]);
+          return;
+        }
+
+        const data = await getEmployeesByOffices(officeIds);
+        setEmployees(data || []);
+      } catch (err) {
+        console.error("Employee load failed", err);
+        setEmployees([]);
+      }
+    };
+
+    loadEmployees();
+  }, [selectedPropertyId, reduxPropertyId]);
 
   // ---------------------------------------------------------
   // Load Salary Group per employee
@@ -171,43 +330,104 @@ export default function AttendanceSheet() {
     setCurrentPage(1);
 
     async function loadAttendance() {
-      if (!propertyId) return;
-
       try {
-        const data = await getAttendanceByProperty(propertyId);
+        // 🔹 Decide which properties to use
+        const propertyIds =
+          selectedPropertyId.length > 0
+            ? selectedPropertyId
+            : reduxPropertyId
+              ? [reduxPropertyId]
+              : [];
 
-        const safeData = data || [];
-        setAttendanceData(safeData);
+        if (!propertyIds.length) return;
 
         const currMonthYear = getMonthYearString(month, year);
 
-        const filtered = safeData.filter(
-          (item) => item.monthyear === currMonthYear
+        // 🔹 NEW MULTI PROPERTY API
+        const response = await getAttendanceByProperties(
+          propertyIds,
+          currMonthYear
         );
 
-        setFilteredAttendance(filtered);
+        // 🔥 Flatten structure
+        const safeData =
+          response?.flatMap((p) => p.Employees || []) || [];
+
+        setFilteredAttendance(safeData);
+        const filtered = safeData;
+
+        // 🔹 Fetch OT hours (still single property based if needed)
+        let otData = [];
+        try {
+          if (propertyIds.length === 1) {
+            otData = await getEmployeeMonthlyTotalOT(
+              propertyIds[0],
+              month,
+              year
+            );
+          }
+        } catch (err) {
+          console.error("OT load failed:", err);
+        }
 
         const mappedInputs = {};
-        filtered.forEach((att) => {
-          mappedInputs[att.EmpID] = {
-            workingDays: att.WorkingDays,
-            leaveDays: att.LeaveDays,
-            weekDaysOff: att.WeekDaysOff,
-            otDays: att.OtDays || "",
-            otHours: att.OtHours || "",
+
+        employees.forEach((emp) => {
+          const empId = emp?.FacilityMember?.FacilityMemberId;
+          const empCode = emp?.Profile?.EmployeeCode;
+
+          if (!empId) return;
+
+          const saved = filtered.find(
+            (a) => a.EmpID === empId
+          );
+
+          const otMatch = otData?.find(
+            (ot) => ot.EmployeeCode === empCode
+          );
+
+          mappedInputs[empId] = {
+            workingDays: saved?.WorkingDays ?? "",
+            EL: saved?.EL ?? "",
+            CL: saved?.CL ?? "",
+            SL: saved?.SL ?? "",
+            weekDaysOff: saved?.WeekDaysOff ?? "",
+            otDays: saved?.OtDays ?? "",
+            otHours:
+              saved?.OtHours !== null &&
+                saved?.OtHours !== undefined &&
+                saved?.OtHours !== ""
+                ? saved.OtHours
+                : otMatch?.TotalOTHours ?? "",
             totalDays:
-              att.TotalWorkingDays ?? employeeSGMap[att.EmpID]?.totalDays ?? globalTotalDays,
+              saved?.TotalWorkingDays ??
+              employeeSGMap[empId]?.totalDays ??
+              globalTotalDays,
             manualTotalDays: false,
+            nhDays: saved?.NHDays ?? "",
+            fhDays: saved?.FHDays ?? "",
+            holidays: saved?.Holidays ?? "",
+            divideByDays: saved?.DivideByDays ?? "",
+            otMonthDays: saved?.OtMonthDays ?? "",
+            pfArrear: saved?.PFArrear ?? "",
+            otherArrear: saved?.OtherArrear ?? "",
+            incentive: saved?.Incentive ?? "",
+            advanceDed: saved?.AdvanceDed ?? "",
+            uniformDed: saved?.UniformDed ?? "",
+            bgvDed: saved?.BGVDed ?? "",
+            roomDed: saved?.RoomDed ?? "",
+            fineDed: saved?.FineDed ?? "",
+            joiningKits: saved?.JoiningKits ?? "",
+            otherDed: saved?.OtherDed ?? "",
+            foodDed: saved?.FoodDed ?? "",
+            status: saved?.Status ?? "",
           };
         });
 
         setDayInputs(mappedInputs);
         setSelectedEmpIds(new Set());
       } catch (err) {
-        // ✅ IMPORTANT PART
         if (err?.response?.status === 404) {
-          // No attendance exists → this is NOT an error
-          setAttendanceData([]);
           setFilteredAttendance([]);
           setDayInputs({});
           setSelectedEmpIds(new Set());
@@ -218,7 +438,13 @@ export default function AttendanceSheet() {
     }
 
     loadAttendance();
-  }, [propertyId, month, year, globalTotalDays, employeeSGMap]);
+  }, [
+    selectedPropertyId,
+    reduxPropertyId,
+    month,
+    year,
+    globalTotalDays,
+  ]);
 
   // ---------------------------------------------------------
   // Checkbox toggle
@@ -237,7 +463,9 @@ export default function AttendanceSheet() {
             ...old,
             [empId]: {
               workingDays: "",
-              leaveDays: "",
+              EL: "",
+              CL: "",
+              SL: "",
               weekDaysOff: "",
               otDays: "",
               otHours: "",
@@ -256,17 +484,20 @@ export default function AttendanceSheet() {
   // Handle per-employee input (manual override supported)
   // ---------------------------------------------------------
   function handleInputChange(empId, field, value) {
-    if (!/^\d*\.?\d*$/.test(value)) return;
+    if (field !== "status" && !/^\d*\.?\d*$/.test(value)) return;
 
     setDayInputs((prev) => {
       const current = prev[empId] || {
         workingDays: "",
-        leaveDays: "",
+        EL: "",
+        CL: "",
+        SL: "",
         weekDaysOff: "",
         otDays: "",
         otHours: "",
         totalDays: employeeSGMap[empId]?.totalDays ?? globalTotalDays,
         manualTotalDays: false,
+        ...baseExtraFields,
       };
 
       const updated = { ...current, [field]: value };
@@ -283,10 +514,13 @@ export default function AttendanceSheet() {
           globalTotalDays;
 
       const w = parseFloat(updated.workingDays) || 0;
-      const l = parseFloat(updated.leaveDays) || 0;
+      const el = parseFloat(updated.EL) || 0;
+      const cl = parseFloat(updated.CL) || 0;
+      const sl = parseFloat(updated.SL) || 0;
+      const l = el + cl + sl;
       const wk = parseFloat(updated.weekDaysOff) || 0;
 
-      if (["workingDays", "leaveDays", "weekDaysOff"].includes(field)) {
+      if (["workingDays", "EL", "CL", "SL", "weekDaysOff"].includes(field)) {
         if (parseFloat(value) > totalDays) return prev;
       }
 
@@ -308,59 +542,126 @@ export default function AttendanceSheet() {
     setSaving(true);
 
     const currMonthYear = getMonthYearString(month, year);
-    const promises = [];
-
-    selectedEmpIds.forEach((empId) => {
-      const emp = employees.find(
-        (e) => e?.FacilityMember?.FacilityMemberId === empId
-      );
-
-      const empName =
-        emp?.Profile?.EmployeeName ||
-        emp?.EmployeeList?.Designation ||
-        emp?.FacilityMember?.Name ||
-        "Unknown";
-
-      const inp = dayInputs[empId];
-
-      const model = {
-        EmpID: empId,
-        EmployeeName: empName,
-        WorkingDays: Number(inp.workingDays) || 0,
-        LeaveDays: Number(inp.leaveDays) || 0,
-        WeekDaysOff: Number(inp.weekDaysOff) || 0,
-        OtDays: Number(inp.otDays) || 0,
-        OtHours: Number(inp.otHours) || 0,
-        TotalWorkingDays: Number(inp.totalDays),
-        PropertyID: propertyId,
-        CreatedOn: new Date().toISOString(),
-        IsActive: true,
-        monthyear: currMonthYear,
-      };
-
-      const existing = attendanceData.find(
-        (a) => a.EmpID === empId && a.monthyear === currMonthYear
-      );
-
-      if (existing)
-        promises.push(updateAttendance(empId, currMonthYear, model));
-      else promises.push(createAttendance(model));
-    });
+    const n = (v) =>
+      v === "" || v === null || v === undefined ? 0 : Number(v);
 
     try {
-      await Promise.all(promises);
+      const updatePromises = [];
+      const newEmployees = [];
+
+      selectedEmpIds.forEach((empId) => {
+        const emp = employees.find(
+          (e) => e?.FacilityMember?.FacilityMemberId === empId
+        );
+
+        if (!emp) return;
+
+        const empName =
+          emp?.Profile?.EmployeeName ||
+          emp?.EmployeeList?.Designation ||
+          emp?.FacilityMember?.Name ||
+          "Unknown";
+
+        const inp = dayInputs[empId] || {};
+
+        const EL = n(inp.EL);
+        const CL = n(inp.CL);
+        const SL = n(inp.SL);
+
+        const model = {
+          EmpID: empId,
+          EmployeeName: empName,
+          PropertyID: emp?.FacilityMember?.PropertyId,
+          monthyear: currMonthYear,
+          IsActive: true,
+          CreatedOn: new Date().toISOString(),
+
+          WorkingDays: n(inp.workingDays),
+          LeaveDays: EL + CL + SL,
+          WeekDaysOff: n(inp.weekDaysOff),
+
+          EL,
+          CL,
+          SL,
+
+          NHDays: n(inp.nhDays),
+          FHDays: n(inp.fhDays),
+          Holidays: n(inp.holidays),
+          DivideByDays: n(inp.divideByDays),
+          OtMonthDays: n(inp.otMonthDays),
+
+          PFArrear: n(inp.pfArrear),
+          OtherArrear: n(inp.otherArrear),
+          Incentive: n(inp.incentive),
+
+          AdvanceDed: n(inp.advanceDed),
+          UniformDed: n(inp.uniformDed),
+          BGVDed: n(inp.bgvDed),
+          RoomDed: n(inp.roomDed),
+          FineDed: n(inp.fineDed),
+          JoiningKits: n(inp.joiningKits),
+          OtherDed: n(inp.otherDed),
+          FoodDed: n(inp.foodDed),
+
+          OtDays: n(inp.otDays),
+          OtHours: n(inp.otHours),
+          TotalWorkingDays: n(inp.totalDays),
+          Status: inp.status || "",
+        };
+
+        const existing = filteredAttendance.find(
+          (a) =>
+            String(a.EmpID) === String(empId) &&
+            String(a.monthyear) === String(currMonthYear)
+        );
+
+        if (existing) {
+          // 🔹 UPDATE using PUT
+          updatePromises.push(
+            updateAttendance(empId, currMonthYear, model)
+          );
+        } else {
+          // 🔹 CREATE using batch
+          newEmployees.push(model);
+        }
+      });
+
+      // 🔹 Execute updates
+      if (updatePromises.length > 0) {
+        await Promise.all(updatePromises);
+      }
+
+      // 🔹 Execute batch create for new ones
+      if (newEmployees.length > 0) {
+        await saveAttendanceBatch(currMonthYear, newEmployees);
+      }
 
       alert("Attendance saved successfully!");
 
-      const refreshed = await getAttendanceByProperty(propertyId);
-      setAttendanceData(refreshed || []);
+      // 🔥 Reload using multi-property API
+      const propertyIds =
+        selectedPropertyId.length > 0
+          ? selectedPropertyId
+          : reduxPropertyId
+            ? [reduxPropertyId]
+            : [];
 
-      setFilteredAttendance(
-        (refreshed || []).filter((item) => item.monthyear === currMonthYear)
-      );
+      if (propertyIds.length) {
+        const refreshed = await getAttendanceByProperties(
+          propertyIds,
+          currMonthYear
+        );
+
+        const flat = refreshed?.flatMap(
+          (p) => p.Employees || []
+        ) || [];
+
+        setFilteredAttendance(flat);
+      }
 
       setSelectedEmpIds(new Set());
     } catch (err) {
+      console.error("Batch save failed:", err);
       alert("Failed to save attendance.");
     } finally {
       setSaving(false);
@@ -378,17 +679,8 @@ export default function AttendanceSheet() {
 
     try {
       await deleteMultipleAttendance(
-        Array.from(selectedEmpIds).join(","),
+        Array.from(selectedEmpIds),
         getMonthYearString(month, year)
-      );
-
-      // Clean UI after delete
-      setAttendanceData((prev) =>
-        prev.filter(
-          (a) =>
-            !selectedEmpIds.has(a.EmpID) ||
-            a.monthyear !== getMonthYearString(month, year)
-        )
       );
 
       setDayInputs((prev) => {
@@ -411,46 +703,102 @@ export default function AttendanceSheet() {
   // ---------------------------------------------------------
   function exportToCSV() {
     const heading = `Attendance for: ${monthNames[month - 1]} ${year}\n\n`;
-    const header =
-      "Employee Name,Working Days,Leave Days,Week Days Off,OT Days,OT Hours,Total Working Days\n";
 
-    const rows = paginatedEmployees.map((emp, idx) => {
-      const empId = emp?.FacilityMember?.FacilityMemberId ?? emp?.EmpID ?? idx;
-      const nameRaw =
+    const header = [
+      "Employee Code",
+      "Employee Name",
+      "Designation",
+      "Working Days",
+      "EL",
+      "CL",
+      "SL",
+      "Leave Days",
+      "Payable Days",
+      "Week Days Off",
+      "OT Days",
+      "OT Hours",
+      "NH Days",
+      "FH Days",
+      "Holidays",
+      "Divide By Days",
+      "OT Month Days",
+      "PF Arrear",
+      "Other Arrear",
+      "Incentive",
+      "Advance Ded",
+      "Uniform Ded",
+      "BGV Ded",
+      "Room Ded",
+      "Fine Ded",
+      "Joining Kits",
+      "Other Ded",
+      "Food Ded",
+      "Status",
+    ].join(",") + "\n";
+
+    const rows = employees.map((emp, idx) => {
+      const empId =
+        emp?.FacilityMember?.FacilityMemberId ?? emp?.EmpID ?? idx;
+
+      const empCode = emp?.Profile?.EmployeeCode || "-";
+
+      const empName =
         emp?.Profile?.EmployeeName ||
-        emp?.EmployeeList?.Designation ||
         emp?.FacilityMember?.Name ||
         "Unknown";
 
-      // escape any double-quotes in name for CSV
-      const name = `"${String(nameRaw).replace(/"/g, '""')}"`;
+      const designation =
+        emp?.EmployeeList?.Designation ||
+        emp?.Profile?.Designation ||
+        "-";
 
       const inp = dayInputs[empId] || {};
+      const saved =
+        filteredAttendance.find(
+          (a) => String(a.EmpID) === String(empId)
+        ) || {};
 
-      // fallback to saved attendance if inputs are empty
-      const saved = (filteredAttendance || []).find(
-        (a) => String(a.EmpID) === String(empId)
-      );
+      const EL = Number(inp.EL ?? saved.EL ?? 0);
+      const CL = Number(inp.CL ?? saved.CL ?? 0);
+      const SL = Number(inp.SL ?? saved.SL ?? 0);
+      const leaveDays = EL + CL + SL;
 
-      const workingDays = inp.workingDays ?? saved?.WorkingDays ?? "";
-      const leaveDays = inp.leaveDays ?? saved?.LeaveDays ?? "";
-      const weekDaysOff = inp.weekDaysOff ?? saved?.WeekDaysOff ?? "";
-      const otDays = inp.otDays ?? saved?.OtDays ?? "";
-      const otHours = inp.otHours ?? saved?.OtHours ?? "";
-      const totalWorkingDays = inp.totalDays ?? saved?.TotalWorkingDays ?? "";
+      const values = [
+        empCode,
+        empName,
+        designation,
+        inp.workingDays ?? saved.WorkingDays ?? "",
+        EL,
+        CL,
+        SL,
+        leaveDays,
+        inp.divideByDays ?? saved.DivideByDays ?? "",
+        inp.weekDaysOff ?? saved.WeekDaysOff ?? "",
+        inp.otDays ?? saved.OtDays ?? "",
+        inp.otHours ?? saved.OtHours ?? "",
+        inp.nhDays ?? saved.NHDays ?? "",
+        inp.fhDays ?? saved.FHDays ?? "",
+        inp.holidays ?? saved.Holidays ?? "",
+        inp.totalDays ?? saved.TotalWorkingDays ?? "",
+        inp.otMonthDays ?? saved.OtMonthDays ?? "",
+        inp.pfArrear ?? saved.PFArrear ?? "",
+        inp.otherArrear ?? saved.OtherArrear ?? "",
+        inp.incentive ?? saved.Incentive ?? "",
+        inp.advanceDed ?? saved.AdvanceDed ?? "",
+        inp.uniformDed ?? saved.UniformDed ?? "",
+        inp.bgvDed ?? saved.BGVDed ?? "",
+        inp.roomDed ?? saved.RoomDed ?? "",
+        inp.fineDed ?? saved.FineDed ?? "",
+        inp.joiningKits ?? saved.JoiningKits ?? "",
+        inp.otherDed ?? saved.OtherDed ?? "",
+        inp.foodDed ?? saved.FoodDed ?? "",
+        inp.status ?? saved.Status ?? "",
+      ];
 
-      // ensure values are strings and escape quotes if any (though numeric fields unlikely to have quotes)
-      const row = [
-        name,
-        `"${String(workingDays)}"`,
-        `"${String(leaveDays)}"`,
-        `"${String(weekDaysOff)}"`,
-        `"${String(otDays)}"`,
-        `"${String(otHours)}"`,
-        `"${String(totalWorkingDays)}"`,
-      ].join(",");
-
-      return row;
+      // ✅ quote ONCE, escape internal quotes safely
+      return values
+        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+        .join(",");
     });
 
     const csv = heading + header + rows.join("\n");
@@ -459,11 +807,41 @@ export default function AttendanceSheet() {
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = `attendance_${monthNames[
+    a.download = `attendance_full_${monthNames[
       month - 1
     ].toLowerCase()}_${year}.csv`;
     a.click();
+
     window.URL.revokeObjectURL(url);
+  }
+
+  const allEmpIds = paginatedEmployees
+    .map((emp) => emp?.FacilityMember?.FacilityMemberId)
+    .filter(Boolean);
+
+  const isAllSelected =
+    allEmpIds.length > 0 &&
+    allEmpIds.every((id) => selectedEmpIds.has(id));
+
+  function toggleSelectAll(checked) {
+    setSelectedEmpIds((prev) => {
+      const next = new Set(prev);
+
+      if (checked) {
+        allEmpIds.forEach((id) => {
+          next.add(id);
+
+          // ensure inputs exist
+          if (!dayInputs[id]) {
+            next.add(id);
+          }
+        });
+      } else {
+        allEmpIds.forEach((id) => next.delete(id));
+      }
+
+      return next;
+    });
   }
 
   // ---------------------------------------------------------
@@ -497,189 +875,381 @@ export default function AttendanceSheet() {
   };
   return (
     <div
-      className="content-wrapper"
-      style={{ minHeight: "100vh", padding: 30 }}
+      style={{
+        padding: "20px 24px",
+        paddingLeft: "100px", // 👈 sidebar width
+        width: "100%",
+        boxSizing: "border-box",
+      }}
     >
+      {/* ===== Attendance Scope Selection ===== */}
       <div
-        className="card"
         style={{
-          maxWidth: 1300,
-          margin: "0 auto",
-          borderRadius: 10,
-          padding: 30,
+          display: "flex",
+          alignItems: "center",
+          gap: 24,
+          padding: "8px 14px",
+          marginBottom: 20,
+          background: "#f9fafb",
+          borderRadius: 8,
+          border: "1px solid #e5e7eb",
         }}
       >
-        {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginBottom: 20,
-          }}
-        >
-          <h2 style={{ fontWeight: "bold", fontSize: "2rem" }}>
-            Employee Attendance Summary
-          </h2>
-
-          <div style={{ display: "flex", gap: 8 }}>
-            <select
-              value={month}
-              onChange={(e) => setMonth(Number(e.target.value))}
-            >
-              {months.map((m) => (
-                <option key={m} value={m}>
-                  {monthNames[m - 1]}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={year}
-              onChange={(e) => {
-                const newY = Number(e.target.value);
-                setYear(newY);
-                if (newY === currentYear && month > currentMonth) {
-                  setMonth(currentMonth);
-                }
-              }}
-            >
-              {years.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-
-            <button
-              onClick={exportToCSV}
-              style={{
-                background: "#3182ce",
-                color: "#fff",
-                padding: "6px 14px",
-              }}
-            >
-              Export CSV
-            </button>
-          </div>
+        {/* Select Client */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <label style={{ fontWeight: 600 }}>Select Client :</label>
+          <select
+            value={selectedUnitId || ""}
+            onChange={(e) => {
+              setSelectedUnitId(Number(e.target.value));
+              setSelectedPropertyId([]);
+            }}
+            style={{ width: 240 }}
+          >
+            <option value="">-- Select Client --</option>
+            {unitList.map((u) => (
+              <option key={u.ClientID} value={u.ClientID}>
+                {u.ClientName}
+              </option>
+            ))}
+          </select>
         </div>
 
-        {/* Total Days (Left) + Actions (Right) */}
+        {/* Select Unit */}
         <div
           style={{
             display: "flex",
-            justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 20,
+            gap: 8,
+            position: "relative",
+            minWidth: 260,
           }}
         >
-          {/* Left: Total Days */}
+          <label style={{ fontWeight: 600, whiteSpace: "nowrap" }}>
+            Select Unit :
+          </label>
+
+          {/* Display Box */}
           <div
+            onClick={() => setShowPropertyDropdown(!showPropertyDropdown)}
             style={{
-              display: "flex",
-              gap: 10,
-              alignItems: "center",
-              fontWeight: "bold",
+              border: "1px solid #cbd5e0",
+              padding: "6px 10px",
+              borderRadius: 6,
+              background: "#fff",
+              cursor: "pointer",
             }}
           >
-            <span>Total Number of Days:</span>
-            <input
-              type="text"
-              value={globalTotalDays}
-              onChange={(e) => {
-                if (!/^\d*$/.test(e.target.value)) return;
+            {selectedPropertyId.length === propertyList.length
+              ? "All Units Selected"
+              : selectedPropertyId.length === 1
+                ? propertyList.find(
+                  (p) => p.PropertyId === selectedPropertyId[0]
+                )?.PropertyName
+                : `${selectedPropertyId.length} Units Selected`}
+          </div>
 
-                const newVal = Number(e.target.value || 0);
-                if (newVal < 1 || newVal > getDaysInMonth(month, year)) return;
-                setGlobalTotalDays(newVal);
-
-                setDayInputs((prev) => {
-                  const out = {};
-                  Object.keys(prev).forEach((id) => {
-                    if (prev[id].manualTotalDays) {
-                      out[id] = prev[id];
-                    } else {
-                      out[id] = { ...prev[id], totalDays: newVal };
-                    }
-                  });
-                  return out;
-                });
-              }}
+          {/* Dropdown */}
+          {showPropertyDropdown && (
+            <div
               style={{
-                width: 90,
-                textAlign: "center",
-                fontWeight: "bold",
-                padding: "4px 6px",
-                borderRadius: 4,
+                position: "absolute",
+                top: "100%",
+                left: 0,
+                right: 0,
+                background: "#fff",
                 border: "1px solid #cbd5e0",
-              }}
-            />
-          </div>
-
-          {/* Right: Actions */}
-          <div style={{ display: "flex", gap: 12 }}>
-            <button
-              disabled={selectedEmpIds.size === 0 || saving}
-              onClick={handleSaveAttendance}
-              style={{
-                background: selectedEmpIds.size === 0 ? "#ccc" : "#48bb78",
-                color: "#fff",
-                padding: "8px 20px",
                 borderRadius: 6,
+                padding: 8,
+                maxHeight: 220,
+                overflowY: "auto",
+                zIndex: 10,
               }}
             >
-              {saving
-                ? "Saving..."
-                : `Save Attendance (${selectedEmpIds.size})`}
-            </button>
+              {propertyList.map((p) => (
+                <div key={p.PropertyId}>
+                  <input
+                    type="checkbox"
+                    checked={selectedPropertyId.includes(p.PropertyId)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedPropertyId((prev) => [
+                          ...prev,
+                          p.PropertyId,
+                        ]);
+                      } else {
+                        setSelectedPropertyId((prev) =>
+                          prev.filter((id) => id !== p.PropertyId)
+                        );
+                      }
+                    }}
+                  />
+                  <span style={{ marginLeft: 8 }}>
+                    {p.PropertyName}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
-            <button
-              onClick={handleBulkDelete}
-              disabled={selectedEmpIds.size === 0 || deleting}
-              style={{
-                background:
-                  selectedEmpIds.size === 0 || deleting ? "#ccc" : "#e53e3e",
-                color: "#fff",
-                padding: "8px 20px",
-                borderRadius: 6,
-                cursor:
-                  selectedEmpIds.size === 0 || deleting
-                    ? "not-allowed"
-                    : "pointer",
-              }}
-            >
-              {deleting ? "Deleting..." : `Delete (${selectedEmpIds.size})`}
-            </button>
-          </div>
+      {/* Header */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 20,
+          maxWidth: "100%",
+        }}
+      >
+        <h2 style={{ fontWeight: "bold", fontSize: "2rem" }}>
+          Employee Attendance Summary
+        </h2>
+
+        <div style={{ display: "flex", gap: 8 }}>
+          <select
+            value={month}
+            onChange={(e) => setMonth(Number(e.target.value))}
+          >
+            {months.map((m) => (
+              <option key={m} value={m}>
+                {monthNames[m - 1]}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={year}
+            onChange={(e) => {
+              const newY = Number(e.target.value);
+              setYear(newY);
+              if (newY === currentYear && month > currentMonth) {
+                setMonth(currentMonth);
+              }
+            }}
+          >
+            {years.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+
+          <button
+            onClick={exportToCSV}
+            style={{
+              background: "#3182ce",
+              color: "#fff",
+              padding: "6px 14px",
+            }}
+          >
+            Export CSV
+          </button>
+        </div>
+      </div>
+
+      {/* Total Days (Left) + Actions (Right) */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 20,
+        }}
+      >
+        {/* Left: Total Days */}
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            alignItems: "center",
+            fontWeight: "bold",
+          }}
+        >
+          <span>Total Number of Days:</span>
+          <input
+            type="text"
+            value={globalTotalDays}
+            onChange={(e) => {
+              if (!/^\d*$/.test(e.target.value)) return;
+
+              const newVal = Number(e.target.value || 0);
+              if (newVal < 1 || newVal > getDaysInMonth(month, year)) return;
+              setGlobalTotalDays(newVal);
+
+              setDayInputs((prev) => {
+                const out = {};
+                Object.keys(prev).forEach((id) => {
+                  if (prev[id].manualTotalDays) {
+                    out[id] = prev[id];
+                  } else {
+                    out[id] = { ...prev[id], totalDays: newVal };
+                  }
+                });
+                return out;
+              });
+            }}
+            style={{
+              width: 90,
+              textAlign: "center",
+              fontWeight: "bold",
+              padding: "4px 6px",
+              borderRadius: 4,
+              border: "1px solid #cbd5e0",
+            }}
+          />
         </div>
 
-        {/* Table */}
+        {/* Right: Actions */}
+        <div style={{ display: "flex", gap: 12 }}>
+          {/* Hidden File Input */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            style={{ display: "none" }}
+            accept=".csv,.xlsx"
+            onChange={handleFileChange}
+          />
+
+          <button
+            onClick={handleImportClick}
+            style={{
+              background: "#2b6cb0",   // clean blue
+              color: "#fff",
+              padding: "8px 20px",
+              borderRadius: 6,
+            }}
+          >
+            Import
+          </button>
+
+          <button
+            disabled={selectedEmpIds.size === 0 || saving}
+            onClick={handleSaveAttendance}
+            style={{
+              background: selectedEmpIds.size === 0 ? "#ccc" : "#48bb78",
+              color: "#fff",
+              padding: "8px 20px",
+              borderRadius: 6,
+            }}
+          >
+            {saving
+              ? "Saving..."
+              : `Save Attendance (${selectedEmpIds.size})`}
+          </button>
+
+          <button
+            onClick={handleBulkDelete}
+            disabled={selectedEmpIds.size === 0 || deleting}
+            style={{
+              background:
+                selectedEmpIds.size === 0 || deleting ? "#ccc" : "#e53e3e",
+              color: "#fff",
+              padding: "8px 20px",
+              borderRadius: 6,
+              cursor:
+                selectedEmpIds.size === 0 || deleting
+                  ? "not-allowed"
+                  : "pointer",
+            }}
+          >
+            {deleting ? "Deleting..." : `Delete (${selectedEmpIds.size})`}
+          </button>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div
+        style={{
+          overflowX: "auto",
+          maxWidth: "100%",
+          border: "1px solid #e2e8f0",
+          borderRadius: 6,
+        }}
+      >
         <table
           style={{
             width: "100%",
             borderCollapse: "collapse",
-            tableLayout: "fixed",
+            tableLayout: "auto", // ✅ IMPORTANT
+            minWidth: "1600px",  // ensures columns don’t crush
           }}
         >
           <thead>
             <tr>
-              <th style={{ ...thStyle, width: 50 }}>S.No.</th>
-              <th style={{ ...thStyle, width: 200, textAlign: "left" }}>
+              <th rowSpan={2} style={{ ...thStyle, width: 50 }}>S.No.</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 120 }}>
+                Employee Code
+              </th>
+
+              <th rowSpan={2} style={{ ...thStyle, width: 200, textAlign: "left" }}>
                 Employee Name
               </th>
-              <th style={{ ...thStyle, width: 70 }}>Select</th>
-              <th style={{ ...thStyle, width: 130 }}>Working Days</th>
-              <th style={{ ...thStyle, width: 130 }}>Leave Days</th>
-              <th style={{ ...thStyle, width: 130 }}>Week Off</th>
-              <th style={{ ...thStyle, width: 100 }}>OT Days</th>
-              <th style={{ ...thStyle, width: 110 }}>OT Hours</th>
-              <th style={{ ...thStyle, width: 120 }}>Total Days</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 180 }}>
+                Designation
+              </th>
+              <th
+                rowSpan={2}
+                style={{
+                  ...thStyle,
+                  width: 70,
+                }}
+              >
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                  <span>Select</span>
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    onChange={(e) => toggleSelectAll(e.target.checked)}
+                  />
+                </div>
+              </th>
+              <th rowSpan={2} style={{ ...thStyle, width: 130 }}>Working Days</th>
+
+              {/* Leave group */}
+              <th colSpan={3} style={thStyle}>Leave</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 180 }}>Payable Days</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 130 }}>Weekly Off</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 100 }}>OT Days</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 110 }}>OT Hours</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 100 }}>NH Days</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 100 }}>FH Days</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 100 }}>Holidays</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 130 }}>Divide By Days</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 130 }}>OT Month Days</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 130 }}>PF Arrear</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 130 }}>Other Arrear</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 130 }}>Incentive</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 130 }}>Advance Ded</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 130 }}>Uniform Ded</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 130 }}>BGV Ded</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 130 }}>Room Ded</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 130 }}>Fine Ded</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 130 }}>Joining Kits</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 130 }}>Other Ded</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 130 }}>Food Ded</th>
+              <th rowSpan={2} style={{ ...thStyle, width: 100 }}>Status</th>
+            </tr>
+
+            <tr>
+              <th style={{ ...thStyle, width: 90 }}>EL</th>
+              <th style={{ ...thStyle, width: 90 }}>CL</th>
+              <th style={{ ...thStyle, width: 90 }}>SL</th>
             </tr>
           </thead>
 
           <tbody>
             {paginatedEmployees.map((emp, idx) => {
+              const empCode = emp?.Profile?.EmployeeCode || "-";
               if (!emp?.FacilityMember?.FacilityMemberId) return null;
               const empId = emp.FacilityMember.FacilityMemberId;
+
+              const designation =
+                emp?.EmployeeList?.Designation ||
+                emp?.Profile?.Designation ||
+                "-";
 
               const name =
                 emp?.Profile?.EmployeeName ||
@@ -691,22 +1261,34 @@ export default function AttendanceSheet() {
 
               const inp = dayInputs[empId] || {
                 workingDays: "",
-                leaveDays: "",
+                EL: "",
+                CL: "",
+                SL: "",
                 weekDaysOff: "",
                 otDays: "",
                 otHours: "",
                 totalDays: employeeSGMap[empId]?.totalDays ?? globalTotalDays,
                 manualTotalDays: false,
+                ...baseExtraFields,
               };
 
               return (
                 <tr key={empId}>
                   <td style={tdStyle}>{idx + 1}</td>
 
-                  <td
-                    style={{ ...tdStyle, textAlign: "left", fontWeight: 500 }}
-                  >
+                  {/* Employee Code */}
+                  <td style={{ ...tdStyle, fontWeight: 500 }}>
+                    {empCode}
+                  </td>
+
+                  {/* Employee Name */}
+                  <td style={{ ...tdStyle, textAlign: "left", fontWeight: 500 }}>
                     {name}
+                  </td>
+
+                  {/* Designation */}
+                  <td style={{ ...tdStyle, textAlign: "left" }}>
+                    {designation}
                   </td>
 
                   <td style={tdStyle}>
@@ -729,13 +1311,52 @@ export default function AttendanceSheet() {
                     />
                   </td>
 
+                  {/* EL */}
                   <td style={tdStyle}>
                     <input
                       type="text"
                       disabled={!isChecked}
-                      value={inp.leaveDays}
+                      value={inp.EL}
                       onChange={(e) =>
-                        handleInputChange(empId, "leaveDays", e.target.value)
+                        handleInputChange(empId, "EL", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
+
+                  {/* CL */}
+                  <td style={tdStyle}>
+                    <input
+                      type="text"
+                      disabled={!isChecked}
+                      value={inp.CL}
+                      onChange={(e) =>
+                        handleInputChange(empId, "CL", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
+
+                  {/* SL */}
+                  <td style={tdStyle}>
+                    <input
+                      type="text"
+                      disabled={!isChecked}
+                      value={inp.SL}
+                      onChange={(e) =>
+                        handleInputChange(empId, "SL", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
+
+                  <td style={tdStyle}>
+                    <input
+                      type="text"
+                      disabled={!isChecked}
+                      value={inp.divideByDays ?? ""}
+                      onChange={(e) =>
+                        handleInputChange(empId, "divideByDays", e.target.value)
                       }
                       style={inputStyle}
                     />
@@ -777,6 +1398,46 @@ export default function AttendanceSheet() {
                     />
                   </td>
 
+                  {/* NH Days */}
+                  <td style={tdStyle}>
+                    <input
+                      type="text"
+                      disabled={!isChecked}
+                      value={inp.nhDays}
+                      onChange={(e) =>
+                        handleInputChange(empId, "nhDays", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
+
+                  {/* FH Days */}
+                  <td style={tdStyle}>
+                    <input
+                      type="text"
+                      disabled={!isChecked}
+                      value={inp.fhDays}
+                      onChange={(e) =>
+                        handleInputChange(empId, "fhDays", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
+
+                  {/* Holidays */}
+                  <td style={tdStyle}>
+                    <input
+                      type="text"
+                      disabled={!isChecked}
+                      value={inp.holidays}
+                      onChange={(e) =>
+                        handleInputChange(empId, "holidays", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
+
+                  {/* Divide By Days */}
                   <td style={tdStyle}>
                     <input
                       type="text"
@@ -788,31 +1449,203 @@ export default function AttendanceSheet() {
                       style={inputStyle}
                     />
                   </td>
+
+                  {/* OT Month Days */}
+                  <td style={tdStyle}>
+                    <input
+                      type="text"
+                      disabled={!isChecked}
+                      value={inp.otMonthDays}
+                      onChange={(e) =>
+                        handleInputChange(empId, "otMonthDays", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
+
+                  {/* PF Arrear */}
+                  <td style={tdStyle}>
+                    <input
+                      type="text"
+                      disabled={!isChecked}
+                      value={inp.pfArrear}
+                      onChange={(e) =>
+                        handleInputChange(empId, "pfArrear", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
+
+                  {/* Other Arrear */}
+                  <td style={tdStyle}>
+                    <input
+                      type="text"
+                      disabled={!isChecked}
+                      value={inp.otherArrear}
+                      onChange={(e) =>
+                        handleInputChange(empId, "otherArrear", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
+
+                  {/* Incentive */}
+                  <td style={tdStyle}>
+                    <input
+                      type="text"
+                      disabled={!isChecked}
+                      value={inp.incentive}
+                      onChange={(e) =>
+                        handleInputChange(empId, "incentive", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
+
+                  {/* Advance Ded */}
+                  <td style={tdStyle}>
+                    <input
+                      type="text"
+                      disabled={!isChecked}
+                      value={inp.advanceDed}
+                      onChange={(e) =>
+                        handleInputChange(empId, "advanceDed", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
+
+                  {/* Uniform Ded */}
+                  <td style={tdStyle}>
+                    <input
+                      type="text"
+                      disabled={!isChecked}
+                      value={inp.uniformDed}
+                      onChange={(e) =>
+                        handleInputChange(empId, "uniformDed", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
+
+                  {/* BGV Ded */}
+                  <td style={tdStyle}>
+                    <input
+                      type="text"
+                      disabled={!isChecked}
+                      value={inp.bgvDed}
+                      onChange={(e) =>
+                        handleInputChange(empId, "bgvDed", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
+
+                  {/* Room Ded */}
+                  <td style={tdStyle}>
+                    <input
+                      type="text"
+                      disabled={!isChecked}
+                      value={inp.roomDed}
+                      onChange={(e) =>
+                        handleInputChange(empId, "roomDed", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
+
+                  {/* Fine Ded */}
+                  <td style={tdStyle}>
+                    <input
+                      type="text"
+                      disabled={!isChecked}
+                      value={inp.fineDed}
+                      onChange={(e) =>
+                        handleInputChange(empId, "fineDed", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
+
+                  {/* Joining Kits */}
+                  <td style={tdStyle}>
+                    <input
+                      type="text"
+                      disabled={!isChecked}
+                      value={inp.joiningKits}
+                      onChange={(e) =>
+                        handleInputChange(empId, "joiningKits", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
+
+                  {/* Other Ded */}
+                  <td style={tdStyle}>
+                    <input
+                      type="text"
+                      disabled={!isChecked}
+                      value={inp.otherDed}
+                      onChange={(e) =>
+                        handleInputChange(empId, "otherDed", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
+
+                  {/* Food Ded */}
+                  <td style={tdStyle}>
+                    <input
+                      type="text"
+                      disabled={!isChecked}
+                      value={inp.foodDed}
+                      onChange={(e) =>
+                        handleInputChange(empId, "foodDed", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
+
+                  <td style={tdStyle}>
+                    <input
+                      type="text"
+                      disabled={!isChecked}
+                      value={inp.status || ""}
+                      onChange={(e) =>
+                        handleInputChange(empId, "status", e.target.value)
+                      }
+                      style={{
+                        ...inputStyle,
+                        width: "120px",
+                      }}
+                    />
+                  </td>
+
                 </tr>
               );
             })}
           </tbody>
         </table>
+      </div>
 
-        <div style={{ textAlign: "center", marginTop: 20 }}>
-          <button
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage(currentPage - 1)}
-          >
-            Prev
-          </button>
+      <div style={{ textAlign: "center", marginTop: 20 }}>
+        <button
+          disabled={currentPage === 1}
+          onClick={() => setCurrentPage(currentPage - 1)}
+        >
+          Prev
+        </button>
 
-          <span style={{ margin: "0 12px" }}>
-            Page {currentPage} / {totalPages}
-          </span>
+        <span style={{ margin: "0 12px" }}>
+          Page {currentPage} / {totalPages}
+        </span>
 
-          <button
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage(currentPage + 1)}
-          >
-            Next
-          </button>
-        </div>
+        <button
+          disabled={currentPage === totalPages}
+          onClick={() => setCurrentPage(currentPage + 1)}
+        >
+          Next
+        </button>
       </div>
     </div>
   );

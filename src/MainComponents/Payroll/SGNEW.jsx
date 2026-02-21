@@ -396,6 +396,38 @@ export default function SGNEW() {
     adList.forEach((item) => {
       const name = item.Name;
 
+      // 🔥 Special case: OTAmount must bypass zero amount filtering
+      if (name === "OTAmount") {
+
+        const isUsedInPF = !!deductionAllowanceMap.PF?.OTAmount;
+        const isUsedInESI = !!deductionAllowanceMap.ESI?.OTAmount;
+        const isSelected = !!allowanceSelected[name];
+
+        if (!isUsedInPF && !isUsedInESI && !isSelected) {
+          return; // ❌ DO NOT SEND OTAmount
+        }
+
+        list.push({
+          AD_Id: item.ID,
+          Name: name,
+          Type: item.Type,
+          FixedAmount: 0,
+          CalculatedAmount: 0,
+          Formula: null,
+          FormulaId: null,
+
+          IsDouble: !!odDoubleFlags[name],
+          MultiplyValue: odDoubleFlags[name]
+            ? Number(multiplyValues[name]) || 0
+            : 0,
+
+          Isbasic: otBaseType === "Base",
+          Perday: false,
+        });
+
+        return;
+      }
+
       let fixed = 0;
       let calculated = 0;
 
@@ -421,23 +453,6 @@ export default function SGNEW() {
         } else {
           calculated = deductionAmounts[name] || 0;
         }
-      }
-
-      // Special case: OTAmount should always be included if selected
-      if (name === "OTAmount" && allowanceSelected["OTAmount"]) {
-        list.push({
-          AD_Id: item.ID,
-          Name: name,
-          Type: item.Type,
-          FixedAmount: 0,
-          IsDouble: odDoubleFlags[name] && multiplyValues[name] ? true : false,
-          MultiplyValue: multiplyValues[name] || null,
-          Formula: null,
-          FormulaId: null,
-          CalculatedAmount: 0,
-          Isbasic: otBaseType === "Base",
-        });
-        return;
       }
 
       // Allowances (A, OA) should ALWAYS be included if fixed amount > 0
@@ -467,10 +482,18 @@ export default function SGNEW() {
         CalculatedAmount: calculated,
         Formula: adValueType[name] === "FIXED" ? null : adFormula[name] || null,
         FormulaId: null,
+
         IsDouble: odDoubleFlags[name] || false,
+
+        MultiplyValue: odDoubleFlags[name]
+          ? Number(multiplyValues[name]) || 0
+          : 0,
+
+        Isbasic: false, // only OT uses Isbasic=true
+
         Perday:
           item.Type === "OD" &&
-          (name === "Food" || name === "Accommodation" || name === "Uniform")
+            (name === "Food" || name === "Accommodation" || name === "Uniform")
             ? !!perDayOD[name]
             : false,
       });
@@ -578,13 +601,30 @@ export default function SGNEW() {
         setOtBaseType(ad.Isbasic === false ? "Gross" : "Base");
       }
 
+      // 🔥 RESTORE OTAmount special flags
+      if (ad.Name === "OTAmount") {
+        setOdDoubleFlags((prev) => ({
+          ...prev,
+          OTAmount: !!ad.IsDouble,
+        }));
+
+        setMultiplyValues((prev) => ({
+          ...prev,
+          OTAmount: ad.MultiplyValue ?? null,
+        }));
+
+        setOtBaseType(ad.Isbasic === false ? "Gross" : "Base");
+      }
+
       // 🔥 RESTORE allowance usage FROM DEDUCTION FORMULA
       if (ad.Type === "D" && ad.Formula) {
         const usedAllowances = {};
 
         const tokens = ad.Formula.match(/[A-Z][A-Za-z0-9_]*/g) || [];
         tokens.forEach((t) => {
-          if (t !== "Base") {
+          if (t === "Base") {
+            usedAllowances["BaseSalary"] = true;
+          } else {
             usedAllowances[t] = true;
           }
         });
@@ -651,15 +691,6 @@ export default function SGNEW() {
         }
       }
     });
-    // 🔥 FORCE Base Salary inclusion for PF & ESI when loading SG
-    ["PF", "ESI"].forEach((d) => {
-      if (deductionAllowanceRestoreMap[d]) {
-        deductionAllowanceRestoreMap[d] = {
-          ...deductionAllowanceRestoreMap[d],
-          BaseSalary: true,
-        };
-      }
-    });
     // 🔥 COMMIT deduction → allowance dependency map FIRST
     setDeductionAllowanceMap(deductionAllowanceRestoreMap);
     // 🔥 Mark PF / ESI as active statutory deductions
@@ -721,53 +752,53 @@ export default function SGNEW() {
 
       const model = isUpdate
         ? {
-            // 🔁 PUT payload
-            SalaryGroup_IDs: existingSG.SalaryGroup_IDs,
-            Property_IDs: selectedPropertyId,
-            SalaryGroup: form.salaryGroupName,
-            BaseSalary: Number(form.baseSalary),
+          // 🔁 PUT payload
+          SalaryGroup_IDs: existingSG.SalaryGroup_IDs,
+          Property_IDs: selectedPropertyId,
+          SalaryGroup: form.salaryGroupName,
+          BaseSalary: Number(form.baseSalary),
 
-            PFLimit: pfLimit ? Number(pfLimit) : null,
-            ESILimit: esiLimit ? Number(esiLimit) : null,
-            TotalWorkingDays: Number(form.totalWorkingDays),
-            ShiftHours: Number(form.shiftHours),
-            Salarystartfrom: Number(form.salaryCycleFrom) || 0,
-            Salaryendto: Number(form.salaryCycleTo) || 0,
-            ExcludeSunday: form.excludeSunday,
-            MonthSundays:
-              form.monthlySundays !== "" ? Number(form.monthlySundays) : null,
+          PFLimit: pfLimit ? Number(pfLimit) : null,
+          ESILimit: esiLimit ? Number(esiLimit) : null,
+          TotalWorkingDays: Number(form.totalWorkingDays),
+          ShiftHours: Number(form.shiftHours),
+          Salarystartfrom: Number(form.salaryCycleFrom) || 0,
+          Salaryendto: Number(form.salaryCycleTo) || 0,
+          ExcludeSunday: form.excludeSunday,
+          MonthSundays:
+            form.monthlySundays !== "" ? Number(form.monthlySundays) : null,
 
-            Designations: designation ? [designation] : [],
-            ExcludedEmployeeIds: excludeEmployees ? excludedEmployeeIds : [],
-            AllowancesDeductions: adModel,
-            CreatedBy: 1,
-            UpdatedBy: 1,
-            IsActive: true,
-          }
+          Designations: designation ? [designation] : [],
+          ExcludedEmployeeIds: excludedEmployeeIds || [],
+          AllowancesDeductions: adModel,
+          CreatedBy: 1,
+          UpdatedBy: 1,
+          IsActive: true,
+        }
         : {
-            // ➕ POST payload
-            SalaryGroup_ID: 0,
-            PropertyIds: selectedPropertyId,
-            SalaryGroup: form.salaryGroupName,
-            BaseSalary: Number(form.baseSalary),
+          // ➕ POST payload
+          SalaryGroup_ID: 0,
+          PropertyIds: selectedPropertyId,
+          SalaryGroup: form.salaryGroupName,
+          BaseSalary: Number(form.baseSalary),
 
-            PFLimit: pfLimit ? Number(pfLimit) : null,
-            ESILimit: esiLimit ? Number(esiLimit) : null,
-            TotalWorkingDays: Number(form.totalWorkingDays),
-            ShiftHours: Number(form.shiftHours),
-            Salarystartfrom: Number(form.salaryCycleFrom) || 0,
-            Salaryendto: Number(form.salaryCycleTo) || 0,
-            ExcludeSunday: form.excludeSunday,
-            MonthSundays:
-              form.monthlySundays !== "" ? Number(form.monthlySundays) : null,
+          PFLimit: pfLimit ? Number(pfLimit) : null,
+          ESILimit: esiLimit ? Number(esiLimit) : null,
+          TotalWorkingDays: Number(form.totalWorkingDays),
+          ShiftHours: Number(form.shiftHours),
+          Salarystartfrom: Number(form.salaryCycleFrom) || 0,
+          Salaryendto: Number(form.salaryCycleTo) || 0,
+          ExcludeSunday: form.excludeSunday,
+          MonthSundays:
+            form.monthlySundays !== "" ? Number(form.monthlySundays) : null,
 
-            Designations: designation ? [designation] : [],
-            ExcludedEmployeeIds: excludeEmployees ? excludedEmployeeIds : [],
-            AllowancesDeductions: adModel,
-            CreatedBy: 1,
-            UpdatedBy: 1,
-            IsActive: true,
-          };
+          Designations: designation ? [designation] : [],
+          ExcludedEmployeeIds: excludedEmployeeIds || [],
+          AllowancesDeductions: adModel,
+          CreatedBy: 1,
+          UpdatedBy: 1,
+          IsActive: true,
+        };
 
       if (isUpdate) {
         // ✅ UPDATED: no separate ID param
@@ -917,9 +948,13 @@ export default function SGNEW() {
     const sgId = Number(emp.FacilityMember?.SG_Link_ID);
     if (!sgId) return "Not Assigned";
 
-    const sg = salaryGroups.find((s) => Number(s.SalaryGroup_ID) === sgId);
+    const sg = salaryGroups.find(
+      (s) =>
+        Array.isArray(s.SalaryGroup_IDs) &&
+        s.SalaryGroup_IDs.some((id) => Number(id) === sgId)
+    );
 
-    return sg?.SalaryGroup || "Not Assigned";
+    return sg ? sg.SalaryGroup : "Not Assigned";
   };
 
   const activateDeductionWithBase = (deductionName) => {
@@ -987,9 +1022,9 @@ export default function SGNEW() {
           />
 
           <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
-            {/* Select Unit */}
+            {/* Select Client */}
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <label style={{ fontWeight: 600 }}>Select Unit :</label>
+              <label style={{ fontWeight: 600 }}>Select Client :</label>
               <select
                 className="form-control"
                 value={selectedUnitId || ""}
@@ -1011,7 +1046,7 @@ export default function SGNEW() {
               </select>
             </div>
 
-            {/* Select Property */}
+            {/* Select Unit */}
             <div
               style={{
                 display: "flex",
@@ -1022,7 +1057,7 @@ export default function SGNEW() {
               }}
             >
               <label style={{ fontWeight: 600, whiteSpace: "nowrap" }}>
-                Select Property :
+                Select Unit :
               </label>
 
               {/* Dropdown trigger */}
@@ -1456,11 +1491,14 @@ export default function SGNEW() {
                             fontWeight: 500,
                           }}
                           onClick={(e) => {
-                            e.stopPropagation(); // 🔥 critical
+                            e.stopPropagation();
 
-                            const sgId = emp.FacilityMember?.SG_Link_ID;
+                            const sgId = Number(emp.FacilityMember?.SG_Link_ID);
+
                             const sg = salaryGroups.find(
-                              (s) => Number(s.SalaryGroup_ID) === Number(sgId),
+                              (s) =>
+                                Array.isArray(s.SalaryGroup_IDs) &&
+                                s.SalaryGroup_IDs.some((id) => Number(id) === sgId)
                             );
 
                             if (sg) setPreviewSG(sg);
