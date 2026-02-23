@@ -10,6 +10,7 @@ export default function OTReport() {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [otEntries, setOtEntries] = useState({});
+  const [existingOTEmployees, setExistingOTEmployees] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -94,14 +95,16 @@ export default function OTReport() {
       // ]
 
       const formattedEntries = {};
+      const existingIds = [];
 
       if (Array.isArray(data)) {
         data.forEach((item) => {
           const empId = item.EmployeeID;
 
+          existingIds.push(empId); // <-- TRACK EXISTING EMPLOYEES
+
           const day = parseInt(item.OTDate.split("T")[0].split("-")[2]);
 
-          // Fill editable inputs state
           formattedEntries[empId] = {
             ...formattedEntries[empId],
             [day]: {
@@ -110,6 +113,8 @@ export default function OTReport() {
           };
         });
       }
+
+      setExistingOTEmployees(existingIds);
 
       setOtEntries(formattedEntries);
 
@@ -160,6 +165,10 @@ export default function OTReport() {
             Year: parseInt(year),
             OTEntries,
           };
+
+          if (existingOTEmployees.includes(empId)) {
+            return updateMonthlyOTReport(model);
+          }
 
           return saveMonthlyOTReport(model);
         })

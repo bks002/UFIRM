@@ -20,11 +20,21 @@ import { getAllDesignations } from "../../Services/DesignationService";
 import { MultiSelect } from "primereact/multiselect";
 
 import FacilityService, {
-  getEmployeesByOffice,
+  // getEmployeesByOffice,
   createEmployee,
   updateEmployee,
   deleteEmployee,
 } from "../../Services/FacilityService";
+import { getEmployeesByOffices } from "../../Services/PayrollService";
+
+import {
+  getAllClients,
+  getClientByPropertyId,
+  getPropertiesByClientId,
+} from "../../Services/ClientService";
+
+import { getPropertyById } from "../../Services/PropertyService";
+import { getBranchById } from "../../Services/BranchMaster";
 
 // Import existing components from old project
 import SalaryGroupView from "../../ReactComponents/DataGrid/SalaryGroupView.jsx";
@@ -42,7 +52,20 @@ const getSalaryGroupsByDesignation = async (propertyId, designation) => {
 
 const StaffPage = () => {
   const toast = useRef(null);
-  const propertyId = useSelector((state) => state.Commonreducer.puidn);
+  // const propertyId = useSelector((state) => state.Commonreducer.puidn);
+  const reduxPropertyId = useSelector((state) => state.Commonreducer.puidn);
+
+  const [unitList, setUnitList] = useState([]);
+  const [selectedUnitId, setSelectedUnitId] = useState(null);
+
+  const [propertyList, setPropertyList] = useState([]);
+  const [selectedPropertyId, setSelectedPropertyId] = useState([]);
+
+  const propertyId =
+    selectedPropertyId[0] || reduxPropertyId || null;
+
+  const [branchName, setBranchName] = useState("");
+  const [clientName, setClientName] = useState("");
   const [customDesignation, setCustomDesignation] = useState("");
   const [designations, setDesignations] = useState([]);
   const [isLoadingDesignations, setIsLoadingDesignations] = useState(false);
@@ -92,6 +115,13 @@ const StaffPage = () => {
   const [pfNumber, setPfNumber] = useState("");
   const [esiNumber, setEsiNumber] = useState("");
   const [profileImage, setProfileImage] = useState(null);
+  const [documents, setDocuments] = useState({
+    profileImage: [],
+    aadhaar: [],
+    pan: [],
+    bankPassbook: [],
+    others: []
+  });
   const [family, setFamily] = useState("");
 
   const [workHistories, setWorkHistories] = useState([
@@ -115,35 +145,6 @@ const StaffPage = () => {
     { label: "Permanent", value: "Permanent" },
     { label: "Contractual", value: "Contractual" }
   ];
-
-  const fetchEmployee = async () => {
-    try {
-      const data = await getEmployeesByOffice(propertyId);
-      const list = Array.isArray(data) ? data : [data];
-      setStaff(list);
-
-      const managers = list
-        .filter(row =>
-          row?.FacilityMember?.FacilityMemberId &&
-          row?.FacilityMember?.FacilityMemberId !== selectedFacilityMemberId
-        )
-        .map(row => ({
-          label: row?.Profile?.EmployeeName || "Unknown",
-          value: row.FacilityMember.FacilityMemberId
-        }));
-
-      setManagerOptions(managers);
-    } catch (err) {
-      toast.current.show({
-        severity: "error",
-        summary: "Error",
-        detail: "Failed to load staff"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
 
   // ADD THIS FUNCTION
   const fetchSalaryGroups = async (designation) => {
@@ -176,6 +177,64 @@ const StaffPage = () => {
       setIsLoadingSalaryGroups(false);
     }
   };
+
+  useEffect(() => {
+    const loadUnits = async () => {
+      try {
+        if (Number(reduxPropertyId) > 0) {
+          const res = await getClientByPropertyId(reduxPropertyId);
+
+          setUnitList(res ? [res] : []);
+          setSelectedUnitId(res?.ClientID || null);
+
+          // 🔥 ADD THIS LINE
+          setSelectedPropertyId([reduxPropertyId]);
+
+        } else {
+          const res = await getAllClients();
+          setUnitList(res || []);
+        }
+      } catch (err) {
+        console.log("Failed to load clients", err);
+      }
+    };
+
+    loadUnits();
+  }, [reduxPropertyId]);
+
+  useEffect(() => {
+    const loadProperties = async () => {
+      try {
+        if (!selectedUnitId) {
+          setPropertyList([]);
+          setSelectedPropertyId([]);
+          setStaff([]);
+          return;
+        }
+
+        const res = await getPropertiesByClientId(selectedUnitId);
+        const properties = res || [];
+
+        setPropertyList(properties);
+
+        // 🔥 FIX STARTS HERE
+        if (reduxPropertyId) {
+          setSelectedPropertyId([reduxPropertyId]);
+        } else if (properties.length === 1) {
+          setSelectedPropertyId([properties[0].PropertyId]);
+        } else {
+          setSelectedPropertyId([]);
+        }
+        // 🔥 FIX ENDS HERE
+
+      } catch (err) {
+        console.log("Failed to load properties", err);
+      }
+    };
+
+    loadProperties();
+  }, [selectedUnitId, reduxPropertyId]);
+
   // Load staff
   useEffect(() => {
     const loadInitialData = async () => {
@@ -211,13 +270,120 @@ const StaffPage = () => {
         setIsLoadingDesignations(false);
       }
 
-      // Fetch employees
-      if (propertyId){ fetchEmployee();
-       fetchManagersForDropdown(); }
     };
 
     loadInitialData();
+  }, []);
+
+  useEffect(() => {
+    const loadEmployees = async () => {
+      try {
+        let officeIds = [];
+
+        if (selectedPropertyId.length > 0) {
+          officeIds = selectedPropertyId;
+        } else if (reduxPropertyId) {
+          officeIds = [reduxPropertyId];
+        }
+
+        if (!officeIds.length) {
+          setStaff([]);
+          return;
+        }
+
+        setLoading(true);
+
+        const data = await getEmployeesByOffices(officeIds);
+        setStaff(data || []);
+
+      } catch (err) {
+        console.error("Employee load failed", err);
+        setStaff([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadEmployees();
+  }, [selectedPropertyId, reduxPropertyId]);
+
+  useEffect(() => {
+    const loadBranch = async () => {
+      if (!propertyId) {
+        setBranchName("");
+        return;
+      }
+
+      try {
+        // 1️⃣ Get property
+        const property = await getPropertyById(propertyId);
+
+        if (!property?.BranchCode) {
+          setBranchName("");
+          return;
+        }
+
+        // 2️⃣ Get branch by BranchCode
+        const branch = await getBranchById(property.BranchCode);
+
+        setBranchName(branch?.BranchName || "");
+      } catch (err) {
+        console.error("Branch load failed:", err);
+        setBranchName("");
+      }
+    };
+
+    loadBranch();
   }, [propertyId]);
+
+  useEffect(() => {
+    const loadClient = async () => {
+      if (!propertyId) {
+        setClientName("");
+        return;
+      }
+
+      try {
+        const client = await getClientByPropertyId(propertyId);
+        setClientName(client?.ClientName || "");
+      } catch (err) {
+        console.error("Client load failed:", err);
+        setClientName("");
+      }
+    };
+
+    loadClient();
+  }, [propertyId]);
+
+  useEffect(() => {
+    const managers = staff
+      .filter(row =>
+        row?.FacilityMember?.FacilityMemberId &&
+        row?.FacilityMember?.FacilityMemberId !== selectedFacilityMemberId
+      )
+      .map(row => ({
+        label: row?.Profile?.EmployeeName || "Unknown",
+        value: row.FacilityMember.FacilityMemberId
+      }));
+
+    setManagerOptions(managers);
+  }, [staff, selectedFacilityMemberId]);
+
+  const addDocument = (type, file) => {
+    if (!file) return;
+
+    setDocuments(prev => ({
+      ...prev,
+      [type]: [...prev[type], file]
+    }));
+  };
+
+  const removeDocument = (type, index) => {
+    setDocuments(prev => ({
+      ...prev,
+      [type]: prev[type].filter((_, i) => i !== index)
+    }));
+  };
 
   const getManagerNames = (managerIds = []) => {
     if (!Array.isArray(managerIds) || managerIds.length === 0) return [];
@@ -229,60 +395,6 @@ const StaffPage = () => {
       .map(row => row?.Profile?.EmployeeName)
       .filter(Boolean);
   };
-const fetchManagersForDropdown = async () => {
-  try {
-    let employees = [];
-
-    // Always include propertyId 27
-    if (propertyId === 27) {
-      // Redux already gives 27 → fetch once
-      const data = await getEmployeesByOffice(27);
-      employees = Array.isArray(data) ? data : [data];
-    } else {
-      // Fetch both: 27 + redux propertyId
-      const [defaultData, reduxData] = await Promise.all([
-        getEmployeesByOffice(27),
-        getEmployeesByOffice(propertyId),
-      ]);
-
-      const list27 = Array.isArray(defaultData) ? defaultData : [defaultData];
-      const listRedux = Array.isArray(reduxData) ? reduxData : [reduxData];
-
-      // Merge both lists
-      employees = [...list27, ...listRedux];
-    }
-
-    // 🔥 Remove duplicates by FacilityMemberId
-    const uniqueMap = new Map();
-    employees.forEach(row => {
-      const id = row?.FacilityMember?.FacilityMemberId;
-      if (id && !uniqueMap.has(id)) {
-        uniqueMap.set(id, row);
-      }
-    });
-
-    const uniqueEmployees = Array.from(uniqueMap.values());
-
-    // Build manager dropdown
-    const managers = uniqueEmployees
-      .filter(row =>
-        row?.FacilityMember?.FacilityMemberId &&
-        row?.FacilityMember?.FacilityMemberId !== selectedFacilityMemberId
-      )
-      .map(row => ({
-        label: row?.Profile?.EmployeeName || "Unknown",
-        value: row.FacilityMember.FacilityMemberId
-      }));
-
-    setManagerOptions(managers);
-  } catch (err) {
-    toast.current?.show({
-      severity: "error",
-      summary: "Error",
-      detail: "Failed to load managers"
-    });
-  }
-};
 
   // Salary & Loan actions
   const openSalaryGroupView = (row) => {
@@ -367,6 +479,13 @@ const fetchManagersForDropdown = async () => {
     setSalaryGroups([]);
     setSelectedSalaryGroup(null);
     setSalaryGroupDetails(null);
+    setDocuments({
+      profileImage: [],
+      aadhaar: [],
+      pan: [],
+      bankPassbook: [],
+      others: []
+    });
   };
 
   const openEditDialog = (row) => {
@@ -464,6 +583,15 @@ const fetchManagersForDropdown = async () => {
   };
 
   const saveStaff = async () => {
+    // 🔒 Ensure unit/property selected
+    if (!propertyId) {
+      toast.current.show({
+        severity: "warn",
+        summary: "Warning",
+        detail: "Please select a unit first",
+      });
+      return;
+    }
     // Validation
     if (!employeeName?.trim() || !employeeCode?.trim() || !mobile?.trim() || !gender) {
       toast.current.show({
@@ -672,8 +800,8 @@ const fetchManagersForDropdown = async () => {
           detail: "Staff updated successfully"
         });
 
-        // Refresh the list
-        await fetchEmployee();
+        // trigger reload by resetting selectedPropertyId
+        setSelectedPropertyId([...selectedPropertyId]);
       } else {
         const response = await createEmployee(employeeData);
         toast.current.show({
@@ -682,8 +810,8 @@ const fetchManagersForDropdown = async () => {
           detail: "Staff member added successfully"
         });
 
-        // Refresh the list
-        await fetchEmployee();
+        // trigger reload by resetting selectedPropertyId
+        setSelectedPropertyId([...selectedPropertyId]);
       }
 
       setDialogVisible(false);
@@ -789,6 +917,42 @@ const fetchManagersForDropdown = async () => {
     }
   };
 
+  const renderDocumentSection = (label, type, accept) => {
+    return (
+      <div className="border rounded p-3 mb-4 shadow-sm bg-light">
+        <div className="d-flex justify-content-between align-items-center mb-2">
+          <h6 className="m-0">{label}</h6>
+        </div>
+
+        {documents[type].map((file, index) => (
+          <div key={index} className="d-flex align-items-center justify-content-between mb-2">
+            <span>{file.name}</span>
+            <Button
+              icon="pi pi-trash"
+              className="p-button-text p-button-danger"
+              onClick={() => removeDocument(type, index)}
+            />
+          </div>
+        ))}
+
+        <div className="mt-2">
+          <label className="p-button p-button-text p-button-success">
+            <i className="pi pi-plus mr-2"></i> Add
+            <input
+              type="file"
+              accept={accept}
+              hidden
+              onChange={(e) => {
+                addDocument(type, e.target.files[0]);
+                e.target.value = null;
+              }}
+            />
+          </label>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <PrimeReactProvider>
       <div className="content-wrapper">
@@ -798,6 +962,46 @@ const fetchManagersForDropdown = async () => {
 
             <div className="card">
               <div className="p-3">
+                <div className="d-flex gap-4 mb-3">
+
+                  {/* Select Client */}
+                  <div>
+                    <label>Select Client:</label>
+                    <select
+                      value={selectedUnitId || ""}
+                      onChange={(e) => {
+                        setSelectedUnitId(Number(e.target.value));
+                        setSelectedPropertyId([]);
+                      }}
+                    >
+                      <option value="">-- Select Client --</option>
+                      {unitList.map((u) => (
+                        <option key={u.ClientID} value={u.ClientID}>
+                          {u.ClientName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Select Unit */}
+                  <div>
+                    <label>Select Unit:</label>
+                    <select
+                      value={selectedPropertyId[0] || ""}
+                      onChange={(e) => {
+                        setSelectedPropertyId([Number(e.target.value)]);
+                      }}
+                    >
+                      <option value="">-- Select Unit --</option>
+                      {propertyList.map((p) => (
+                        <option key={p.PropertyId} value={p.PropertyId}>
+                          {p.PropertyName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                </div>
                 <DataTable
                   value={staff}
                   dataKey="FacilityMember.FacilityMemberId"
@@ -879,6 +1083,18 @@ const fetchManagersForDropdown = async () => {
             {/* Personal Details */}
             <TabPanel header="Personal Details">
               <div className="p-fluid">
+                <label>Branch Name</label>
+                <InputText
+                  value={branchName}
+                  readOnly
+                  className="mb-3"
+                />
+                <label>Client Name</label>
+                <InputText
+                  value={clientName}
+                  readOnly
+                  className="mb-3"
+                />
                 <label>Employee Code *</label>
                 <InputText
                   placeholder="Employee Code"
@@ -1047,14 +1263,6 @@ const fetchManagersForDropdown = async () => {
                   onChange={(e) => setStateName(e.target.value)}
                   className="mb-3"
                 />
-
-                <label>Profile Image</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setProfileImage(e.target.files[0])}
-                  className="form-control mb-3"
-                />
               </div>
             </TabPanel>
 
@@ -1220,6 +1428,37 @@ const fetchManagersForDropdown = async () => {
                 />
               </div>
             </TabPanel>
+            <TabPanel header="Upload Documents">
+              <div className="p-fluid">
+
+                <div className="border rounded p-3 mb-4 shadow-sm bg-light">
+                  <h6>Profile Image</h6>
+
+                  {profileImage && (
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <span>{profileImage.name}</span>
+                      <Button
+                        icon="pi pi-trash"
+                        className="p-button-text p-button-danger"
+                        onClick={() => setProfileImage(null)}
+                      />
+                    </div>
+                  )}
+
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setProfileImage(e.target.files[0])}
+                    className="form-control"
+                  />
+                </div>
+                {renderDocumentSection("Aadhaar Card", "aadhaar", "image/*,.pdf")}
+                {renderDocumentSection("Pan Card", "pan", "image/*,.pdf")}
+                {renderDocumentSection("Bank Passbook", "bankPassbook", "image/*,.pdf")}
+                {renderDocumentSection("Others", "others", "*")}
+
+              </div>
+            </TabPanel>
           </TabView>
         </Dialog>
 
@@ -1235,6 +1474,18 @@ const fetchManagersForDropdown = async () => {
             <TabView>
               <TabPanel header="Personal Details">
                 <div className="p-fluid">
+                  <label>Branch Name</label>
+                  <InputText
+                    value={branchName}
+                    readOnly
+                    className="mb-3"
+                  />
+                  <label>Client Name</label>
+                  <InputText
+                    value={clientName}
+                    readOnly
+                    className="mb-3"
+                  />
                   <label>Employee Code</label>
                   <InputText
                     value={viewData.Profile?.EmployeeCode || ""}
@@ -1468,6 +1719,16 @@ const fetchManagersForDropdown = async () => {
                       <p className="text-muted">No work history available</p>
                     );
                   })()}
+                </div>
+              </TabPanel>
+              <TabPanel header="Upload Documents">
+                <div className="p-fluid">
+                  {["profileImage", "aadhaar", "pan", "bankPassbook", "others"].map(type => (
+                    <div key={type} className="mb-3">
+                      <h6>{type}</h6>
+                      <p className="text-muted">Document preview will appear after backend integration.</p>
+                    </div>
+                  ))}
                 </div>
               </TabPanel>
             </TabView>

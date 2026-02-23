@@ -24,6 +24,7 @@ import { getAllClients } from "../../Services/ClientService";
 import { getAllServices } from "../../Services/ServiceService";
 import { getAllPropertyTypes } from "../../Services/PropertyTypeService";
 import { getAllCities } from "../../Services/CityService";
+import { getAllBranches } from "../../Services/BranchMaster";
 
 export default function PropertyMaster() {
   const toast = useRef(null);
@@ -35,6 +36,7 @@ export default function PropertyMaster() {
 
   const [dialogVisible, setDialogVisible] = useState(false);
   const [viewDialogVisible, setViewDialogVisible] = useState(false);
+  const [branches, setBranches] = useState([]);
 
   const [editId, setEditId] = useState(null);
   const [viewData, setViewData] = useState(null);
@@ -61,6 +63,7 @@ export default function PropertyMaster() {
     TotalWorkingDays: 0,
     ClientID: 0,
     ServiceIds: [],
+    BranchCode: 0,
 
     // NEW (ADDED)
     SalaryCycleDayFrom: 1,
@@ -140,6 +143,20 @@ export default function PropertyMaster() {
       );
     } catch { }
 
+    // 6️⃣ Branches
+    try {
+      const branchList = await getAllBranches();
+      setBranches(
+        branchList
+          .filter(b => b.IsActive) // optional but good practice
+          .map(b => ({
+            label: b.BranchName,
+            value: b.BranchCode
+          }))
+      );
+    } catch {
+      console.log("Branch fetch failed");
+    }
     setLoading(false);
   };
 
@@ -168,6 +185,7 @@ export default function PropertyMaster() {
       TotalWorkingDays: 0,
       ClientID: 0,
       ServiceIds: [],
+      BranchCode: 0,
 
       // ✅ KEEP NEW FIELDS
       SalaryCycleDayFrom: 1,
@@ -208,6 +226,7 @@ export default function PropertyMaster() {
         ShiftHour: data.ShiftHours || 0,
         TotalWorkingDays: data.TotalWorkingDays || 0,
         ClientID: data.ClientID || 0,
+        BranchCode: data.BranchCode ?? 0,
         ServiceIds: data.ServiceIds || [],
 
         // ✅ MAP NEW FIELDS
@@ -400,6 +419,12 @@ export default function PropertyMaster() {
             <Column field="Pincode" header="Pincode" />
             <Column header="City" body={cityBodyTemplate} />
             <Column header="Client" body={clientBodyTemplate} />
+            <Column
+              header="Branch"
+              body={(row) =>
+                branches.find(b => b.value === row.BranchCode)?.label || "—"
+              }
+            />
 
             <Column
               header="Actions"
@@ -532,6 +557,17 @@ export default function PropertyMaster() {
                   value={form.ClientID}
                   options={clients}
                   onChange={(e) => setForm({ ...form, ClientID: e.value })}
+                />
+
+                <label>Branch Name</label>
+                <Dropdown
+                  className="w-100 mb-2"
+                  value={form.BranchCode}
+                  options={branches}
+                  placeholder="Select Branch"
+                  onChange={(e) =>
+                    setForm({ ...form, BranchCode: e.value })
+                  }
                 />
 
                 <label>Services</label>
@@ -744,11 +780,16 @@ export default function PropertyMaster() {
                 </div>
               </div>
 
-              {/* CLIENT & SERVICES */}
+              {/* CLIENT & BRANCH & SERVICES */}
               <h6 className="mt-3 mb-2">Client & Services</h6>
               <div className="mb-2">
                 <b>Client:</b>{" "}
                 {clients.find((c) => c.value === viewData.ClientID)?.label}
+              </div>
+
+              <div className="mb-2">
+                <b>Branch:</b>{" "}
+                {branches.find((b) => b.value === viewData.BranchCode)?.label || "—"}
               </div>
 
               <div className="mb-2">

@@ -1,13 +1,26 @@
 import React, { useState, useEffect } from "react";
 import {
-  getSalaryAllowancesByProperty,
-  getEmployeesByOffice,
+  getSalaryAllowancesByProperties,
+  getEmployeesByOffices,
   assignSalaryGroupToFacilityMember,
 } from "../../Services/PayrollService";
+import {
+  getAllClients,
+  getClientByPropertyId,
+  getPropertiesByClientId,
+} from "../../Services/ClientService";
 import { useSelector } from "react-redux";
 
 export default function DesignationLinking() {
-  const propertyId = useSelector((state) => state.Commonreducer.puidn);
+  const reduxPropertyId = useSelector((state) => state.Commonreducer.puidn);
+
+  const [unitList, setUnitList] = useState([]);
+  const [selectedUnitId, setSelectedUnitId] = useState(null);
+
+  const [propertyList, setPropertyList] = useState([]);
+  const [selectedPropertyId, setSelectedPropertyId] = useState([]);
+
+  const [showPropertyDropdown, setShowPropertyDropdown] = useState(false);
 
   const [salaryGroups, setSalaryGroups] = useState([]);
   const [salaryGroup, setSalaryGroup] = useState(null);
@@ -52,9 +65,21 @@ export default function DesignationLinking() {
     FETCH EMPLOYEES
   ------------------------------------------------------*/
   async function fetchEmployees() {
-    if (!propertyId) return;
     try {
-      const data = await getEmployeesByOffice(propertyId);
+      let officeIds = [];
+
+      if (selectedPropertyId.length > 0) {
+        officeIds = selectedPropertyId;
+      } else if (reduxPropertyId) {
+        officeIds = [reduxPropertyId];
+      }
+
+      if (!officeIds.length) {
+        setEmployeeList([]);
+        return;
+      }
+
+      const data = await getEmployeesByOffices(officeIds);
 
       const employees = (data || [])
         .map((item) => ({
@@ -86,31 +111,97 @@ export default function DesignationLinking() {
     FETCH SALARY GROUPS
   ------------------------------------------------------*/
   async function fetchSalaryGroups() {
-    if (!propertyId) return;
     try {
-      const response = await getSalaryAllowancesByProperty(propertyId);
+      let propertyIds = [];
+
+      // 1️⃣ If user selected units from dropdown
+      if (selectedPropertyId.length > 0) {
+        propertyIds = selectedPropertyId;
+      }
+
+      // 2️⃣ Fallback to navbar property
+      else if (reduxPropertyId) {
+        propertyIds = [reduxPropertyId];
+      }
+
+      if (!propertyIds.length) {
+        setSalaryGroups([]);
+        setSalaryGroupsData([]);
+        return;
+      }
+
+      const response = await getSalaryAllowancesByProperties(propertyIds);
 
       if (Array.isArray(response)) {
         setSalaryGroupsData(response);
+
         setSalaryGroups(
           response.map((item) => ({
-            id: item.SalaryGroup_ID,
+            id: item.SalaryGroup_IDs?.[0], // important change
             name: item.SalaryGroup,
           }))
         );
       }
-    } catch {
+    } catch (error) {
+      console.error("Error loading salary groups:", error);
       setSalaryGroups([]);
+      setSalaryGroupsData([]);
     }
   }
 
   useEffect(() => {
     fetchEmployees();
-  }, [propertyId]);
+    setSalaryGroup(null);
+    setSelectedGroupData(null);
+  }, [selectedPropertyId, reduxPropertyId]);
 
   useEffect(() => {
     fetchSalaryGroups();
-  }, [propertyId]);
+  }, [selectedPropertyId, reduxPropertyId]);
+
+  useEffect(() => {
+    const loadUnits = async () => {
+      try {
+        if (Number(reduxPropertyId) > 0) {
+          const res = await getClientByPropertyId(reduxPropertyId);
+          setUnitList(res ? [res] : []);
+          setSelectedUnitId(res?.ClientID || null);
+        } else {
+          const res = await getAllClients();
+          setUnitList(res || []);
+        }
+      } catch (err) {
+        console.log("Failed to load units", err);
+      }
+    };
+
+    loadUnits();
+  }, [reduxPropertyId]);
+
+  useEffect(() => {
+    const loadProperties = async () => {
+      try {
+        if (!selectedUnitId) {
+          setPropertyList([]);
+          setSelectedPropertyId([]);
+          return;
+        }
+
+        const res = await getPropertiesByClientId(selectedUnitId);
+        const properties = res || [];
+
+        setPropertyList(properties);
+
+        // default select all
+        const allIds = properties.map((p) => p.PropertyId);
+        setSelectedPropertyId(allIds);
+      } catch (err) {
+        console.log("Failed to load properties", err);
+      }
+    };
+
+    loadProperties();
+  }, [selectedUnitId]);
 
   /*------------------------------------------------------
     EMPLOYEE SELECT HANDLER
@@ -143,6 +234,8 @@ export default function DesignationLinking() {
       await fetchEmployees();
       alert("Salary group assigned successfully.");
       setSelectedEmployees([]);
+      setSalaryGroup(null);
+      setSelectedGroupData(null);
     } catch {
       alert("Operation failed.");
     } finally {
@@ -155,15 +248,17 @@ export default function DesignationLinking() {
   ------------------------------------------------------*/
   const getGroupNameById = (id) => {
     if (!id) return null;
+
     const group = salaryGroupsData.find(
-      (g) => parseInt(g.SalaryGroup_ID) === parseInt(id)
+      (g) => g.SalaryGroup_IDs?.includes(parseInt(id))
     );
+
     return group ? group.SalaryGroup : null;
   };
 
   const handleGroupClick = (groupId) => {
     const group = salaryGroupsData.find(
-      (g) => parseInt(g.SalaryGroup_ID) === parseInt(groupId)
+      (g) => g.SalaryGroup_IDs?.includes(parseInt(groupId))
     );
     if (group) {
       setPopupGroup(group);
@@ -192,6 +287,101 @@ export default function DesignationLinking() {
           background: "#f7fafc",
         }}
       >
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 40,
+          marginBottom: 20,
+          background: "#f9fafb",
+          padding: "8px 14px",
+          borderRadius: 8,
+          border: "1px solid #e5e7eb",
+        }}>
+          {/* Select Client */}
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <label style={{ fontWeight: 600 }}>Select Client :</label>
+            <select
+              value={selectedUnitId || ""}
+              onChange={(e) => {
+                setSelectedUnitId(Number(e.target.value));
+                setSelectedPropertyId([]);
+              }}
+            >
+              <option value="">-- Select Client --</option>
+              {unitList.map((u) => (
+                <option key={u.ClientID} value={u.ClientID}>
+                  {u.ClientName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Select Unit Multi Select */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            position: "relative"
+          }}>
+            <label style={{ fontWeight: 600, minWidth: 100 }}>
+              Select Unit :
+            </label>
+
+            <div
+              onClick={() => setShowPropertyDropdown(!showPropertyDropdown)}
+              style={{
+                border: "1px solid #cbd5e0",
+                padding: "6px 12px",
+                borderRadius: 6,
+                background: "#fff",
+                cursor: "pointer",
+                minWidth: 180,
+                textAlign: "center"
+              }}
+            >
+              {selectedPropertyId.length === propertyList.length
+                ? "All Units Selected"
+                : `${selectedPropertyId.length} Unit${selectedPropertyId.length !== 1 ? "s" : ""} Selected`}
+            </div>
+
+            {showPropertyDropdown && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "40px",
+                  left: "112px",
+                  background: "#fff",
+                  border: "1px solid #cbd5e0",
+                  borderRadius: 6,
+                  padding: 10,
+                  maxHeight: 220,
+                  overflowY: "auto",
+                  zIndex: 1000,
+                  boxShadow: "0 4px 10px rgba(0,0,0,0.1)"
+                }}
+              >
+                {propertyList.map((p) => (
+                  <div key={p.PropertyId} style={{ marginBottom: 6 }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedPropertyId.includes(p.PropertyId)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedPropertyId((prev) => [...prev, p.PropertyId]);
+                        } else {
+                          setSelectedPropertyId((prev) =>
+                            prev.filter((id) => id !== p.PropertyId)
+                          );
+                        }
+                      }}
+                    />
+                    <span style={{ marginLeft: 8 }}>{p.PropertyName}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
         <h2 style={{ fontWeight: "bold", color: "#2a4365", marginBottom: 20 }}>
           Salary Designation Linking
         </h2>
@@ -215,7 +405,7 @@ export default function DesignationLinking() {
                 const value = parseInt(e.target.value);
                 setSalaryGroup(value);
                 const groupData = salaryGroupsData.find(
-                  (g) => g.SalaryGroup_ID === value
+                  (g) => g.SalaryGroup_IDs?.includes(value)
                 );
                 setSelectedGroupData(groupData || null);
               }}
@@ -248,7 +438,7 @@ export default function DesignationLinking() {
 
                 {/* FIXED SALARY ONLY CASE */}
                 {selectedGroupData.AllowancesDeductions.length === 0 &&
-                selectedGroupData.FixedSalary > 0 ? (
+                  selectedGroupData.FixedSalary > 0 ? (
                   <table style={{ width: "100%" }}>
                     <tbody>
                       <tr>
@@ -595,7 +785,7 @@ export default function DesignationLinking() {
 
             {/* FIXED SALARY ONLY VIEW */}
             {popupGroup.FixedSalary > 0 &&
-            popupGroup.AllowancesDeductions.length === 0 ? (
+              popupGroup.AllowancesDeductions.length === 0 ? (
               <table style={{ width: "100%" }}>
                 <tbody>
                   <tr>

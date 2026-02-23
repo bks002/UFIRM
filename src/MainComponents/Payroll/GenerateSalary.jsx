@@ -3,14 +3,21 @@ import { useSelector } from "react-redux";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import {
-  getUngeneratedSalaryByOffice,
+  // getUngeneratedSalaryByOffice,
   createGeneratedSalary,
-  getEmployeeGeneratedSalaries,
+  // getEmployeeGeneratedSalaries,
   getFacilityMemberSalaryDetails,
   deleteGeneratedSalary,
   regenerateEmployeeSalary,
   getAllowancesDeductions,
+  getUngeneratedSalaryByProperties,
+  getGeneratedSalaryByProperties,
 } from "../../Services/PayrollService";
+import {
+  getAllClients,
+  getClientByPropertyId,
+  getPropertiesByClientId,
+} from "../../Services/ClientService";
 
 const monthNames = [
   "January", "February", "March", "April", "May", "June",
@@ -71,7 +78,19 @@ export default function GenerateSalary() {
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
 
-  const officeId = useSelector((state) => state.Commonreducer.puidn);
+  const reduxPropertyId = useSelector((state) => state.Commonreducer.puidn);
+
+  const [unitList, setUnitList] = useState([]);
+  const [selectedUnitId, setSelectedUnitId] = useState(null);
+
+  const [propertyList, setPropertyList] = useState([]);
+  const [selectedPropertyId, setSelectedPropertyId] = useState([]);
+
+  const officeId =
+    selectedPropertyId.length === 1
+      ? selectedPropertyId[0]
+      : reduxPropertyId || null;
+  // const officeId = useSelector((state) => state.Commonreducer.puidn);
 
   // UI state
   const [selectedOption, setSelectedOption] = useState("All");
@@ -104,6 +123,8 @@ export default function GenerateSalary() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  const [unitDropdownOpen, setUnitDropdownOpen] = useState(false);
 
   // years/months arrays
   const years = [];
@@ -157,6 +178,50 @@ export default function GenerateSalary() {
     return masterName;
   }
 
+  useEffect(() => {
+    const loadUnits = async () => {
+      try {
+        if (Number(reduxPropertyId) > 0) {
+          const res = await getClientByPropertyId(reduxPropertyId);
+          setUnitList(res ? [res] : []);
+          setSelectedUnitId(res?.ClientID || null);
+        } else {
+          const res = await getAllClients();
+          setUnitList(res || []);
+        }
+      } catch (err) {
+        console.log("Failed to load clients", err);
+      }
+    };
+
+    loadUnits();
+  }, [reduxPropertyId]);
+
+  useEffect(() => {
+    const loadProperties = async () => {
+      try {
+        if (!selectedUnitId) {
+          setPropertyList([]);
+          setSelectedPropertyId([]);
+          return;
+        }
+
+        const res = await getPropertiesByClientId(selectedUnitId);
+        const properties = res || [];
+
+        setPropertyList(properties);
+
+        // Select all by default
+        const allIds = properties.map((p) => p.PropertyId);
+        setSelectedPropertyId(allIds);
+      } catch (err) {
+        console.log("Failed to load properties", err);
+      }
+    };
+
+    loadProperties();
+  }, [selectedUnitId]);
+
   // ----------------------------
   // Load master allowance/deduction list
   // ----------------------------
@@ -190,12 +255,23 @@ export default function GenerateSalary() {
   // Fetch employees / generated lists
   // ----------------------------
   useEffect(() => {
-    if (officeId && selectedMonth && selectedYear) {
+    if (selectedPropertyId.length && selectedMonth && selectedYear) {
       const monthName = monthNames[selectedMonth - 1];
-      getUngeneratedSalaryByOffice(officeId, monthName, selectedYear)
+
+      getUngeneratedSalaryByProperties(
+        selectedPropertyId,
+        monthName,
+        selectedYear
+      )
         .then((data) => {
           setAllEmployees(data || []);
-          const uniqueDesignations = [...new Set((data || []).map((emp) => emp.Designation).filter(Boolean))].sort();
+          const uniqueDesignations = [
+            ...new Set(
+              (data || [])
+                .map((emp) => emp.Designation)
+                .filter(Boolean)
+            ),
+          ].sort();
           setDesignations(uniqueDesignations);
         })
         .catch(() => {
@@ -203,17 +279,17 @@ export default function GenerateSalary() {
           setDesignations([]);
         });
     }
-  }, [officeId, selectedMonth, selectedYear]);
+  }, [selectedPropertyId, selectedMonth, selectedYear]);
 
   useEffect(() => {
     filterEmployees();
   }, [selectedOption, selectedDesignation, allEmployees, searchText]);
 
   useEffect(() => {
-    if (officeId && selectedMonth && selectedYear) {
+    if (selectedPropertyId.length && selectedMonth && selectedYear) {
       fetchGeneratedEmployees();
     }
-  }, [officeId, selectedMonth, selectedYear]);
+  }, [selectedPropertyId, selectedMonth, selectedYear]);
 
   useEffect(() => {
     // Whenever property changes → clear regen box + hide grid
@@ -221,24 +297,35 @@ export default function GenerateSalary() {
     setShowGrid(false);
   }, [officeId]);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest(".unit-dropdown-wrapper")) {
+        setUnitDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   // ----------------------------
   // Fetch helpers
   // ----------------------------
-  const fetchEmployees = async () => {
-    setLoading(true);
-    try {
-      const monthName = monthNames[selectedMonth - 1];
-      const data = await getUngeneratedSalaryByOffice(officeId, monthName, selectedYear);
-      setAllEmployees(data || []);
-      const uniqueDesignations = [...new Set((data || []).map((emp) => emp.Designation).filter(Boolean))].sort();
-      setDesignations(uniqueDesignations);
-    } catch (error) {
-      console.error("Failed to fetch employees:", error);
-      alert("Failed to fetch employees. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const fetchEmployees = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const monthName = monthNames[selectedMonth - 1];
+  //     const data = await getUngeneratedSalaryByOffice(officeId, monthName, selectedYear);
+  //     setAllEmployees(data || []);
+  //     const uniqueDesignations = [...new Set((data || []).map((emp) => emp.Designation).filter(Boolean))].sort();
+  //     setDesignations(uniqueDesignations);
+  //   } catch (error) {
+  //     console.error("Failed to fetch employees:", error);
+  //     alert("Failed to fetch employees. Please try again.");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const filterEmployees = () => {
     let filtered = [...allEmployees];
@@ -254,12 +341,22 @@ export default function GenerateSalary() {
   const fetchGeneratedEmployees = async () => {
     setLoadingGenerated(true);
     try {
-      const data = await getEmployeeGeneratedSalaries(officeId);
-      const monthName = selectedMonth ? monthNames[selectedMonth - 1] : null;
+      const data = await getGeneratedSalaryByProperties(
+        selectedPropertyId
+      );
+
+      const monthName = selectedMonth
+        ? monthNames[selectedMonth - 1]
+        : null;
+
       const filtered = data.filter((emp) => {
         if (!monthName) return emp.Year === selectedYear;
-        return emp.Month === monthName && emp.Year === selectedYear;
+        return (
+          emp.Month === monthName &&
+          emp.Year === selectedYear
+        );
       });
+
       setGeneratedEmployees(filtered || []);
     } catch (error) {
       console.error("Failed to fetch generated employees:", error);
@@ -301,16 +398,13 @@ export default function GenerateSalary() {
     const rowKeys = Object.keys(row || {});
     const foundKeys = [];
 
-    // Always include 'Basic' if present in row or master
-    if (rowKeys.includes("Basic")) foundKeys.push("Basic");
-    // Always include OTHALL if present and > 0
-    if (Number(row.OTHALL || 0) > 0) {
-      foundKeys.push("OTHALL");
-    }
-    else {
-      // also check normalized matches (sometimes salary might have basic in different case)
-      const bMatch = rowKeys.find((k) => normalizeKeyName(k) === normalizeKeyName("Basic"));
-      if (bMatch) foundKeys.push(bMatch);
+    // Always include Basic (case-insensitive)
+    const basicKey = rowKeys.find(
+      (k) => normalizeKeyName(k) === normalizeKeyName("Basic")
+    );
+
+    if (basicKey) {
+      foundKeys.push(basicKey);
     }
 
     // Map master allowance names to actual row keys (if they exist)
@@ -433,10 +527,10 @@ export default function GenerateSalary() {
     <head>
       <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; color: #000; font-size: 15px; }
-        .header-row { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;}
+        .header-row { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;}
         .header-left { text-align: left; line-height: 1.5;}
         .co-bold { font-size: 17px; font-weight: 800; letter-spacing: 1px;}
-        .header-right { text-align: right; font-size: 13px; max-width: 270px; line-height: 1.5;}
+        .header-right { text-align: right; font-size: 13px; max-width: 460px; line-height: 1.5;}
         .est-header { font-size: 14px; font-weight: 700;}
         .est-address { font-size: 15px; font-weight: normal; }
         .center-title { text-align: center; font-size: 20px; font-weight: bold; margin: 15px 0 12px 0;}
@@ -489,7 +583,17 @@ export default function GenerateSalary() {
           <div>H-64, SEC-63</div>
           <div>NOIDA, UP</div>
         </div>
-        <div style="text-align:center; flex:1; font-size:20px; font-weight:800;">
+        <div style="
+  text-align:center;
+  flex:0 0 40%;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  margin-top:25px;
+  font-size:20px;
+  font-weight:800;
+">
           SALARY SLIP
           <div style="font-size:14px; font-weight:500; margin-top:4px;">
             For the month ${row.Month} ${row.Year}
@@ -497,19 +601,37 @@ export default function GenerateSalary() {
         </div>
 
         <div class="header-right">
-          <div class="est-header">
-            Name and Address of Establishment in under which contract is carried on:
+        <div class="est-header">
+          Name and Address of Establishment in under which contract is carried on:
+        </div>
+
+        <div class="est-address">
+          ${row.PropertyName || ""}
+          ${row.AddressLine1 ? " - " + row.AddressLine1 : ""}
+          ${row.Landmark ? ", " + row.Landmark : ""}
+        </div>
+
+        <div>
+          ${row.ContactNumber ? "Contact: " + row.ContactNumber : ""}
+          ${row.Pincode ? " PIN:" + row.Pincode : ""}
+        </div>
+
+        <div style="margin-top:10px; text-align:right;">
+          <div style="font-size:14px; font-weight:700; white-space:nowrap;">
+            Name and Address of Principal Employer:
           </div>
-          <div class="est-address">
-            ${row.PropertyName || ""}
-            ${row.AddressLine1 ? " - " + row.AddressLine1 : ""}
-            ${row.Landmark ? ", " + row.Landmark : ""}
+
+          <div style="font-size:14px; margin-top:3px; white-space:nowrap;">
+            <span>
+              ${row.ClientName || ""}
+            </span>
           </div>
-          <div>
-            ${row.ContactNumber ? "Contact: " + row.ContactNumber : ""}
-            ${row.Pincode ? " PIN:" + row.Pincode : ""}
+
+          <div style="font-size:14px; white-space:nowrap;">
+            ${row.ClientAddress || ""}
           </div>
         </div>
+      </div>
       </div>
       </div>
       <div style="border-top: 2px solid #111; margin: 8px 0 10px 0;"></div>
@@ -770,24 +892,21 @@ export default function GenerateSalary() {
       const monthValue = selectedMonth ? monthNames[selectedMonth - 1] : null;
       const yearValue = selectedYear;
 
-      const promises = selectedEmployees.map((emp) => {
-        const salaryDataPayload = {
-          EmployeeId: emp.EmployeeId,
-          EmployeeName: emp.EmployeeName,
-          OfficeId: officeId,
-          CreatedOn: new Date().toISOString(),
-          Month: monthValue,
-          Year: yearValue,
-          is_active: true,
-        };
-        return createGeneratedSalary(salaryDataPayload);
-      });
+      const payload = selectedEmployees.map((emp) => ({
+        EmployeeId: emp.EmployeeId,
+        EmployeeName: emp.EmployeeName,
+        OfficeId: emp.PropertyId, // ✅ ALWAYS use employee's own property
+        CreatedOn: new Date().toISOString(),
+        Month: monthValue,
+        Year: yearValue,
+        is_active: true,
+      }));
 
-      await Promise.all(promises);
+      await createGeneratedSalary(payload);
 
       alert(`Successfully generated salary for ${selectedEmployees.length} employee(s)`);
       setSelectedEmployees([]);
-      fetchEmployees();
+      // fetchEmployees();
       await fetchGeneratedEmployees();
 
       const generatedIds = selectedEmployees.map((emp) => emp.EmployeeId);
@@ -820,18 +939,17 @@ export default function GenerateSalary() {
       const monthValue = monthNames[selectedMonth - 1];
       const yearValue = selectedYear;
 
-      for (const emp of selectedRegenEmployees) {
-        const payload = {
-          EmployeeId: emp.EmployeeId,
-          EmployeeName: emp.EmployeeName,
-          OfficeId: officeId,
-          CreatedOn: new Date().toISOString(),
-          Month: monthValue,
-          Year: yearValue,
-          is_active: true,
-        };
-        await regenerateEmployeeSalary(payload);
-      }
+      const payload = selectedRegenEmployees.map((emp) => ({
+        EmployeeId: emp.EmployeeId,
+        EmployeeName: emp.EmployeeName,
+        OfficeId: emp.PropertyId, // ✅ ALWAYS use employee's own property
+        CreatedOn: new Date().toISOString(),
+        Month: monthValue,
+        Year: yearValue,
+        is_active: true,
+      }));
+
+      await regenerateEmployeeSalary(payload);
 
       const ids = selectedRegenEmployees.map((e) => e.EmployeeId);
       await fetchGeneratedEmployees();
@@ -911,12 +1029,140 @@ export default function GenerateSalary() {
     emp.EmployeeName && emp.EmployeeName.toLowerCase().includes(searchGeneratedText.toLowerCase())
   );
 
+  const getUnitSummaryText = () => {
+    if (selectedPropertyId.length === 0) return "-- Select Unit --";
+
+    if (selectedPropertyId.length === propertyList.length)
+      return "All Units Selected";
+
+    if (selectedPropertyId.length === 1) {
+      const unit = propertyList.find(
+        (p) => p.PropertyId === selectedPropertyId[0]
+      );
+      return unit ? unit.PropertyName : "1 Unit Selected";
+    }
+
+    return `${selectedPropertyId.length} Units Selected`;
+  };
+
   // ----------------------------
   // Render
   // ----------------------------
   return (
     <div className="content-wrapper" style={{ minHeight: "100vh", padding: 30 }}>
       <div className="card" style={{ maxWidth: 1400, margin: "0 auto", borderRadius: 10, boxShadow: "0 2px 10px rgba(0,0,0,0.08)", padding: "20px 30px", background: "#f7fafc" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 24,
+            padding: "8px 14px",
+            marginBottom: 20,
+            background: "#f9fafb",
+            borderRadius: 8,
+            border: "1px solid #e5e7eb",
+          }}
+        >
+          {/* Select Client */}
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <label style={{ fontWeight: 600 }}>Select Client :</label>
+            <select
+              value={selectedUnitId || ""}
+              onChange={(e) => {
+                setSelectedUnitId(Number(e.target.value));
+                setSelectedPropertyId([]);
+              }}
+              style={{ width: 240 }}
+            >
+              <option value="">-- Select Client --</option>
+              {unitList.map((u) => (
+                <option key={u.ClientID} value={u.ClientID}>
+                  {u.ClientName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Select Unit */}
+          <div
+            className="unit-dropdown-wrapper"
+            style={{ display: "flex", gap: 8, alignItems: "center", position: "relative" }}
+          >
+            <label style={{ fontWeight: 600 }}>
+              Select Unit :
+            </label>
+
+            <div style={{ position: "relative" }}>
+              <div
+                onClick={() => setUnitDropdownOpen(!unitDropdownOpen)}
+                style={{
+                  minWidth: 220,
+                  padding: "6px 10px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: 6,
+                  background: "#fff",
+                  cursor: "pointer",
+                  fontSize: "0.9rem",
+                }}
+              >
+                {getUnitSummaryText()}
+              </div>
+
+              {unitDropdownOpen && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "105%",
+                    left: 0,
+                    width: "100%",
+                    maxHeight: 200,
+                    overflowY: "auto",
+                    background: "#fff",
+                    border: "1px solid #d1d5db",
+                    borderRadius: 6,
+                    boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
+                    zIndex: 1000,
+                    padding: 8,
+                  }}
+                >
+                  {propertyList.map((p) => (
+                    <label
+                      key={p.PropertyId}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        marginBottom: 6,
+                        cursor: "pointer",
+                        fontSize: "0.9rem",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedPropertyId.includes(p.PropertyId)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedPropertyId([
+                              ...selectedPropertyId,
+                              p.PropertyId,
+                            ]);
+                          } else {
+                            setSelectedPropertyId(
+                              selectedPropertyId.filter(
+                                (id) => id !== p.PropertyId
+                              )
+                            );
+                          }
+                        }}
+                      />
+                      {p.PropertyName}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
         <h2 style={{ fontWeight: "bold", marginBottom: 20, fontSize: "2rem", color: "#2a4365" }}>Generate Salary</h2>
 
         {/* Controls */}
@@ -1092,13 +1338,18 @@ export default function GenerateSalary() {
             )
           );
 
-          const allDeductionHeaders = Array.from(
+          let allDeductionHeaders = Array.from(
             new Set(
               (salaryData || []).flatMap((row) =>
                 getRowDeductionKeys(row).filter((k) => Number(row[k] || 0) > 0)
               )
             )
           );
+
+          // If no deduction present, keep a dummy column for layout stability
+          if (allDeductionHeaders.length === 0) {
+            allDeductionHeaders = ["NoDeduction"];
+          }
 
           return (
             <div style={{ marginTop: 50, position: "relative" }}>
@@ -1165,7 +1416,9 @@ export default function GenerateSalary() {
                       ))}
 
                       {allDeductionHeaders.map((key) => (
-                        <th key={key} style={dynamicTh}>{displayNameMap[key] || key}</th>
+                        <th key={key} style={dynamicTh}>
+                          {key === "NoDeduction" ? "Deduction" : displayNameMap[key] || key}
+                        </th>
                       ))}
                     </tr>
                   </thead>
@@ -1216,7 +1469,11 @@ export default function GenerateSalary() {
 
                             {allDeductionHeaders.map((key) => (
                               <td key={key} style={cellCenter}>
-                                {Number(row[key] || 0) > 0 ? Number(row[key]).toLocaleString() : ""}
+                                {key === "NoDeduction"
+                                  ? "-"
+                                  : Number(row[key] || 0) > 0
+                                    ? Number(row[key]).toLocaleString()
+                                    : ""}
                               </td>
                             ))}
 
