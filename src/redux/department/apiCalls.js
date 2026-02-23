@@ -5,9 +5,6 @@ import { getConfig } from '../../utility/apiConfig';
 export async function fetchDepartment(SearchValue, PageSize, PageNumber) {
   const config = getConfig('common.fetchdepartment');
   config.pathVariables = { SearchValue: SearchValue, PageSize: PageSize, PageNumber: PageNumber }
-  //config.pathVariables = { escode }
-  // if (param != undefined)
-  //   config.urlParams = { param }
   const apiInstance = new ApiService(config);
   return apiInstance.call();
 }
@@ -180,92 +177,3 @@ export async function fetchCompany(CompanyId) {
   const apiInstance = new ApiService(config);
   return apiInstance.call();
 }
-
-
-// export async function fetchESQueryWithData(escode, param) {
-//   const config = getConfig('catalog.fetchEsQuery');
-//   config.pathVariables = { escode }
-//   if (param != undefined)
-//     config.urlParams = { param }
-//   const apiInstance = new ApiService(config);
-//   return apiInstance.call();
-// }
-
-
-
-// export async function fetchESQuery(escode, param) {
-//   const config = getConfig('catalog.fetchEsQuery');
-//   config.pathVariables = { escode }
-//   if (param != undefined)
-//     config.urlParams = { param }
-//   const apiInstance = new ApiService(config);
-//   return apiInstance.call();
-// }
-
-// export async function fetchStructure(code) {
-//   const config = getConfig('catalog.fetchStructures');
-//   config.pathVariables = { code }
-//   const apiInstance = new ApiService(config);
-//   return apiInstance.call();
-// }
-
-// export async function fetchItems(itemcode, tabname) {
-//   const config = getConfig('catalog.fetchItems');
-//   config.pathVariables = { itemcode, tabname }
-//   const apiInstance = new ApiService(config);
-//   return apiInstance.call();
-// }
-
-// export async function fetchCurrency() {
-//   const config = getConfig('catalog.fetchCurrency');
-//   const apiInstance = new ApiService(config);
-//   return apiInstance.call();
-// }
-
-// export async function fetchCountry() {
-//   const config = getConfig('catalog.fetchCountry');
-//   const apiInstance = new ApiService(config);
-//   return apiInstance.call();
-// }
-
-// export async function fetchMiniPrices(itemCodes, domains) {
-//   const config = getConfig('catalog.fetchMiniPrices');
-//   config.pathVariables = { itemCodes, domains }
-//   const apiInstance = new ApiService(config);
-//   return apiInstance.call();
-// }
-
-// export async function requestMissingInformation(missInfo) {
-//   const config = getConfig('catalog.requestMissingInformation');
-//   config.data = missInfo
-//   const apiInstance = new ApiService(config);
-//   return apiInstance.call();
-// }
-
-// export async function fetchDocumentFiles(fileName) {
-//   const config = getConfig('catalog.fetchDocumentFiles');
-//   config.data = fileName
-//   const apiInstance = new ApiService(config);
-//   return apiInstance.call();
-// }
-
-
-// export async function productMedia(productId) {
-//   const config = getConfig('catalog.productMedia');
-//   config.pathVariables = { productId }
-//   const apiInstance = new ApiService(config);
-//   return apiInstance.call();
-// }
-// export async function productDocument(nodeId) {
-//   const config = getConfig('catalog.productDocument');
-//   config.pathVariables = { nodeId }
-//   const apiInstance = new ApiService(config);
-//   return apiInstance.call();
-// }
-
-// export async function insertError(errorMessage) {
-//   const config = getConfig('catalog.insertError');
-//   config.pathVariables = { errorMessage }
-//   const apiInstance = new ApiService(config);
-//   return apiInstance.call();
-// }

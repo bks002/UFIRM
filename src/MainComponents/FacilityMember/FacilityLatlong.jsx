@@ -88,7 +88,7 @@ const FacilityLatlong = () => {
   setLatitude(row.latitude);
   setLongitude(row.longitude);
   setLocationName(row.locationName);
-  setVisitType(row.Type);
+  setVisitType(row.visitType);
 
   setDialogVisible(true);
 };
@@ -268,7 +268,7 @@ const FacilityLatlong = () => {
                 <Column field="employeeName" header="Employee Name" />
                 <Column field="latitude" header="Latitude" />
                 <Column field="longitude" header="Longitude" />
-                <Column field="Type" header="Visit Type" />
+                <Column field="visitType" header="Visit Type" />
                 <Column field="locationName" header="Location Name" />
                 <Column header="Action" body={actionBodyTemplate} style={{ width: "9rem" }} />
               </DataTable>

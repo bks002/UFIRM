@@ -7,6 +7,7 @@ import {
     FETCH_OWNERTYPE,
     FETCH_RELATIONSHIPTYPE,
     FETCH_RESIDENTTYPE,
+    ON_CLIENT_CHANGED,
     ON_PROPERTY_CHANGED,
     ON_USER_ROLE_CHANGED,
     FETCH_DASHBOARDDATES
@@ -21,6 +22,7 @@ const initStateObj =
     userId: 0,
     companyid:0,
     puidn:0,
+    puidnlist:[],
     entrolval:'User',
     dashDates:""
  
@@ -71,10 +73,19 @@ export default function commonreducer(state = initStateObj, action) {
                 ...state, residentTypeId: action.value
             }
         }
-        case ON_PROPERTY_CHANGED:
+        case ON_CLIENT_CHANGED:
             {
                 return {
-                    ...state, puidn: action.CompanyId
+                    ...state, companyid: action.CompanyId
+                }
+            }
+        case ON_PROPERTY_CHANGED:
+            {
+                const propertyIds = Array.isArray(action.PropertyIds)
+                    ? action.PropertyIds
+                    : (action.CompanyId ? [action.CompanyId] : []);
+                return {
+                    ...state, puidn: action.CompanyId, puidnlist: propertyIds
                 }
             }
             case ON_USER_ROLE_CHANGED:
