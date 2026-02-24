@@ -57,11 +57,16 @@ export default function AttendanceSheet() {
 
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const days = getDaysInMonth(month, year);
     setGlobalTotalDays(days);
   }, [month, year]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const totalDaysInSelectedMonth = getDaysInMonth(month, year);
 
@@ -75,8 +80,27 @@ export default function AttendanceSheet() {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 20;
-  const totalPages = Math.ceil(employees.length / recordsPerPage);
-  const paginatedEmployees = employees.slice(
+  const filteredEmployees = employees.filter((emp) => {
+    const code = emp?.Profile?.EmployeeCode?.toLowerCase() || "";
+    const name =
+      emp?.Profile?.EmployeeName?.toLowerCase() ||
+      emp?.FacilityMember?.Name?.toLowerCase() ||
+      "";
+    const designation =
+      emp?.EmployeeList?.Designation?.toLowerCase() ||
+      emp?.Profile?.Designation?.toLowerCase() ||
+      "";
+
+    return (
+      code.includes(searchTerm.toLowerCase()) ||
+      name.includes(searchTerm.toLowerCase()) ||
+      designation.includes(searchTerm.toLowerCase())
+    );
+  });
+
+  const totalPages = Math.ceil(filteredEmployees.length / recordsPerPage);
+
+  const paginatedEmployees = filteredEmployees.slice(
     (currentPage - 1) * recordsPerPage,
     currentPage * recordsPerPage
   );
@@ -1058,8 +1082,8 @@ export default function AttendanceSheet() {
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
           alignItems: "center",
+          gap: 20,
           marginBottom: 20,
         }}
       >
@@ -1106,8 +1130,25 @@ export default function AttendanceSheet() {
           />
         </div>
 
-        {/* Right: Actions */}
-        <div style={{ display: "flex", gap: 12 }}>
+        {/* Search */}
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <input
+            type="text"
+            placeholder="Search by Employee Code, Name, or Designation..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: 320,
+              padding: "6px 10px",
+              borderRadius: 6,
+              border: "1px solid #cbd5e0",
+              fontSize: 14,
+            }}
+          />
+        </div>
+
+        {/* Push actions to right */}
+        <div style={{ marginLeft: "auto", display: "flex", gap: 12 }}>
           {/* Hidden File Input */}
           <input
             type="file"

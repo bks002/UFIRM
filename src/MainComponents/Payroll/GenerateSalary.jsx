@@ -407,60 +407,21 @@ export default function GenerateSalary() {
       foundKeys.push(basicKey);
     }
 
-    // Map master allowance names to actual row keys (if they exist)
+    // Include ONLY master-defined allowances
     for (const masterName of masterAllowanceNames) {
       const mappedKey = findRowKeyForMasterName(masterName, row);
-      // include if mappedKey exists on row and is > 0 OR it's Basic handled above
-      if (mappedKey && mappedKey !== "Basic" && row.hasOwnProperty(mappedKey)) {
-        if (Number(row[mappedKey]) > 0) foundKeys.push(mappedKey);
+
+      if (
+        mappedKey &&
+        row.hasOwnProperty(mappedKey) &&
+        Number(row[mappedKey] || 0) > 0 &&
+        !foundKeys.includes(mappedKey)
+      ) {
+        foundKeys.push(mappedKey);
       }
     }
 
-    // Also include any additional numeric keys from row that look like allowances (not in master)
-    // but avoid pulling deduction keys. We will include numeric keys that are not known deduction names and not attendance/metadata.
-    const knownDeductionSet = new Set(masterDeductionNames.map((n) => normalizeKeyName(n)));
-    const excludeKeys = new Set([
-      "FACILITYMEMBERID", "FACILITYMEMBERNAME", "FATHERNAME", "GENDER", "MOBILENUMBER",
-      "DESIGNATION", "PROPERTYID", "PROPERTYNAME", "ADDRESSLINE1", "CONTACTNUMBER",
-      "LANDMARK", "PINCODE", "STATENAME", "DATEOFJOINING", "MONTH", "YEAR", "DAYSINMONTH",
-      "SGTOTALWORKINGDAYS", "ATTENDANCETOTALWORKINGDAYS", "MONTHLYBASE", "MONTHLYBASESALARY",
-      "EFFECTIVESTARTDATE", "EFFECTIVEENDDATE", "SALARYGROUP", "UTC", "CREATEDON", "ISACTIVE",
-      "BANKACCOUNTNUMBER", "BANKIFSCCODE", "BANKNAME", "UANNUMBER", "PANNUMBER", "PF_NUMBER",
-
-      // 🚫 New exclusions (your request)
-      "ESINUMBER",         // do not include in allowances
-      "OTRATEPRICE",       // do not include
-      "OTDAYSAMOUNT",      // do not include auto — only OTAmount allowed
-      "OTHOURSAMOUNT",     // do not include auto
-      "ISSUEDATE",
-      "REPAYMENTSTARTDATE",
-      "TENUREMONTHS",
-      "LOANID",
-      "SHIFTHOURS",
-      "LOANADVANCEAMOUNT"
-    ]);
-
-    // Add master names normalized to exclude (deductions) to avoid misclassifying
-    for (const d of masterDeductionNames) excludeKeys.add(normalizeKeyName(d));
-
-    for (const k of rowKeys) {
-      if (foundKeys.includes(k)) continue; // already added
-      const norm = normalizeKeyName(k);
-      if (excludeKeys.has(norm)) continue;
-      // skip attendance keys
-      if (["ATTENDANCETOTALWORKINGDAYS", "WORKINGDAYS", "WEEKDAYSOFF", "LEAVEDAYS", "OTDAYS", "OTHOURS"].includes(norm)) continue;
-      // If numeric and > 0 and not deduction master, consider as allowance
-      const val = Number(row[k]);
-      if (!Number.isNaN(val) && val > 0) {
-        // ensure it's not a deduction by checking name vs masterDeductionNames normalized
-        if (!knownDeductionSet.has(norm)) {
-          foundKeys.push(k);
-        }
-      }
-    }
-
-    // Remove duplicates while preserving order
-    return Array.from(new Set(foundKeys));
+    return foundKeys;
   }
 
   function getRowDeductionKeys(row) {
@@ -574,67 +535,68 @@ export default function GenerateSalary() {
       </style>
     </head>
     <body>
-      <div class="header-row">
-        <div class="header-left">
-          <div style="margin-bottom:6px;">
-            <img src="/Urest-logo.png" style="height:55px;" />
-          </div>
-          <div class="co-bold">UFIRM TECHNOLOGIES PVT. LTD.</div>
-          <div>H-64, SEC-63</div>
-          <div>NOIDA, UP</div>
-        </div>
-        <div style="
-  text-align:center;
-  flex:0 0 40%;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  margin-top:25px;
-  font-size:20px;
-  font-weight:800;
-">
-          SALARY SLIP
-          <div style="font-size:14px; font-weight:500; margin-top:4px;">
-            For the month ${row.Month} ${row.Year}
-          </div>
-        </div>
+      <div style="border-bottom: 3px solid #1e293b; padding-bottom: 14px; margin-bottom: 18px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
 
-        <div class="header-right">
-        <div class="est-header">
-          Name and Address of Establishment in under which contract is carried on:
-        </div>
-
-        <div class="est-address">
-          ${row.PropertyName || ""}
-          ${row.AddressLine1 ? " - " + row.AddressLine1 : ""}
-          ${row.Landmark ? ", " + row.Landmark : ""}
-        </div>
-
-        <div>
-          ${row.ContactNumber ? "Contact: " + row.ContactNumber : ""}
-          ${row.Pincode ? " PIN:" + row.Pincode : ""}
-        </div>
-
-        <div style="margin-top:10px; text-align:right;">
-          <div style="font-size:14px; font-weight:700; white-space:nowrap;">
-            Name and Address of Principal Employer:
+          <!-- LEFT: Company Registered Address -->
+          <div style="flex:1; line-height:1.5;">
+            <img src="/Urest-logo.png" style="height:55px; margin-bottom:8px;" />
+            <div style="font-size:17px; font-weight:800; letter-spacing:1px;">
+              UFIRM TECHNOLOGIES PVT. LTD.
+            </div>
+            <div style="font-size:14px;">
+              H-64, SEC-63
+            </div>
+            <div style="font-size:14px;">
+              NOIDA, UP
+            </div>
           </div>
 
-          <div style="font-size:14px; margin-top:3px; white-space:nowrap;">
-            <span>
+          <!-- CENTER: Title -->
+          <div style="flex:1; text-align:center; padding-top:10px;">
+            <div style="font-size:24px; font-weight:800; letter-spacing:2px;">
+              SALARY SLIP
+            </div>
+            <div style="font-size:14px; margin-top:6px; color:#444;">
+              For the Month of <b>${row.Month} ${row.Year}</b>
+            </div>
+          </div>
+
+          <!-- RIGHT: Establishment + Principal Employer -->
+          <div style="flex:1; text-align:right; font-size:13px; line-height:1.6;">
+
+            <!-- Establishment -->
+            <div style="font-weight:800; font-size:14px; margin-bottom:6px;">
+              Name and Address of Establishment in under which contract is carried on:
+            </div>
+            <div>
+              ${row.PropertyName || ""}
+            </div>
+            <div>
+              ${row.AddressLine1 || ""}
+              ${row.Landmark ? ", " + row.Landmark : ""}
+            </div>
+            <div>
+              ${row.ContactNumber ? "Contact: " + row.ContactNumber : ""}
+            </div>
+            <div style="margin-bottom:10px;">
+              ${row.Pincode ? "PIN: " + row.Pincode : ""}
+            </div>
+
+            <!-- Principal Employer -->
+            <div style="font-weight:800; font-size:14px; margin-top:8px;">
+              Name and Address of Principal Employer :
+            </div>
+            <div>
               ${row.ClientName || ""}
-            </span>
-          </div>
+            </div>
+            <div>
+              ${row.ClientAddress || ""}
+            </div>
 
-          <div style="font-size:14px; white-space:nowrap;">
-            ${row.ClientAddress || ""}
           </div>
         </div>
-      </div>
-      </div>
-      </div>
-      <div style="border-top: 2px solid #111; margin: 8px 0 10px 0;"></div>
+      </div>          
       <table class="info-table">
   <tr>
     <td><b>Employee Name:</b></td>
@@ -1508,9 +1470,37 @@ export default function GenerateSalary() {
       </div>
 
       {viewPayslipOpen && (
-        <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "rgba(0,0,0,0.45)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#fff", padding: 24, borderRadius: 10, width: "95vw", maxWidth: "1100px", maxHeight: "95vh", overflowY: "auto", boxShadow: "0 0 20px rgba(0,0,0,0.3)" }}>
-            <button style={{ float: "right", border: "none", background: "transparent", fontSize: 20, cursor: "pointer" }} onClick={() => setViewPayslipOpen(false)}>×</button>
+        <div
+          onClick={() => setViewPayslipOpen(false)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0,0,0,0.55)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            transition: "opacity 0.2s ease",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#fff",
+              padding: 24,
+              borderRadius: 10,
+              width: "95vw",
+              maxWidth: "1100px",
+              maxHeight: "95vh",
+              overflowY: "auto",
+              boxShadow: "0 0 20px rgba(0,0,0,0.3)",
+              cursor: "default",
+            }}
+          >
             <div dangerouslySetInnerHTML={{ __html: viewPayslipHtml }} />
           </div>
         </div>
