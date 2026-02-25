@@ -11,6 +11,8 @@ import { fetchVisitor } from "../../Services/VisitorService"; // Make sure this 
 import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 import ExportToCSV from '../../ReactComponents/ExportToCSV/ExportToCSV.js';
+import { Calendar } from "primereact/calendar";
+
 
 
 const Visitor = () => {
@@ -23,6 +25,8 @@ const Visitor = () => {
 
     const [selectedVisitor, setSelectedVisitor] = useState(null);
     const [viewDialogVisible, setViewDialogVisible] = useState(false);
+    const [dateRange, setDateRange] = useState(null);
+
 
     const dt = useRef(null);
     const toast = useRef(null);
@@ -78,23 +82,55 @@ const Visitor = () => {
         );
     };
 
+    const filteredData = gridData.filter((item) => {
+    if (!dateRange || !dateRange[0] || !dateRange[1]) return true;
+
+    const meetingDate = new Date(item.MeetingStartTime);
+    const from = new Date(dateRange[0]);
+    const to = new Date(dateRange[1]);
+
+    // end date ke poore din ko include karne ke liye
+    to.setHours(23, 59, 59, 999);
+
+    return meetingDate >= from && meetingDate <= to;
+});
+
      const header = (
-        <div className="d-flex justify-content-between align-items-center p-2">
-                      <h5 className="m-0">Visitor</h5>
-                      <div className="d-flex gap-2 align-items-center">
-                        <span className="p-input-icon-left">
-                         
-                          <InputText
-                            value={globalFilterValue}
-                            onChange={onGlobalFilterChange}
-                            placeholder="Search..."
-                          />
-                        </span>
-          
-                          <ExportToCSV data={gridData} className="btn btn-success btn-sm rounded mr-2" />
-                      </div>
+    <div className="d-flex justify-content-between align-items-center p-2">
+        <h5 className="m-0">Visitor</h5>
+
+        <div className="d-flex gap-2 align-items-center">
+            {/* Search */}
+            <span className="p-input-icon-left">
+                <i className="pi pi-search" />
+                <InputText
+                    value={globalFilterValue}
+                    onChange={onGlobalFilterChange}
+                    placeholder="Search..."
+                />
+            </span>
+
+            {/* Date Range Calendar */}
+            <Calendar
+                value={dateRange}
+                onChange={(e) => setDateRange(e.value)}
+                selectionMode="range"
+                readOnlyInput
+                showIcon
+                hideOnRangeSelection
+                placeholder="Select Date Range"
+                dateFormat="dd-mm-yy"
+                className="p-inputtext-sm"
+            />
+
+            <ExportToCSV
+                data={filteredData}
+                className="btn btn-success btn-sm rounded"
+            />
         </div>
-    );
+    </div>
+);
+
 
     return (
         <div className="content-wrapper">
@@ -105,7 +141,7 @@ const Visitor = () => {
                         <div className="p-3">
                             <DataTable
                                 ref={dt}
-                                value={gridData}
+                                value={filteredData}
                                 loading={loading}
                                 header={header}
                                 paginator
@@ -156,24 +192,70 @@ const Visitor = () => {
                                 />
                             </DataTable>
 
-                            <Dialog
-                                header="Visitor Details"
-                                visible={viewDialogVisible}
-                                style={{ width: "400px" }}
-                                modal
-                                onHide={() => setViewDialogVisible(false)}
-                            >
-                                {selectedVisitor && (
-                                    <div>
-                                        <p><strong>ID:</strong> {selectedVisitor.ID}</p>
-                                        <p><strong>Name:</strong> {selectedVisitor.Fname} {selectedVisitor.Lname}</p>
-                                        <p><strong>Purpose:</strong> {selectedVisitor.MPurpose}</p>
-                                        <p><strong>In Time:</strong> {new Date(selectedVisitor.MeetingStartTime).toLocaleString()}</p>
-                                        <p><strong>Out Time:</strong> {selectedVisitor.MeetingEndTime ? new Date(selectedVisitor.MeetingEndTime).toLocaleString() : "-"}</p>
-                                        <p><strong>Status:</strong> {selectedVisitor.Status}</p>
-                                    </div>
-                                )}
-                            </Dialog>
+                           <Dialog
+    header="Visitor Details"
+    visible={viewDialogVisible}
+    style={{ width: "800px" }}
+    modal
+    onHide={() => setViewDialogVisible(false)}
+>
+    {selectedVisitor && (
+        <table width="100%" cellPadding="8">
+            <tbody>
+                <tr>
+                    <td>
+                        <strong>Name:</strong> {selectedVisitor.Fname} {selectedVisitor.Lname}
+                    </td>
+                    <td>
+                        <strong>Mobile No:</strong> {selectedVisitor.MobileNo}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        <strong>Address:</strong> {selectedVisitor.Address}
+                    </td>
+                    <td>
+                        <strong>Purpose:</strong> {selectedVisitor.MPurpose}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        <strong>Carrying:</strong> {selectedVisitor.ACarrying || "-"}
+                    </td>
+                    <td>
+                        <strong>Contact Person:</strong> {selectedVisitor.ContactPersonName}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        <strong>Status:</strong> {selectedVisitor.Status}
+                    </td>
+                    <td>
+                        <strong>Meeting Over:</strong>{" "}
+                        {selectedVisitor.IsMeetingOver ? "Yes" : "No"}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        <strong>In Time:</strong>{" "}
+                        {new Date(selectedVisitor.MeetingStartTime).toLocaleString()}
+                    </td>
+                    <td>
+                        <strong>Out Time:</strong>{" "}
+                        {selectedVisitor.MeetingEndTime
+                            ? new Date(selectedVisitor.MeetingEndTime).toLocaleString()
+                            : "-"}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    )}
+</Dialog>
+
                         </div>
                     </div>
                 </div>
