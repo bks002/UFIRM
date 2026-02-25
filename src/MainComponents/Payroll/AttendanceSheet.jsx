@@ -68,6 +68,11 @@ export default function AttendanceSheet() {
     setCurrentPage(1);
   }, [searchTerm]);
 
+  useEffect(() => {
+    const days = getDaysInMonth(month, year);
+    setGlobalTotalDays(days);
+  }, [month, year]);
+
   const totalDaysInSelectedMonth = getDaysInMonth(month, year);
 
   const [globalTotalDays, setGlobalTotalDays] = useState(
