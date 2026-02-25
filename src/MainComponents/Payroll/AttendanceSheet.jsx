@@ -57,6 +57,16 @@ export default function AttendanceSheet() {
 
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    const days = getDaysInMonth(month, year);
+    setGlobalTotalDays(days);
+  }, [month, year]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   useEffect(() => {
     const days = getDaysInMonth(month, year);
@@ -75,8 +85,27 @@ export default function AttendanceSheet() {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 20;
-  const totalPages = Math.ceil(employees.length / recordsPerPage);
-  const paginatedEmployees = employees.slice(
+  const filteredEmployees = employees.filter((emp) => {
+    const code = emp?.Profile?.EmployeeCode?.toLowerCase() || "";
+    const name =
+      emp?.Profile?.EmployeeName?.toLowerCase() ||
+      emp?.FacilityMember?.Name?.toLowerCase() ||
+      "";
+    const designation =
+      emp?.EmployeeList?.Designation?.toLowerCase() ||
+      emp?.Profile?.Designation?.toLowerCase() ||
+      "";
+
+    return (
+      code.includes(searchTerm.toLowerCase()) ||
+      name.includes(searchTerm.toLowerCase()) ||
+      designation.includes(searchTerm.toLowerCase())
+    );
+  });
+
+  const totalPages = Math.ceil(filteredEmployees.length / recordsPerPage);
+
+  const paginatedEmployees = filteredEmployees.slice(
     (currentPage - 1) * recordsPerPage,
     currentPage * recordsPerPage
   );
@@ -184,7 +213,7 @@ export default function AttendanceSheet() {
           weekDaysOff: att.WeekDaysOff,
           otDays: att.OtDays || "",
           otHours: att.OtHours || "",
-          totalDays: att.TotalWorkingDays ?? globalTotalDays,
+          totalDays: att.PayableDays ?? globalTotalDays,
           manualTotalDays: false,
           nhDays: att.NHDays ?? "",
           fhDays: att.FHDays ?? "",
@@ -308,7 +337,7 @@ export default function AttendanceSheet() {
 
           if (sg) {
             map[fmId] = {
-              totalDays: sg.TotalWorkingDays ?? null,
+              totalWorkingDays: sg.TotalWorkingDays ?? null,
               shiftHours: sg.ShiftHours ?? null,
             };
           }
@@ -400,14 +429,15 @@ export default function AttendanceSheet() {
                 ? saved.OtHours
                 : otMatch?.TotalOTHours ?? "",
             totalDays:
-              saved?.TotalWorkingDays ??
-              employeeSGMap[empId]?.totalDays ??
-              globalTotalDays,
+              saved?.PayableDays ?? "",
             manualTotalDays: false,
             nhDays: saved?.NHDays ?? "",
             fhDays: saved?.FHDays ?? "",
             holidays: saved?.Holidays ?? "",
-            divideByDays: saved?.DivideByDays ?? "",
+            divideByDays:
+              saved?.DivideByDays ??
+              employeeSGMap[empId]?.totalWorkingDays ??
+              globalTotalDays,
             otMonthDays: saved?.OtMonthDays ?? "",
             pfArrear: saved?.PFArrear ?? "",
             otherArrear: saved?.OtherArrear ?? "",
@@ -469,7 +499,7 @@ export default function AttendanceSheet() {
               weekDaysOff: "",
               otDays: "",
               otHours: "",
-              totalDays: employeeSGMap[empId]?.totalDays ?? globalTotalDays,
+              totalDays: employeeSGMap[empId]?.totalDays ?? "",
               manualTotalDays: false,
             },
           }));
@@ -524,7 +554,10 @@ export default function AttendanceSheet() {
         if (parseFloat(value) > totalDays) return prev;
       }
 
-      if (w + l + wk > totalDays) return prev;
+      // Only validate when NOT editing totalDays itself
+      if (field !== "totalDays") {
+        if (w + l + wk > totalDays) return prev;
+      }
 
       return { ...prev, [empId]: updated };
     });
@@ -605,7 +638,7 @@ export default function AttendanceSheet() {
 
           OtDays: n(inp.otDays),
           OtHours: n(inp.otHours),
-          TotalWorkingDays: n(inp.totalDays),
+          PayableDays: n(inp.totalDays),
           Status: inp.status || "",
         };
 
@@ -772,14 +805,14 @@ export default function AttendanceSheet() {
         CL,
         SL,
         leaveDays,
-        inp.divideByDays ?? saved.DivideByDays ?? "",
+        inp.totalDays ?? saved.PayableDays ?? "",
         inp.weekDaysOff ?? saved.WeekDaysOff ?? "",
         inp.otDays ?? saved.OtDays ?? "",
         inp.otHours ?? saved.OtHours ?? "",
         inp.nhDays ?? saved.NHDays ?? "",
         inp.fhDays ?? saved.FHDays ?? "",
         inp.holidays ?? saved.Holidays ?? "",
-        inp.totalDays ?? saved.TotalWorkingDays ?? "",
+        inp.divideByDays ?? saved.DivideByDays ?? "",
         inp.otMonthDays ?? saved.OtMonthDays ?? "",
         inp.pfArrear ?? saved.PFArrear ?? "",
         inp.otherArrear ?? saved.OtherArrear ?? "",
@@ -1054,8 +1087,8 @@ export default function AttendanceSheet() {
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
           alignItems: "center",
+          gap: 20,
           marginBottom: 20,
         }}
       >
@@ -1085,7 +1118,7 @@ export default function AttendanceSheet() {
                   if (prev[id].manualTotalDays) {
                     out[id] = prev[id];
                   } else {
-                    out[id] = { ...prev[id], totalDays: newVal };
+                    out[id] = { ...prev[id], divideByDays: newVal };
                   }
                 });
                 return out;
@@ -1102,8 +1135,25 @@ export default function AttendanceSheet() {
           />
         </div>
 
-        {/* Right: Actions */}
-        <div style={{ display: "flex", gap: 12 }}>
+        {/* Search */}
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <input
+            type="text"
+            placeholder="Search by Employee Code, Name, or Designation..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: 320,
+              padding: "6px 10px",
+              borderRadius: 6,
+              border: "1px solid #cbd5e0",
+              fontSize: 14,
+            }}
+          />
+        </div>
+
+        {/* Push actions to right */}
+        <div style={{ marginLeft: "auto", display: "flex", gap: 12 }}>
           {/* Hidden File Input */}
           <input
             type="file"
@@ -1260,6 +1310,7 @@ export default function AttendanceSheet() {
               const isChecked = selectedEmpIds.has(empId);
 
               const inp = dayInputs[empId] || {
+                ...baseExtraFields,   // spread first
                 workingDays: "",
                 EL: "",
                 CL: "",
@@ -1267,9 +1318,9 @@ export default function AttendanceSheet() {
                 weekDaysOff: "",
                 otDays: "",
                 otHours: "",
-                totalDays: employeeSGMap[empId]?.totalDays ?? globalTotalDays,
+                totalDays: employeeSGMap[empId]?.totalDays ?? "",
                 manualTotalDays: false,
-                ...baseExtraFields,
+                divideByDays: globalTotalDays,  // override AFTER spread
               };
 
               return (
@@ -1354,9 +1405,9 @@ export default function AttendanceSheet() {
                     <input
                       type="text"
                       disabled={!isChecked}
-                      value={inp.divideByDays ?? ""}
+                      value={inp.totalDays ?? ""}
                       onChange={(e) =>
-                        handleInputChange(empId, "divideByDays", e.target.value)
+                        handleInputChange(empId, "totalDays", e.target.value)
                       }
                       style={inputStyle}
                     />
@@ -1442,9 +1493,9 @@ export default function AttendanceSheet() {
                     <input
                       type="text"
                       disabled={!isChecked}
-                      value={inp.totalDays}
+                      value={inp.divideByDays ?? ""}
                       onChange={(e) =>
-                        handleInputChange(empId, "totalDays", e.target.value)
+                        handleInputChange(empId, "divideByDays", e.target.value)
                       }
                       style={inputStyle}
                     />

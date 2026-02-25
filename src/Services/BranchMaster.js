@@ -2,10 +2,19 @@ import axios from "axios";
 
 const API_BASE_URL = "https://api.urest.in:8096/api/Branch";
 
-// GET
+// GET ALL
 export const getAllBranches = async () => {
   const response = await axios.get(
     `${API_BASE_URL}/GetAllBranches`,
+    { withCredentials: false }
+  );
+  return response.data;
+};
+
+// GET BY ID
+export const getBranchById = async (id) => {
+  const response = await axios.get(
+    `${API_BASE_URL}/GetBranchById/${id}`,
     { withCredentials: false }
   );
   return response.data;

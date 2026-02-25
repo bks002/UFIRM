@@ -1303,6 +1303,16 @@ class MainNav extends React.Component {
                         className="nav nav-treeview"
                         style={{ display: "none" }}
                       >
+                        
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/BranchMaster"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Branch Master</p>
+                          </Link>
+                        </li>
                         <li className="nav-item">
                           <Link
                             to="/Account/App/ClientMaster"

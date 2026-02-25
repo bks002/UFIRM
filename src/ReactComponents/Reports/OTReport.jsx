@@ -1,15 +1,27 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
-import { getEmployeesByOffice, getMonthlyOTReport, saveMonthlyOTReport, updateMonthlyOTReport, deleteMonthlyOTReport, } from "../../Services/PayrollService";
-
+import { getEmployeesByOffices, getMonthlyOTReport, saveMonthlyOTReport, updateMonthlyOTReport, deleteMonthlyOTReport, } from "../../Services/PayrollService";
+import {
+  getAllClients,
+  getClientByPropertyId,
+  getPropertiesByClientId,
+} from "../../Services/ClientService";
 export default function OTReport() {
   const [selectedMonth, setSelectedMonth] = useState("");
-  const officeId = useSelector((state) => state.Commonreducer.puidn);
+  const reduxPropertyId = useSelector((state) => state.Commonreducer.puidn);
+
+  const [unitList, setUnitList] = useState([]);
+  const [selectedUnitId, setSelectedUnitId] = useState(null);
+
+  const [propertyList, setPropertyList] = useState([]);
+  const [selectedPropertyId, setSelectedPropertyId] = useState(null);
+  //const officeId = useSelector((state) => state.Commonreducer.puidn);
 
   const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [otEntries, setOtEntries] = useState({});
+  const [existingOTEmployees, setExistingOTEmployees] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -71,37 +83,36 @@ export default function OTReport() {
   const fetchMonthlyOT = async () => {
     if (!selectedMonth) return;
 
+    if (!selectedPropertyId) {
+      alert("Please select exactly one unit for OT report.");
+      return;
+    }
+
+    const propertyId = selectedPropertyId;
     const [year, month] = selectedMonth.split("-");
 
     try {
       setLoading(true);
 
       const data = await getMonthlyOTReport(
-        officeId,
+        propertyId,
         parseInt(month),
         parseInt(year)
       );
 
-      // Expected backend structure:
-      // [
-      //   {
-      //     EmployeeID: 277,
-      //     TotalOTDays: 5,
-      //     TotalOTHours: 10,
-      //     ResultantOT: 3,
-      //     OTEntries: [...]
-      //   }
-      // ]
-
       const formattedEntries = {};
+      const existingIds = [];
 
       if (Array.isArray(data)) {
         data.forEach((item) => {
           const empId = item.EmployeeID;
 
-          const day = parseInt(item.OTDate.split("T")[0].split("-")[2]);
+          existingIds.push(empId);
 
-          // Fill editable inputs state
+          const day = parseInt(
+            item.OTDate.split("T")[0].split("-")[2]
+          );
+
           formattedEntries[empId] = {
             ...formattedEntries[empId],
             [day]: {
@@ -111,6 +122,7 @@ export default function OTReport() {
         });
       }
 
+      setExistingOTEmployees(existingIds);
       setOtEntries(formattedEntries);
 
     } catch (error) {
@@ -140,6 +152,13 @@ export default function OTReport() {
     try {
       setLoading(true);
 
+      if (!selectedPropertyId) {
+        alert("Please select exactly one unit before saving OT.");
+        return;
+      }
+
+      const propertyId = selectedPropertyId;
+
       await Promise.all(
         selectedEmployees.map(async (empId) => {
           const entries = otEntries[empId] || {};
@@ -155,11 +174,15 @@ export default function OTReport() {
 
           const model = {
             EmployeeID: empId,
-            PropertyID: officeId,
+            PropertyID: propertyId,
             Month: parseInt(month),
             Year: parseInt(year),
             OTEntries,
           };
+
+          if (existingOTEmployees.includes(empId)) {
+            return updateMonthlyOTReport(model);
+          }
 
           return saveMonthlyOTReport(model);
         })
@@ -182,6 +205,12 @@ export default function OTReport() {
   const handleDelete = async () => {
     if (!selectedMonth || selectedEmployees.length === 0) return;
 
+    if (!selectedPropertyId) {
+      alert("Please select exactly one unit before deleting OT.");
+      return;
+    }
+
+    const propertyId = selectedPropertyId;
     const [year, month] = selectedMonth.split("-");
 
     try {
@@ -190,7 +219,7 @@ export default function OTReport() {
       await Promise.all(
         selectedEmployees.map((empId) =>
           deleteMonthlyOTReport(
-            officeId,
+            propertyId,
             empId,
             parseInt(month),
             parseInt(year)
@@ -214,23 +243,73 @@ export default function OTReport() {
 
   useEffect(() => {
     fetchMonthlyOT();
-  }, [selectedMonth]);
+  }, [selectedMonth, selectedPropertyId]);
 
   useEffect(() => {
-    if (!officeId) return;
-
-    async function loadEmployees() {
+    const loadUnits = async () => {
       try {
-        const data = await getEmployeesByOffice(officeId);
+        if (Number(reduxPropertyId) > 0) {
+          const res = await getClientByPropertyId(reduxPropertyId);
+          setUnitList(res ? [res] : []);
+          setSelectedUnitId(res?.ClientID || null);
+        } else {
+          const res = await getAllClients();
+          setUnitList(res || []);
+        }
+      } catch (err) {
+        console.log("Failed to load clients", err);
+      }
+    };
+
+    loadUnits();
+  }, [reduxPropertyId]);
+
+  useEffect(() => {
+    const loadProperties = async () => {
+      try {
+        if (!selectedUnitId) {
+          setPropertyList([]);
+          setSelectedPropertyId(null);
+          return;
+        }
+
+        const res = await getPropertiesByClientId(selectedUnitId);
+        const properties = res || [];
+
+        setPropertyList(properties);
+
+        // If navbar already selected property
+        if (reduxPropertyId) {
+          setSelectedPropertyId(reduxPropertyId);
+        } else {
+          setSelectedPropertyId(null);
+        }
+      } catch (err) {
+        console.log("Failed to load properties", err);
+      }
+    };
+
+    loadProperties();
+  }, [selectedUnitId]);
+
+  useEffect(() => {
+    const loadEmployees = async () => {
+      try {
+        if (!selectedPropertyId) {
+          setEmployees([]);
+          return;
+        }
+
+        const data = await getEmployeesByOffices([selectedPropertyId]);
         setEmployees(data || []);
       } catch (err) {
-        console.error("Failed to load employees:", err);
+        console.error("Employee load failed", err);
         setEmployees([]);
       }
-    }
+    };
 
     loadEmployees();
-  }, [officeId]);
+  }, [selectedPropertyId]);
 
   const calculateRowTotalHours = (empId) => {
     const entries = otEntries[empId] || {};
@@ -335,6 +414,68 @@ export default function OTReport() {
       <h3 style={{ fontWeight: "bold", color: "#2a4365" }}>
         OT Report
       </h3>
+
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 24,
+        padding: "8px 14px",
+        marginBottom: 20,
+        background: "#f9fafb",
+        borderRadius: 8,
+        border: "1px solid #e5e7eb",
+      }}>
+
+        {/* Select Client */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <label style={{ fontWeight: 600 }}>Select Client :</label>
+          <select
+            value={selectedUnitId || ""}
+            onChange={(e) => {
+              const clientId = Number(e.target.value) || null;
+
+              setSelectedUnitId(clientId);
+              setSelectedPropertyId(null);
+
+              // Clear previous state to prevent stale data flash
+              setEmployees([]);
+              setSelectedEmployees([]);
+              setOtEntries({});
+            }}
+            style={{ width: 240 }}
+          >
+            <option value="">-- Select Client --</option>
+            {unitList.map((u) => (
+              <option key={u.ClientID} value={u.ClientID}>
+                {u.ClientName}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Select Unit */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <label style={{ fontWeight: 600 }}>Select Unit :</label>
+
+          <select
+            value={selectedPropertyId || ""}
+            onChange={(e) => {
+              const value = Number(e.target.value) || null;
+              setSelectedPropertyId(value);
+              setSelectedEmployees([]);
+              setEmployees([]);
+            }}
+            style={{ width: 240 }}
+          >
+            <option value="">-- Select Unit --</option>
+            {propertyList.map((p) => (
+              <option key={p.PropertyId} value={p.PropertyId}>
+                {p.PropertyName}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       {/* Month Selector */}
       <div

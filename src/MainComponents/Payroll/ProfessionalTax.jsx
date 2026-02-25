@@ -32,7 +32,17 @@ export default function ProfessionalTax() {
   }, []);
 
   function fetchData() {
-    getPftList().then(setPftData).catch(() => setPftData([]));
+    getPftList()
+      .then((data) =>
+        setPftData(
+          data.map((item) => ({
+            ...item,
+            TaxAmountMale: item.TaxAmountMale ?? 0,
+            TaxAmountFemale: item.TaxAmountFemale ?? 0,
+          }))
+        )
+      )
+      .catch(() => setPftData([]));
   }
 
   const getStateName = (stateId) => {
@@ -45,7 +55,8 @@ export default function ProfessionalTax() {
     StateId: 0,
     AmountFrom: 0,
     AmountTo: 0,
-    PftAmount: 0,
+    TaxAmountMale: 0,
+    TaxAmountFemale: 0,
   };
 
   const openDialog = (type, record = null) => {
@@ -54,7 +65,11 @@ export default function ProfessionalTax() {
     if (type === "create-pft") {
       setFormData(initialPftForm);
     } else if (record) {
-      setFormData(record);
+      setFormData({
+        ...record,
+        TaxAmountMale: record.TaxAmountMale ?? 0,
+        TaxAmountFemale: record.TaxAmountFemale ?? 0,
+      });
     }
     setDialogOpen(true);
   };
@@ -84,11 +99,20 @@ export default function ProfessionalTax() {
       return;
     }
 
+    const payload = {
+      PftId: formData.PftId,
+      StateId: formData.StateId,
+      AmountFrom: formData.AmountFrom,
+      AmountTo: formData.AmountTo,
+      TaxAmountMale: formData.TaxAmountMale,
+      TaxAmountFemale: formData.TaxAmountFemale,
+    };
+
     try {
       if (dialogType === "create-pft") {
-        await addPft(formData);
+        await addPft(payload);
       } else if (dialogType === "edit-pft") {
-        await updatePft(formData.PftId, formData);
+        await updatePft(formData.PftId, payload);
       }
       fetchData();
       closeDialog();
@@ -99,9 +123,20 @@ export default function ProfessionalTax() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "StateId" ? parseInt(value) : value,
+      [name]:
+        name === "StateId"
+          ? parseInt(value)
+          : name === "AmountFrom" ||
+            name === "AmountTo" ||
+            name === "TaxAmountMale" ||
+            name === "TaxAmountFemale"
+            ? value === ""
+              ? ""   // allow empty
+              : Number(value)
+            : value,
     }));
   };
 
@@ -120,7 +155,8 @@ export default function ProfessionalTax() {
         .includes(searchPft.toLowerCase()) ||
       item.AmountFrom.toString().includes(searchPft) ||
       item.AmountTo.toString().includes(searchPft) ||
-      item.PftAmount.toString().includes(searchPft)
+      item.TaxAmountMale?.toString().includes(searchPft) ||
+      item.TaxAmountFemale?.toString().includes(searchPft)
   );
 
   return (
@@ -163,16 +199,17 @@ export default function ProfessionalTax() {
             <tr>
               <th>S.No.</th>
               <th>State Name</th>
-              <th>Amount From</th>
-              <th>Amount To</th>
-              <th>Pft Amount</th>
+              <th>Salary Lower Limit</th>
+              <th>Salary Upper Limit</th>
+              <th>Tax Amount Male</th>
+              <th>Tax Amount Female</th>
               <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {filteredPft.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: "center", color: "#718096" }}>
+                <td colSpan={7} style={{ textAlign: "center", color: "#718096" }}>
                   No data
                 </td>
               </tr>
@@ -183,7 +220,8 @@ export default function ProfessionalTax() {
                   <td>{getStateName(item.StateId)}</td>
                   <td>{item.AmountFrom}</td>
                   <td>{item.AmountTo}</td>
-                  <td>{item.PftAmount}</td>
+                  <td>{item.TaxAmountMale ?? 0}</td>
+                  <td>{item.TaxAmountFemale ?? 0}</td>
                   <td style={{ textAlign: "center", fontSize: 18, userSelect: "none" }}>
                     <button
                       className="btn btn-sm btn-info me-2"
@@ -271,7 +309,7 @@ export default function ProfessionalTax() {
               </div>
 
               <div style={{ marginBottom: 10 }}>
-                <label>Amount From:</label>
+                <label>Salary Lower Limit:</label>
                 {isView ? (
                   <div>{formData.AmountFrom}</div>
                 ) : (
@@ -287,7 +325,7 @@ export default function ProfessionalTax() {
                 )}
               </div>
               <div style={{ marginBottom: 10 }}>
-                <label>Amount To:</label>
+                <label>Salary Upper Limit:</label>
                 {isView ? (
                   <div>{formData.AmountTo}</div>
                 ) : (
@@ -303,15 +341,32 @@ export default function ProfessionalTax() {
                 )}
               </div>
               <div style={{ marginBottom: 10 }}>
-                <label>Pft Amount:</label>
+                <label>Tax Amount Male:</label>
                 {isView ? (
-                  <div>{formData.PftAmount}</div>
+                  <div>{formData.TaxAmountMale}</div>
                 ) : (
                   <input
                     type="number"
                     step="0.01"
-                    name="PftAmount"
-                    value={formData.PftAmount}
+                    name="TaxAmountMale"
+                    value={formData.TaxAmountMale}
+                    onChange={handleInputChange}
+                    required
+                    style={{ width: "100%", padding: 6 }}
+                  />
+                )}
+              </div>
+
+              <div style={{ marginBottom: 10 }}>
+                <label>Tax Amount Female:</label>
+                {isView ? (
+                  <div>{formData.TaxAmountFemale}</div>
+                ) : (
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="TaxAmountFemale"
+                    value={formData.TaxAmountFemale}
                     onChange={handleInputChange}
                     required
                     style={{ width: "100%", padding: 6 }}
