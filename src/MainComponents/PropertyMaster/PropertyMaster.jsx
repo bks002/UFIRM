@@ -34,7 +34,6 @@ export default function PropertyMaster() {
   const [properties, setProperties] = useState([]);
   const [searchText, setSearchText] = useState("");
 
-  const [dialogVisible, setDialogVisible] = useState(false);
   const [viewDialogVisible, setViewDialogVisible] = useState(false);
   const [branches, setBranches] = useState([]);
 
@@ -82,24 +81,28 @@ export default function PropertyMaster() {
   const loadData = async () => {
     setLoading(true);
 
+    let propertyList = [];
+    let clientList = [];
+    let serviceList = [];
+    let cityList = [];
+    let propertyTypeList = [];
+    let branchList = [];
+
     // 1️⃣ Property loading logic
     try {
       if (PropertyId && PropertyId > 0) {
-        // If navbar selected → load that one property
         const result = await getPropertyById(PropertyId);
-        setProperties([result]);
+        propertyList = [result];
       } else {
-        // If navbar NOT selected → load ALL active properties
-        const allProperties = await getAllProperties();
-        setProperties(allProperties);
+        propertyList = await getAllProperties();
       }
     } catch (err) {
       console.log("Property fetch failed", err);
     }
 
-    // 2️⃣ Clients (ALWAYS fetch)
+    // 2️⃣ Clients
     try {
-      const clientList = await getAllClients();
+      clientList = await getAllClients();
       setClients(
         clientList.map((c) => ({
           label: c.ClientName,
@@ -112,7 +115,7 @@ export default function PropertyMaster() {
 
     // 3️⃣ Services
     try {
-      const serviceList = await getAllServices();
+      serviceList = await getAllServices();
       setServices(
         serviceList.map((s) => ({
           label: s.ServiceName,
@@ -123,7 +126,7 @@ export default function PropertyMaster() {
 
     // 4️⃣ Cities
     try {
-      const cityList = await getAllCities();
+      cityList = await getAllCities();
       setCities(
         cityList.map((ct) => ({
           label: ct.CityName,
@@ -134,7 +137,7 @@ export default function PropertyMaster() {
 
     // 5️⃣ Property Types
     try {
-      const propertyTypeList = await getAllPropertyTypes();
+      propertyTypeList = await getAllPropertyTypes();
       setPropertyTypes(
         propertyTypeList.map((pt) => ({
           label: pt.PropertyType,
@@ -145,18 +148,36 @@ export default function PropertyMaster() {
 
     // 6️⃣ Branches
     try {
-      const branchList = await getAllBranches();
+      branchList = await getAllBranches();
       setBranches(
         branchList
-          .filter(b => b.IsActive) // optional but good practice
-          .map(b => ({
+          .filter((b) => b.IsActive)
+          .map((b) => ({
             label: b.BranchName,
-            value: b.BranchCode
+            value: b.BranchCode,
           }))
       );
     } catch {
       console.log("Branch fetch failed");
     }
+
+    // 🔥 7️⃣ ENRICH PROPERTIES (this is the upgrade)
+    const enriched = propertyList.map((p) => ({
+      ...p,
+      ClientName:
+        clientList.find((c) => c.ClientID === p.ClientID)?.ClientName || "—",
+      BranchName:
+        branchList.find((b) => b.BranchCode === p.BranchCode)?.BranchName || "—",
+      CityName:
+        cityList.find((c) => c.CityId === p.CityId)?.CityName || "—",
+      PropertyTypeName:
+        propertyTypeList.find(
+          (pt) => pt.PropertyTypeId === p.PropertyTypeId
+        )?.PropertyType || "—",
+    }));
+
+    setProperties(enriched);
+
     setLoading(false);
   };
 
@@ -241,7 +262,6 @@ export default function PropertyMaster() {
 
       setShowForm(true); // ✅ ADD THIS
 
-      setDialogVisible(true);
     } catch (err) {
       toast.current.show({
         severity: "error",
@@ -342,24 +362,6 @@ export default function PropertyMaster() {
   });
 
   // ---------------------------------------------------------
-  // RENDER COLUMN HELPERS
-  // ---------------------------------------------------------
-  const clientBodyTemplate = (row) => {
-    const client = clients.find((c) => c.value === row.ClientID);
-    return client ? client.label : "—";
-  };
-
-  const cityBodyTemplate = (row) => {
-    const city = cities.find((c) => c.value === row.CityId);
-    return city ? city.label : "—";
-  };
-
-  const propertyTypeBodyTemplate = (row) => {
-    const type = propertyTypes.find((pt) => pt.value === row.PropertyTypeId);
-    return type ? type.label : "—";
-  };
-
-  // ---------------------------------------------------------
   // DIALOG FOOTER
   // ---------------------------------------------------------
   const dialogFooter = (
@@ -412,19 +414,14 @@ export default function PropertyMaster() {
             stripedRows
           >
             <Column field="Name" header="Property Name" sortable />
-            <Column header="Type" body={propertyTypeBodyTemplate} />
+            <Column field="PropertyTypeName" header="Type" />
             <Column field="ContactNumber" header="Contact" />
             <Column field="AddressLine1" header="Address" />
             <Column field="State" header="State" />
             <Column field="Pincode" header="Pincode" />
-            <Column header="City" body={cityBodyTemplate} />
-            <Column header="Client" body={clientBodyTemplate} />
-            <Column
-              header="Branch"
-              body={(row) =>
-                branches.find(b => b.value === row.BranchCode)?.label || "—"
-              }
-            />
+            <Column field="CityName" header="City" />
+            <Column field="ClientName" header="Client" />
+            <Column field="BranchName" header="Branch" />
 
             <Column
               header="Actions"
