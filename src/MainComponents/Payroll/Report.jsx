@@ -1,0 +1,55 @@
+// Report.jsx
+import React, { useState } from "react";
+import OTReport from "../../ReactComponents/Reports/OTReport.jsx";
+// import PFReport from "./PFReport";
+// import ESIReport from "./ESIReport";
+
+export default function Report() {
+  const [selectedReport, setSelectedReport] = useState("");
+
+  const renderReportComponent = () => {
+    switch (selectedReport) {
+      case "OT":
+        return <OTReport />;
+      // case "PF":
+      //   return <PFReport />;
+      // case "ESI":
+      //   return <ESIReport />;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="content-wrapper" style={{ padding: 30 }}>
+      
+      {/* Page Header */}
+      <div style={{ marginBottom: 25 }}>
+        <h2 style={{ fontWeight: "bold", marginBottom: 15 }}>
+          Reports
+        </h2>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
+          <label style={{ fontWeight: 500 }}>
+            Select Report Type:
+          </label>
+
+          <select
+            className="form-control"
+            style={{ width: 220 }}
+            value={selectedReport}
+            onChange={(e) => setSelectedReport(e.target.value)}
+          >
+            <option value="">-- Select Report --</option>
+            <option value="OT">OT Report</option>
+            <option value="PF">PF Report</option>
+            <option value="ESI">ESI Report</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Selected Report */}
+      {renderReportComponent()}
+    </div>
+  );
+}

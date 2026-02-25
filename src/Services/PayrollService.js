@@ -430,17 +430,20 @@ export async function getEmployeeGeneratedSalaries(officeId) {
 }
 
 // POST to create generated salary entry
-export async function createGeneratedSalary(employee) {
-  const response = await fetch('https://api.urest.in:8096/api/employee/generatedSalary', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: JSON.stringify(employee),
-  });
+export async function createGeneratedSalary(employees) {
+  const response = await fetch(
+    "https://api.urest.in:8096/api/employee/generatedSalary",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(employees),
+    }
+  );
 
-  if (!response.ok) throw new Error('Failed to create generated salary');
+  if (!response.ok) throw new Error("Failed to create generated salary");
   return await response.json();
 }
 
@@ -453,6 +456,58 @@ export async function deleteGeneratedSalary(employeeId) {
   if (!response.ok) throw new Error('Failed to delete generated salary');
   return await response.json();
 }
+
+// ------------------------------
+// NEW: Get Ungenerated Salary (Multiple Properties)
+// ------------------------------
+export const getUngeneratedSalaryByProperties = async (
+  propertyIds = [],
+  month,
+  year
+) => {
+  if (!propertyIds.length) return [];
+
+  const ids = propertyIds.join(",");
+
+  const response = await fetch(
+    `https://api.urest.in:8096/api/employee/ungeneratedSalary?propertyIds=${ids}&month=${month}&year=${year}`,
+    {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch ungenerated salary");
+  }
+
+  return response.json();
+};
+
+// ------------------------------
+// NEW: Get Generated Salary (Multiple Properties)
+// ------------------------------
+export const getGeneratedSalaryByProperties = async (
+  propertyIds = []
+) => {
+  if (!propertyIds.length) return [];
+
+  const ids = propertyIds.join(",");
+
+  const response = await fetch(
+    `https://api.urest.in:8096/api/employee/generatedSalary?propertyIds=${ids}`,
+    {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch generated salaries");
+  }
+
+  return response.json();
+};
 
 // Attendance Summary API Calls
 const BASE_URL = 'https://api.urest.in:8096/api/attendance-summary';
@@ -503,6 +558,31 @@ export const deleteMultipleAttendance = async (empIds, monthyear) => {
   });
 
   return response.data;
+};
+
+// Upload Attendance File
+export const uploadAttendance = async (file, propertyId, monthyear) => {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("propertyId", propertyId);
+    formData.append("monthyear", monthyear);
+
+    const response = await axios.post(
+      `${BASE_URL}/UploadAttendance`,
+      formData,
+      {
+        withCredentials: false,   // keep this
+        // ❌ do NOT set Content-Type manually
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Upload attendance failed:", error);
+    console.error("Error details:", error.response ? error.response.data : error.message);
+    throw error;
+  }
 };
 
 
@@ -563,25 +643,22 @@ export const getFacilityMemberSalaryDetails = async (facilityMemberIds, month, y
 
 
 // Regenerate employee salary entry (POST)
-export const regenerateEmployeeSalary = async (employee) => {
-  try {
-    const response = await axios.post(
-      `${URL}/employee/regeneratedSalary`,
-      employee,
-      {
-        withCredentials: false,
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      }
-    );
-    return response.data;
-  } catch (error) {
-    console.error("Error regenerating salary:", error);
-    throw error;
-  }
-};
+export async function regenerateEmployeeSalary(employees) {
+  const response = await fetch(
+    "https://api.urest.in:8096/api/employee/regeneratedSalary",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(employees),
+    }
+  );
+
+  if (!response.ok) throw new Error("Failed to regenerate salary");
+  return await response.json();
+}
 
 
 // Update generated salary document
@@ -802,3 +879,200 @@ export const getSalaryAllowancesByProperties = async (propertyIds = []) => {
   return response.json();
 };
 
+
+// ----------------OTReport API Calls------------------- 
+// ================= GET MONTHLY OT REPORT =================
+export async function getMonthlyOTReport(propertyId, month, year) {
+  try {
+    const url = `https://api.urest.in:8096/api/otreport/getMonthly?propertyId=${propertyId}&month=${month}&year=${year}`;
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch monthly OT report: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching monthly OT report:", error);
+    throw error;
+  }
+}
+
+// ================= OT REPORT (MONTHLY SAVE) =================
+export async function saveMonthlyOTReport(model) {
+  try {
+    const response = await fetch(
+      "https://api.urest.in:8096/api/otreport/saveMonthly",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(model),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to save monthly OT report: ${response.status}`);
+    }
+
+    return await response.json(); // returns {}
+  } catch (error) {
+    console.error("Error saving monthly OT report:", error);
+    throw error;
+  }
+}
+
+// ================= UPDATE MONTHLY OT REPORT =================
+export async function updateMonthlyOTReport(model) {
+  try {
+    const response = await fetch(
+      "https://api.urest.in:8096/api/otreport/updateMonthly",
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(model),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to update monthly OT report: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating monthly OT report:", error);
+    throw error;
+  }
+}
+
+// ================= DELETE MONTHLY OT REPORT =================
+export async function deleteMonthlyOTReport(
+  propertyId,
+  employeeId,
+  month,
+  year
+) {
+  try {
+    const url = `https://api.urest.in:8096/api/otreport/deleteMonthly?propertyId=${propertyId}&employeeId=${employeeId}&month=${month}&year=${year}`;
+
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete monthly OT report: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error deleting monthly OT report:", error);
+    throw error;
+  }
+}
+
+// Get Employee Monthly Total OT
+export const getEmployeeMonthlyTotalOT = async (propertyId, month, year) => {
+  try {
+    const response = await axios.get(
+      `https://api.urest.in:8096/api/otreport/getEmployeeMonthlyTotalOT`,
+      {
+        params: {
+          propertyId,
+          month,
+          year,
+        },
+        withCredentials: false,
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch monthly OT report:", error);
+    throw error;
+  }
+};
+
+export const getEmployeesByOffices = async (officeIds = []) => {
+  if (!officeIds.length) return [];
+
+  try {
+    const response = await axios.post(
+      `${EMPLOYEE_API_BASE_URL}/getByOffices`,
+      {
+        OfficeIds: officeIds,
+      },
+      {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: false,
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch employees by offices", error);
+    throw error;
+  }
+};
+
+export const getAttendanceByProperties = async (
+  propertyIds = [],
+  monthYear
+) => {
+  if (!propertyIds.length || !monthYear) return [];
+
+  try {
+    const response = await axios.post(
+      `${APIBASE_URL}/attendance-summary/by-properties`,
+      {
+        PropertyIds: propertyIds,
+        MonthYear: monthYear,
+      },
+      {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: false,
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch attendance summary", error);
+    throw error;
+  }
+};
+
+export const saveAttendanceBatch = async (monthyear, employees = []) => {
+  if (!monthyear || !employees.length) return;
+
+  try {
+    const response = await axios.post(
+      `${APIBASE_URL}/attendance-summary/batch`,
+      {
+        monthyear,
+        Employees: employees,
+      },
+      {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: false,
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Failed to save attendance batch", error);
+    throw error;
+  }
+};

@@ -13,6 +13,7 @@ import { Toast } from "primereact/toast";
 
 // Services
 import {
+  getAllProperties,
   getPropertyById,
   createProperty,
   updateProperty,
@@ -23,6 +24,7 @@ import { getAllClients } from "../../Services/ClientService";
 import { getAllServices } from "../../Services/ServiceService";
 import { getAllPropertyTypes } from "../../Services/PropertyTypeService";
 import { getAllCities } from "../../Services/CityService";
+import { getAllBranches } from "../../Services/BranchMaster";
 
 export default function PropertyMaster() {
   const toast = useRef(null);
@@ -32,8 +34,8 @@ export default function PropertyMaster() {
   const [properties, setProperties] = useState([]);
   const [searchText, setSearchText] = useState("");
 
-  const [dialogVisible, setDialogVisible] = useState(false);
   const [viewDialogVisible, setViewDialogVisible] = useState(false);
+  const [branches, setBranches] = useState([]);
 
   const [editId, setEditId] = useState(null);
   const [viewData, setViewData] = useState(null);
@@ -60,6 +62,7 @@ export default function PropertyMaster() {
     TotalWorkingDays: 0,
     ClientID: 0,
     ServiceIds: [],
+    BranchCode: 0,
 
     // NEW (ADDED)
     SalaryCycleDayFrom: 1,
@@ -78,53 +81,102 @@ export default function PropertyMaster() {
   const loadData = async () => {
     setLoading(true);
 
-    try {
-      const result = await getPropertyById(PropertyId);
-      const clientList = await getAllClients();
-      const serviceList = await getAllServices();
-      const cityList = await getAllCities();
-      const propertyTypeList = await getAllPropertyTypes();
+    let propertyList = [];
+    let clientList = [];
+    let serviceList = [];
+    let cityList = [];
+    let propertyTypeList = [];
+    let branchList = [];
 
-      // Clients dropdown
+    // 1️⃣ Property loading logic
+    try {
+      if (PropertyId && PropertyId > 0) {
+        const result = await getPropertyById(PropertyId);
+        propertyList = [result];
+      } else {
+        propertyList = await getAllProperties();
+      }
+    } catch (err) {
+      console.log("Property fetch failed", err);
+    }
+
+    // 2️⃣ Clients
+    try {
+      clientList = await getAllClients();
       setClients(
         clientList.map((c) => ({
           label: c.ClientName,
           value: c.ClientID,
         }))
       );
+    } catch {
+      console.log("Client fetch failed");
+    }
 
-      // Services dropdown
+    // 3️⃣ Services
+    try {
+      serviceList = await getAllServices();
       setServices(
         serviceList.map((s) => ({
           label: s.ServiceName,
           value: s.ServiceId,
         }))
       );
+    } catch { }
 
-      // Property Types dropdown
-      setPropertyTypes(
-        propertyTypeList.map((pt) => ({
-          label: pt.PropertyType,
-          value: pt.PropertyTypeId,
-        }))
-      );
-
-      // Cities dropdown
+    // 4️⃣ Cities
+    try {
+      cityList = await getAllCities();
       setCities(
         cityList.map((ct) => ({
           label: ct.CityName,
           value: ct.CityId,
         }))
       );
+    } catch { }
 
-      setProperties([result]);
-    } catch (err) {
-      toast.current?.show({
-        severity: "error",
-        summary: "Error",
-        detail: "Failed to load data",
-      });
+    // 5️⃣ Property Types
+    try {
+      propertyTypeList = await getAllPropertyTypes();
+      setPropertyTypes(
+        propertyTypeList.map((pt) => ({
+          label: pt.PropertyType,
+          value: pt.PropertyTypeId,
+        }))
+      );
+    } catch { }
+
+    // 6️⃣ Branches
+    try {
+      branchList = await getAllBranches();
+      setBranches(
+        branchList
+          .filter((b) => b.IsActive)
+          .map((b) => ({
+            label: b.BranchName,
+            value: b.BranchCode,
+          }))
+      );
+    } catch {
+      console.log("Branch fetch failed");
     }
+
+    // 🔥 7️⃣ ENRICH PROPERTIES (this is the upgrade)
+    const enriched = propertyList.map((p) => ({
+      ...p,
+      ClientName:
+        clientList.find((c) => c.ClientID === p.ClientID)?.ClientName || "—",
+      BranchName:
+        branchList.find((b) => b.BranchCode === p.BranchCode)?.BranchName || "—",
+      CityName:
+        cityList.find((c) => c.CityId === p.CityId)?.CityName || "—",
+      PropertyTypeName:
+        propertyTypeList.find(
+          (pt) => pt.PropertyTypeId === p.PropertyTypeId
+        )?.PropertyType || "—",
+    }));
+
+    setProperties(enriched);
 
     setLoading(false);
   };
@@ -154,6 +206,7 @@ export default function PropertyMaster() {
       TotalWorkingDays: 0,
       ClientID: 0,
       ServiceIds: [],
+      BranchCode: 0,
 
       // ✅ KEEP NEW FIELDS
       SalaryCycleDayFrom: 1,
@@ -194,6 +247,7 @@ export default function PropertyMaster() {
         ShiftHour: data.ShiftHours || 0,
         TotalWorkingDays: data.TotalWorkingDays || 0,
         ClientID: data.ClientID || 0,
+        BranchCode: data.BranchCode ?? 0,
         ServiceIds: data.ServiceIds || [],
 
         // ✅ MAP NEW FIELDS
@@ -208,7 +262,6 @@ export default function PropertyMaster() {
 
       setShowForm(true); // ✅ ADD THIS
 
-      setDialogVisible(true);
     } catch (err) {
       toast.current.show({
         severity: "error",
@@ -309,24 +362,6 @@ export default function PropertyMaster() {
   });
 
   // ---------------------------------------------------------
-  // RENDER COLUMN HELPERS
-  // ---------------------------------------------------------
-  const clientBodyTemplate = (row) => {
-    const client = clients.find((c) => c.value === row.ClientID);
-    return client ? client.label : "—";
-  };
-
-  const cityBodyTemplate = (row) => {
-    const city = cities.find((c) => c.value === row.CityId);
-    return city ? city.label : "—";
-  };
-
-  const propertyTypeBodyTemplate = (row) => {
-    const type = propertyTypes.find((pt) => pt.value === row.PropertyTypeId);
-    return type ? type.label : "—";
-  };
-
-  // ---------------------------------------------------------
   // DIALOG FOOTER
   // ---------------------------------------------------------
   const dialogFooter = (
@@ -379,13 +414,14 @@ export default function PropertyMaster() {
             stripedRows
           >
             <Column field="Name" header="Property Name" sortable />
-            <Column header="Type" body={propertyTypeBodyTemplate} />
+            <Column field="PropertyTypeName" header="Type" />
             <Column field="ContactNumber" header="Contact" />
             <Column field="AddressLine1" header="Address" />
             <Column field="State" header="State" />
             <Column field="Pincode" header="Pincode" />
-            <Column header="City" body={cityBodyTemplate} />
-            <Column header="Client" body={clientBodyTemplate} />
+            <Column field="CityName" header="City" />
+            <Column field="ClientName" header="Client" />
+            <Column field="BranchName" header="Branch" />
 
             <Column
               header="Actions"
@@ -512,6 +548,35 @@ export default function PropertyMaster() {
               <div className="card p-3 shadow-sm">
                 <h5 className="mb-3">Operational & Payroll</h5>
 
+                <label>Client</label>
+                <Dropdown
+                  className="w-100 mb-2"
+                  value={form.ClientID}
+                  options={clients}
+                  onChange={(e) => setForm({ ...form, ClientID: e.value })}
+                />
+
+                <label>Branch Name</label>
+                <Dropdown
+                  className="w-100 mb-2"
+                  value={form.BranchCode}
+                  options={branches}
+                  placeholder="Select Branch"
+                  onChange={(e) =>
+                    setForm({ ...form, BranchCode: e.value })
+                  }
+                />
+
+                <label>Services</label>
+                <MultiSelect
+                  className="w-100"
+                  value={form.ServiceIds}
+                  options={services}
+                  filter
+                  display="chip"
+                  onChange={(e) => setForm({ ...form, ServiceIds: e.value })}
+                />
+
                 <label>Latitude</label>
                 <InputText
                   className="w-100 mb-2"
@@ -600,24 +665,6 @@ export default function PropertyMaster() {
                   onChange={(e) =>
                     setForm({ ...form, MonthSundays: Number(e.target.value) })
                   }
-                />
-
-                <label>Client</label>
-                <Dropdown
-                  className="w-100 mb-2"
-                  value={form.ClientID}
-                  options={clients}
-                  onChange={(e) => setForm({ ...form, ClientID: e.value })}
-                />
-
-                <label>Services</label>
-                <MultiSelect
-                  className="w-100"
-                  value={form.ServiceIds}
-                  options={services}
-                  filter
-                  display="chip"
-                  onChange={(e) => setForm({ ...form, ServiceIds: e.value })}
                 />
               </div>
             </div>
@@ -730,7 +777,7 @@ export default function PropertyMaster() {
                 </div>
               </div>
 
-              {/* CLIENT & SERVICES */}
+              {/* CLIENT & BRANCH & SERVICES */}
               <h6 className="mt-3 mb-2">Client & Services</h6>
               <div className="mb-2">
                 <b>Client:</b>{" "}
@@ -738,12 +785,17 @@ export default function PropertyMaster() {
               </div>
 
               <div className="mb-2">
+                <b>Branch:</b>{" "}
+                {branches.find((b) => b.value === viewData.BranchCode)?.label || "—"}
+              </div>
+
+              <div className="mb-2">
                 <b>Services:</b>{" "}
                 {viewData.ServiceIds?.length === 0
                   ? "—"
                   : viewData.ServiceIds.map(
-                      (id) => services.find((s) => s.value === id)?.label
-                    ).join(", ")}
+                    (id) => services.find((s) => s.value === id)?.label
+                  ).join(", ")}
               </div>
             </div>
           )}

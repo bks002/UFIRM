@@ -175,6 +175,53 @@ const RentAssetPage = (actions) => {
                 ))}
               </tbody>
             </table>
+
+            {/* PAGINATION */}
+            <div className="d-flex justify-content-between align-items-center">
+              <span>
+                Showing {currentRecords.length} out of {recordsPerPage} entries
+              </span>
+
+              <ul className="pagination mb-0">
+                <li className={`page-item ${currentPage === 1 && "disabled"}`}>
+                  <button
+                    className="page-link"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                  >
+                    ‹
+                  </button>
+                </li>
+
+                {[...Array(totalPages)].map((_, i) => (
+                  <li
+                    key={i}
+                    className={`page-item ${
+                      currentPage === i + 1 ? "active" : ""
+                    }`}
+                  >
+                    <button
+                      className="page-link"
+                      onClick={() => setCurrentPage(i + 1)}
+                    >
+                      {i + 1}
+                    </button>
+                  </li>
+                ))}
+
+                <li
+                  className={`page-item ${
+                    currentPage === totalPages && "disabled"
+                  }`}
+                >
+                  <button
+                    className="page-link"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                  >
+                    ›
+                  </button>
+                </li>
+              </ul>
+            </div>
           </LoadingOverlay>
         </div>
 

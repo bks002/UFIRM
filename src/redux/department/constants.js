@@ -23,6 +23,7 @@ export const FETCH_USERROLE = 'common/FETCH_USERROLE';
 export const FETCH_DEPARTMENTS = 'common/FETCH_DEPARTMENTS';
 export const FETCH_VENDOR = 'common/FETCH_VENDOR';
 export const FETCH_COMPANY = 'common/FETCH_COMPANY';
+export const ON_CLIENT_CHANGED = 'common/ON_CLIENT_CHANGED';
 export const ON_PROPERTY_CHANGED = 'common/ON_PROPERTY_CHANGED';
 export const ON_USER_ROLE_CHANGED = 'common/ON_USER_ROLE_CHANGED';
 export const FETCH_DASHBOARDDATES = 'common/FETCH_DASHBOARDDATES';
