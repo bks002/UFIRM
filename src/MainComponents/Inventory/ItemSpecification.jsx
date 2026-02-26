@@ -1,7 +1,7 @@
 // itemspecification.jsx
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useSelector } from "react-redux"; // ✅ Added (was missing)
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
@@ -33,6 +33,8 @@ const ItemSpecificationPage = () => {
   const propertyId = useSelector((state) => state.Commonreducer.puidn);
 
   const [dialogVisible, setDialogVisible] = useState(false);
+  const [viewMode, setViewMode] = useState("panel");
+  const [selectedSpecId, setSelectedSpecId] = useState(null);
   const [formData, setFormData] = useState({
     Id: null,
     ItemId: null,
@@ -153,9 +155,47 @@ const ItemSpecificationPage = () => {
   };
 
   // 🔹 Header section
+  const filteredItems = useMemo(() => {
+    if (!globalFilterValue) return items || [];
+    const term = globalFilterValue.toLowerCase();
+    return (items || []).filter(
+      (x) =>
+        (x.Name || "").toLowerCase().includes(term) ||
+        (x.Specification || "").toLowerCase().includes(term)
+    );
+  }, [items, globalFilterValue]);
+
+  useEffect(() => {
+    if (!filteredItems.length) {
+      setSelectedSpecId(null);
+      return;
+    }
+    if (!filteredItems.some((x) => x.Id === selectedSpecId)) {
+      setSelectedSpecId(filteredItems[0].Id);
+    }
+  }, [filteredItems, selectedSpecId]);
+
   const header = (
-    <div className="d-flex justify-content-between align-items-center p-2">
-      <h3 className="m-0">Item Master</h3>
+    <div className="d-flex justify-content-between align-items-center p-2 flex-wrap" style={{ gap: "10px" }}>
+      <div className="d-flex align-items-center" style={{ gap: "12px" }}>
+        <h3 className="m-0">Item Master</h3>
+        <div className="item-spec-toggle">
+          <button
+            type="button"
+            className={viewMode === "panel" ? "active" : ""}
+            onClick={() => setViewMode("panel")}
+          >
+            Panel View
+          </button>
+          <button
+            type="button"
+            className={viewMode === "table" ? "active" : ""}
+            onClick={() => setViewMode("table")}
+          >
+            Table View
+          </button>
+        </div>
+      </div>
       <div className="d-flex gap-2 align-items-center">
         <span className="p-input-icon-left">
           <i className="pi pi-search" />
@@ -177,25 +217,138 @@ const ItemSpecificationPage = () => {
 
   return (
     <div className="content-wrapper">
+      <style>{`
+        .item-spec-toggle {
+          display: inline-flex;
+          border: 1px solid #d4e3ed;
+          border-radius: 8px;
+          overflow: hidden;
+          background: #fff;
+        }
+        .item-spec-toggle button {
+          border: none;
+          background: transparent;
+          color: #4A7FA8;
+          font-size: 12px;
+          font-weight: 600;
+          padding: 8px 12px;
+          cursor: pointer;
+        }
+        .item-spec-toggle button.active {
+          background: #e8f1f8;
+          color: #1E4A6B;
+        }
+        .item-spec-panel {
+          display: grid;
+          grid-template-columns: 360px minmax(0, 1fr);
+          gap: 12px;
+        }
+        .item-spec-list {
+          border: 1px solid #d4e3ed;
+          border-radius: 8px;
+          background: #fff;
+          max-height: 560px;
+          overflow-y: auto;
+          padding: 8px;
+        }
+        .item-spec-card {
+          border: 1px solid #e4edf4;
+          border-radius: 8px;
+          background: #fff;
+          padding: 10px;
+          margin-bottom: 8px;
+          cursor: pointer;
+          text-align: left;
+          width: 100%;
+        }
+        .item-spec-card.active {
+          background: #eef5fb;
+          border-color: #4A7FA8;
+          box-shadow: inset 2px 0 0 #4A7FA8;
+        }
+        .item-spec-detail {
+          border: 1px solid #d4e3ed;
+          border-radius: 8px;
+          background: #fff;
+          padding: 14px;
+          min-height: 280px;
+        }
+        .item-spec-label {
+          font-size: 11px;
+          color: #7a8ea0;
+          text-transform: uppercase;
+          font-weight: 700;
+          margin-bottom: 4px;
+        }
+        .item-spec-value {
+          font-size: 14px;
+          color: #1E4A6B;
+          font-weight: 600;
+        }
+        @media (max-width: 1024px) {
+          .item-spec-panel {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
       <section className="content">
         <div className="container-fluid">
           <div className="card">
             <Toast ref={toast} />
             <div className="pr-6 pl-6">
-              <DataTable
-                value={items}
-                header={header}
-                paginator
-                rows={10}
-                filters={filters}
-                globalFilterFields={["Name", "Specification"]}
-                emptyMessage="No items found."
-                dataKey="Id"
-                breakpoint="960px"
-              >
-                <Column field="Name" header="Item Name" />
-                <Column field="Specification" header="Specification" />
-              </DataTable>
+              {viewMode === "panel" ? (
+                <>
+                  <div className="p-2">{header}</div>
+                  <div className="item-spec-panel p-2 pb-3">
+                    <div className="item-spec-list">
+                      {filteredItems.length === 0 && (
+                        <div className="text-muted text-center py-4">No items found.</div>
+                      )}
+                      {filteredItems.map((row, idx) => (
+                        <button
+                          key={row.Id ?? idx}
+                          type="button"
+                          className={`item-spec-card ${selectedSpecId === row.Id ? "active" : ""}`}
+                          onClick={() => setSelectedSpecId(row.Id)}
+                        >
+                          <div style={{ fontWeight: 700, color: "#1E4A6B", fontSize: 14 }}>{row.Name || "-"}</div>
+                          <div style={{ marginTop: 4, color: "#4A7FA8", fontSize: 12 }}>{row.Specification || "-"}</div>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="item-spec-detail">
+                      {(() => {
+                        const active = filteredItems.find((x) => x.Id === selectedSpecId) || filteredItems[0];
+                        if (!active) return <div className="text-muted">No items found.</div>;
+                        return (
+                          <>
+                            <h3 style={{ margin: 0, color: "#1E4A6B", fontWeight: 700 }}>{active.Name || "-"}</h3>
+                            <div style={{ marginTop: 16 }}>
+                              <div className="item-spec-label">Specification</div>
+                              <div className="item-spec-value">{active.Specification || "-"}</div>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <DataTable
+                  value={items}
+                  header={header}
+                  paginator
+                  rows={10}
+                  filters={filters}
+                  globalFilterFields={["Name", "Specification"]}
+                  emptyMessage="No items found."
+                  dataKey="Id"
+                  breakpoint="960px"
+                >
+                  <Column field="Name" header="Item Name" />
+                  <Column field="Specification" header="Specification" />
+                </DataTable>
+              )}
             </div>
           </div>
         </div>

@@ -4,9 +4,12 @@ import { Button, Form } from "react-bootstrap";
 
 const styles = {
   chatScroll: {
-    maxHeight: "250px",
+    maxHeight: "300px",
     overflowY: "auto",
-    padding: "10px",
+    padding: "12px",
+    background: "#f5f7fb",
+    borderRadius: "8px",
+    border: "1px solid #dbe6ef",
   },
   chatRow: {
     display: "flex",
@@ -19,18 +22,21 @@ const styles = {
     justifyContent: "flex-end",
   },
   bubble: {
-    maxWidth: "70%",
-    padding: "8px 12px",
-    borderRadius: "12px",
-    fontSize: "14px",
+    maxWidth: "72%",
+    padding: "9px 12px",
+    borderRadius: "10px",
+    fontSize: "13px",
+    boxShadow: "0 1px 2px rgba(16,24,40,.08)",
   },
   supBubble: {
-    backgroundColor: "#e4e6eb",
-    borderTopLeftRadius: "0",
+    backgroundColor: "#ffffff",
+    borderTopLeftRadius: "4px",
+    border: "1px solid #dbe6ef",
   },
   fmBubble: {
     backgroundColor: "#dcf8c6",
-    borderTopRightRadius: "0",
+    borderTopRightRadius: "4px",
+    border: "1px solid #bde5a8",
   },
 };
 
@@ -192,10 +198,38 @@ const ChatBox = ({ remarks = [], onSend, status, context, assetData }) => {
   };
 
   return (
-    <div className="container mt-3">
+    <div className="container mt-2">
+      <style>{`
+        .chatbox-header {
+          background: #edf5ff;
+          border: 1px solid #d8e6f2;
+          border-radius: 8px;
+          padding: 10px 12px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 10px;
+        }
+        .chatbox-status {
+          font-size: 13px;
+          color: #37546a;
+          font-weight: 600;
+        }
+        .chatbox-input-row {
+          display: flex;
+          gap: 8px;
+          margin-top: 10px;
+          align-items: center;
+        }
+        .chatbox-input-row input {
+          border-radius: 8px !important;
+          border: 1px solid #d5e3ee !important;
+          height: 38px;
+        }
+      `}</style>
       {context !== "asset" && (
-        <div className="alert alert-info mb-3 d-flex justify-content-between align-items-center">
-          <span>
+        <div className="chatbox-header">
+          <span className="chatbox-status">
             Status: <strong>{currentStatus}</strong>
           </span>
 
@@ -214,12 +248,11 @@ const ChatBox = ({ remarks = [], onSend, status, context, assetData }) => {
       )}
 
       <div
-        className="alert alert-secondary mb-3"
+        className="mb-2"
         style={
           context === "asset"
             ? {}
             : {
-                maxHeight: "300px",
                 display: "flex",
                 flexDirection: "column",
               }
@@ -381,7 +414,7 @@ const ChatBox = ({ remarks = [], onSend, status, context, assetData }) => {
             </Button>
           </div>
         ) : (
-          <div className="d-flex mt-2">
+          <div className="chatbox-input-row">
             <Form.Control
               type="text"
               placeholder="Type your message here..."

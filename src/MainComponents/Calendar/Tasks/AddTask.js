@@ -412,22 +412,48 @@ class AddTask extends Component {
   }
 
   render() {
+    const isUnifiedPanel = this.props.sourceView === "panel";
+    const isSpotVisit = this.props.type === "SpotVisit";
     return (
       <div>
         <style>
           {`
-  .add-task-form label {
-    font-weight: 500;
+.add-task-form label {
+    font-weight: 700;
     margin-bottom: 6px;
     display: block;
+    color: #3a556a;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .25px;
   }
+.addtask-section-title {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:14px;
+  color:#1f4f6d;
+  font-weight:700;
+  margin: 8px 0 10px;
+  border-bottom:1px solid #dce8f1;
+  padding-bottom:8px;
+}
+.addtask-section-title i { color:#2f9cff; }
 
   .add-task-form .form-control,
   .add-task-form .react-datepicker-wrapper,
   .add-task-form .react-datepicker__input-container input {
-    height: 38px;
-    padding: 6px 12px;
-    font-size: 14px;
+  height: 40px;
+  padding: 6px 12px;
+  font-size: 13px;
+  border: 1px solid #d5e3ee;
+  border-radius: 8px;
+  box-shadow: none;
+}
+.add-task-form .form-control:focus,
+.add-task-form .react-datepicker__input-container input:focus {
+  border-color: #2f9cff;
+  box-shadow: 0 0 0 2px rgba(47, 156, 255, 0.12);
   }
 
   .add-task-form .react-datepicker-wrapper {
@@ -438,7 +464,7 @@ class AddTask extends Component {
     transform: scale(0.9);
   }
     .add-task-form {
-  padding-bottom: 10px;
+  padding: 10px 4px 18px;
 }
 
 .card-header {
@@ -452,16 +478,16 @@ class AddTask extends Component {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 18px;
+  padding: 12px 16px;
   background: linear-gradient(135deg, #1f4f6d, #2f6f96);
   border-radius: 4px 4px 0 0;
 }
 
 .add-task-title {
-  font-size: 22px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
   color: #ffffff;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   margin: 0;
 }
 
@@ -483,8 +509,8 @@ class AddTask extends Component {
 }
 
 .card-header .nav-tabs .nav-link {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 700;
   color: #dbe7f0;
   border: none;
   padding: 8px 16px;
@@ -492,7 +518,7 @@ class AddTask extends Component {
 
 .card-header .nav-tabs .nav-link.active {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.22);
   border-radius: 4px 4px 0 0;
 }
 /* Make tabs feel clickable */
@@ -514,6 +540,50 @@ class AddTask extends Component {
 .placeholder-select option {
   color: #000; /* dropdown items stay normal */
 }
+.addtask-cancel-btn {
+  border-radius: 8px !important;
+  padding: 8px 14px !important;
+  background: #eef3f7 !important;
+  border: 1px solid #d4e3ed !important;
+  color: #4f6475 !important;
+  font-weight: 700 !important;
+}
+.addtask-primary-btn {
+  border-radius: 8px !important;
+  padding: 8px 14px !important;
+  font-weight: 700 !important;
+}
+.add-task-form .row {
+  margin-left: 0;
+  margin-right: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #edf3f8;
+  margin-bottom: 10px !important;
+  background: #fbfdff;
+}
+.add-task-form .row > [class*="col-"] {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+.add-task-form .switch .slider {
+  border-radius: 30px !important;
+}
+.add-task-form .switch .slider .on,
+.add-task-form .switch .slider .off {
+  font-size: 12px;
+  font-weight: 700;
+}
+.add-task-form .btn-success,
+.add-task-form .btn-danger {
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+.modal-footer {
+  border-top: 1px solid #dce8f1;
+  padding-top: 10px;
+}
 `}
         </style>
 
@@ -531,7 +601,9 @@ class AddTask extends Component {
               <div className="card card-primary">
                 <div className="card-header">
                   <div className="add-task-header">
-                    <h3 className="add-task-title">Add Task</h3>
+                    <h3 className="add-task-title">
+                      {isSpotVisit ? "Add Spot Visit Task" : "Add Task"}
+                    </h3>
                     <button
                       className="btn btn-tool add-task-close"
                       onClick={this.props.closeModal}
@@ -541,7 +613,7 @@ class AddTask extends Component {
                   </div>
 
                   {/* tabs */}
-                  <ul className="nav nav-tabs mt-2">
+                  {!isUnifiedPanel && <ul className="nav nav-tabs mt-2">
                     <li className="nav-item">
                       <a
                         className={`nav-link ${this.state.activeTab === "task" ? "active" : ""}`}
@@ -568,7 +640,7 @@ class AddTask extends Component {
                         Asset Details
                       </a>
                     </li>
-                  </ul>
+                  </ul>}
                 </div>
 
                 <div
@@ -578,8 +650,11 @@ class AddTask extends Component {
                     overflowY: "auto",
                   }}
                 >
-                  {this.state.activeTab === "task" && (
+                  {(this.state.activeTab === "task" || isUnifiedPanel) && (
                     <div className="add-task-form">
+                      <div className="addtask-section-title">
+                        <i className="fa fa-list-alt"></i> Task Details
+                      </div>
                       <div className="row mb-3 align-items-center">
                         <div className="col-md-2">
                           <label>Task Name</label>
@@ -832,7 +907,56 @@ class AddTask extends Component {
                     </div>
                   )}
 
-                  {this.state.activeTab === "asset" && (
+                  {isUnifiedPanel && (
+                    <>
+                      <div className="addtask-section-title">
+                        <i className="fa fa-question-circle"></i> Question Details
+                      </div>
+                      <div className="row mb-2">
+                        <div className="col-12 d-flex justify-content-end">
+                          <Button
+                            ClassName="btn btn-success btn-sm"
+                            Icon={<i className="fa fa-plus"></i>}
+                            Text="Add Question"
+                            Action={this.addQuesFields}
+                          />
+                        </div>
+                      </div>
+
+                      {this.state.quesValues.map((item, index) => (
+                        <div key={index} className="row mb-3">
+                          <div className="col-10">
+                            <label>Question Name</label>
+                            <input
+                              type="text"
+                              name="QuestionName"
+                              className="form-control"
+                              placeholder="Enter Question Name"
+                              value={item.QuestionName}
+                              onChange={(e) => this.handleQuesChange(index, e)}
+                            />
+                          </div>
+                          <div className="col-2 d-flex align-items-end">
+                            {index > 0 && (
+                              <button
+                                className="btn btn-danger btn-sm"
+                                onClick={() => this.removeQuesFields(index)}
+                              >
+                                <i className="fa fa-trash"></i>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+
+                      <div className="addtask-section-title">
+                        <i className="fa fa-cube"></i> Asset Details (Optional)
+                      </div>
+                    </>
+                  )}
+
+                  {(this.state.activeTab === "asset" && !isUnifiedPanel) ||
+                  isUnifiedPanel ? (
                     <div className="add-task-form">
                       {/* Asset selection */}
                       <div className="row mb-3 align-items-center">
@@ -944,9 +1068,9 @@ class AddTask extends Component {
                         </div>
                       </div>
                     </div>
-                  )}
+                  ) : null}
 
-                  {this.state.activeTab === "question" && (
+                  {!isUnifiedPanel && this.state.activeTab === "question" && (
                     <>
                       <div className="row mb-3">
                         {/* <div className="col-6">
@@ -1010,7 +1134,7 @@ class AddTask extends Component {
 
                   <div className="modal-footer">
                     <button
-                      className="btn btn-primary"
+                      className="btn btn-primary addtask-primary-btn"
                       disabled={
                         !this.isTaskValid() ||
                         !this.hasAtLeastOneQuestion() ||
@@ -1018,14 +1142,19 @@ class AddTask extends Component {
                       }
                       onClick={this.handleSave}
                     >
-                      {this.state.isSaving ? "Saving..." : "Save"}
+                      <i className="fa fa-check mr-1"></i>
+                      {this.state.isSaving
+                        ? "Saving..."
+                        : isSpotVisit
+                          ? "Create Spot Visit Task"
+                          : "Create Task"}
                     </button>
 
                     <Button
                       Id="btnCancel"
-                      Text="Cancel"
+                      Text={<><i className="fa fa-times mr-1"></i>Cancel</>}
                       Action={this.handleCancel}
-                      ClassName="btn btn-secondary"
+                      ClassName="btn addtask-cancel-btn"
                     />
                   </div>
                 </div>

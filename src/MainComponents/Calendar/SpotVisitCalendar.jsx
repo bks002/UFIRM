@@ -1,29 +1,82 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { Dialog } from "primereact/dialog";
 import { useSelector } from "react-redux";
 import { getTaskDailySummary, getTaskDetails } from "../../Services/SpotVisitCalendar";
-import { Dialog } from "primereact/dialog";
 
 export default function SpotVisitCalendar() {
+  const propertyId = useSelector((s) => s.Commonreducer.puidn);
+
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [taskSummaryData, setTaskSummaryData] = useState([]);
+  const [summaryByDate, setSummaryByDate] = useState({});
   const [dialogVisible, setDialogVisible] = useState(false);
-  const [dialogData, setDialogData] = useState({}); // { FacilityMemberName: { taskId: [details] } }
-  const propertyId = useSelector((state) => state.Commonreducer.puidn);
+  const [dialogData, setDialogData] = useState({
+    detailsByMemberAndTaskId: {},
+  });
+  const [expandedCell, setExpandedCell] = useState(null);
+
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+  ];
+
+  const dayHeaders = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
+  const MAX_VISIBLE_CARDS = 2;
 
   useEffect(() => {
     if (!propertyId) return;
 
-    const fetchTaskSummary = async () => {
+    const fetchSummary = async () => {
       try {
         const data = await getTaskDailySummary(propertyId);
-        setTaskSummaryData(data);
+        const grouped = {};
+
+        (data || []).forEach((item) => {
+          const dateKey = (item.TaskDate || "").slice(0, 10);
+          if (!dateKey) return;
+          if (!grouped[dateKey]) grouped[dateKey] = {};
+
+          const memberKey = String(item.FacilityMemberId || item.FacilityMemberName || "0");
+          if (!grouped[dateKey][memberKey]) {
+            grouped[dateKey][memberKey] = {
+              ...item,
+              TaskCount: 0,
+              TaskIds: [],
+              TaskNameById: {},
+            };
+          }
+
+          grouped[dateKey][memberKey].TaskCount += Number(item.TaskCount || 0);
+          if (item.TaskId) {
+            grouped[dateKey][memberKey].TaskIds.push(item.TaskId);
+            if (item.TaskName) {
+              grouped[dateKey][memberKey].TaskNameById[String(item.TaskId)] = item.TaskName;
+            }
+          }
+          if (item.TaskIds) {
+            const splitIds = String(item.TaskIds)
+              .split(",")
+              .map((x) => x.trim())
+              .filter(Boolean);
+            grouped[dateKey][memberKey].TaskIds.push(...splitIds);
+          }
+        });
+
+        const normalized = {};
+        Object.keys(grouped).forEach((dateKey) => {
+          normalized[dateKey] = Object.values(grouped[dateKey]).map((member) => ({
+            ...member,
+            TaskIds: [...new Set(member.TaskIds.map(String))],
+          }));
+        });
+
+        setSummaryByDate(normalized);
       } catch (error) {
         console.error("Error fetching task summary data:", error);
       }
     };
 
-    fetchTaskSummary();
-  }, [propertyId]);
+    fetchSummary();
+  }, [propertyId, currentDate]);
 
   const getDaysInMonth = (date) =>
     new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
@@ -32,230 +85,226 @@ export default function SpotVisitCalendar() {
     new Date(date.getFullYear(), date.getMonth(), 1).getDay();
 
   const generateCalendarDays = () => {
-    const daysInMonth = getDaysInMonth(currentDate);
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const totalDays = getDaysInMonth(currentDate);
     const firstDay = getFirstDayOfMonth(currentDate);
+    const startOffset = firstDay === 0 ? 6 : firstDay - 1;
     const days = [];
-    for (let i = 1; i < firstDay; i++) days.push(null);
-    for (let i = 1; i <= daysInMonth; i++) days.push(i);
+
+    const prevMonthDays = new Date(year, month, 0).getDate();
+    for (let i = startOffset - 1; i >= 0; i--) {
+      days.push({ day: prevMonthDays - i, currentMonth: false });
+    }
+
+    for (let i = 1; i <= totalDays; i++) {
+      days.push({ day: i, currentMonth: true });
+    }
+
+    const remainder = days.length % 7;
+    if (remainder !== 0) {
+      const needed = 7 - remainder;
+      for (let i = 1; i <= needed; i++) {
+        days.push({ day: i, currentMonth: false });
+      }
+    }
+
     return days;
   };
 
-  const calendarDays = generateCalendarDays();
-
-  // Group task data by date string (YYYY-MM-DD)
-  const taskDataByDate = taskSummaryData.reduce((acc, item) => {
-    const dateKey = item.TaskDate.slice(0, 10);
-    if (!acc[dateKey]) {
-      acc[dateKey] = [];
-    }
-    acc[dateKey].push(item);
-    return acc;
-  }, {});
-
-  const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
-  ];
-  const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-  const handleMonthChange = (e) => {
-    const newMonth = parseInt(e.target.value, 10);
-    setCurrentDate(new Date(currentDate.getFullYear(), newMonth, 1));
+  const isToday = (day) => {
+    const today = new Date();
+    return (
+      day === today.getDate() &&
+      currentDate.getMonth() === today.getMonth() &&
+      currentDate.getFullYear() === today.getFullYear()
+    );
   };
 
-  // On clicking a day box, fetch detailed task questionnaire info for each member's tasks and open dialog
-  const handleDayClick = async (dayNumber) => {
-    if (!dayNumber) return;
+  const goToPrevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  };
 
-    const dateKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(dayNumber).padStart(2, "0")}`;
-    const taskEntries = taskDataByDate[dateKey] || [];
+  const goToNextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  };
 
-    // Prepare a nested map: FacilityMemberName -> TaskId -> details array
+  const handleMemberClick = async (_, dateKey) => {
+    const membersOnDate = summaryByDate[dateKey] || [];
     const detailsByMemberAndTaskId = {};
-
     try {
-      for (const entry of taskEntries) {
-        const details = await getTaskDetails(entry.TaskId, dateKey, entry.FacilityMemberId);
+      for (const member of membersOnDate) {
+        const memberName = member.FacilityMemberName || "Unknown";
+        const taskIds = (member.TaskIds || [])
+          .map((id) => String(id).trim())
+          .filter(Boolean);
 
-        if (!detailsByMemberAndTaskId[entry.FacilityMemberName]) {
-          detailsByMemberAndTaskId[entry.FacilityMemberName] = {};
+        if (!detailsByMemberAndTaskId[memberName]) {
+          detailsByMemberAndTaskId[memberName] = {};
         }
-        if (!detailsByMemberAndTaskId[entry.FacilityMemberName][entry.TaskId]) {
-          detailsByMemberAndTaskId[entry.FacilityMemberName][entry.TaskId] = [];
+
+        for (const taskId of taskIds) {
+          const details = await getTaskDetails(taskId, dateKey, member.FacilityMemberId);
+          if (!detailsByMemberAndTaskId[memberName][taskId]) {
+            detailsByMemberAndTaskId[memberName][taskId] = [];
+          }
+
+          const detailsWithTaskName = (details || []).map((d) => ({
+            TaskName: d.TaskName || member.TaskNameById?.[String(taskId)] || "Task",
+            ...d,
+          }));
+
+          detailsByMemberAndTaskId[memberName][taskId].push(...detailsWithTaskName);
         }
-
-        const detailsWithTaskName = details.map(item => ({
-          TaskName: entry.TaskName || entry.TaskName,
-          ...item,
-        }));
-
-        detailsByMemberAndTaskId[entry.FacilityMemberName][entry.TaskId].push(...detailsWithTaskName);
       }
 
-      setDialogData(detailsByMemberAndTaskId);
+      setDialogData({
+        detailsByMemberAndTaskId,
+      });
       setDialogVisible(true);
     } catch (error) {
       console.error("Error fetching task details:", error);
     }
   };
 
-  const dialogFooter = (
-    <button className="btn btn-secondary" onClick={() => setDialogVisible(false)}>
-      Close
-    </button>
-  );
+  const calendarDays = generateCalendarDays();
 
   return (
-    <div className="content-wrapper" style={{ minHeight: "100vh" }}>
-      <div className="card" style={{ maxWidth: 1280, margin: "0 auto" }}>
-        {/* Header */}
-        <div className="card-header d-flex justify-content-center align-items-center p-3 mb-0 pb-0">
-          <div className="d-flex align-items-center">
-            <select
-              className="form-select me-2"
-              style={{ width: 160, display: "inline-block" }}
-              value={currentDate.getMonth()}
-              onChange={handleMonthChange}
-            >
-              {monthNames.map((name, idx) => (
-                <option value={idx} key={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-            <span style={{ fontSize: "1.3rem", fontWeight: 500 }}>
-              {currentDate.getFullYear()}
-            </span>
+    <div className="content-wrapper">
+      <div className="ppm-calendar-container">
+        <div className="ppm-header">
+          <h2 className="ppm-header-title">Spot Visit Calendar</h2>
+          <div className="ppm-view-toggle">
+            <button className="ppm-view-toggle-btn active">Month</button>
+            <button className="ppm-view-toggle-btn" disabled>Week</button>
           </div>
         </div>
 
-        {/* Calendar Grid */}
-        <div className="card-body p-0 mt-0 pt-0">
-          <div className="table-responsive">
-            <table className="table table-bordered mb-0">
-              <thead className="table-light">
-                <tr>
-                  {dayNames.map((day, idx) => (
-                    <th
-                      key={day}
-                      className={`text-center py-3 ${idx === 6 ? "bg-light text-secondary" : ""}`}
-                      style={{ width: "14.28%" }}
-                    >
-                      {day}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {Array.from(
-                  { length: Math.ceil(calendarDays.length / 7) },
-                  (_, weekIndex) => (
-                    <tr key={weekIndex}>
-                      {Array.from({ length: 7 }, (_, dayIndex) => {
-                        const dayNumber = calendarDays[weekIndex * 7 + dayIndex];
-                        const dateKey = dayNumber
-                          ? `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(dayNumber).padStart(2, "0")}`
-                          : null;
-                        const taskEntries = dateKey ? taskDataByDate[dateKey] || [] : [];
+        <div className="ppm-nav-bar">
+          <button className="ppm-nav-btn" onClick={goToPrevMonth}>
+            <i className="fas fa-chevron-left"></i>
+          </button>
+          <span className="ppm-nav-label">
+            {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+          </span>
+          <button className="ppm-nav-btn" onClick={goToNextMonth}>
+            <i className="fas fa-chevron-right"></i>
+          </button>
+        </div>
 
-                        return (
-                          <td
-                            key={dayIndex}
-                            className={`text-center align-top ${dayNumber ? "cursor-pointer" : ""}`}
-                            style={{
-                              height: "140px",
-                              verticalAlign: "top",
-                              background: "#fff",
-                              color: "#22223b",
-                              fontWeight: 500,
-                              fontSize: "0.9rem",
-                              padding: 4,
+        <div className="ppm-calendar-card">
+          <div className="ppm-calendar-grid">
+            {dayHeaders.map((d) => (
+              <div key={d} className="ppm-day-header">{d}</div>
+            ))}
+
+            {calendarDays.map((cell, idx) => {
+              const dateKey = cell.currentMonth
+                ? `${currentDate.getFullYear()}-${String(
+                    currentDate.getMonth() + 1
+                  ).padStart(2, "0")}-${String(cell.day).padStart(2, "0")}`
+                : null;
+
+              const members = dateKey ? summaryByDate[dateKey] : null;
+              const visibleMembers = members ? members.slice(0, MAX_VISIBLE_CARDS) : [];
+              const hiddenCount = members ? Math.max(0, members.length - MAX_VISIBLE_CARDS) : 0;
+
+              return (
+                <div
+                  key={idx}
+                  className={`ppm-day-cell${!cell.currentMonth ? " ppm-other-month" : ""}`}
+                >
+                  <div className="ppm-day-number">
+                    <span className={cell.currentMonth && isToday(cell.day) ? "ppm-today" : ""}>
+                      {cell.day}
+                    </span>
+                  </div>
+
+                  {cell.currentMonth && members && (
+                    <div className="ppm-tasks-container">
+                      {visibleMembers.map((m, i) => (
+                        <div
+                          key={i}
+                          className="ppm-task-card"
+                          onClick={() => handleMemberClick(m, dateKey)}
+                        >
+                          <span className="ppm-task-card-dot"></span>
+                          <span className="ppm-task-card-name">
+                            <span>Member: {m.FacilityMemberName}</span>
+                            <br />
+                            <span className="ppm-task-card-property">Property: {m.PropertyName || "-"}</span>
+                          </span>
+                          <span className="ppm-task-card-count">{m.TaskCount}</span>
+                        </div>
+                      ))}
+
+                      {hiddenCount > 0 && (
+                        <button
+                          className="ppm-more-link"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExpandedCell(expandedCell === idx ? null : idx);
+                          }}
+                        >
+                          +{hiddenCount} more
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {expandedCell === idx && members && (
+                    <>
+                      <div
+                        className="ppm-popover-backdrop"
+                        onClick={() => setExpandedCell(null)}
+                      />
+                      <div className="ppm-popover">
+                        {members.map((m, i) => (
+                          <div
+                            key={i}
+                            className="ppm-task-card"
+                            onClick={() => {
+                              setExpandedCell(null);
+                              handleMemberClick(m, dateKey);
                             }}
-                            onClick={() => handleDayClick(dayNumber)}
                           >
-                            {dayNumber && (
-                              <div>
-                                <div style={{
-                                  fontWeight: "bold",
-                                  fontSize: '1.1rem',
-                                  marginBottom: 4
-                                }}>
-                                  {dayNumber}
-                                </div>
-                                {taskEntries.length > 0 && (
-                                  <div
-                                    style={{
-                                      margin: 0,
-                                      fontSize: '0.81rem',
-                                      textAlign: 'left',
-                                      maxHeight: '100px',
-                                      overflowY: "auto",
-                                    }}
-                                  >
-                                    {taskEntries.map((entry, idx) => (
-                                      <div
-                                        key={idx}
-                                        style={{
-                                          boxShadow: "0 1px 3px rgba(60,60,60,0.08)",
-                                          border: "1px solid #e4e4e4",
-                                          borderRadius: 4,
-                                          marginBottom: 3,
-                                          padding: "3px 6px",
-                                          background: "#f7f7fe",
-                                          wordBreak: "break-word",
-                                        }}
-                                      >
-                                        <div style={{ fontWeight: 600, fontSize: "0.8rem", lineHeight: "1.2" }}>
-                                          Member: <span style={{ fontWeight: 400 }}>{entry.FacilityMemberName}</span>
-                                        </div>
-                                        <div style={{ fontWeight: 600, fontSize: "0.8rem", lineHeight: "1.2" }}>
-                                          Property: <span style={{ fontWeight: 400 }}>{entry.PropertyName}</span>
-                                        </div>
-                                        <div style={{ fontWeight: 600, fontSize: "0.8rem", lineHeight: "1.2" }}>
-                                          Tasks: <span style={{ fontWeight: 400 }}>{entry.TaskCount}</span>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  )
-                )}
-              </tbody>
-            </table>
+                            <span className="ppm-task-card-dot"></span>
+                            <span className="ppm-task-card-name">
+                              <span>Member: {m.FacilityMemberName}</span>
+                              <br />
+                              <span className="ppm-task-card-property">Property: {m.PropertyName || "-"}</span>
+                            </span>
+                            <span className="ppm-task-card-count">{m.TaskCount}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
 
-      {/* Dialog for showing detailed tasks grouped by Facility Member Name and TaskId */}
       <Dialog
         header="Task Details"
         visible={dialogVisible}
-        style={{ width: '70vw', maxHeight: '80vh' }}
+        className="ppm-dialog"
+        style={{ width: "75vw" }}
         modal
         onHide={() => setDialogVisible(false)}
-        draggable={false}
-        resizable={false}
-        blockScroll
       >
-        <div style={{ maxHeight: '65vh', overflowY: 'auto' }}>
-          {Object.entries(dialogData).length === 0 && (
-            <p>No task details available.</p>
-          )}
-          {Object.entries(dialogData).map(([memberName, tasksById], memberIdx) => (
-            <div key={memberIdx} style={{ marginBottom: 30 }}>
-              <h5 style={{ borderBottom: '1px solid #ccc', paddingBottom: 6, marginBottom: 12 }}>
-                Facility Member Name: {memberName}
-              </h5>
-              {Object.entries(tasksById).map(([taskId, details], taskIdx) => (
-                <div key={taskIdx} style={{ marginBottom: 24 }}>
-                  <h6 style={{ fontWeight: '600', marginBottom: 8 }}>Task ID: {taskId}</h6>
-                  <table className="table table-striped table-bordered" style={{ fontSize: '0.85rem' }}>
+        {Object.keys(dialogData.detailsByMemberAndTaskId || {}).length === 0 ? (
+          <p>No task details available.</p>
+        ) : (
+          Object.entries(dialogData.detailsByMemberAndTaskId).map(([memberName, tasksById], memberIdx) => (
+            <div key={memberIdx} className="ppm-dialog-task-section">
+              <h5 className="ppm-dialog-member-name">Facility Member Name: {memberName}</h5>
+              {Object.entries(tasksById).map(([taskId, rows], taskIdx) => (
+                <div key={taskIdx} style={{ marginBottom: 18 }}>
+                  <h6 className="ppm-dialog-task-title">Task ID: {taskId}</h6>
+                  <table className="ppm-detail-table">
                     <thead>
                       <tr>
                         <th>TaskName</th>
@@ -265,12 +314,12 @@ export default function SpotVisitCalendar() {
                       </tr>
                     </thead>
                     <tbody>
-                      {details.map((detail, detailIdx) => (
-                        <tr key={detailIdx}>
-                          <td>{detail.TaskName}</td>
-                          <td>{detail.QuestionName}</td>
-                          <td>{detail.Remarks || '-'}</td>
-                          <td>{detail.Action || '-'}</td>
+                      {rows.map((r, i) => (
+                        <tr key={i}>
+                          <td>{r.TaskName || "-"}</td>
+                          <td>{r.QuestionName || r.Question || "-"}</td>
+                          <td>{r.Remarks || r.Remark || "-"}</td>
+                          <td>{r.Action || "-"}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -278,8 +327,8 @@ export default function SpotVisitCalendar() {
                 </div>
               ))}
             </div>
-          ))}
-        </div>
+          ))
+        )}
       </Dialog>
     </div>
   );

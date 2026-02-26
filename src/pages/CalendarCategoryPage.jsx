@@ -24,24 +24,17 @@ class CalendarCategoryPage extends Component {
                             <div className="col-sm-6">
                                 <h1 className="m-0 text-dark">{this.state.PageTitle}</h1>
                             </div>
-                            <div className="col-sm-6">
-                                <ol className="breadcrumb float-sm-right">
-                                    <li className="breadcrumb-item">{this.state.PageMode}</li>
-                                    <li className="breadcrumb-item active">{this.state.PageTitle}</li>
-                                </ol>
-                            </div>
                         </div>
                     </div>
                 </div>
                 <section className="content">
                     <div className="container-fluid">
-                        <div className="container-fluid">
-                            <Category
-                                PageMode={this.state.PageMode}
-                                PageTitle={this.state.PageTitle}
-                                setPageTitle={this.setPageTitle}
-                                setPageMode={this.setPageMode} />
-                        </div>
+                        <Category
+                            PageMode={this.state.PageMode}
+                            PageTitle={this.state.PageTitle}
+                            setPageTitle={this.setPageTitle}
+                            setPageMode={this.setPageMode}
+                        />
                     </div>
                 </section>
             </div>

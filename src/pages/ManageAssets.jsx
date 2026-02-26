@@ -29,6 +29,9 @@ const ServiceRecords = (actions) => {
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
     const [filteredAssets, setFilteredAssets] = useState(upcomingServiceAssets);
+    const [viewMode, setViewMode] = useState("panel");
+    const [selectedAssetId, setSelectedAssetId] = useState(null);
+    const [searchText, setSearchText] = useState("");
 
     const getAssets = async () => {
         setLoading(true);
@@ -173,15 +176,99 @@ const ServiceRecords = (actions) => {
         }));
     };
 
+    const combinedAssets = [
+        ...(serviceOverdueAssets || []).map((a) => ({ ...a, _status: "Overdue" })),
+        ...(filteredAssets || []).map((a) => ({ ...a, _status: "Upcoming" })),
+    ];
+    const searchedAssets = combinedAssets.filter((asset) => {
+        if (!searchText) return true;
+        const text = `${asset.Id || ""} ${asset.Name || ""} ${asset.NextServiceDate || ""} ${asset._status}`.toLowerCase();
+        return text.includes(searchText.toLowerCase());
+    });
+    const activeAsset = searchedAssets.find((x) => x.Id === selectedAssetId) || searchedAssets[0] || null;
 
     return (
         <div className="content-wrapper">
+            <style>{`
+                .service-view-header { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
+                .service-view-toggle { display:inline-flex; border:1px solid #d4e3ed; border-radius:8px; overflow:hidden; background:#fff; }
+                .service-view-toggle button { border:none; background:transparent; padding:7px 12px; font-size:12px; font-weight:600; color:#4A7FA8; }
+                .service-view-toggle button.active { background:#e8f1f8; color:#1E4A6B; }
+                .service-panel-shell { display:grid; grid-template-columns:340px minmax(0,1fr); border:1px solid #d8e6f0; border-radius:10px; overflow:hidden; min-height:560px; background:#fff; }
+                .service-panel-list { border-right:1px solid #d8e6f0; max-height:560px; overflow-y:auto; padding:10px; }
+                .service-panel-item { width:100%; text-align:left; border:1px solid #e6eff6; border-radius:8px; background:#fff; padding:10px; margin-bottom:8px; cursor:pointer; }
+                .service-panel-item.active { border-color:#2f9cff; background:#f5faff; box-shadow: inset 2px 0 0 #2f9cff; }
+                .service-panel-detail { max-height:560px; overflow-y:auto; padding:16px; }
+                .service-label { font-size:11px; color:#7a8ea0; text-transform:uppercase; font-weight:700; margin-bottom:4px; }
+                .service-value { font-size:13px; color:#22384c; font-weight:600; word-break:break-word; }
+                .service-grid { margin-top:12px; display:grid; grid-template-columns:repeat(2,minmax(180px,1fr)); gap:14px; }
+                @media (max-width:1024px){ .service-panel-shell { grid-template-columns:1fr; } .service-panel-list { border-right:none; border-bottom:1px solid #d8e6f0; max-height:240px; } }
+            `}</style>
+            <section className="content">
+                <div className="card container-fluid p-2">
+                    <div className="service-view-header">
+                        <h2 style={{ margin: 0 }}>Service Records</h2>
+                        <div className="d-flex align-items-center gap-2">
+                            <div className="service-view-toggle">
+                                <button type="button" className={viewMode === "panel" ? "active" : ""} onClick={() => setViewMode("panel")}>Panel View</button>
+                                <button type="button" className={viewMode === "table" ? "active" : ""} onClick={() => setViewMode("table")}>Table View</button>
+                            </div>
+                            <input
+                                type="text"
+                                className="form-control form-control-sm"
+                                style={{ width: 220 }}
+                                value={searchText}
+                                onChange={(e) => setSearchText(e.target.value)}
+                                placeholder="Search assets..."
+                            />
+                        </div>
+                    </div>
+                    {viewMode === "panel" && (
+                        <div className="service-panel-shell">
+                            <div className="service-panel-list">
+                                {searchedAssets.map((asset) => (
+                                    <button
+                                        key={`${asset._status}-${asset.Id}`}
+                                        type="button"
+                                        className={`service-panel-item ${activeAsset && activeAsset.Id === asset.Id ? "active" : ""}`}
+                                        onClick={() => setSelectedAssetId(asset.Id)}
+                                    >
+                                        <div style={{ fontWeight: 700, color: "#22384c", fontSize: 13 }}>{asset.Name || "-"}</div>
+                                        <div style={{ fontSize: 12, color: asset._status === "Overdue" ? "#A83232" : "#B8860B", fontWeight: 600 }}>#{asset.Id} • {asset._status}</div>
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="service-panel-detail">
+                                {!activeAsset && <div className="text-muted">No service assets found.</div>}
+                                {activeAsset && (
+                                    <>
+                                        <h3 style={{ margin: 0, color: "#22384c", fontWeight: 700 }}>{activeAsset.Name || "-"}</h3>
+                                        <div className="service-grid">
+                                            <div><div className="service-label">Asset ID</div><div className="service-value">{activeAsset.Id || "-"}</div></div>
+                                            <div><div className="service-label">Service Status</div><div className="service-value" style={{ color: activeAsset._status === "Overdue" ? "#A83232" : "#B8860B", fontWeight: 700 }}>{activeAsset._status}</div></div>
+                                            <div><div className="service-label">Next Service Date</div><div className="service-value">{activeAsset.NextServiceDate || "-"}</div></div>
+                                        </div>
+                                        <div className="d-flex gap-2 mt-3">
+                                            <button type="button" className="btn btn-primary btn-sm" onClick={() => handleViewRecord(activeAsset.Id)}>
+                                                <i className="fa fa-eye" /> View Record
+                                            </button>
+                                            <button type="button" className="btn btn-success btn-sm" onClick={() => handleAddRecord(activeAsset.Id)}>
+                                                <i className="fa fa-plus" /> Add Record
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </section>
             <section className="content">
                 <LoadingOverlay
                     active={loading}
                     spinner={<PropagateLoader color="#336B93" size={30} />}
                 >
-                    <div className="card container-fluid">
+                    <div className="card container-fluid" style={{ display: viewMode === "table" ? "block" : "none" }}>
                         <h2>Service Over Due Assets</h2>
                         {error ? (
                             <p className="text-danger">{error}</p>
@@ -237,7 +324,7 @@ const ServiceRecords = (actions) => {
                     active={loading}
                     spinner={<PropagateLoader color="#336B93" size={30} />}
                 >
-                    <div className="card container-fluid">
+                    <div className="card container-fluid" style={{ display: viewMode === "table" ? "block" : "none" }}>
                         <div className="d-flex justify-content-between align-items-center mt-2">
                             <div><h2>Upcoming Services</h2></div>
                             <div className="d-flex gap-2">
