@@ -1539,6 +1539,12 @@ class MainNav extends React.Component {
             <Route path="/Account/App/AddNewUser">
               <AddNewUser />
             </Route>
+            <Route path="/Account/App/CreateNewUser">
+              <CreateNewUser />
+            </Route>
+            <Route path="/Account/App/AddNewUser">
+              <AddNewUser />
+            </Route>
             <Route path="/Account/App/PropertyMember">
               <PropertyMember />
             </Route>
