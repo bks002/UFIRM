@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import LoadingOverlay from 'react-loading-overlay';
 import { PropagateLoader } from 'react-spinners';
 import '../Style/ManageAssets.css';
-import {connect} from "react-redux";
+import { connect } from "react-redux";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import {fetchAssets, getServiceHistory, saveServiceRecord} from "../Services/AssetService";
+import { fetchAssets, getServiceHistory, saveServiceRecord } from "../Services/AssetService";
 
 const ServiceRecords = (actions) => {
     const [serviceOverdueAssets, setServiceOverdueAssets] = useState([]); // Initialize as an empty array
@@ -14,7 +14,7 @@ const ServiceRecords = (actions) => {
     const [error, setError] = useState(null);
     const [showServiceRecord, setShowServiceRecord] = useState(false);
     const [addServiceRecord, setAddServiceRecord] = useState(false);
-    const [serviceRecord,setServiceRecord] = useState([]);
+    const [serviceRecord, setServiceRecord] = useState([]);
     const [formData, setFormData] = useState({
         assetId: "0",
         serviceDate: "",
@@ -22,28 +22,31 @@ const ServiceRecords = (actions) => {
         image: null,
         receipt: null,
         nextServiceDate: "",
+        servicedBy: "",
+        approvedBy: "",
+        serviceCost: "",
     });
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
     const [filteredAssets, setFilteredAssets] = useState(upcomingServiceAssets);
 
-            const getAssets = async () => {
-            setLoading(true);
-            try {
-                const data = await fetchAssets(actions.propId);
-                setServiceOverdueAssets(data.PassedServiceDates );
-                const validServiceDates = data.UpcomingServiceDates.filter(
-                    (service) => service.NextServiceDate !== null
-                );
-                setUpcomingServiceAssets(validServiceDates);
-                setFilteredAssets(validServiceDates);
-                setError(null);
-            } catch (err) {
-                setError('Failed to load assets');
-            } finally {
-                setLoading(false);
-            }
-        };
+    const getAssets = async () => {
+        setLoading(true);
+        try {
+            const data = await fetchAssets(actions.propId);
+            setServiceOverdueAssets(data.PassedServiceDates);
+            const validServiceDates = data.UpcomingServiceDates.filter(
+                (service) => service.NextServiceDate !== null
+            );
+            setUpcomingServiceAssets(validServiceDates);
+            setFilteredAssets(validServiceDates);
+            setError(null);
+        } catch (err) {
+            setError('Failed to load assets');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         getAssets();
@@ -80,27 +83,35 @@ const ServiceRecords = (actions) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
         try {
-            let serviceRecordData = {
-                assetId: formData.assetId,
-                serviceDate: formData.serviceDate,
-                remark: formData.remarks,
-                nextServiceDate: formData.nextServiceDate,
-            };
+            setLoading(true);
+
+            const formDataToSend = new FormData();
+            formDataToSend.append("AssetId", formData.assetId);
+            formDataToSend.append("ServiceDate", formData.serviceDate);
+            formDataToSend.append("NextServiceDate", formData.nextServiceDate);
+            formDataToSend.append("Remark", formData.remarks);
+            formDataToSend.append("ServiceCost", formData.serviceCost || 0);
+            formDataToSend.append("ServicedBy", formData.servicedBy || "");
+            formDataToSend.append("ApprovedBy", formData.approvedBy || "");
 
             if (formData.image) {
-                const imageBase64 = await handleFileToBase64(formData.image);
-                serviceRecordData = { ...serviceRecordData, image: imageBase64.split(",")[1] };
+                formDataToSend.append("ServiceImg", formData.image);
             }
             if (formData.receipt) {
-                const receiptBase64 = await handleFileToBase64(formData.receipt);
-                serviceRecordData = { ...serviceRecordData, serviceDoc: receiptBase64.split(",")[1] };
+                formDataToSend.append("ServiceDoc", formData.receipt);
             }
-            const response = await saveServiceRecord(serviceRecordData);
+
+            const response = await saveServiceRecord(formDataToSend);
+            //console.log("✅ Record saved:", response);
+
             await getAssets();
-            handleCancel()
+            handleCancel();
         } catch (error) {
-            console.error('Error saving service record:', error);
+            console.error("❌ Error saving service record:", error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -113,6 +124,9 @@ const ServiceRecords = (actions) => {
             image: null,
             receipt: null,
             nextServiceDate: "",
+            servicedBy: "",
+            approvedBy: "",
+            serviceCost: "",
         });
     };
 
@@ -135,7 +149,7 @@ const ServiceRecords = (actions) => {
         setEndDate(null);
         setFilteredAssets(upcomingServiceAssets); // Reset to show all data
     };
-    const handleViewRecord= async (id)=> {
+    const handleViewRecord = async (id) => {
         setLoading(true);
         try {
             const response = await getServiceHistory(id);
@@ -165,7 +179,7 @@ const ServiceRecords = (actions) => {
             <section className="content">
                 <LoadingOverlay
                     active={loading}
-                    spinner={<PropagateLoader color="#336B93" size={30}/>}
+                    spinner={<PropagateLoader color="#336B93" size={30} />}
                 >
                     <div className="card container-fluid">
                         <h2>Service Over Due Assets</h2>
@@ -180,35 +194,35 @@ const ServiceRecords = (actions) => {
                                 }}
                             >
                                 <table className="table table-striped table-danger table-hover">
-                                    <thead className="table-danger" style={{position: 'sticky', top: 0}}>
-                                    <tr>
-                                        <th className="text-center">Id</th>
-                                        <th className="text-center">Name</th>
-                                        <th className="text-center">Service Due Date <span
-                                            className="text-danger text-lg">!!</span></th>
-                                        <th className="text-center">Actions</th>
-                                    </tr>
+                                    <thead className="table-danger" style={{ position: 'sticky', top: 0 }}>
+                                        <tr>
+                                            <th className="text-center">Id</th>
+                                            <th className="text-center">Name</th>
+                                            <th className="text-center">Service Due Date <span
+                                                className="text-danger text-lg">!!</span></th>
+                                            <th className="text-center">Actions</th>
+                                        </tr>
                                     </thead>
                                     <tbody>
-                                    {serviceOverdueAssets.map((asset, index) => (
-                                        <tr key={index}>
-                                            <td className="text-center">{asset.Id || 'N/A'}</td>
-                                            <td className="text-center">{asset.Name || 'N/A'}</td>
-                                            <td className="text-center">{asset.NextServiceDate || 'N/A'}</td>
-                                            <td className="text-center">
-                                                <div className="d-flex justify-content-center gap-2">
-                                                    <button type="button" className="btn btn-primary btn-sm"
+                                        {serviceOverdueAssets.map((asset, index) => (
+                                            <tr key={index}>
+                                                <td className="text-center">{asset.Id || 'N/A'}</td>
+                                                <td className="text-center">{asset.Name || 'N/A'}</td>
+                                                <td className="text-center">{asset.NextServiceDate || 'N/A'}</td>
+                                                <td className="text-center">
+                                                    <div className="d-flex justify-content-center gap-2">
+                                                        <button type="button" className="btn btn-primary btn-sm"
                                                             onClick={() => handleViewRecord(asset.Id)}><i
-                                                        className="fa fa-eye"></i>
-                                                    </button>
-                                                    <button type="button" className="btn btn-success btn-sm"
+                                                                className="fa fa-eye"></i>
+                                                        </button>
+                                                        <button type="button" className="btn btn-success btn-sm"
                                                             onClick={() => handleAddRecord(asset.Id)}><i
-                                                        className="fa fa-plus"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                                                className="fa fa-plus"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
                                     </tbody>
                                 </table>
                             </div>
@@ -221,7 +235,7 @@ const ServiceRecords = (actions) => {
             <section className="content">
                 <LoadingOverlay
                     active={loading}
-                    spinner={<PropagateLoader color="#336B93" size={30}/>}
+                    spinner={<PropagateLoader color="#336B93" size={30} />}
                 >
                     <div className="card container-fluid">
                         <div className="d-flex justify-content-between align-items-center mt-2">
@@ -274,34 +288,34 @@ const ServiceRecords = (actions) => {
                                 }}
                             >
                                 <table className="table table-striped table-warning table-hover">
-                                    <thead className="table-warning" style={{position: 'sticky', top: 0}}>
-                                    <tr>
-                                        <th className="text-center">Id</th>
-                                        <th className="text-center">Name</th>
-                                        <th className="text-center">Service Due Date</th>
-                                        <th className="text-center">Actions</th>
-                                    </tr>
+                                    <thead className="table-warning" style={{ position: 'sticky', top: 0 }}>
+                                        <tr>
+                                            <th className="text-center">Id</th>
+                                            <th className="text-center">Name</th>
+                                            <th className="text-center">Service Due Date</th>
+                                            <th className="text-center">Actions</th>
+                                        </tr>
                                     </thead>
                                     <tbody>
-                                    {filteredAssets.map((asset, index) => (
-                                        <tr key={index}>
-                                            <td className="text-center">{asset.Id || 'N/A'}</td>
-                                            <td className="text-center">{asset.Name || 'N/A'}</td>
-                                            <td className="text-center">{asset.NextServiceDate || 'N/A'}</td>
-                                            <td className="text-center">
-                                                <div className="d-flex justify-content-center gap-2">
-                                                    <button type="button" className="btn btn-primary btn-sm"
+                                        {filteredAssets.map((asset, index) => (
+                                            <tr key={index}>
+                                                <td className="text-center">{asset.Id || 'N/A'}</td>
+                                                <td className="text-center">{asset.Name || 'N/A'}</td>
+                                                <td className="text-center">{asset.NextServiceDate || 'N/A'}</td>
+                                                <td className="text-center">
+                                                    <div className="d-flex justify-content-center gap-2">
+                                                        <button type="button" className="btn btn-primary btn-sm"
                                                             onClick={() => handleViewRecord(asset.Id)}><i
-                                                        className="fa fa-eye"></i>
-                                                    </button>
-                                                    <button type="button" className="btn btn-success btn-sm"
+                                                                className="fa fa-eye"></i>
+                                                        </button>
+                                                        <button type="button" className="btn btn-success btn-sm"
                                                             onClick={() => handleAddRecord(asset.Id)}><i
-                                                        className="fa fa-plus"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                                                className="fa fa-plus"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
                                     </tbody>
                                 </table>
                             </div>
@@ -363,6 +377,55 @@ const ServiceRecords = (actions) => {
                                             required
                                         />
                                     </div>
+                                    {/* Serviced By */}
+                                    <div className="mb-3">
+                                        <label htmlFor="servicedBy" className="form-label">
+                                            Serviced By
+                                        </label>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            id="servicedBy"
+                                            name="servicedBy"
+                                            value={formData.servicedBy}
+                                            onChange={handleChange}
+                                            required
+                                        />
+                                    </div>
+
+                                    {/* Approved By */}
+                                    <div className="mb-3">
+                                        <label htmlFor="approvedBy" className="form-label">
+                                            Approved By
+                                        </label>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            id="approvedBy"
+                                            name="approvedBy"
+                                            value={formData.approvedBy}
+                                            onChange={handleChange}
+                                            required
+                                        />
+                                    </div>
+
+                                    {/* Service Cost */}
+                                    <div className="mb-3">
+                                        <label htmlFor="serviceCost" className="form-label">
+                                            Service Cost (₹)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            className="form-control"
+                                            id="serviceCost"
+                                            name="serviceCost"
+                                            value={formData.serviceCost}
+                                            onChange={handleChange}
+                                            min="0"
+                                            step="0.01"
+                                            required
+                                        />
+                                    </div>
                                     {/* Remarks */}
                                     <div className="mb-3">
                                         <label htmlFor="remarks" className="form-label">
@@ -405,14 +468,7 @@ const ServiceRecords = (actions) => {
                                         <label htmlFor="receipt" className="form-label">
                                             Upload Service Receipt
                                         </label>
-                                        <input
-                                            type="file"
-                                            className="form-control"
-                                            id="receipt"
-                                            name="receipt"
-                                            accept="application/pdf, image/*"
-                                            onChange={handleFileChange}
-                                        />
+                                        z
                                         {formData.receipt && (
                                             <button
                                                 type="button"
@@ -475,7 +531,7 @@ const ServiceRecords = (actions) => {
                                 <button
                                     type="button"
                                     className="btn-close"
-                                    onClick={()=>setShowServiceRecord(false)}
+                                    onClick={() => setShowServiceRecord(false)}
                                     aria-label="Close"
                                 ></button>
                             </div>
@@ -488,48 +544,52 @@ const ServiceRecords = (actions) => {
                                                     <strong>Service Date:</strong> {item.ServiceDate}
                                                 </p>
                                                 <p>
+                                                    <strong>Service Cost:</strong> {item.ServiceCost || "No cost"}
+                                                </p>
+                                                <p>
+                                                    <strong>Serviced By:</strong> {item.ServicedBy || "No Serviced by"}
+                                                </p>
+                                                <p>
+                                                    <strong>Approved By:</strong> {item.ApprovedBy || "No Approved by"}
+                                                </p>
+                                                <p>
                                                     <strong>Remark:</strong> {item.Remark || "No Remarks"}
                                                 </p>
-                                                {item.Image && (
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-link mt-1 text-decoration-none"
-                                                        onClick={() => {
-                                                            const imageData = item.Image.replace(/^"|"$/g, ''); // Remove quotes
-                                                            const newWindow = window.open();
-                                                            newWindow.document.write(
-                                                                `<html><body style="margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden;">
-            <img src="data:image/png;base64,${imageData}" alt="Service Image" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
-            </body></html>`
-                                                            );
-                                                            newWindow.document.close();
-                                                        }}
-                                                    >
-                                                        View Image
-                                                    </button>
-                                                )}
 
+                                                {item.Image && (
+                                                    <div className="mt-2">
+                                                        <img
+                                                            src={item.Image}
+                                                            alt="Service Image"
+                                                            style={{ width: "200px", height: "auto", borderRadius: "8px" }}
+                                                            onError={(e) => (e.target.src = "https://via.placeholder.com/200?text=Image+Not+Available")}
+                                                        />
+                                                    </div>
+                                                )}
                                                 {item.ServiceDoc && (
                                                     <button
                                                         type="button"
                                                         className="btn btn-link mt-1 text-decoration-none"
                                                         onClick={() => {
-                                                            const serviceDocData = item.ServiceDoc.replace(/^"|"$/g, ''); // Remove quotes
-                                                            const newWindow = window.open();
-                                                            newWindow.document.write(
-                                                                `<html><body style="margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden;">
-          <img src="data:image/png;base64,${serviceDocData}" alt="Service Document" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
-        </body></html>`
-                                                            );
-                                                            newWindow.document.close();
+                                                            const serviceDocUrl = item.ServiceDoc.replace(/^"|"$/g, '');
+                                                            // Open directly if it's a PDF or other file
+                                                            if (serviceDocUrl.toLowerCase().endsWith(".pdf")) {
+                                                                window.open(serviceDocUrl, "_blank");
+                                                            } else {
+                                                                // Otherwise treat it like an image
+                                                                const newWindow = window.open();
+                                                                newWindow.document.write(`
+          <html><body style="margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden;">
+            <img src="${serviceDocUrl}" alt="Service Document" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+          </body></html>
+        `);
+                                                                newWindow.document.close();
+                                                            }
                                                         }}
                                                     >
                                                         View Service Document
                                                     </button>
                                                 )}
-
-
-
                                             </div>
                                         </div>
                                     ))
@@ -539,7 +599,7 @@ const ServiceRecords = (actions) => {
                             </div>
                             <div className="modal-footer">
                                 <button type="button" className="btn btn-secondary"
-                                        onClick={() => setShowServiceRecord(false)}>
+                                    onClick={() => setShowServiceRecord(false)}>
                                     Close
                                 </button>
                             </div>
@@ -550,8 +610,8 @@ const ServiceRecords = (actions) => {
         </div>
     );
 };
-            function mapStateToProps(state, props) {
-            return {
-            propId: state.Commonreducer.puidn,
-        }
-        } export default connect(mapStateToProps)(ServiceRecords);
+function mapStateToProps(state, props) {
+    return {
+        propId: state.Commonreducer.puidn,
+    }
+} export default connect(mapStateToProps)(ServiceRecords);

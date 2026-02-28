@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 
+const IMAGE_SCALE = 0.5;
+const IMAGE_QUALITY = 0.35;
+
 const CheckOut = ({sendData, close} ) => {
   const [checkoutType, setCheckoutType] = useState("asset");
   const [formData, setFormData] = useState({
@@ -52,38 +55,66 @@ const CheckOut = ({sendData, close} ) => {
 
   const handleImageChange = (event) => {
     const file = event.target.files[0];
+    if (!file) return;
+
     const reader = new FileReader();
   
     reader.onloadend = () => {
-      const imageString = reader.result;
-      const base64String = imageString.split(',')[1]; // remove the "data:image/png;base64," part
-      setFormData({ ...formData, imageOut: base64String });
+      const image = new Image();
+      image.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.floor(image.width * IMAGE_SCALE));
+        canvas.height = Math.max(1, Math.floor(image.height * IMAGE_SCALE));
+
+        const context = canvas.getContext("2d");
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+        const compressedDataUrl = canvas.toDataURL("image/jpeg", IMAGE_QUALITY);
+        const base64String = compressedDataUrl.split(",")[1];
+        setFormData({ ...formData, imageOut: base64String });
+      };
+
+      image.src = reader.result;
     };
   
-    reader.readAsDataURL(file); // start reading the file
+    reader.readAsDataURL(file);
   };
 
- 
+const handleSubmit = (event) => {
+  event.preventDefault();
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    console.log(formData);
-    sendData(formData);
-    // Replace with actual form submission logic
-    // Example: Send formData to server, reset form, etc.
-    setFormData({
-      assigneeName: "",
-      purpose: "",
-      checkOutDateTime: "",
-      outFrom: "",
-      sentTo: "",
-      tentativeReturnDate: "",
-      imageOut: null,
-      spareFields: [{ id: 1, spareName: "", tentativeReturnDate: "" }],
-      approvedBy: ""
-    });
-    close();
+  const payload = {
+    AssigneeName: formData.assigneeName,
+    Purpose: formData.purpose,
+    CheckOutDateTime: formData.checkOutDateTime
+      ? new Date(formData.checkOutDateTime).toISOString()
+      : null,
+    OutFrom: formData.outFrom,
+    SentTo: formData.sentTo,
+    TentativeReturnDate: formData.tentativeReturnDate
+      ? new Date(formData.tentativeReturnDate).toISOString()
+      : null,
+    ImageOut: formData.imageOut || null,
+    ApprovedBy: formData.approvedBy,
+    SpareFields:
+      checkoutType === "asset"
+        ? []
+        : formData.spareFields
+            .filter(sf => sf.spareName.trim() !== "")
+            .map(sf => ({
+              Id: sf.id,
+              SpareName: sf.spareName,
+              TentativeReturnDate: sf.tentativeReturnDate
+                ? new Date(sf.tentativeReturnDate).toISOString()
+                : null,
+              ReturnDateTime: null
+            }))
   };
+
+  sendData(payload);
+  close();
+};
+
 
   return (
     <div className="container mt-4">

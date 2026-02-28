@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import DocumentUploader from "../ReactComponents/FileUploader/DocumentUploader";
 
 const UploaderPage = () => {
@@ -7,6 +6,7 @@ const UploaderPage = () => {
         asset: { file: null, name: '', error: '' },
         task: { file: null, name: '', error: '' }
     });
+
     const [uploadStatus, setUploadStatus] = useState({ asset: '', task: '' });
 
     const handleFileChange = (type) => (event) => {
@@ -16,16 +16,15 @@ const UploaderPage = () => {
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'application/vnd.ms-excel'
         ];
-        const isValidType = file ? validTypes.includes(file.type) : false;
 
-        if (isValidType) {
-            setFiles((prevState) => ({
-                ...prevState,
+        if (file && validTypes.includes(file.type)) {
+            setFiles((prev) => ({
+                ...prev,
                 [type]: { file, name: file.name, error: '' }
             }));
         } else {
-            setFiles((prevState) => ({
-                ...prevState,
+            setFiles((prev) => ({
+                ...prev,
                 [type]: { file: null, name: '', error: `Please upload a valid CSV or Excel file for ${type}.` }
             }));
         }
@@ -33,51 +32,49 @@ const UploaderPage = () => {
 
     const handleUpload = async (type) => {
         const fileData = files[type];
+
         if (!fileData.file) {
-            setUploadStatus((prevStatus) => ({
-                ...prevStatus,
+            setUploadStatus((prev) => ({
+                ...prev,
                 [type]: 'Please select a file to upload.'
             }));
             return;
         }
 
         const formData = new FormData();
-        formData.append('file', fileData.file);
+        formData.append("file", fileData.file); // MUST MATCH .NET HttpPostedFile **key name**
+
+        const endpoint =
+            type === "asset"
+                ? "https://api.urest.in:8096/Uploadasset"
+                : "https://api.urest.in:8096/Uploadtask";
 
         try {
-            setUploadStatus((prevStatus) => ({
-                ...prevStatus,
-                [type]: 'Uploading...'
+            setUploadStatus((prev) => ({
+                ...prev,
+                [type]: "Uploading..."
             }));
 
-            const response = await fetch(`https://api.urest.in:8096/Upload${type}`, {
-
-                method: 'POST',
-                body: formData,
-
+            const response = await fetch(endpoint, {
+                method: "POST",
+                body: formData
             });
 
-            // const response = await fetch(`http://localhost:62929/Upload${type}`, {
-            //
-            //     method: 'POST',
-            //     body: formData,
-            //
-            // });
-
-            // Check if the response is OK (status code in the range 200-299)
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const text = await response.text();
+                throw new Error(`Server error ${response.status}: ${text}`);
             }
 
-            const responseData = await response.json(); // Parse the JSON response
-            setUploadStatus((prevStatus) => ({
-                ...prevStatus,
-                [type]: 'Upload successful: ' + responseData,
+            const json = await response.json();
+
+            setUploadStatus((prev) => ({
+                ...prev,
+                [type]: "Upload successful: " + (json?.message || json)
             }));
         } catch (error) {
-            setUploadStatus((prevStatus) => ({
-                ...prevStatus,
-                [type]: 'Upload failed: ' + error.message,
+            setUploadStatus((prev) => ({
+                ...prev,
+                [type]: "Upload failed: " + error.message
             }));
         }
     };
@@ -86,60 +83,53 @@ const UploaderPage = () => {
         <div className="content-wrapper">
             <section className="content">
                 <div className="card-container" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    
                     {/* Asset Upload Card */}
-                    <div className="card asset-upload p-3" style={{ backgroundColor: '#e3f2fd', flex: '1', margin: '10px' }}>
+                    <div className="card asset-upload p-3" style={{ backgroundColor: '#e3f2fd', flex: 1, margin: '10px' }}>
                         <h2>Asset Upload</h2>
+
                         <div className="d-flex flex-row justify-content-between">
-                            <div>
-                                <DocumentUploader
-                                    Class="file-input"
-                                    Id="asset-file-upload"
-                                    type="file"
-                                    onChange={handleFileChange('asset')}
-                                />
-                            </div>
-                            <div>
-                                {/* Download Sample Button */}
-                                <a href="/docs/sample_asset_list.xlsx" download>
-                                    <button style={{ marginTop: '10px' }}>Download Sample Asset List</button>
-                                </a>
-                            </div></div>
+                            <DocumentUploader
+                                Class="file-input"
+                                Id="asset-file-upload"
+                                type="file"
+                                onChange={handleFileChange("asset")}
+                            />
+
+                            <a href="/docs/sample_asset_list.xlsx" download>
+                                <button style={{ marginTop: '10px' }}>Download Sample Asset List</button>
+                            </a>
+                        </div>
 
                         {files.asset.error && <p style={{ color: 'red' }}>{files.asset.error}</p>}
                         <p>Selected File: {files.asset.name}</p>
-                        <button onClick={() => handleUpload('asset')}>Upload Asset List</button>
-                        {uploadStatus.asset && <p>{uploadStatus.asset}</p>}
 
+                        <button onClick={() => handleUpload("asset")}>Upload Asset List</button>
+                        {uploadStatus.asset && <p>{uploadStatus.asset}</p>}
                     </div>
 
                     {/* Task Upload Card */}
-                    <div className="card task-upload p-3"
-                         style={{backgroundColor: '#b2f6ff', flex: '1', margin: '10px'}}>
+                    <div className="card task-upload p-3" style={{ backgroundColor: '#b2f6ff', flex: 1, margin: '10px' }}>
                         <h2>Task Upload</h2>
+
                         <div className="d-flex flex-row justify-content-between">
+                            <DocumentUploader
+                                Class="file-input"
+                                Id="task-file-upload"
+                                type="file"
+                                onChange={handleFileChange("task")}
+                            />
 
-                            <div>
-                                <DocumentUploader
-                                    Class="file-input"
-                                    Id="task-file-upload"
-                                    type="file"
-                                    onChange={handleFileChange('task')}
-                                />
-                            </div>
-                            <div>
-                                {/* Download Sample Button */}
-                                <a href="/docs/sample_task_list.xlsx" download>
-
-                                    <button style={{marginTop: '10px'}}>Download Sample Task</button>
-                                </a>
-                            </div>
+                            <a href="/docs/sample_task_list.xlsx" download>
+                                <button style={{ marginTop: '10px' }}>Download Sample Task List</button>
+                            </a>
                         </div>
 
-                        {files.task.error && <p style={{color: 'red'}}>{files.task.error}</p>}
+                        {files.task.error && <p style={{ color: 'red' }}>{files.task.error}</p>}
                         <p>Selected File: {files.task.name}</p>
-                        <button onClick={() => handleUpload('task')}>Upload Task List</button>
-                        {uploadStatus.task && <p>{uploadStatus.task}</p>}
 
+                        <button onClick={() => handleUpload("task")}>Upload Task List</button>
+                        {uploadStatus.task && <p>{uploadStatus.task}</p>}
                     </div>
                 </div>
             </section>

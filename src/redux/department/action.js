@@ -24,6 +24,7 @@ import {
     FETCH_USERROLE,
     FETCH_VENDOR,
     FETCH_COMPANY,
+    ON_CLIENT_CHANGED,
     ON_PROPERTY_CHANGED,
     ON_USER_ROLE_CHANGED,
     FETCH_DASHBOARDDATES
@@ -215,10 +216,18 @@ const fetchCompany = ({ promise, CompanyId }) => (
         promise,
         CompanyId
     });
-const updateproperty = ({ CompanyId }) => (
+
+const updateclient = ({ CompanyId }) => (
+    {
+        type: ON_CLIENT_CHANGED,
+        CompanyId
+    });
+
+const updateproperty = ({ CompanyId, PropertyIds = [] }) => (
     {
         type: ON_PROPERTY_CHANGED,
-        CompanyId
+        CompanyId,
+        PropertyIds
     });
 
     const updateuserrole = ({ UserRole }) => (
@@ -262,6 +271,7 @@ const departmentActions = {
     fetchDepartments,
     fetchVendor,
     fetchCompany,
+    updateclient,
     updateproperty,
     updateuserrole,
     fetchDashDates

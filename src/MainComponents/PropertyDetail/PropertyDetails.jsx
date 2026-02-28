@@ -20,7 +20,6 @@ class PropertyTower extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            PropertyListData: [],
             PropertyTowersData: [],
             PropertyFloors: [],
             MeasureunitListData: [],
@@ -68,22 +67,6 @@ class PropertyTower extends React.Component {
         rData = appCommon.changejsoncolumnname(rData, "text", "Name");
         this.setState({ MeasureunitListData: rData });
     }
-    async loadProperty() {
-        await this.comdbprovider.getPropertyMaster(0).then(
-            resp => {
-                if (resp.ok && resp.status == 200) {
-                    return resp.json().then(rData => {
-
-                        rData = appCommon.changejsoncolumnname(rData, "id", "Value");
-                        rData = appCommon.changejsoncolumnname(rData, "text", "Name");
-                        this.setState({ PropertyListData: rData }, () => {
-
-                        });
-                    });
-                }
-
-            });
-    }
     async loadPropertyTowers(id) {
         var rData = await this.comdbprovider.getPropertyTowersAsync(id);
         rData = appCommon.changejsoncolumnname(rData, "id", "Value");
@@ -115,13 +98,20 @@ class PropertyTower extends React.Component {
         this.loadHomagePageData();
         this.loadPropertyDetailType();
         this.loadMeasureunit();
-
+        // Load property towers for the Redux PropertyId
+        if (this.props.PropertyId) {
+            this.loadPropertyTowers(this.props.PropertyId);
+        }
     }
     componentDidUpdate(prevProps) {
         if (prevProps.PropertyId !== this.props.PropertyId) {
             this.loadHomagePageData();
             this.loadPropertyDetailType();
             this.loadMeasureunit();
+            // Load property towers for the new Redux PropertyId
+            if (this.props.PropertyId) {
+                this.loadPropertyTowers(this.props.PropertyId);
+            }
         }
     }
      async loadHomagePageData() {
@@ -174,7 +164,6 @@ class PropertyTower extends React.Component {
     }
 
     async ongridedit(Id) {
-        await this.loadProperty();
         this.setState({ PageMode: 'Edit' });
         await CreateValidator();
 
@@ -187,16 +176,15 @@ class PropertyTower extends React.Component {
             return;
         }
 
-        await this.loadPropertyTowers(rowData.PropertyId);
+        await this.loadPropertyTowers(this.props.PropertyId);
         this.onTowerChanges(rowData.PropertyTowerId);
         this.setState({
-            PropertyTowerId: rowData.PropertyTowerId, PropertyDetailsId: rowData.PropertyDetailsId, PropertyId: rowData.PropertyId
+            PropertyTowerId: rowData.PropertyTowerId, PropertyDetailsId: rowData.PropertyDetailsId, PropertyId: this.props.PropertyId
             , Floor: rowData.Floor, FlatName: rowData.Flat,
             ContactNumber: rowData.ContactNumber, SuperBuilupArea: rowData.SuperBuilUpArea
             , TotalArea: rowData.TotalArea, BuitupArea: rowData.BuiltupArea, CarpetArea: rowData.CarpetArea, Configuration: rowData.UniteConfiguration
             , MeasureunitId: parseInt(rowData.MeasurementUnitsId), PropertyDetailTypeId: parseInt(rowData.PropertyDetailTypeId)
         }, () => {
-            $('#ddlPropertyList').val(rowData.PropertyId);
             $('#ddlTowerList').val(rowData.PropertyTowerId);
             $('#ddlFloorsList').val(rowData.Floor);
             $('#ddlPropertyDetailType').val(rowData.PropertyDetailTypeId);
@@ -208,7 +196,10 @@ class PropertyTower extends React.Component {
         this.setState({ PageMode: 'Add' }, () => {
             CreateValidator();
         });
-        await this.loadProperty();
+        // Load property towers for the Redux PropertyId instead of loading all properties
+        if (this.props.PropertyId) {
+            await this.loadPropertyTowers(this.props.PropertyId);
+        }
     }
 
     findItem(id) {
@@ -282,16 +273,6 @@ class PropertyTower extends React.Component {
             this.loadHomagePageData();
         });
     };
-    onPropertyChanged(value) {
-
-        this.setState({ PropertyId: parseInt(value) }, () => {
-            this.setState({ PropertyTowersData: [], PropertyFloors: [] }, () => {
-                this.loadPropertyTowers(value);
-            })
-
-
-        });
-    }
     onTowerChanges(id) {
         var searchvalue = [];
         this.state.PropertyTowersData.find((item) => {
@@ -360,40 +341,40 @@ class PropertyTower extends React.Component {
                     </div>
                 }
                 {(this.state.PageMode == 'Add' || this.state.PageMode == 'Edit') &&
-                    <div>
-                        <div >
-                            <div class="modal-content">
-                                <div class="modal-body">
-                                    <div class="row">
-                                        <div class="col-sm-6">
-                                            <div class="form-group">
-                                                <label for="ddlPropertyList">Property</label>
-                                                <DropDownList Id="ddlPropertyList"
-                                                    onSelected={this.onPropertyChanged.bind(this)}
-                                                    Options={this.state.PropertyListData} />
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <div class="form-group">
-                                                <label for="ddlTowerList">Tower/Wing</label>
+                    <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                        <div className="modal-dialog modal-lg">
+                            <div className="modal-content">
+                                <div className="modal-header">
+                                    <h5 className="modal-title">
+                                        {this.state.PageMode == 'Add' ? 'Add New Property Detail' : 'Edit Property Detail'}
+                                    </h5>
+                                    <button type="button" className="close" onClick={this.handleCancel}>
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div className="modal-body">
+                                    <div className="row">
+                                        <div className="col-sm-6">
+                                            <div className="form-group">
+                                                <label htmlFor="ddlTowerList" className="font-weight-bold">Tower/Wing</label>
                                                 <DropDownList Id="ddlTowerList"
                                                     onSelected={this.onTowerChanges.bind(this)}
                                                     Options={this.state.PropertyTowersData} />
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-sm-6">
-                                            <div class="form-group">
-                                                <label for="ddlFloorsList">Floor</label>
+                                        <div className="col-sm-6">
+                                            <div className="form-group">
+                                                <label htmlFor="ddlFloorsList" className="font-weight-bold">Floor</label>
                                                 <DropDownList Id="ddlFloorsList"
                                                     onSelected={this.oncFloorChange.bind(this)}
                                                     Options={this.state.PropertyFloors} />
                                             </div>
                                         </div>
-                                        <div class="col-sm-6">
-                                            <div class="form-group">
-                                                <label for="txtFlatName">Unit Name</label>
+                                    </div>
+                                    <div className="row">
+                                        <div className="col-sm-6">
+                                            <div className="form-group">
+                                                <label htmlFor="txtFlatName" className="font-weight-bold">Unit Name</label>
                                                 <InputBox Id="txtFlatName"
                                                     Value={this.state.FlatName}
                                                     onChange={this.updatetextmodel.bind(this, "flat")}
@@ -402,67 +383,40 @@ class PropertyTower extends React.Component {
                                                 />
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="row">
-                                        {/* <div class="col-sm-6">
-                                            <div class="form-group">
-                                                <label for="txtExtention">Extention</label>
-                                                <InputBox Id="txtExtention"
-                                                    Value={this.state.ContactNumber}
-                                                    onChange={this.updatetextmodel.bind(this, "ext")}
-                                                    PlaceHolder="Extension"
-                                                    Class="form-control form-control-sm"
-                                                />
-                                            </div>
-                                        </div> */}
-                                        <div class="col-sm-6">
-                                            <div class="form-group">
-                                                <label for="ddlPropertyDetailType">Flat/Shop Type</label>
+                                        <div className="col-sm-6">
+                                            <div className="form-group">
+                                                <label htmlFor="ddlPropertyDetailType" className="font-weight-bold">Flat/Shop Type</label>
                                                 <DropDownList Id="ddlPropertyDetailType"
                                                     onSelected={this.onPropertyDetailChanged.bind(this)}
                                                     Options={this.state.PropertyDetailsTypeListData} />
                                             </div>
                                         </div>
-                                        <div class="col-sm-6">
-                                            <div class="form-group">
-                                                <label for="ddlMeasureunit">Measrue Unit</label>
+                                    </div>
+                                    <div className="row">
+                                        <div className="col-sm-6">
+                                            <div className="form-group">
+                                                <label htmlFor="ddlMeasureunit" className="font-weight-bold">Measure Unit</label>
                                                 <DropDownList Id="ddlMeasureunit"
                                                     onSelected={this.onmeasurmentChanged.bind(this)}
                                                     Options={this.state.MeasureunitListData} />
-
+                                            </div>
+                                        </div>
+                                        <div className="col-sm-6">
+                                            <div className="form-group">
+                                                <label htmlFor="txtPropertyConfiguration" className="font-weight-bold">Property Configuration</label>
+                                                <InputBox Id="txtPropertyConfiguration"
+                                                    Value={this.state.Configuration}
+                                                    onChange={this.updatetextmodel.bind(this, "config")}
+                                                    PlaceHolder="Property Configuration"
+                                                    Class="form-control form-control-sm"
+                                                />
                                             </div>
                                         </div>
                                     </div>
-                                    {/* <div class="row"> */}
-                                        {/* <div class="col-sm-6">
-                                            <div class="form-group">
-                                                <label for="txtSuperBuiltupArea">Super Builtup Area</label>
-                                                <InputBox Id="txtSuperBuiltupArea"
-                                                    Value={this.state.SuperBuilupArea}
-                                                    onChange={this.updatetextmodel.bind(this, "super")}
-                                                    PlaceHolder="Super Builtup Area"
-                                                    Class="form-control form-control-sm"
-                                                />
-                                            </div>
-                                        </div> */}
-                                    {/* </div> */}
-
-                                    <div class="row">
-                                        {/* <div class="col-sm-6">
-                                            <div class="form-group">
-                                                <label for="txtTotalArea">Total Area</label>
-                                                <InputBox Id="txtTotalArea"
-                                                    Value={this.state.TotalArea}
-                                                    onChange={this.updatetextmodel.bind(this, "total")}
-                                                    PlaceHolder="Total Area"
-                                                    Class="form-control form-control-sm"
-                                                />
-
-                                            </div>
-                                        </div> */}
-                                        <div class="col-sm-6">
-                                            <div class="form-group">
-                                                <label for="txtBuiltupArea">Builtup Area</label>
+                                    <div className="row">
+                                        <div className="col-sm-6">
+                                            <div className="form-group">
+                                                <label htmlFor="txtBuiltupArea" className="font-weight-bold">Builtup Area</label>
                                                 <InputBox Id="txtBuiltupArea"
                                                     Value={this.state.BuitupArea}
                                                     onChange={this.updatetextmodel.bind(this, "built")}
@@ -471,59 +425,20 @@ class PropertyTower extends React.Component {
                                                 />
                                             </div>
                                         </div>
-                                        <div class="col-sm-6">
-                                            <div class="form-group">
-                                                <label for="txtCarpetArea">Carpet Area</label>
+                                        <div className="col-sm-6">
+                                            <div className="form-group">
+                                                <label htmlFor="txtCarpetArea" className="font-weight-bold">Carpet Area</label>
                                                 <InputBox Id="txtCarpetArea"
                                                     Value={this.state.CarpetArea}
                                                     onChange={this.updatetextmodel.bind(this, "carpet")}
                                                     PlaceHolder="Carpet Area"
                                                     Class="form-control form-control-sm"
                                                 />
-
                                             </div>
                                         </div>
                                     </div>
-
-                                    <div class="row">
-                                        <div class="col-sm-6">
-                                            <div class="form-group">
-                                                <label for="txtPropertyConfiguration">Property Configuration</label>
-                                                <InputBox Id="txtPropertyConfiguration"
-                                                    Value={this.state.Configuration}
-                                                    onChange={this.updatetextmodel.bind(this, "config")}
-                                                    PlaceHolder="Property Configuration"
-                                                    Class="form-control form-control-sm"
-                                                />
-
-
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-sm-6">
-                                            <div class="form-group">
-
-
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <div class="form-group">
-                                                {/* <label for="txtSuperBuiltupArea">Super Builtup Area</label>
-                          <InputBox Id="txtSuperBuiltupArea"
-                                  Value={this.state.ContactNumber}
-                                      onChange={this.updatetextmodel.bind(this,"ext")}
-                                      PlaceHolder="Extension"
-                                      Class="form-control form-control-sm"
-                                  />                                */}
-                                            </div>
-                                        </div>
-                                    </div>
-
                                 </div>
-
-                                <div class="modal-footer">
+                                <div className="modal-footer">
                                     <Button
                                         Id="btnSave"
                                         Text="Save"
@@ -536,7 +451,6 @@ class PropertyTower extends React.Component {
                                         ClassName="btn btn-secondary" />
                                 </div>
                             </div>
-
                         </div>
                         <ToastContainer
                             position="top-right"
@@ -549,7 +463,6 @@ class PropertyTower extends React.Component {
                             draggable
                             pauseOnHover
                         />
-                        <ToastContainer />
                     </div>
                 }
             </div>

@@ -120,10 +120,8 @@ class ApiService {
 }
 
 axios.interceptors.request.use((config) => {
-  console.log('interceptors request ===================');
   return config;
 }, (error) => {
-  console.log('interceptors request ===================');
   Promise.reject(error);
 });
 

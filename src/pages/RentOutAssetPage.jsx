@@ -21,24 +21,31 @@ const RentOut = ({ Close, setData }) => {  // Destructure Close from props
   };
 
   const handleFileChange = (event) => {
-    const file = event.target.files[0];
-    const reader = new FileReader();
-  
-    reader.onloadend = () => {
-      const imageString = reader.result;
-      const base64String = imageString.split(',')[1]; // remove the "data:image/png;base64," part
-      setFormData({ ...formData, imageOut: base64String });
-    };
-  
-    reader.readAsDataURL(file); // start reading the file
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onloadend = () => {
+    const base64WithPrefix = reader.result; 
+    // e.g. data:image/png;base64,iVBORw0KGgo...
+
+    setFormData({
+      ...formData,
+      imageOut: base64WithPrefix, // ✅ FULL base64
+    });
   };
+
+  reader.readAsDataURL(file);
+};
+
   // const handleFileChange = (event) => {
   //   setFormData({ ...formData, imageOut: event.target.files[0] });
   // };
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    console.log(formData); // Replace with actual form submission logic
+    //console.log(formData); // Replace with actual form submission logic
     setData(formData);
     setFormData({
       assigneeName: "",

@@ -59,7 +59,7 @@ class PropertyDetails extends React.Component {
         var model = [{
             "propertyTowerId": this.state.PropertyTowerId,
             "towername": this.state.Towername,
-            "propertyId": this.state.PropertyId,
+            "propertyId": this.state.PropertyId.toString() || this.state.PropertyId,
             "totalFoors": this.state.TotalFoors,
             "cmdType": ""+type+""
           }]

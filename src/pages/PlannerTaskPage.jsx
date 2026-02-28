@@ -16,7 +16,6 @@ class PlannerTaskPage extends Component {
     const status =  new URLSearchParams(location.search).get('status');
     const priority =  new URLSearchParams(location.search).get('priority');
     const subCatId =  new URLSearchParams(location.search).get('subCat');
-    console.log(status,priority,subCatId);
     return (
       <div className='content-wrapper'>
         <section className="content mt-4">

@@ -1,2442 +1,1919 @@
-import React from "react";
-import DataGrid from "../../ReactComponents/DataGrid/DataGrid.jsx";
-import Button from "../../ReactComponents/Button/Button";
-import ApiProvider from "../FacilityMember/DataProvider.js";
-import { ToastContainer, toast } from "react-toastify";
-import * as appCommon from "../../Common/AppCommon.js";
-import swal from "sweetalert";
+"use client";
+
+import React, { useRef, useState, useEffect } from "react";
+import { DataTable } from "primereact/datatable";
+import { Column } from "primereact/column";
+import { Button } from "primereact/button";
+import { InputText } from "primereact/inputtext";
+import { Toast } from "primereact/toast";
+import { Dialog } from "primereact/dialog";
+import { Dropdown } from "primereact/dropdown";
+import { Checkbox } from "primereact/checkbox";
+import { TabView, TabPanel } from "primereact/tabview";
+import { Calendar } from "primereact/calendar";
+import { PrimeReactProvider } from "primereact/api";
+import "primeicons/primeicons.css";
+import "primereact/resources/primereact.min.css";
+import "primereact/resources/themes/lara-light-indigo/theme.css";
+import { useSelector } from "react-redux";
+import { getAllDesignations } from "../../Services/DesignationService";
+import { MultiSelect } from "primereact/multiselect";
+
 import {
-  CreateValidator,
-  ValidateControls,
-} from "../FacilityMember/Validation.js";
-import CommonDataProvider from "../../Common/DataProvider/CommonDataProvider.js";
-import MultiSelectInline from "../../ReactComponents/MultiSelectInline/MultiSelectInline.jsx";
-import DropDownList from "../../ReactComponents/SelectBox/DropdownList.jsx";
-import InputBox from "../../ReactComponents/InputBox/InputBox.jsx";
-import DocumentBL from "../../ComponentBL/DocumentBL";
+  // getEmployeesByOffice,
+  createEmployee,
+  updateEmployee,
+  deleteEmployee,
+} from "../../Services/FacilityService";
+import { getEmployeesByOffices, getSalaryGroupsByDesignation } from "../../Services/PayrollService";
+
 import {
-  DELETE_CONFIRMATION_MSG,
-  BLOCK_CONFIRMATION_MSG,
-  UNBLOCK_CONFIRMATION_MSG,
-} from "../../Contants/Common";
-import DocumentUploader from "../../ReactComponents/FileUploader/DocumentUploader.jsx";
-import SelectBox from "../../ReactComponents/SelectBox/Selectbox.jsx";
-import UrlProvider from "../../Common/ApiUrlProvider.js";
-import axios from "axios";
-import ImageUploader from "react-images-upload";
-import * as appCommonJs from "../../Common/AppCommon.js";
-import "./FacilityMember.css";
-import {withRouter} from "react-router-dom";
-import { connect } from "react-redux";
-import departmentAction from "../../redux/department/action";
-import { convertEsTojson, promiseWrapper } from "../../utility/common";
-import { bindActionCreators } from "redux";
+  getAllClients,
+  getClientByPropertyId,
+  getPropertiesByClientId,
+  getAllDepartments
+} from "../../Services/ClientService";
 
-const $ = window.$;
-const documentBL = new DocumentBL();
+import { getPropertyById } from "../../Services/PropertyService";
+import { getBranchById } from "../../Services/BranchMaster";
 
+// Import existing components from old project
+import SalaryGroupView from "../../ReactComponents/DataGrid/SalaryGroupView.jsx";
+import LoanAdvanceDialog from "../../ReactComponents/DataGrid/LoanAdvances.jsx";
 
-const toBase64 = (file) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result.split(","));
-    reader.onerror = (error) => reject(error);
+const StaffPage = () => {
+  const toast = useRef(null);
+  // const propertyId = useSelector((state) => state.Commonreducer.puidn);
+  const reduxPropertyId = useSelector((state) => state.Commonreducer.puidn);
+
+  const [unitList, setUnitList] = useState([]);
+  const [selectedUnitId, setSelectedUnitId] = useState(null);
+
+  const [propertyList, setPropertyList] = useState([]);
+  const [selectedPropertyId, setSelectedPropertyId] = useState([]);
+
+  const propertyId =
+    selectedPropertyId[0] || reduxPropertyId || null;
+
+  const [branchName, setBranchName] = useState("");
+  const [clientName, setClientName] = useState("");
+  const [customDepartment, setCustomDepartment] = useState("");
+  const [customDesignation, setCustomDesignation] = useState("");
+  const [employmentType, setEmploymentType] = useState("");
+  const [departments, setDepartments] = useState([]);
+  const [isLoadingDepartments, setIsLoadingDepartments] = useState(false);
+  const [designations, setDesignations] = useState([]);
+  const [salaryGroups, setSalaryGroups] = useState([]);
+  const [salaryGroupMessage, setSalaryGroupMessage] = useState("");
+  const [selectedSalaryGroup, setSelectedSalaryGroup] = useState(null);
+  const [showSalaryGroupPopup, setShowSalaryGroupPopup] = useState(false);
+  const [salaryGroupDetails, setSalaryGroupDetails] = useState(null);
+  const [isLoadingSalaryGroups, setIsLoadingSalaryGroups] = useState(false);
+  const [isLoadingDesignations, setIsLoadingDesignations] = useState(false);
+  const [staff, setStaff] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [globalFilterValue, setGlobalFilterValue] = useState("");
+  const [selectedRow, setSelectedRow] = useState(null);
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [viewDialogVisible, setViewDialogVisible] = useState(false);
+  const [viewData, setViewData] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editEmployeeId, setEditEmployeeId] = useState(null);
+  const [managerOptions, setManagerOptions] = useState([]);
+  const [selectedManagers, setSelectedManagers] = useState([]); // FacilityMemberIds[]
+  // Salary & Loan dialog states
+  const [showSalaryGroupView, setShowSalaryGroupView] = useState(false);
+  const [selectedFacilityMemberId, setSelectedFacilityMemberId] = useState(null);
+  const [selectedFacilityMemberName, setSelectedFacilityMemberName] = useState("");
+  const [showLoanAdvanceDialog, setShowLoanAdvanceDialog] = useState(false);
+  const [selectedLoanAdvanceId, setSelectedLoanAdvanceId] = useState(null);
+
+  // Form fields
+  const [employeeCode, setEmployeeCode] = useState("");
+  const [employeeName, setEmployeeName] = useState("");
+  const [designation, setDesignation] = useState("");
+  const [gender, setGender] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [email, setEmail] = useState("");
+  const [department, setDepartment] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [addressLine1, setAddressLine1] = useState("");
+  const [addressLine2, setAddressLine2] = useState("");
+  const [city, setCity] = useState("");
+  const [stateName, setStateName] = useState("");
+  const [aadharCard, setAadharCard] = useState("");
+  const [panCard, setPanCard] = useState("");
+  const [bankAccountNumber, setBankAccountNumber] = useState("");
+  const [bankIFSCCode, setBankIFSCCode] = useState("");
+  const [bankName, setBankName] = useState("");
+  const [uanNumber, setUanNumber] = useState("");
+  const [panNumber, setPanNumber] = useState("");
+  const [pfNumber, setPfNumber] = useState("");
+  const [esiNumber, setEsiNumber] = useState("");
+  const [profileImage, setProfileImage] = useState(null);
+  const [documents, setDocuments] = useState({
+    profileImage: [],
+    aadhaar: [],
+    pan: [],
+    bankPassbook: [],
+    others: []
   });
+  const [family, setFamily] = useState("");
 
-class FacilityMember extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      Pictures: null,
-      PageMode: "Home",
-      FacilityMemberId: "0",
-      PropertyId: 0,
-      ProfileImageUrl: "",
-      Name: "",
-      Contact: "",
-      Address: "",
-      FacilityMasterId: "0",
-      FacilityMaster: [],
-      PropertyTowerId: "0",
-      PropertyTowersData: [],
-      PropertyFloorId: "0",
-      PropertyFloors: [],
-      PropertyFlatId: "0",
-      PropertyFlat: [],
-      FacilityMemberDocumentId: "0",
-      documentTypeId: "0",
-      DocumentTypeName: "",
-      Gender: "0",
-      GenderList: [],
-      Filter: [],
-      FilterValue: "All",
-      PropertyDetailsIds: [],
-      pageSize: 10,
-      pageNumber: 1,
-      Image: "",
-      gridFacilityMemberHeader: [
-        { sTitle: "Id", titleValue: "sNo", orderable: false }, //"visible": true
-        // { sTitle: 'Image', titleValue: 'Image', ImagePath: 'profileImageUrl', Index: '0' },
-        { sTitle: "Name", titleValue: "name" },
-        { sTitle: "Gender", titleValue: "gender" },
-        { sTitle: "Contact", titleValue: "mobileNumber" },
-        { sTitle: "Facility Type", titleValue: "facilityName" },
-        {
-          sTitle: "Access",
-          titleValue: "ToggleSwitch",
-          Value: "accessCode",
-          Index: "0",
-          Width: "70",
-        },
-        // { sTitle: 'Status', titleValue: 'IsBlocked', Value: 'isBlocked', Value2: 'isApproved', Index: '0' },
-        { sTitle: "Status", titleValue: "status" },
-        // { sTitle: 'Approved On', titleValue: 'approvedOn' },
-        {
-          sTitle: "Action",
-          titleValue: "Action",
-          Action: "Edit&Delete&Block",
-          Index: "0",
-          orderable: false,
-        },
-      ],
-      gridFacilityMemberData: [],
-      gridDocumentHeader: [
-        {
-          sTitle: "Id",
-          titleValue: "facilityMemberDocumentId",
-          orderable: false,
-        },
-        {
-          sTitle: "Document Type",
-          titleValue: "documentTypeName",
-          orderable: false,
-        },
-        // { sTitle: 'Document Name', titleValue: 'documentName', "orderable": false, },
-        {
-          sTitle: "Action",
-          titleValue: "Action",
-          Action: "Edit&View",
-          Index: "0",
-          urlIndex: "3",
-          orderable: false,
-        },
-      ],
-      addDocumentHeader: [
-        {
-          sTitle: "Id",
-          titleValue: "id",
-          orderable: false,
-        },
-        {
-          sTitle: "Document Type",
-          titleValue: "documentTypeName",
-          orderable: false,
-        },
-        // { sTitle: 'Document Name', titleValue: 'documentName', "orderable": false, },
-        {
-          sTitle: "Action",
-          titleValue: "Action",
-          Action: "View&Delete",
-          Index: "0",
-          urlIndex: "3",
-          orderable: false,
-        },
-      ],
-      gridDocumentData: [],
-      kycDocumentData: [],
-      kycDocumentType: "",
-      grdTotalRows: 0,
-      grdTotalPages: 0,
-      //Document file
-      DocumentType: [],
-      documentType: [],
-      documentName: "",
-      DocumentNumber: "",
-      selectedFile: undefined,
-      selectedFileName: undefined,
-      imageSrc: undefined,
-      value: "",
-      Showimguploader: false,
-      isServiceStaff: "Staff",
-      FacilityTypeId: 2,
-      documentVal: "",
-      currentSelectedFile: null,
-      ImageData: [],
-      FileData: [],
-      File: "",
-      FileExt: "",
-      addKYCData : [],
-      gridAddKYCData : [],
-      showDocfile:""
+  const [workHistories, setWorkHistories] = useState([
+    {
+      CompanyName: "",
+      Role: "",
+      StartDate: null,
+      EndDate: null,
+      ThirdPartyVerification: false,
+      UploadResume: null,
+      ResumeUrl: "",
+    },
+  ]);
+
+  const genders = [
+    { label: "Male", value: "Male" },
+    { label: "Female", value: "Female" },
+  ];
+
+  const employmentTypes = [
+    { label: "Permanent", value: "Permanent" },
+    { label: "Contractual", value: "Contractual" }
+  ];
+
+  useEffect(() => {
+    const loadUnits = async () => {
+      try {
+        if (Number(reduxPropertyId) > 0) {
+          const res = await getClientByPropertyId(reduxPropertyId);
+
+          setUnitList(res ? [res] : []);
+          setSelectedUnitId(res?.ClientID || null);
+
+          // 🔥 ADD THIS LINE
+          setSelectedPropertyId([reduxPropertyId]);
+
+        } else {
+          const res = await getAllClients();
+          setUnitList(res || []);
+        }
+      } catch (err) {
+        console.log("Failed to load clients", err);
+      }
     };
-    this.onDrop = this.onDrop.bind(this);
-    this.removeImage = this.removeImage.bind(this);
-    this.ApiProviderr = new ApiProvider();
-    this.comdbprovider = new CommonDataProvider();
-  }
 
-  componentDidMount() {
-    documentBL.CreateValidator();
-    this.setState({ PropertyId: this.props.PropertyId, pageNumber: 1 }, () => {
-      this.loadPropertyTowers(this.props.PropertyId);
-      this.loadGender();
-      this.getDocumentType();
-      this.getFacilityMember("All");
-      this.loadFilter();
-    });
-    $("#grdFacilityMember").find("[aria-label=Action]").addClass("addWidth");
-  }
-  componentDidUpdate(prevProps) {
-    //
-    if (prevProps.PropertyId !== this.props.PropertyId) {
-      this.setState(
-        { PropertyId: this.props.PropertyId, pageNumber: 1 },
-        () => {
-          this.loadPropertyTowers(this.props.PropertyId);
-          this.loadGender();
-          this.getDocumentType();
-          this.getFacilityMember("All");
-          this.loadFilter();
+    loadUnits();
+  }, [reduxPropertyId]);
+
+  useEffect(() => {
+    const loadProperties = async () => {
+      try {
+        if (!selectedUnitId) {
+          setPropertyList([]);
+          setSelectedPropertyId([]);
+          setStaff([]);
+          return;
         }
+
+        const res = await getPropertiesByClientId(selectedUnitId);
+        const properties = res || [];
+
+        setPropertyList(properties);
+
+        // 🔥 FIX STARTS HERE
+        if (reduxPropertyId) {
+          setSelectedPropertyId([reduxPropertyId]);
+        } else if (properties.length === 1) {
+          setSelectedPropertyId([properties[0].PropertyId]);
+        } else {
+          setSelectedPropertyId([]);
+        }
+        // 🔥 FIX ENDS HERE
+
+      } catch (err) {
+        console.log("Failed to load properties", err);
+      }
+    };
+
+    loadProperties();
+  }, [selectedUnitId, reduxPropertyId]);
+
+  useEffect(() => {
+    const loadDepartments = async () => {
+      setIsLoadingDepartments(true);
+      try {
+        const data = await getAllDepartments();
+
+        const formatted = Array.isArray(data)
+          ? data.map(d => ({
+            label: d.Name,
+            value: d.Name
+          }))
+          : [];
+
+        // Add OTHER option
+        formatted.push({ label: "OTHER", value: "OTHER" });
+
+        setDepartments(formatted);
+      } catch (err) {
+        console.error("Department load failed", err);
+        toast.current?.show({
+          severity: "warn",
+          summary: "Warning",
+          detail: "Failed to load departments"
+        });
+      } finally {
+        setIsLoadingDepartments(false);
+      }
+    };
+
+    loadDepartments();
+  }, []);
+
+  useEffect(() => {
+    const loadDesignations = async () => {
+      setIsLoadingDesignations(true);
+      try {
+        const data = await getAllDesignations();
+
+        const formatted = Array.isArray(data)
+          ? data
+            .filter(d => d.IsActive) // optional but smart
+            .map(d => ({
+              label: d.DesignationName,
+              value: d.DesignationName
+            }))
+          : [];
+
+        formatted.push({ label: "OTHER", value: "OTHER" });
+
+        setDesignations(formatted);
+      } catch (err) {
+        console.error("Designation load failed", err);
+        setDesignations([]);
+      } finally {
+        setIsLoadingDesignations(false);
+      }
+    };
+
+    loadDesignations();
+  }, []);
+
+  useEffect(() => {
+    const loadEmployees = async () => {
+      try {
+        let officeIds = [];
+
+        if (selectedPropertyId.length > 0) {
+          officeIds = selectedPropertyId;
+        } else if (reduxPropertyId) {
+          officeIds = [reduxPropertyId];
+        }
+
+        if (!officeIds.length) {
+          setStaff([]);
+          return;
+        }
+
+        setLoading(true);
+
+        const data = await getEmployeesByOffices(officeIds);
+        setStaff(data || []);
+
+      } catch (err) {
+        console.error("Employee load failed", err);
+        setStaff([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadEmployees();
+  }, [selectedPropertyId, reduxPropertyId]);
+
+  useEffect(() => {
+    const loadBranch = async () => {
+      if (!propertyId) {
+        setBranchName("");
+        return;
+      }
+
+      try {
+        // 1️⃣ Get property
+        const property = await getPropertyById(propertyId);
+
+        if (!property?.BranchCode) {
+          setBranchName("");
+          return;
+        }
+
+        // 2️⃣ Get branch by BranchCode
+        const branch = await getBranchById(property.BranchCode);
+
+        setBranchName(branch?.BranchName || "");
+      } catch (err) {
+        console.error("Branch load failed:", err);
+        setBranchName("");
+      }
+    };
+
+    loadBranch();
+  }, [propertyId]);
+
+  useEffect(() => {
+    const loadClient = async () => {
+      if (!propertyId) {
+        setClientName("");
+        return;
+      }
+
+      try {
+        const client = await getClientByPropertyId(propertyId);
+        setClientName(client?.ClientName || "");
+      } catch (err) {
+        console.error("Client load failed:", err);
+        setClientName("");
+      }
+    };
+
+    loadClient();
+  }, [propertyId]);
+
+  useEffect(() => {
+    const managers = staff
+      .filter(row =>
+        row?.FacilityMember?.FacilityMemberId &&
+        row?.FacilityMember?.FacilityMemberId !== selectedFacilityMemberId
+      )
+      .map(row => ({
+        label: row?.Profile?.EmployeeName || "Unknown",
+        value: row.FacilityMember.FacilityMemberId
+      }));
+
+    setManagerOptions(managers);
+  }, [staff, selectedFacilityMemberId]);
+
+  const addDocument = (type, file) => {
+    if (!file) return;
+
+    setDocuments(prev => ({
+      ...prev,
+      [type]: [...prev[type], file]
+    }));
+  };
+
+  const removeDocument = (type, index) => {
+    setDocuments(prev => ({
+      ...prev,
+      [type]: prev[type].filter((_, i) => i !== index)
+    }));
+  };
+
+  const getManagerNames = (managerIds = []) => {
+    if (!Array.isArray(managerIds) || managerIds.length === 0) return [];
+
+    return staff
+      .filter(row =>
+        managerIds.includes(row?.FacilityMember?.FacilityMemberId)
+      )
+      .map(row => row?.Profile?.EmployeeName)
+      .filter(Boolean);
+  };
+
+  // Salary & Loan actions
+  const openSalaryGroupView = (row) => {
+    const memberId = String(row.FacilityMember.FacilityMemberId);
+    const memberName = row.Profile?.EmployeeName || "";
+    setSelectedFacilityMemberId(memberId);
+    setSelectedFacilityMemberName(memberName);
+    setShowSalaryGroupView(true);
+  };
+
+  const closeSalaryGroupView = () => {
+    setShowSalaryGroupView(false);
+    setSelectedFacilityMemberId(null);
+  };
+  // Convert JS Date to IST ISO String
+  const toISTISOString = (date) => {
+    if (!date) return null;
+    const dt = new Date(date);
+    const offsetIST = 5.5 * 60 * 60 * 1000; // IST offset (+5:30)
+    const istTime = new Date(dt.getTime() + offsetIST);
+    return istTime.toISOString().slice(0, 19); // remove 'Z'
+  };
+
+  const openLoanAdvanceDialog = (row) => {
+    const memberId = row.FacilityMember.FacilityMemberId;
+    setSelectedLoanAdvanceId(memberId);
+    setShowLoanAdvanceDialog(true);
+  };
+
+  const closeLoanAdvanceDialog = () => {
+    setShowLoanAdvanceDialog(false);
+    setSelectedLoanAdvanceId(null);
+  };
+
+  const viewStaff = (row) => {
+    setViewData(row);
+    setViewDialogVisible(true);
+  };
+
+  const openDialog = () => {
+    resetForm();
+    setDialogVisible(true);
+  };
+
+  const resetForm = () => {
+    setEmployeeCode("");
+    setEmployeeName("");
+    setDesignation("");
+    setGender("");
+    setMobile("");
+    setEmail("");
+    setDepartment("");
+    setDateOfBirth("");
+    setAddressLine1("");
+    setAddressLine2("");
+    setCity("");
+    setStateName("");
+    setAadharCard("");
+    setPanCard("");
+    setBankAccountNumber("");
+    setBankIFSCCode("");
+    setBankName("");
+    setUanNumber("");
+    setPanNumber("");
+    setPfNumber("");
+    setEsiNumber("");
+    setProfileImage(null);
+    setFamily("");
+    setWorkHistories([
+      {
+        CompanyName: "",
+        Role: "",
+        StartDate: null,
+        EndDate: null,
+        ThirdPartyVerification: false,
+        UploadResume: null,
+        ResumeUrl: "",
+      },
+    ]);
+    setIsEditMode(false);
+    setEditEmployeeId(null);
+    setSalaryGroups([]);
+    setSelectedSalaryGroup(null);
+    setSalaryGroupMessage("");
+    setDocuments({
+      profileImage: [],
+      aadhaar: [],
+      pan: [],
+      bankPassbook: [],
+      others: []
+    });
+  };
+
+  const openEditDialog = (row) => {
+    setIsEditMode(true);
+    setEditEmployeeId(row?.FacilityMember?.FacilityMemberId || "");
+
+    // Profile Info
+    const profile = row?.Profile || {};
+    setEmployeeCode(profile.EmployeeCode || "");
+    setEmployeeName(profile.EmployeeName || "");
+    setDesignation(profile.Designation || "");
+    setEmail(profile.Email || "");
+    setMobile(profile.PhoneNumber || "");
+    setDepartment(profile.Department || "");
+    setEmploymentType(profile.EmploymentType || "");
+    setGender(profile.Gender || "");
+    setDateOfBirth(profile.DateOfBirth ? profile.DateOfBirth.slice(0, 10) : "");
+    setPanCard(profile.PanCard || "");
+    setAadharCard(profile.AadharCard || "");
+    setAddressLine1(profile.AddressLine1 || "");
+    setAddressLine2(profile.AddressLine2 || "");
+    setCity(profile.City || "");
+    setStateName(profile.State || "");
+    setSelectedFacilityMemberId(row?.FacilityMember?.FacilityMemberId || "");
+    setSelectedManagers(
+      row?.FacilityMember?.ManagerIdList || []
+    );
+    if (profile.Designation) {
+      fetchSalaryGroups(profile.Designation);
+    }
+    const existingSG = row?.FacilityMember?.SG_Link_ID || null;
+
+    setSelectedSalaryGroup(existingSG);
+    // Work History - Handle both single and array
+    if (row?.WorkHistories && Array.isArray(row.WorkHistories) && row.WorkHistories.length > 0) {
+      setWorkHistories(
+        row.WorkHistories.map((wh) => ({
+          CompanyName: wh.CompanyName || "",
+          Role: wh.Role || "",
+          StartDate: wh.StartDate ? new Date(wh.StartDate) : null,
+          EndDate: wh.EndDate ? new Date(wh.EndDate) : null,
+          ThirdPartyVerification: wh.ThirdPartyVerification || false,
+          UploadResume: null,
+          ResumeUrl: wh.UploadResume || "",
+        }))
       );
+    } else {
+      setWorkHistories([
+        {
+          CompanyName: "",
+          Role: "",
+          StartDate: null,
+          EndDate: null,
+          ThirdPartyVerification: false,
+          UploadResume: null,
+          ResumeUrl: "",
+        },
+      ]);
     }
-  }
 
-  loadGender() {
-    let gender = [
-      { Value: "Male", Name: "Male" },
-      { Value: "Female", Name: "Female" },
-      { Value: "Other", Name: "Other" },
-    ];
-    this.setState({ GenderList: gender });
-  }
+    // Financial Info
+    const fin = row?.FinancialInfo || {};
+    setBankAccountNumber(fin.BankAccountNumber || "");
+    setBankIFSCCode(fin.BankIFSCCode || "");
+    setBankName(fin.BankName || "");
+    setUanNumber(fin.UANNumber || "");
+    setPanNumber(fin.PANNumber || "");
+    setPfNumber(fin.PFNumber || "");
+    setEsiNumber(fin.ESINumber || "");
 
-  loadFilter() {
-    let value = [
-      { Value: "All", Name: "All" },
-      { Value: "Active", Name: "Active" },
-      { Value: "Pending", Name: "Pending" },
-      { Value: "Blocked", Name: "Blocked" },
-      { Value: "Old", Name: "Old" },
-    ];
-    this.setState({ Filter: value });
-  }
+    // Employee List
+    const empList = row?.EmployeeList || {};
+    setFamily(empList.FatherName || "");
 
-  getFacilityMember(value) {
-    var type = "R";
-    var model = this.getModel(type, value);
-    this.manageFacilityMember(model, type);
-  }
-
-  getFacilityType() {
-    this.comdbprovider.getFacilityType().then((resp) => {
-      if (resp.ok && resp.status == 200) {
-        return resp.json().then((rData) => {
-          rData = appCommon.changejsoncolumnname(rData, "id", "Value");
-          rData = appCommon.changejsoncolumnname(rData, "text", "Name");
-          this.setState({ FacilityType: rData });
-
-          let data = [{ Id: "All", Name: "All" }];
-          rData.map((item) => {
-            data.push(item);
-          });
-          this.setState({ FilterFacilityType: data });
-        });
-      }
-    });
-  }
-
-  getFacilityMaster(id) {
-    this.comdbprovider.getFacilityMaster(id).then((resp) => {
-      if (resp.ok && resp.status == 200) {
-        return resp.json().then((rData) => {
-          rData = appCommon.changejsoncolumnname(rData, "id", "Value");
-          rData = appCommon.changejsoncolumnname(rData, "text", "Name");
-          this.setState({ FacilityMaster: rData });
-        });
-      }
-    });
-  }
-
-  getDocumentType() {
-    this.comdbprovider.getDocumentType(0).then((resp) => {
-      if (resp.ok && resp.status == 200) {
-        return resp.json().then((rData) => {
-          rData = appCommon.changejsoncolumnname(rData, "documentTypeId", "Id");
-          rData = appCommon.changejsoncolumnname(
-            rData,
-            "documentTypeName",
-            "Name"
-          );
-          let documentTypeData = [{ Id: "0", Name: "Select Document Type" }];
-          rData.forEach((element) => {
-            documentTypeData.push({
-              Id: element.Id.toString(),
-              Name: element.Name,
-            });
-          });
-          this.setState({ DocumentType: documentTypeData });
-        });
-      }
-    });
-  }
-
-  loadPropertyTowers(id) {
-    this.comdbprovider.getPropertyTowers(id).then((resp) => {
-      if (resp.ok && resp.status == 200) {
-        return resp.json().then((rData) => {
-          rData = appCommon.changejsoncolumnname(rData, "id", "Value");
-          rData = appCommon.changejsoncolumnname(rData, "text", "Name");
-          this.setState({ PropertyTowersData: rData });
-        });
-      }
-    });
-  }
-
-  loadPropertyFlat(id) {
-    this.comdbprovider.getPropertyFlat(id).then((resp) => {
-      if (resp.ok && resp.status == 200) {
-        return resp.json().then((rData) => {
-          rData = appCommon.changejsoncolumnname(rData, "id", "Value");
-          rData = appCommon.changejsoncolumnname(rData, "text", "Name");
-          this.setState({ PropertyFlat: rData });
-        });
-      }
-    });
-  }
-
-  manageFacilityMember = (model, type) => {
-    this.ApiProviderr.manageFacilityMember(model, type).then((resp) => {
-      if (resp.ok && resp.status == 200) {
-        return resp.json().then((rData) => {
-          switch (type) {
-            case "U":
-              appCommon.showtextalert(
-                "Facility Member Saved Successfully!",
-                "",
-                "success"
-              );
-              this.handleCancel();
-              break;
-            case "D":
-              appCommon.showtextalert(
-                "Facility Member Deleted Successfully!",
-                "",
-                "success"
-              );
-              this.handleCancel();
-              break;
-            case "B":
-              if (model[0].isBlocked) {
-                appCommon.showtextalert(
-                  "Facility Member Update Unblock Successfully!",
-                  "",
-                  "success"
-                );
-              } else {
-                appCommon.showtextalert(
-                  "Facility Member Update Block Successfully!",
-                  "",
-                  "success"
-                );
-              }
-              this.handleCancel();
-              break;
-            case "R":
-              rData.facilityMember.map((item,index)=>{
-                item['sNo']=index+1;
-            })
-              this.setState({ grdTotalPages: rData.totalPages });
-              this.setState({ grdTotalRows: rData.totalRows });
-              this.setState({ gridFacilityMemberData: rData.facilityMember });
-              break;
-            default:
-          }
-        });
-      }
-    });
+    setDialogVisible(true);
   };
 
-  addNew() {
-    this.setState({ PageMode: "Add", Showimguploader: false }, () => {
-      CreateValidator();
-      documentBL.CreateValidator();
-    });
-
-    this.getModel("C");
-
-    //load gender
-    this.loadGender();
-    this.setState({ PropertyId: this.state.PropertyId });
-
-    //load tower
-    this.loadPropertyTowers(this.state.PropertyId);
-        //load documents panel
-        this.getDocumentType();
-        $("#grdFacilityMember").find("[aria-label=Action]").addClass("addWidth");
-        let arrayCopy = [...this.state.DocumentType];
-        this.setState({ documentType: arrayCopy });
-        this.setState({ documentTypeId: "0" });
-        this.getFacilityMaster(parseInt(this.state.FacilityTypeId));
-  }
-
-  addDocs() {
-    this.setState({ PageMode: "AddDocs" }, () => {
-      CreateValidator();
-      documentBL.CreateValidator();
-    });
-
-    //load documents panel
-    this.getDocumentType();
-    $("#grdFacilityMember").find("[aria-label=Action]").addClass("addWidth");
-    let arrayCopy = [...this.state.DocumentType];
-    this.setState({ documentType: arrayCopy });
-    this.setState({ documentTypeId: "0" });
-    this.getFacilityMaster(parseInt(this.state.FacilityTypeId));
-  }
-
-  uploadDocs() {
-    this.setState({ PageMode: "UploadDocs" }, () => {
-      CreateValidator();
-      documentBL.CreateValidator();
-    });
-
-    //load documents panel
-    this.getDocumentType();
-    $("#grdFacilityMember").find("[aria-label=Action]").addClass("addWidth");
-    let arrayCopy = [...this.state.DocumentType];
-    this.setState({ documentType: arrayCopy });
-    this.setState({ documentTypeId: "0" });
-  }
-
-  onPagechange = (page) => {
-    this.setState({ pageNumber: page }, () => {
-      this.getFacilityMember(this.state.FilterValue);
-    });
-  };
-
-  onDrop(pictureFiles, pictureDataURLs) {
-    this.setState({ Pictures: pictureFiles });
-  }
-
-  onGridDelete = (Id) => {
-    var rowData = this.findByRowId(Id)
-    let myhtml = document.createElement("div");
-    myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
-    alert: swal({
-      buttons: {
-        ok: "Yes",
-        cancel: "No",
+  // Work History handlers
+  const addWorkHistory = () => {
+    setWorkHistories([
+      ...workHistories,
+      {
+        CompanyName: "",
+        Role: "",
+        StartDate: null,
+        EndDate: null,
+        ThirdPartyVerification: false,
+        UploadResume: null,
+        ResumeUrl: "",
       },
-      content: myhtml,
-      icon: "warning",
-      closeOnClickOutside: false,
-      dangerMode: true,
-    }).then((value) => {
-      switch (value) {
-        case "ok":
-          var model = [{ facilityMemberId: parseInt(rowData.facilityMemberId) }];
-          this.manageFacilityMember(model, "D");
-          break;
-        case "cancel":
-          break;
-        default:
-          break;
-      }
-    });
+    ]);
   };
 
-  onDocDelete = (Id) => {
-    let myhtml = document.createElement("div");
-    myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
-    alert: swal({
-      buttons: {
-        ok: "Yes",
-        cancel: "No",
-      },
-      content: myhtml,
-      icon: "warning",
-      closeOnClickOutside: false,
-      dangerMode: true,
-    }).then((value) => {
-      switch (value) {
-        case "ok":
-          this.setState({
-            gridAddKYCData : this.state.gridAddKYCData.filter((item) => item.id !== Id),
-          })
-          break;
-        case "cancel":
-          break;
-        default:
-          break;
-      }
-    });
+  const removeWorkHistory = (index) => {
+    setWorkHistories(workHistories.filter((_, i) => i !== index));
   };
 
-  onDocView = (Id) => {
-    this.setState({ PageMode: "docView" }, () => {
-    var doc = this.state.gridAddKYCData.find((item) => item.id == Id);
-    this.setState({ showDocfile: doc.docURl });
-    })
-  }
-
-  onGridBlock = (Id) => {
-    let val = this.findByRowId(parseInt(Id)).isBlocked;
-    let myhtml = document.createElement("div");
-    myhtml.innerHTML = BLOCK_CONFIRMATION_MSG + "</hr>";
-    if (val) myhtml.innerHTML = UNBLOCK_CONFIRMATION_MSG + "</hr>";
-
-    alert: swal({
-      buttons: {
-        ok: "Yes",
-        cancel: "No",
-      },
-      content: myhtml,
-      icon: "warning",
-      closeOnClickOutside: false,
-      dangerMode: true,
-    }).then((value) => {
-      switch (value) {
-        case "ok":
-          var model = [{ facilityMemberId: parseInt(Id), isBlocked: val }];
-          this.manageFacilityMember(model, "B");
-          break;
-        case "cancel":
-          break;
-        default:
-          break;
-      }
-    });
+  const handleWorkHistoryChange = (index, field, value) => {
+    const updated = [...workHistories];
+    updated[index][field] = value;
+    setWorkHistories(updated);
   };
 
-  async ongridedit(Id) {
-    this.setState({ PageMode: "Edit", Showimguploader: false }, () => {
-      CreateValidator();
-      documentBL.CreateValidator();
-    });
-    this.loadGender();
-    var rowData = this.findByRowId(Id);
-    this.setState({ FacilityMemberId: rowData.facilityMemberId });
-    this.setState({ ProfileImageUrl: rowData.profileImageUrl });
-    // if(rowData.profileImageUrl != null && rowData.profileImageUrl != ""){
-    //     this.state.gridDocumentData.push({
-    //         "facilityMemberDocumentId": 0,
-    //         "facilityMemberId": 0,
-    //         "documentTypeId": 0,
-    //         "documentTypeName": "Profile Image",
-    //         "documentName": rowData.profileImageUrl,
-    //         "documentUrl": rowData.profileImageUrl,
-    //     })
-    // }
-    this.setState({ Name: rowData.name });
-    this.setState({ Contact: rowData.mobileNumber });
-    this.setState({ Address: rowData.address });
-    $("#ddlGender").val(rowData.gender);
-    this.setState({ Gender: rowData.gender });
-
-    this.comdbprovider
-      .getFacilityMaster(this.state.FacilityTypeId)
-      .then((resp) => {
-        if (resp.ok && resp.status == 200) {
-          return resp.json().then((rData) => {
-            rData = appCommon.changejsoncolumnname(rData, "id", "Value");
-            rData = appCommon.changejsoncolumnname(rData, "text", "Name");
-            this.setState(
-              {
-                FacilityMaster: rData,
-                FacilityMasterId: rowData.facilityMasterId,
-              },
-              () => {
-                $("#ddlFacilityMaster").val(rowData.facilityMasterId);
-              }
-            );
-          });
-        }
+  const saveStaff = async () => {
+    // 🔒 Ensure unit/property selected
+    if (!propertyId) {
+      toast.current.show({
+        severity: "warn",
+        summary: "Warning",
+        detail: "Please select a unit first",
       });
-
-    if (rowData.facilityTypeId == 1) {
-      //load tower
-      this.loadPropertyTowers(this.state.PropertyId);
-      let dataValue = [];
-      rowData.facilityMemberPropertyAssignmentList.map((item) => {
-        dataValue.push({
-          Id: item.value,
-          Name: item.name,
-          value: item.name,
-          label: item.name,
-          color: "#0052CC",
-        });
+      return;
+    }
+    // Validation
+    if (!employeeName?.trim() || !employeeCode?.trim() || !mobile?.trim() || !gender) {
+      toast.current.show({
+        severity: "warn",
+        summary: "Validation",
+        detail: "Please fill all required fields (Name, Code, Mobile, Gender)"
       });
-      this.onDropdownChanges("PropertyDetails", dataValue);
+      return;
     }
 
-    //Document Grid
-    this.getDocumentType();
-
-    let arrayCopy = [...this.state.DocumentType];
-    this.state.gridDocumentData = [];
-    rowData.facilityMemberDocumentList.map((item) => {
-      this.removeByAttr(arrayCopy, "Id", item.documentTypeId.toString());
-    });
-    this.setState({ documentType: arrayCopy });
-    this.setState({ documentTypeId: "0" });
-    this.setState({
-      gridDocumentData: [
-        ...this.state.gridDocumentData,
-        ...rowData.facilityMemberDocumentList,
-      ],
-    });
-  }
-
-  async ongridShow(Id) {
-    this.setState({ PageMode: "Edit", Showimguploader: false }, () => {
-      CreateValidator();
-      documentBL.CreateValidator();
-    });
-    this.loadGender();
-    var rowData = this.findByRowId(Id);
-    this.setState({ FacilityMemberId: rowData.facilityMemberId });
-    this.setState({ ProfileImageUrl: rowData.profileImageUrl });
-    this.setState({ Name: rowData.name });
-    this.setState({ Contact: rowData.mobileNumber });
-    this.setState({ Address: rowData.address });
-    $("#ddlGender").val(rowData.gender);
-    this.setState({ Gender: rowData.gender });
-
-    this.comdbprovider
-      .getFacilityMaster(this.state.FacilityTypeId)
-      .then((resp) => {
-        if (resp.ok && resp.status == 200) {
-          return resp.json().then((rData) => {
-            rData = appCommon.changejsoncolumnname(rData, "id", "Value");
-            rData = appCommon.changejsoncolumnname(rData, "text", "Name");
-            this.setState(
-              {
-                FacilityMaster: rData,
-                FacilityMasterId: rowData.facilityMasterId,
-              },
-              () => {
-                $("#ddlFacilityMaster").val(rowData.facilityMasterId);
-              }
-            );
-          });
-        }
+    // Validate mobile number format (basic check)
+    if (!/^\d{10}$/.test(mobile.trim())) {
+      toast.current.show({
+        severity: "warn",
+        summary: "Validation",
+        detail: "Please enter a valid 10-digit mobile number"
       });
-
-    if (rowData.facilityTypeId == 1) {
-      //load tower
-      this.loadPropertyTowers(this.state.PropertyId);
-      let dataValue = [];
-      rowData.facilityMemberPropertyAssignmentList.map((item) => {
-        dataValue.push({
-          Id: item.value,
-          Name: item.name,
-          value: item.name,
-          label: item.name,
-          color: "#0052CC",
-        });
-      });
-      this.onDropdownChanges("PropertyDetails", dataValue);
+      return;
     }
 
-    //Document Grid
-    this.getDocumentType();
+    let profileImageUrl = "";
 
-    let arrayCopy = [...this.state.DocumentType];
-    rowData.facilityMemberDocumentList.map((item) => {
-      this.removeByAttr(arrayCopy, "Id", item.documentTypeId.toString());
-    });
-    this.setState({ documentType: arrayCopy });
-    this.setState({ documentTypeId: "0" });
-  }
-
-  findItem(id) {
-    return this.state.gridFacilityMemberData.find((item) => {
-      if (item.facilityMemberId == id) {
-        return item;
+    // Upload Profile Image if exists
+    if (profileImage && profileImage instanceof File) {
+      if (!["image/jpeg", "image/png"].includes(profileImage.type)) {
+        toast.current.show({
+          severity: "warn",
+          summary: "Validation",
+          detail: "Only JPG or PNG images are allowed",
+        });
+        return;
       }
-    });
-  }
 
-  findByRowId(id) {
-    return this.state.gridFacilityMemberData.find((item) => {
-      if (item.sNo == id) {
-        return item;
+      try {
+        const formData = new FormData();
+        formData.append("images", profileImage);
+
+        const res = await fetch("http://194.238.18.39:8000/upload/", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.uploaded?.length) throw new Error("Image upload failed");
+        profileImageUrl = data.uploaded[0];
+      } catch (err) {
+        console.error("Image upload error:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to upload profile image",
+        });
+        return;
       }
-    });
-  }
-
-  getModel = (type, value) => {
-    var model = [];
-    switch (type) {
-      case "R":
-        model.push({
-          SearchValue: "NULL",
-          PropertyId: parseInt(this.state.PropertyId),
-          PageSize: this.state.pageSize,
-          PageNumber: this.state.pageNumber,
-          Filter: this.state.FilterValue,
-          FacilityType: this.state.isServiceStaff,
-        });
-        break;
-      case "U":
-        model.push({
-          Name: this.state.Name,
-          Contact: this.state.Contact,
-          Address: this.state.Address,
-          FacilityTypeId: this.state.FacilityTypeId,
-          FacilityMasterId: this.state.FacilityMasterId,
-          PropertyTowerId: this.state.PropertyTowerId,
-          PropertyFloorId: this.state.PropertyFloorId,
-          PropertyFlatId: this.state.PropertyFlatId,
-          Gender: this.state.Gender,
-        });
-        break;
-      case "C":
-        this.setState({ Pictures: null, ProfileImageUrl: "" });
-        this.setState({ Name: "", Contact: "", Address: "" });
-        this.setState({ FacilityMemberId: "0" });
-        this.setState({ FacilityMasterId: "0", FacilityMaster: [] });
-        this.setState({ PropertyTowerId: "0", PropertyTowersData: [] });
-        this.setState({ PropertyFloorId: "0", PropertyFloors: [] });
-        this.setState({ PropertyFlatId: "0", PropertyFlat: [] });
-        this.setState({ Gender: "0" });
-        this.setState({ gridFacilityMemberData: [], gridDocumentData: [] });
-        this.setState({
-          documentType: [],
-          documentTypeId: "0",
-          documentName: "",
-        });
-        this.removeImage();
-        break;
-      default:
     }
-    return model;
-  };
 
-  handleSave = (saveType) => {
-      let url = new UrlProvider().MainUrl;
-      if (ValidateControls()) {
+    // Upload all resumes
+    let updatedWorkHistories = [...workHistories];
+
+    for (let i = 0; i < updatedWorkHistories.length; i++) {
+      const item = updatedWorkHistories[i];
+
+      if (item.UploadResume && item.UploadResume instanceof File) {
+        try {
           const formData = new FormData();
-          formData.append("propertyId", this.props.PropertyId);
-          formData.append("name", this.state.Name);
-          formData.append("mobileNumber", this.state.Contact);
-          formData.append("address", this.state.Address);
-          formData.append("gender", this.state.Gender);
-          formData.append("facilityMasterId", this.state.FacilityMasterId);
-          formData.append("saveType", saveType);
-          this.state.gridAddKYCData.map((item,index) => {
-              formData.append(`fileData[${index}].file`, item.file);
-              formData.append(`fileData[${index}].DocumentTypeId`, item.documentTypeId);
-              formData.append(`fileData[${index}].DocumentNumber`, item.documentNumber);
-              formData.append(`fileData[${index}].DocumentName`, item.documentName);
+          formData.append("file", item.UploadResume);
+
+          const res = await fetch("https://api.urest.in:8096/api/employee/upload-resume", {
+            method: "POST",
+            body: formData,
           });
-          formData.append('document', JSON.stringify(this.state.gridAddKYCData));
-          if (this.state.FacilityTypeId == 1 && this.state.PropertyDetailsIds.length > 0) {
-              if (this.state.gridAddKYCData.length > 0) {
-                  this.ApiProviderr.saveFacilityMember(formData)
-                      .then(res => {
-                          if (res.data <= 0) {
-                              appCommon.ShownotifyError("Facility Member Contact is already created");
-                          }
-                          else {
-                              if (this.props.PageMode != "Edit") {
-                                  appCommon.showtextalert("Facility Member Created Successfully", "", "success");
-                              }
-                              else {
-                                  appCommon.showtextalert("Facility Member Updated Successfully", "", "success");
-                              }
-                              this.handleCancel();
-                          }
-                      });
-              }
-              else
-                  appCommon.showtextalert("At least one document is required", "", "error");
+
+          const url = await res.json();
+
+          if (!res.ok || typeof url !== "string") {
+            throw new Error("Resume upload failed");
           }
-          else if (this.state.FacilityTypeId == 2) {
-              if (this.state.gridAddKYCData.length > 0) {
-                  this.ApiProviderr.saveFacilityMember(formData)
-                      .then(res => {
-                          if (res.data <= 0) {
-                              appCommon.ShownotifyError("Facility Member Contact is already created");
-                          }
-                          else {
-                              if (this.props.PageMode != "Edit") {
-                                  appCommon.showtextalert("Facility Member Created Successfully", "", "success");
-                              }
-                              else {
-                                  appCommon.showtextalert("Facility Member Updated Successfully", "", "success");
-                              }
-                              this.handleCancel();
-                          }
-                      });
-              }
-              else
-                  appCommon.showtextalert("At least one document is required", "", "error");
-          }
-          else {
-              appCommon.showtextalert("At least one flat is required", "", "error");
-          }
-      }
-  }
 
-  getFacilityModel = (type, value) => {
-    var model = [];
-    switch (type) {
-      case "C":
-        model.push({
-          propertyId: parseInt(this.props.PropertyId),
-          name: this.state.Name,
-          mobileNumber: this.state.Contact,
-          address: this.state.Address,
-          gender: this.state.Gender,
-          facilityMasterId: this.state.FacilityMasterId,
-          fileData : this.state.gridAddKYCData,
-        });
-        break;
-        case "U":
-          model.push({
-            facilityMemberId: parseInt(this.state.FacilityMemberId),
-            propertyId: parseInt(this.props.PropertyId),
-            name: this.state.Name,
-            mobileNumber: this.state.Contact,
-            address: this.state.Address,
-            gender: this.state.Gender,
-            facilityMasterId: this.state.FacilityMasterId,
-          });
-          break;
-      case "R":
-        model.push({
-          CmdType: type,
-        });
-        break;
-      case "Upload":
-        model.push({
-          FacilityMemberId: this.state.FacilityMemberId,
-          Document: JSON.stringify(this.state.kycDocumentData),
-        });
-        break;
-      case "DeleteFile":
-        model.push({
-          FacilityMemberDocumentId: value,
-        });
-      default:
-    }
-    return model;
-  };
-
-  // handleSave = async (e) => {
-  //   e.currentTarget.disabled = true;
-  //   if (ValidateControls()) {
-  //     if (
-  //       this.state.FacilityTypeId == 1 &&
-  //       this.state.PropertyDetailsIds.length > 0
-  //     ) {
-  //       var type = "C";
-  //       var model = this.getFacilityModel(type);
-  //       console.log(model)
-  //       this.ApiProviderr.manageFacilityMember(model, type).then((res) => {
-  //         if (res.data <= 0) {
-  //           appCommon.ShownotifyError(
-  //             "Facility Member Contact is already created"
-  //           );
-  //         } else {
-  //           if (this.props.PageMode != "Edit") {
-  //             appCommon.showtextalert(
-  //               "Facility Member Created Successfully",
-  //               "",
-  //               "success"
-  //             );
-  //           } else {
-  //             appCommon.showtextalert(
-  //               "Facility Member Updated Successfully",
-  //               "",
-  //               "success"
-  //             );
-  //           }
-  //           this.handleCancel();
-  //         }
-  //       });
-  //     } else if (this.state.FacilityTypeId == 2) {
-  //       var type = "C";
-  //       var model = this.getFacilityModel(type);
-  //       console.log(model)
-  //       this.ApiProviderr.manageFacilityMember(model, type).then((res) => {
-  //         if (res.data <= 0) {
-  //           appCommon.ShownotifyError(
-  //             "Facility Member Contact is already created"
-  //           );
-  //         } else {
-  //           if (this.props.PageMode != "Edit") {
-  //             appCommon.showtextalert(
-  //               "Facility Member Created Successfully",
-  //               "",
-  //               "success"
-  //             );
-  //           } else {
-  //             appCommon.showtextalert(
-  //               "Facility Member Updated Successfully",
-  //               "",
-  //               "success"
-  //             );
-  //           }
-  //           this.handleCancel();
-  //         }
-  //       });
-  //     } else {
-  //       appCommon.showtextalert("At least one flat is required", "", "error");
-  //     }
-  //   }
-
-  //   // this.state.ImageData="";
-  //   // this.state.Image="";
-  //   // this.state.ImageExt="";
-  // };
-
-  handleEdit = async (e) => {
-    e.currentTarget.disabled = true;
-    if (ValidateControls()) {
-      if (
-        this.state.FacilityTypeId == 1 &&
-        this.state.PropertyDetailsIds.length > 0
-      ) {
-        var type = "U";
-        var model = this.getFacilityModel(type);
-        this.ApiProviderr.manageFacilityMember(model, type).then((res) => {
-          if (res.data <= 0) {
-              appCommon.showtextalert(
-                "Facility Member Updated Successfully",
-                "",
-                "success"
-              );
-            this.handleCancel();
-          }
-        });
-      } else if (this.state.FacilityTypeId == 2) {
-        var type = "U";
-        var model = this.getFacilityModel(type);
-        this.ApiProviderr.manageFacilityMember(model, type).then((res) => {
-          if (res.data <= 0) {
-            appCommon.ShownotifyError(
-              "Facility Member Contact is already created"
-            );
-          } else {
-            if (this.props.PageMode != "Edit") {
-              appCommon.showtextalert(
-                "Facility Member Created Successfully",
-                "",
-                "success"
-              );
-            } else {
-              appCommon.showtextalert(
-                "Facility Member Updated Successfully",
-                "",
-                "success"
-              );
-            }
-            this.handleCancel();
-          }
-        });
-      } else {
-        appCommon.showtextalert("At least one flat is required", "", "error");
-      }
-    }
-  };
-  addFile = async (e) => {
-    e.currentTarget.disabled = true;
-    this.state.addKYCData = [];
-    let upfile = this.state.ImageData;
-    let fileD = await toBase64(upfile);
-    this.state.addKYCData.push({
-      id:this.state.gridAddKYCData.length+1,
-      //Have to implement a formData
-      file:this.state.ImageData,
-      documentTypeId: parseInt(this.state.documentTypeId),
-      documentTypeName: this.state.DocumentTypeName,
-      documentNumber: this.state.DocumentNumber,
-      docURl : fileD[1],
-    });
-    console.log(this.state.addKYCData)
-    this.setState({
-      gridAddKYCData: [
-        ...this.state.gridAddKYCData,
-        ...this.state.addKYCData,
-      ],
-    });
-    console.log(this.state)
-    this.handleCancelAddUpload()
-  };
-
-  uploadFile = async (e) => {
-    e.currentTarget.disabled = true;
-    let UpFile = this.state.ImageData;
-    let res = null;
-    if (UpFile) {
-      if (UpFile != "") {
-        let fileD = await toBase64(UpFile);
-        var imgbytes = UpFile.size; // Size returned in bytes.
-        var imgkbytes = Math.round(parseInt(imgbytes) / 1024); // Size returned in KB.
-        let extension = UpFile.name.substring(UpFile.name.lastIndexOf(".") + 1);
-        res = {
-          filename: UpFile.name,
-          filepath: fileD[1],
-          sizeinKb: imgkbytes,
-          fileType: fileD[0],
-          extension: extension.toLowerCase(),
-        };
-        this.state.ImageFileName = UpFile.name;
-        this.state.Image = fileD[1];
-        this.state.ImageExt = extension;
-        this.state.kycDocumentData = [];
-        this.state.kycDocumentData.push({
-          facilityMemberDocumentId: 0,
-          facilityMemberId: this.state.FacilityMemberId,
-          documentTypeId: parseInt(this.state.documentTypeId),
-          documentTypeName: this.state.DocumentTypeName,
-          documentName: res.filename,
-          documentUrl: res.filepath,
-          documentNumber: this.state.DocumentNumber,
-        });
-        this.setState({
-          gridDocumentData: [
-            ...this.state.gridDocumentData,
-            ...this.state.kycDocumentData,
-          ],
-        });
-      }
-    }
-    let url = new UrlProvider().MainUrl;
-    if (ValidateControls()) {
-      var type = "Upload";
-      var model = this.getFacilityModel(type);
-      this.ApiProviderr.manageFacilityMember(model, type).then((res) => {
-        if (res.data == "Success") {
-          appCommon.ShownotifyError("File Uploaded Successfully");
-        }
-        this.handleSaveUpload()
-      });
-    }
-
-    this.state.ImageData = "";
-    this.state.Image = "";
-    this.state.ImageExt = "";
-  };
-
-  updateFile = async (e) => {
-    e.currentTarget.disabled = true;
-
-    let UpFile = this.state.ImageData;
-    let res = null;
-    if (UpFile) {
-      if (UpFile != "") {
-        let fileD = await toBase64(UpFile);
-        var imgbytes = UpFile.size; // Size returned in bytes.
-        var imgkbytes = Math.round(parseInt(imgbytes) / 1024); // Size returned in KB.
-        let extension = UpFile.name.substring(UpFile.name.lastIndexOf(".") + 1);
-        res = {
-          filename: UpFile.name,
-          filepath: fileD[1],
-          sizeinKb: imgkbytes,
-          fileType: fileD[0],
-          extension: extension.toLowerCase(),
-        };
-        this.state.ImageFileName = UpFile.name;
-        this.state.Image = fileD[1];
-        this.state.ImageExt = extension;
-        this.state.kycDocumentData.push({
-          facilityMemberDocumentId: this.state.FacilityMemberDocumentId,
-          facilityMemberId: this.state.FacilityMemberId,
-          documentTypeId: this.state.documentTypeId,
-          documentTypeName: this.state.DocumentTypeName,
-          documentName: res.filename,
-          documentUrl: res.filepath,
-          documentNumber: this.state.DocumentNumber,
-        });
-        this.state.gridDocumentData.forEach((item, index) => {
-          if (
-            item.facilityMemberDocumentId == this.state.FacilityMemberDocumentId
-          ) {
-            this.state.gridDocumentData[index].documentUrl =
-              this.state.gridDocumentData[index].documentUrl.split(
-                "FacilityMemberDocuments/"
-              )[0] +
-              "FacilityMemberDocuments/" +
-              res.filename;
-          }
-        });
-      }
-    }
-    let url = new UrlProvider().MainUrl;
-    if (ValidateControls()) {
-      var type = "Upload";
-      var model = this.getFacilityModel(type);
-      this.ApiProviderr.manageFacilityMember(model, type).then((res) => {
-        if (res.data == "Success") {
-          appCommon.ShownotifyError("File Uploaded Successfully");
-        }
-        this.handleCancelUpload();
-      });
-    }
-
-    this.state.ImageData = "";
-    this.state.Image = "";
-    this.state.ImageExt = "";
-  };
-
-  handleCancel = () => {
-    this.setState({ PageMode: "Home" }, () => {
-      this.getFacilityMember(this.state.FilterValue);
-      this.state.gridAddKYCData = [];
-    });
-  };
-
-  handleCancelAddUpload = () => {
-    this.state.ImageData = "";
-    this.addNew();
-  };
-
-  handleCancelUpload = () => {
-    this.setState({ PageMode: "Edit" }, () => {
-      this.state.gridDocumentData = [];
-      var rowId = this.state.gridFacilityMemberData.find((item)=>{
-        return item.facilityMemberId == this.state.FacilityMemberId
-      })
-      this.ongridedit(rowId.sNo);
-    });
-  };
-
-  handleSaveUpload = () => {
-    this.setState({ PageMode: "Edit" },()=>{
-      var rowId = this.state.gridFacilityMemberData.find((item)=>{
-        return item.facilityMemberId == this.state.FacilityMemberId
-      })
-      this.ongridShow(rowId.sNo)
-    });
-  };
-
-  handleDeleteFile = () => {
-    this.setState({ PageMode: "AddDocs" });
-  };
-
-  onSelected(name, value) {
-    switch (name) {
-      case "DocumentType":
-        this.state.documentType.find((item) => {
-          if (item.Id == value) {
-            this.setState({ DocumentTypeName: item.Name });
-            this.setState({ documentTypeId: item.Id });
-          }
-        });
-        break;
-      case "Filter":
-        this.setState({ FilterValue: value, pageNumber: 1 }, () => {
-          this.getFacilityMember(value);
-        });
-        break;
-      // case "FilterFacilityType":
-      //     this.setState({ FilterFacilityTypeValue: value, pageNumber: 1 }, () => {
-      //         this.getFacilityMember(this.state.FilterValue);
-      //     });
-      //     break;
-      default:
-    }
-  }
-
-  removeImage() {
-    this.setState({
-      selectedFile: undefined,
-      selectedFileName: undefined,
-      imageSrc: undefined,
-      value: "",
-    });
-  }
-
-  // onFileChange(event) {
-  //     if (event.target.files[0]) {
-  //         this.setState({
-  //             selectedFile: event.target.files[0],
-  //             selectedFileName: event.target.files[0].name,
-  //             imageSrc: window.URL.createObjectURL(event.target.files[0]),
-  //             value: event.target.value,
-  //         });
-  //     }
-  // };
-
-  onFileChange(event) {
-    let _validFileExtensions = ["jpg", "jpeg", "png", "pdf"];
-    if (event.target.files[0]) {
-      let extension = event.target.files[0].name.substring(
-        event.target.files[0].name.lastIndexOf(".") + 1
-      );
-      let isvalidFiletype = _validFileExtensions.some(
-        (x) => x === extension.toLowerCase()
-      );
-      if (isvalidFiletype) {
-        this.state.FileData = event.target.files[0];
-      } else {
-        this.setState({ documentVal: "", currentSelectedFile: null });
-        let temp_validFileExtensions = _validFileExtensions.join(",");
-        appCommon.showtextalert(
-          `${event.target.files[0].name.filename} Invalid file type, Please Select only ${temp_validFileExtensions} `,
-          "",
-          "error"
-        );
-      }
-    }
-  }
-
-  onImageChange(event) {
-    let _validFileExtensions = ["jpg", "jpeg", "png", "pdf"];
-    if (event.target.files[0]) {
-      let extension = event.target.files[0].name.substring(
-        event.target.files[0].name.lastIndexOf(".") + 1
-      );
-      let isvalidFiletype = _validFileExtensions.some(
-        (x) => x === extension.toLowerCase()
-      );
-      if (isvalidFiletype) {
-        this.state.ImageData = event.target.files[0];
-      } else {
-        this.setState({ documentVal: "", currentSelectedFile: null });
-        let temp_validFileExtensions = _validFileExtensions.join(",");
-        appCommon.showtextalert(
-          `${event.target.files[0].name.filename} Invalid file type, Please Select only ${temp_validFileExtensions} `,
-          "",
-          "error"
-        );
-      }
-    }
-  }
-
-  compareBy(key) {
-    return function (a, b) {
-      if ("" + a[key] < "" + b[key]) return -1;
-      if ("" + a[key] > "" + b[key]) return 1;
-      return 0;
-    };
-  }
-
-  handleDocSave = async () => {
-    if (documentBL.ValidateControls() == "") {
-      let UpFile = this.state.FileData;
-      let res = null;
-      if (UpFile) {
-        if (UpFile != "") {
-          let fileD = await toBase64(UpFile);
-          var imgbytes = UpFile.size; // Size returned in bytes.
-          var imgkbytes = Math.round(parseInt(imgbytes) / 1024); // Size returned in KB.
-          let extension = UpFile.name.substring(
-            UpFile.name.lastIndexOf(".") + 1
-          );
-          res = {
-            filename: UpFile.name,
-            filepath: fileD[1],
-            sizeinKb: imgkbytes,
-            fileType: fileD[0],
-            extension: extension.toLowerCase(),
+          updatedWorkHistories[i] = {
+            ...item,
+            ResumeUrl: url,
           };
-          this.state.File = fileD[1];
-          this.state.FileExt = extension;
+        } catch (err) {
+          console.error("Resume upload error:", err);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: "Failed to upload resume",
+          });
+          return;
         }
       }
-      let documentTypeName = this.state.documentType.find((item) => {
-        return item.Id == this.state.documentTypeId;
-      }).Name;
-      this.setState({
-        documentType: this.removeByAttr(
-          this.state.documentType,
-          "Id",
-          this.state.documentTypeId
-        ),
-      });
-      let gridDocumentData = this.state.gridDocumentData;
-      gridDocumentData.push({
-        facilityMemberDocumentId: 0,
-        // propertyMemberDocumentId: 0,
-        documentTypeId: this.state.documentTypeId,
-        documentTypeName: documentTypeName,
-        documentName: UpFile.name,
-        documentNumber: this.state.documentName,
-        documentFileName: this.state.selectedFileName,
-        documentUrl: this.state.File,
-        documentExt: this.state.FileExt,
-        selectedFile: this.state.selectedFile,
-      });
-      this.setState({ gridDocumentData: gridDocumentData });
-      //clear object
-      this.setState({
-        documentName: " ",
-        documentTypeName: " ",
-        documentTypeId: 0,
-        selectedFile: undefined,
-        selectedFileName: undefined,
-        File: "",
-        FileExt: "",
-      });
-      this.removeImage();
     }
-  };
 
-  onDocumentGridData(gridLink) {
-    window.open(gridLink);
-  }
+    // Filter valid work histories
+    const validWorkHistories = updatedWorkHistories.filter(wh =>
+      wh.CompanyName.trim() !== "" ||
+      wh.Role.trim() !== "" ||
+      wh.StartDate !== null ||
+      wh.EndDate !== null
+    );
 
-  onDocumentGridDelete(gridId) {
-    let myhtml = document.createElement("div");
-    //myhtml.innerHTML = "Save your changes otherwise all change will be lost! </br></br> Are you sure want to close this page?" + "</hr>"
-    myhtml.innerHTML = DELETE_CONFIRMATION_MSG + "</hr>";
-    alert: swal({
-      buttons: {
-        ok: "Yes",
-        cancel: "No",
+    // Format work histories
+    const now = toISTISOString(new Date());
+    const formattedWorkHistories = validWorkHistories.map((wh) => ({
+      CompanyName: wh.CompanyName,
+      Role: wh.Role,
+      StartDate: wh.StartDate ? toISTISOString(wh.StartDate) : null,
+      EndDate: wh.EndDate ? toISTISOString(wh.EndDate) : null,
+      ThirdPartyVerification: wh.ThirdPartyVerification,
+      UploadResume: wh.ResumeUrl || "",
+      CreatedOn: now,
+      UpdatedOn: now,
+      IsActive: true,
+    }));
+
+    // Determine Facility Master ID based on designation
+    let facilityMasterId = 0;
+    if (designation === "H.K. SUPERVISOR") facilityMasterId = 19;
+    else if (designation === "TECHNICAL SUPERVISOR") facilityMasterId = 34;
+
+    // Build Payload matching backend structure
+    const dobValue = dateOfBirth
+      ? toISTISOString(dateOfBirth)
+      : toISTISOString('1900-01-01');
+
+    const employeeData = {
+      Profile: {
+        OfficeId: propertyId,
+        EmployeeCode: employeeCode,
+        EmployeeName: employeeName,
+        EmploymentType: employmentType,
+        CreatedOn: now,
+        UpdatedOn: now,
+        IsActive: true,
+        Email: email || "",
+        PhoneNumber: mobile,
+        Designation:
+          designation === "OTHER" ? customDesignation : designation,
+        Department:
+          department === "OTHER" ? customDepartment : department,
+        Gender: gender,
+        DateOfBirth: dobValue,
+        PanCard: panCard || "",
+        AadharCard: aadharCard || "",
+        AddressLine1: addressLine1 || "",
+        AddressLine2: addressLine2 || "",
+        City: city || "",
+        State: stateName || "",
       },
-      content: myhtml,
-      icon: "warning",
-      closeOnClickOutside: false,
-      dangerMode: true,
-    }).then((value) => {
-      switch (value) {
-        case "ok":
-          this.setState({
-            gridDocumentData: this.removeByAttr(
-              this.state.gridDocumentData,
-              "facilityMemberDocumentId",
-              gridId
-            ),
-          });
 
-          //dropdown
-          let documentType = this.state.documentType;
-          this.state.documentType.map((item) => {
-            if (item.Id == gridId) documentType.push(item);
-          });
-          let arrayCopy = [...this.state.documentType];
-          arrayCopy.sort(this.compareBy("Id"));
-          this.setState({ documentType: arrayCopy });
-          this.setState({ documentTypeId: "0" });
-          appCommon.showtextalert(
-            "Document Deleted Successfully",
-            "",
-            "success"
-          );
-          break;
-        case "cancel":
-          //do nothing
-          break;
-        default:
-          break;
-      }
-    });
-  }
+      WorkHistories: formattedWorkHistories,
 
-  onKYCDocumentDelete(docId) {
-    let data = this.state.gridDocumentData.find(
-      (x) => x.facilityMemberDocumentId === docId
-    );
-    this.setState({
-      PageMode: "UpdateDocs",
-      documentTypeId: data.documentTypeId,
-      FacilityMemberDocumentId: data.facilityMemberDocumentId,
-    });
-  }
+      // Backend still expects WorkHistory single object for compatibility
+      WorkHistory: formattedWorkHistories[0] || {},
 
-  removeByAttr(arr, attr, value) {
-    var i = arr.length;
-    while (i--) {
-      if (
-        arr[i] &&
-        arr[i].hasOwnProperty(attr) &&
-        arguments.length > 2 &&
-        arr[i][attr] === value
-      ) {
-        arr.splice(i, 1);
-      }
-    }
-    return arr;
-  }
+      FinancialInfo: {
+        BankAccountNumber: bankAccountNumber || "",
+        BankIFSCCode: bankIFSCCode || "",
+        BankName: bankName || "",
+        UANNumber: uanNumber || "",
+        PANNumber: panNumber || "",
+        PFNumber: pfNumber || "",
+        ESINumber: esiNumber || "",
+        CreatedOn: now,
+        UpdatedOn: now,
+        IsActive: true,
+      },
 
-  updateData = (name, value) => {
-    switch (name) {
-      case "Name":
-        this.setState({ Name: value });
-        break;
-      case "Contact":
-        this.setState({ Contact: value });
-        break;
-      case "Address":
-        this.setState({ Address: value });
-        break;
-      case "DocumentName":
-        this.setState({ documentName: value });
-        break;
-      case "DocumentNumber":
-        this.setState({ DocumentNumber: value });
-        break;
-      default:
-    }
-  };
+      FacilityMember: {
+        Name: employeeName,
+        FacilityMemberId: selectedFacilityMemberId || 0,
+        PropertyId: propertyId || 0,
+        Address: (addressLine1 + " " + addressLine2).trim() || "",
+        FacilityMasterId: facilityMasterId,
+        ProfileImageUrl: profileImageUrl || "",
+        IsBlocked: false,
+        AccessCode: "",
+        IsApproved: true,
+        ApprovedOn: now,
+        ApprovedBy: 1,
+        IsActive: true,
+        IsDeleted: false,
+        CreatedBy: 1,
+        CreatedOn: now,
+        UpdatedBy: 1,
+        UpdatedOn: now,
+        oldID: "0",
+        SG_Link_ID: selectedSalaryGroup || "0",
+        tax_amount: 0,
+        ManagerIdList: selectedManagers
+      },
 
-  onDropdownChanges = (value, id) => {
-    switch (value) {
-      case "Gender":
-        this.setState({ Gender: id });
-        break;
-      case "FacilityMaster":
-        this.setState({ FacilityMasterId: id });
-        break;
-      case "PropertyTower":
-        this.setState({ PropertyTowerId: id });
-        this.loadPropertyFlat(id);
-        break;
-      case "PropertyDetails":
-        this.setState({ PropertyDetailsIds: id });
-        break;
-      case "PropertyFlat":
-        let dataValue = [...this.state.PropertyDetailsIds];
-        let isExist = dataValue.find((i) => {
-          if (i.Id.toString() == id.toString()) {
-            return true;
-          } else {
-            return false;
-          }
+      EmployeeList: {
+        FatherName: family || "",
+        IsDeleted: false,
+        Approved: true,
+        Designation:
+          designation === "OTHER" ? customDesignation : designation,
+      },
+    };
+
+    try {
+      if (isEditMode) {
+        await updateEmployee(editEmployeeId, employeeData);
+        toast.current.show({
+          severity: "success",
+          summary: "Updated",
+          detail: "Staff updated successfully"
         });
-        if (!isExist) {
-          let item = this.state.PropertyFlat.find((item) => {
-            if (item.Value == id) {
-              dataValue.push({
-                Id: item.Value,
-                Name: item.Name,
-                value: item.Name,
-                label: item.Name,
-                color: "#0052CC",
-              });
-              this.onDropdownChanges("PropertyDetails", dataValue);
-              return item;
-            }
-          });
-          this.state.PropertyDetailsIds.push(item);
-        }
-        //remove item from flat dropdown
-        let data = this.removeByAttr(
-          this.state.PropertyFlat,
-          "Value",
-          parseInt(id)
-        );
-        this.setState({ PropertyFlat: data });
-        $("#ddlFlatList").val("0");
-        break;
-      default:
+
+        // trigger reload by resetting selectedPropertyId
+        setSelectedPropertyId([...selectedPropertyId]);
+      } else {
+        const response = await createEmployee(employeeData);
+        toast.current.show({
+          severity: "success",
+          summary: "Added",
+          detail: "Staff member added successfully"
+        });
+
+        // trigger reload by resetting selectedPropertyId
+        setSelectedPropertyId([...selectedPropertyId]);
+      }
+
+      setDialogVisible(false);
+      resetForm();
+    } catch (error) {
+      console.error(error);
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: isEditMode ? "Failed to update employee" : "Failed to create employee",
+      });
     }
   };
 
-  handleImagechange = () => {
-    this.setState({ Showimguploader: true });
-  };
-  handleImageClose = () => {
-    this.setState({ Showimguploader: false });
+  const deleteStaff = async (selectedRow) => {
+    if (!selectedRow) return;
+
+    try {
+      await deleteEmployee(selectedRow.FacilityMember.FacilityMemberId);
+      setStaff(staff.filter(s =>
+        s.FacilityMember.FacilityMemberId !== selectedRow.FacilityMember.FacilityMemberId
+      ));
+      toast.current.show({
+        severity: "success",
+        summary: "Deleted",
+        detail: "Staff deleted successfully"
+      });
+      setSelectedRow(null);
+    } catch (error) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Failed to delete staff"
+      });
+    }
   };
 
-  checkActiveInactiveData = (val) => {
-    this.setState({ isServiceStaff: val }, () => {
-      if (val === "Staff") {
-        this.setState({ FacilityTypeId: 2 });
-      } else if (val === "Service") {
-        this.setState({ FacilityTypeId: 1 });
+  const header = (
+    <div className="d-flex justify-content-between align-items-center p-2">
+      <h5 className="m-0">Facility Member</h5>
+      <div className="d-flex align-items-center gap-2">
+        {selectedRow && (
+          <>
+            <Button
+              icon="pi pi-pencil"
+              className="p-button-text p-button-info"
+              onClick={() => openEditDialog(selectedRow)}
+              tooltip="Edit Staff"
+            />
+            <Button
+              icon="pi pi-trash"
+              className="p-button-text p-button-danger"
+              onClick={() => deleteStaff(selectedRow)}
+              tooltip="Delete Staff"
+            />
+            <Button
+              icon="pi pi-eye"
+              className="p-button-text p-button-help"
+              onClick={() => viewStaff(selectedRow)}
+              tooltip="View Staff"
+            />
+            <Button
+              icon="pi pi-wallet"
+              className="p-button-text p-button-warning"
+              tooltip="View Salary"
+              onClick={() => openSalaryGroupView(selectedRow)}
+            />
+            <Button
+              icon="pi pi-credit-card"
+              className="p-button-text p-button-secondary"
+              tooltip="View Loan Advances"
+              onClick={() => openLoanAdvanceDialog(selectedRow)}
+            />
+          </>
+        )}
+
+        <div className="p-input-left">
+
+          <InputText
+            value={globalFilterValue}
+            onChange={(e) => setGlobalFilterValue(e.target.value)}
+            placeholder="Search..."
+          />
+        </div>
+
+        <Button
+          label="Add Staff"
+          icon="pi pi-plus"
+          onClick={openDialog}
+          className="p-button-success"
+        />
+      </div>
+    </div>
+  );
+
+  // Allow selecting and deselecting a row
+  const handleRowSelection = (e) => {
+    if (selectedRow?.FacilityMember?.FacilityMemberId === e.value?.FacilityMember?.FacilityMemberId) {
+      // clicking same row → DESELECT
+      setSelectedRow(null);
+    } else {
+      setSelectedRow(e.value);
+    }
+  };
+
+  const fetchSalaryGroups = async (designationValue) => {
+    // Clear previous selection first
+    setSelectedSalaryGroup(null);
+    setSalaryGroupDetails(null);
+    setSalaryGroupMessage("");
+    if (!designationValue || designationValue === "OTHER" || !propertyId) {
+      setSalaryGroups([]);
+      setSalaryGroupMessage("");
+      return;
+    }
+
+    setIsLoadingSalaryGroups(true);
+
+    try {
+      const data = await getSalaryGroupsByDesignation(propertyId, designationValue);
+
+      const formatted = Array.isArray(data)
+        ? data.map(sg => ({
+          label: sg.SalaryGroup,
+          value: sg.SalaryGroup_ID,
+          data: sg
+        }))
+        : [];
+
+      setSalaryGroups(formatted);
+      if (formatted.length === 0) {
+        setSalaryGroupMessage(
+          "No Salary Group available for this designation. You can still create employee without assigning it."
+        );
+      } else {
+        setSalaryGroupMessage("");
       }
-      this.getFacilityMember(val);
-    });
+
+      // 🔥 AUTO SELECT IF ONLY ONE
+      if (formatted.length === 1) {
+        setSelectedSalaryGroup(formatted[0].value);
+        setSalaryGroupDetails(formatted[0].data);
+        setShowSalaryGroupPopup(true);
+      }
+
+    } catch (err) {
+      console.error("Salary group fetch failed", err);
+      setSalaryGroups([]);
+    } finally {
+      setIsLoadingSalaryGroups(false);
+    }
   };
 
-  openInNewTab = (url) => {
-    window.open(url, "_blank", "noopener,noreferrer");
-  };
-  onViewDocument(docId) {
-    let data = this.state.gridDocumentData.find(
-      (x) => x.facilityMemberDocumentId === docId
-    );
-    this.openInNewTab(data.documentUrl);
-  }
-
-  addUser (){
-    console.log("Add User Clicked");
-    console.log(this.props.history)
-    this.props.history.push('/about');
-  };
-
-  render() {
+  const renderDocumentSection = (label, type, accept) => {
     return (
-      <div>
-        {this.state.PageMode === "Home" && (
-          <div className="row">
-            <div className="col-12">
-              <div className="card">
-                <div className="card-header d-flex p-0">
-                  <ul className="nav tableFilterContainer">
-                    <li className="nav-item">
-                      <div className="btn-group">
-                        <Button
-                          id="btnStaff"
-                          Action={this.checkActiveInactiveData.bind(
-                            this,
-                            "Staff"
-                          )}
-                          ClassName={
-                            this.state.isServiceStaff === "Staff"
-                              ? "btn btn-success"
-                              : "btn btn-default"
-                          }
-                          Text="Staff"
-                        />
-                        <Button
-                          id="btnService"
-                          Action={this.checkActiveInactiveData.bind(
-                            this,
-                            "Service"
-                          )}
-                          ClassName={
-                            this.state.isServiceStaff === "Service"
-                              ? "btn btn-success"
-                              : "btn btn-default"
-                          }
-                          Text="Service"
-                        />
-                      </div>
-                    </li>
-                    <li className="nav-item ">
-                      <div className="form-inline">
-                        <label htmlFor="lblFilter">Filter</label>
-                        <SelectBox
-                          ID="ddlFilter"
-                          Value={this.state.FilterValue}
-                          onSelected={this.onSelected.bind(this, "Filter")}
-                          Options={this.state.Filter}
-                          ClassName="form-control"
-                        />
-                      </div>
-                    </li>
-                  </ul>
-                  <ul className="nav ml-auto tableFilterContainer">
-                    {this.state.PropertyId !== 0 && (
-                      <li className="nav-item">
-                        <div className="input-group input-group-sm">
-                          <div className="input-group-prepend">
-                            <Button
-                                id="btnNewComplain"
-                                Action={this.addNew.bind(this)}
-                                ClassName="btn btn-success btn-sm"
-                                Icon={
-                                  <i
-                                      className="fa fa-plus"
-                                      aria-hidden="true"
-                                  ></i>
-                                }
-                                Text={`Add ${this.state.isServiceStaff}`}
-                            />
-                          </div>
-                        </div>
-                      </li>
-                    )}
-                  </ul>
-                </div>
-                <div className="card-body pt-2">
-                  <DataGrid
-                      Id="grdFacilityMember"
-                      IsPagination={true}
-                      ColumnCollection={this.state.gridFacilityMemberHeader}
-                      totalpages={this.state.grdTotalPages}
-                      totalrows={this.state.grdTotalRows}
-                      Onpageindexchanged={this.onPagechange.bind(this)}
-                      onEditMethod={this.ongridedit.bind(this)}
-                      onGridDeleteMethod={this.onGridDelete.bind(this)}
-                    onGridBlockMethod={this.onGridBlock.bind(this)}
-                    DefaultPagination={false}
-                    IsSarching="true"
-                    GridData={this.state.gridFacilityMemberData}
-                    pageSize="500"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        {this.state.PageMode === "Add" && (
-          <div>
-            <div>
-              <div className="modal-content">
-                <div className="modal-body">
-                  <div className="row">
-                    <div class="col-sm-4">
-                      <div class="form-group">
-                        <label htmlFor="lblName">Name</label>
-                        {/* <InputBox
-                          Id="txtName"
-                          Value={this.state.Name}
-                          onChange={this.updateData.bind(this, "Name")}
-                          PlaceHolder="Name"
-                          className="form-control"
-                        /> */}
-                         <input
-                            id="txtCatColor"
-                            placeholder="Enter Name"
-                            type="text"
-                            className="form-control"
-                            value={this.state.Name}
-                            onChange={(e) => { this.setState({ Name: e.target.value }) }}
-                        />
-                      </div>
-                    </div>
-                    <div class="col-sm-4">
-                      <div class="form-group">
-                        <label htmlFor="lblGender">Gender</label>
-                        <DropDownList
-                          Id="ddlGender"
-                          Value={this.state.Gender}
-                          onSelected={this.onDropdownChanges.bind(
-                            this,
-                            "Gender"
-                          )}
-                          Options={this.state.GenderList}
-                        />
-                      </div>
-                    </div>
-                    <div class="col-sm-4">
-                      <div class="form-group">
-                        <label htmlFor="lblFacilityMaster">Job Profile</label>
-                        <DropDownList
-                          Id="ddlFacilityMaster"
-                          onSelected={this.onDropdownChanges.bind(
-                            this,
-                            "FacilityMaster"
-                          )}
-                          Options={this.state.FacilityMaster}
-                        />
-                      </div>
-                    </div>
-                    <div class="col-sm-4">
-                      <div class="form-group">
-                        <label htmlFor="lblContact">Contact</label>
-                        <InputBox
-                          Id="txtContact"
-                          Value={this.state.Contact}
-                          onChange={this.updateData.bind(this, "Contact")}
-                          PlaceHolder="Contact"
-                          className="form-control"
-                        />
-                      </div>
-                    </div>
-                    <div class="col-sm-4">
-                      <div class="form-group">
-                        <label htmlFor="lblAddress">Address</label>
-                        <InputBox
-                          Id="txtAddress"
-                          Value={this.state.Address}
-                          onChange={this.updateData.bind(this, "Address")}
-                          PlaceHolder="Address"
-                          className="form-control"
-                        />
-                      </div>
-                    </div>
-                    {this.state.FacilityTypeId === 1 && (
-                      <div class="col-sm-4">
-                        <div class="form-group">
-                          <label htmlFor="ddlTowerList">Tower/Wing</label>
-                          <DropDownList
-                            Id="ddlTowerList"
-                            onSelected={this.onDropdownChanges.bind(
-                              this,
-                              "PropertyTower"
-                            )}
-                            Options={this.state.PropertyTowersData}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div
-                    className="row"
-                    style={{ display: "flex", justifyContent: "space-between" }}
-                  >
-                    <label>KYC Documents</label>
+      <div className="border rounded p-3 mb-4 shadow-sm bg-light">
+        <div className="d-flex justify-content-between align-items-center mb-2">
+          <h6 className="m-0">{label}</h6>
+        </div>
 
-                    <div>
-                      <Button
-                        id="btnNewComplain"
-                        Action={this.uploadDocs.bind(this)}
-                        ClassName="btn btn-success btn-sm"
-                        Icon={<i className="fa fa-plus" aria-hidden="true"></i>}
-                        Text={`Add Documents`}
-                      />
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-sm-12">
-                      <DataGrid
-                        Id="grdDoc"
-                        IsPagination={false}
-                        ColumnCollection={this.state.addDocumentHeader}
-                        onGridDeleteMethod={this.onDocDelete.bind(this)}
-                        onGridViewMethod={this.onDocView.bind(this)}
-                        GridData={this.state.gridAddKYCData}
-                      />
-                    </div>
-                  </div>
-
-                  {this.state.FacilityTypeId === 1 && (
-                    <div>
-                      <div className="row">
-                        <div class="col-sm-4">
-                          <div class="form-group">
-                            <label htmlFor="ddlFlatList">Flat Name</label>
-                            <DropDownList
-                              Id="ddlFlatList"
-                              onSelected={this.onDropdownChanges.bind(
-                                this,
-                                "PropertyFlat"
-                              )}
-                              Options={this.state.PropertyFlat}
-                            />
-                          </div>
-                        </div>
-                        <div class="col-sm-8">
-                          <label htmlFor="selectedFlat">
-                            Selected Flat Name
-                          </label>
-                          <div class="form-group">
-                            <div className="disableKey">
-                              <MultiSelectInline
-                                ID="ddlPropertyDetails"
-                                isMulti={true}
-                                value={this.state.PropertyDetailsIds}
-                                onChange={this.onDropdownChanges.bind(
-                                  this,
-                                  "PropertyDetails"
-                                )}
-                                //options={this.state.OwnerData}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  {/* <div className="row">
-                                        <div className="col-sm-4">
-                                            {
-                                                (this.state.PageMode === 'Add' || this.state.Showimguploader) ?
-                                                    <div className="form-group">
-                                                        <label htmlFor="lbPictureUpload">Picture Upload</label>
-                                                        <div style={{ display: "flex" }}>
-                                                            <div style={{ marginRight: "15px" }}>
-                                                                
-                                                                <DocumentUploader
-                                                                Class={"form-control"}
-                                                                Id={"kycfileUploader"}
-                                                                type={"file"}
-                                                                onChange={this.onImageChange.bind(this)}
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    : null
-                                            }
-                                            {this.state.PageMode === "Edit" && !this.state.Showimguploader &&
-                                                <div style={{ marginRight: "15px" }}>
-                                                    <img className="ImageView" src={this.state.ProfileImageUrl}
-                                                        style={{ height: "90px" }} />
-                                                </div>
-                                            }
-                                            {!this.state.Showimguploader && this.state.PageMode === "Edit" &&
-                                                <Button
-                                                    Id="bntShowimage"
-                                                    Text="Upload Image"
-                                                    Action={this.handleImagechange}
-                                                    ClassName="btn btn-link" />
-                                            }
-                                            {this.state.Showimguploader && this.state.PageMode === "Edit" &&
-                                                <Button
-                                                    Id="bnthideimage"
-                                                    Text="Cancel"
-                                                    Action={this.handleImageClose}
-                                                    ClassName="btn btn-link" />
-                                            }
-                                        </div>
-                                    </div>
-                                    <div className="row">
-                                        <div className="modal-content">
-                                            <div className="modal-body">
-                                                <div className="row">
-                                                    <div className="col-sm-3">
-                                                        <div className="form-group">
-                                                            <label htmlFor="lbDocumentType">Document Type</label>
-                                                            <SelectBox
-                                                                ID="ddlDocumentType"
-                                                                Value={this.state.documentTypeId}
-                                                                onSelected={this.onSelected.bind(this, "DocumentType")}
-                                                                Options={this.state.documentType}
-                                                                ClassName="form-control " />
-                                                        </div>
-                                                    </div>
-                                                    <div className="col-sm-3">
-                                                        <div className="form-group">
-                                                            <label htmlFor="lbDocumentName">Document Number</label>
-                                                            <InputBox Id="txtDocumentName"
-                                                                onChange={this.updateData.bind(this, "DocumentName")}
-                                                                PlaceHolder="Document Number"
-                                                                Value={this.state.documentName}
-                                                                Class="form-control"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                    <div className="col-sm-3">
-                                                        <div className="form-group">
-                                                            <label htmlFor="lbDocumentUpload">Document Upload</label>
-                                                            <div className="pr-inner-block mar-bottom-zero-cover">
-                                                                <DocumentUploader
-                                                                    Class={"form-control "}
-                                                                    Id={"fileDocumentUploader"}
-                                                                    type={"file"}
-                                                                    // value={this.state.FileData.name}
-                                                                    onChange={this.onFileChange.bind(this)} />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="col-sm-3">
-                                                        <br></br>
-                                                        <Button
-                                                            Id="btnAddDoc"
-                                                            Text="Add Document"
-                                                            Action={this.handleDocSave.bind(this)}
-                                                            ClassName="btn btn-primary" />
-                                                    </div>
-                                                </div>
-                                                <div className="row">
-                                                    <div className="col-sm-12">
-                                                        <DataGrid
-                                                            Id="grdDoc"
-                                                            IsPagination={false}
-                                                            ColumnCollection={this.state.gridDocumentHeader}
-                                                            onGridDeleteMethod={this.onDocumentGridDelete.bind(this)}
-                                                            onGridDownloadMethod={this.onDocumentGridData.bind(this)}
-                                                            GridData={this.state.gridDocumentData}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div> */}
-                </div>
-                <div className="modal-footer">
-                  {/* <Button
-                    Id="btnSave"
-                    Text="Save"
-                    Action={this.handleSave.bind(this, "Save")}
-                    ClassName="btn btn-primary"
-                  /> */}
-                  {/* <button className="btn btn-primary" onClick={(e)=>this.handleSave(e)}>
-                        Save
-                      </button> */}
-                  <Button
-                                        Id="btnSaveAndApprove"
-                                        Text="Save &amp; Approve"
-                                        Action={this.handleSave.bind(this, "SaveApprove")}
-                                        ClassName="btn btn-success" />
-                  <Button
-                    Id="btnCancel"
-                    Text="Cancel"
-                    Action={this.handleCancel}
-                    ClassName="btn btn-secondary"
-                  />
-                </div>
-              </div>
-            </div>
-            <ToastContainer
-              position="top-right"
-              autoClose={5000}
-              hideProgressBar={false}
-              newestOnTop={false}
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
+        {documents[type].map((file, index) => (
+          <div key={index} className="d-flex align-items-center justify-content-between mb-2">
+            <span>{file.name}</span>
+            <Button
+              icon="pi pi-trash"
+              className="p-button-text p-button-danger"
+              onClick={() => removeDocument(type, index)}
             />
-            <ToastContainer />
           </div>
-        )}
-        {this.state.PageMode === "Edit" && (
-          <div>
-            <div>
-              <div className="modal-content">
-                <div className="modal-body">
-                  <div className="row">
-                    <div class="col-sm-4">
-                      <div class="form-group">
-                        <label htmlFor="lblName">Name</label>
-                        <InputBox
-                          Id="txtName"
-                          Value={this.state.Name}
-                          onChange={this.updateData.bind(this, "Name")}
-                          PlaceHolder="Name"
-                          className="form-control"
-                        />
-                      </div>
-                    </div>
-                    <div class="col-sm-4">
-                      <div class="form-group">
-                        <label htmlFor="lblGender">Gender</label>
-                        <DropDownList
-                          Id="ddlGender"
-                          onSelected={this.onDropdownChanges.bind(
-                            this,
-                            "Gender"
-                          )}
-                          Options={this.state.GenderList}
-                        />
-                      </div>
-                    </div>
-                    <div class="col-sm-4">
-                      <div class="form-group">
-                        <label htmlFor="lblFacilityMaster">Job Profile</label>
-                        <DropDownList
-                          Id="ddlFacilityMaster"
-                          onSelected={this.onDropdownChanges.bind(
-                            this,
-                            "FacilityMaster"
-                          )}
-                          Options={this.state.FacilityMaster}
-                        />
-                      </div>
-                    </div>
-                    <div class="col-sm-4">
-                      <div class="form-group">
-                        <label htmlFor="lblContact">Contact</label>
-                        <InputBox
-                          Id="txtContact"
-                          Value={this.state.Contact}
-                          onChange={this.updateData.bind(this, "Contact")}
-                          PlaceHolder="Contact"
-                          className="form-control"
-                        />
-                      </div>
-                    </div>
-                    <div class="col-sm-4">
-                      <div class="form-group">
-                        <label htmlFor="lblAddress">Address</label>
-                        <InputBox
-                          Id="txtAddress"
-                          Value={this.state.Address}
-                          onChange={this.updateData.bind(this, "Address")}
-                          PlaceHolder="Address"
-                          className="form-control"
-                        />
-                      </div>
-                    </div>
-                    {this.state.FacilityTypeId === 1 && (
-                      <div class="col-sm-4">
-                        <div class="form-group">
-                          <label htmlFor="ddlTowerList">Tower/Wing</label>
-                          <DropDownList
-                            Id="ddlTowerList"
-                            onSelected={this.onDropdownChanges.bind(
-                              this,
-                              "PropertyTower"
-                            )}
-                            Options={this.state.PropertyTowersData}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div
-                    className="row"
-                    style={{ display: "flex", justifyContent: "space-between" }}
-                  >
-                    <label>KYC Documents</label>
+        ))}
 
-                    <div>
-                      <Button
-                        id="btnNewComplain"
-                        Action={this.addDocs.bind(this)}
-                        ClassName="btn btn-success btn-sm"
-                        Icon={<i className="fa fa-plus" aria-hidden="true"></i>}
-                        Text={`Add Documents`}
-                      />
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-sm-12">
-                      <DataGrid
-                        Id="grdDoc"
-                        IsPagination={false}
-                        ColumnCollection={this.state.gridDocumentHeader}
-                        onEditMethod={this.onKYCDocumentDelete.bind(this)}
-                        onGridDownloadMethod={this.onDocumentGridData.bind(
-                          this
-                        )}
-                        onGridViewMethod={this.onViewDocument.bind(this)}
-                        GridData={this.state.gridDocumentData}
-                      />
-                    </div>
-                  </div>
-
-                  {this.state.FacilityTypeId === 1 && (
-                    <div>
-                      <div className="row">
-                        <div class="col-sm-4">
-                          <div class="form-group">
-                            <label htmlFor="ddlFlatList">Flat Name</label>
-                            <DropDownList
-                              Id="ddlFlatList"
-                              onSelected={this.onDropdownChanges.bind(
-                                this,
-                                "PropertyFlat"
-                              )}
-                              Options={this.state.PropertyFlat}
-                            />
-                          </div>
-                        </div>
-                        <div class="col-sm-8">
-                          <label htmlFor="selectedFlat">
-                            Selected Flat Name
-                          </label>
-                          <div class="form-group">
-                            <div className="disableKey">
-                              <MultiSelectInline
-                                ID="ddlPropertyDetails"
-                                isMulti={true}
-                                value={this.state.PropertyDetailsIds}
-                                onChange={this.onDropdownChanges.bind(
-                                  this,
-                                  "PropertyDetails"
-                                )}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div className="modal-footer">
-                  {/* <Button
-                    Id="btnSave"
-                    Text="Save"
-                    Action={this.handleSave.bind(this, "Save")}
-                    ClassName="btn btn-primary"
-                  /> */}
-                  <button className="btn btn-primary" onClick={(e)=>this.handleEdit(e)}>
-                        Save
-                      </button>
-                  {/* <Button
-                                        Id="btnSaveAndApprove"
-                                        Text="Save &amp; Approve"
-                                        Action={this.handleSave.bind(this, "SaveApprove")}
-                                        ClassName="btn btn-success" /> */}
-                  <Button
-                    Id="btnCancel"
-                    Text="Cancel"
-                    Action={this.handleCancel}
-                    ClassName="btn btn-secondary"
-                  />
-                </div>
-              </div>
-            </div>
-            <ToastContainer
-              position="top-right"
-              autoClose={5000}
-              hideProgressBar={false}
-              newestOnTop={false}
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
+        <div className="mt-2">
+          <label className="p-button p-button-text p-button-success">
+            <i className="pi pi-plus mr-2"></i> Add
+            <input
+              type="file"
+              accept={accept}
+              hidden
+              onChange={(e) => {
+                addDocument(type, e.target.files[0]);
+                e.target.value = null;
+              }}
             />
-            <ToastContainer />
-          </div>
-        )}
-{/* While Creating New User */}
-      {this.state.PageMode === "UploadDocs" && (
-          <div>
-            <div>
-              <div className="modal-content">
-                <div className="modal-body">
-                  <div className="row">
-                    <div className="col-sm-4">
-                      <div className="form-group">
-                        <label htmlFor="lbDocumentType">Document Type</label>
-                        <SelectBox
-                          ID="ddlDocumentType"
-                          Value={this.state.documentTypeId}
-                          onSelected={this.onSelected.bind(
-                            this,
-                            "DocumentType"
-                          )}
-                          Options={this.state.DocumentType}
-                          ClassName="form-control "
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-sm-4">
-                      <div>
-                        <label>Upload KYC Documents</label>
-                      </div>
-                      <div style={{ display: "flex" }}>
-                        <div style={{ marginRight: "15px" }}>
-                          <DocumentUploader
-                            Class={"form-control"}
-                            Id={"kycfileUploader"}
-                            type={"file"}
-                            // value={this.state.documentName}
-                            onChange={this.onImageChange.bind(this)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="col-sm-4">
-                      <div className="form-group">
-                        <label htmlFor="lblName">Document Number</label>
-                        <InputBox
-                          Id="txtName"
-                          value={this.state.DocumentNumber}
-                          onChange={this.updateData.bind(
-                            this,
-                            "DocumentNumber"
-                          )}
-                          PlaceHolder="Document Number"
-                          className="form-control"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="modal-footer">
-                  {/* <Button
-                    Id="btnSave"
-                    Text="Save"
-                    Action={this.uploadFile.bind(this)}
-                    ClassName="btn btn-primary"
-                  /> */}
-                  <button className="btn btn-primary" onClick={(e)=>this.addFile(e)}>
-                        Save
-                      </button>
-                  <Button
-                    Id="btnCancel"
-                    Text="Cancel"
-                    Action={this.handleCancelAddUpload}
-                    ClassName="btn btn-secondary"
-                  />
-                </div>
-              </div>
-            </div>
-            <ToastContainer
-              position="top-right"
-              autoClose={5000}
-              hideProgressBar={false}
-              newestOnTop={false}
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-            />
-            <ToastContainer />
-          </div>
-        )}
-{/* While Editing User and adding new documents */}
-        {this.state.PageMode === "AddDocs" && (
-          <div>
-            <div>
-              <div className="modal-content">
-                <div className="modal-body">
-                  <div className="row">
-                    <div className="col-sm-4">
-                      <div className="form-group">
-                        <label htmlFor="lblName">Id</label>
-                        <InputBox
-                          Id="txtName"
-                          Disabled={true}
-                          Value={this.state.FacilityMemberId}
-                          PlaceHolder="Id"
-                          className="form-control"
-                        />
-                      </div>
-                    </div>
-                    <div className="col-sm-4">
-                      <div className="form-group">
-                        <label htmlFor="lblName">Name</label>
-                        <InputBox
-                          Id="txtName"
-                          Value={this.state.Name}
-                          PlaceHolder="Name"
-                          className="form-control"
-                        />
-                      </div>
-                    </div>
-                    <div className="col-sm-4">
-                      <div className="form-group">
-                        <label htmlFor="lbDocumentType">Document Type</label>
-                        <SelectBox
-                          ID="ddlDocumentType"
-                          Value={this.state.documentTypeId}
-                          onSelected={this.onSelected.bind(
-                            this,
-                            "DocumentType"
-                          )}
-                          Options={this.state.DocumentType}
-                          ClassName="form-control "
-                        />
-                        {/* <select className='form-control' onSelect={(e)=>{this.setState({documentTypeId:e.target.value})}}>
-                                                                {this.state.documentType.map((item, index) => {
-                                                                    return <option value={item.Id}>{item.Name}</option>
-                                                                })}
-                                                            </select> */}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-sm-4">
-                      <div>
-                        <label>Upload KYC Documents</label>
-                      </div>
-                      <div style={{ display: "flex" }}>
-                        <div style={{ marginRight: "15px" }}>
-                          <DocumentUploader
-                            Class={"form-control"}
-                            Id={"kycfileUploader"}
-                            type={"file"}
-                            // value={this.state.documentName}
-                            onChange={this.onImageChange.bind(this)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="col-sm-4">
-                      <div className="form-group">
-                        <label htmlFor="lblName">Document Number</label>
-                        <InputBox
-                          Id="txtName"
-                          value={this.state.DocumentNumber}
-                          onChange={this.updateData.bind(
-                            this,
-                            "DocumentNumber"
-                          )}
-                          PlaceHolder="Document Number"
-                          className="form-control"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="modal-footer">
-                  {/* <Button
-                    Id="btnSave"
-                    Text="Save"
-                    Action={this.uploadFile.bind(this)}
-                    ClassName="btn btn-primary"
-                  /> */}
-                  <button className="btn btn-primary" onClick={(e)=>this.uploadFile(e)}>
-                        Save
-                      </button>
-                  <Button
-                    Id="btnCancel"
-                    Text="Cancel"
-                    Action={this.handleCancelUpload}
-                    ClassName="btn btn-secondary"
-                  />
-                </div>
-              </div>
-            </div>
-            <ToastContainer
-              position="top-right"
-              autoClose={5000}
-              hideProgressBar={false}
-              newestOnTop={false}
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-            />
-            <ToastContainer />
-          </div>
-        )}
-{/* While Editing User and updating documents */}
-        {this.state.PageMode === "UpdateDocs" && (
-          <div>
-            <div>
-              <div className="modal-content">
-                <div className="modal-body">
-                  <div className="row">
-                    <div className="col-sm-4">
-                      <div className="form-group">
-                        <label htmlFor="lblName">Id</label>
-                        <InputBox
-                          Id="txtName"
-                          Disabled={true}
-                          Value={this.state.FacilityMemberId}
-                          PlaceHolder="Id"
-                          className="form-control"
-                        />
-                      </div>
-                    </div>
-                    <div className="col-sm-4">
-                      <div className="form-group">
-                        <label htmlFor="lblName">Name</label>
-                        <InputBox
-                          Id="txtName"
-                          Disabled={true}
-                          Value={this.state.Name}
-                          PlaceHolder="Name"
-                          className="form-control"
-                        />
-                      </div>
-                    </div>
-                    <div className="col-sm-4">
-                      <div className="form-group">
-                        <label htmlFor="lbDocumentType">Document Type</label>
-                        <SelectBox
-                          disabled={true}
-                          ID="ddlDocumentType"
-                          Value={this.state.documentTypeId}
-                          onSelected={this.onSelected.bind(
-                            this,
-                            "DocumentType"
-                          )}
-                          Options={this.state.DocumentType}
-                          ClassName="form-control "
-                        />
-                         {/*<select className='form-control' onSelect={(e)=>{this.setState({documentTypeId:e.target.value})}}>*/}
-                         {/*                                       {this.state.documentType.map((item, index) => {*/}
-                         {/*                                           return <option value={item.Id}>{item.Name}</option>*/}
-                         {/*                                       })}*/}
-                         {/*                                   </select>*/}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-sm-4">
-                      <div>
-                        <label>Update KYC Documents</label>
-                      </div>
-                      <div style={{ display: "flex" }}>
-                        <div style={{ marginRight: "15px" }}>
-                          <DocumentUploader
-                            Class={"form-control"}
-                            Id={"kycfileUploader"}
-                            type={"file"}
-                            onChange={this.onImageChange.bind(this)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="col-sm-4">
-                      <div className="form-group">
-                        <label htmlFor="lblName">Document Id</label>
-                        <InputBox
-                          Id="txtName"
-                          Disabled={true}
-                          Value={this.state.FacilityMemberDocumentId}
-                          // onChange={this.updateData.bind(this, "DocumentNumber")}
-                          PlaceHolder="Document Id"
-                          className="form-control"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="modal-footer">
-                  {/* <Button
-                    Id="btnSave"
-                    Text="Save"
-                    Action={this.updateFile.bind(this)}
-                    ClassName="btn btn-primary"
-                  /> */}
-                      <button className="btn btn-primary" onClick={(e)=>this.updateFile(e)}>
-                        Save
-                      </button>
-                  <Button
-                    Id="btnCancel"
-                    Text="Cancel"
-                    Action={this.handleCancelUpload}
-                    ClassName="btn btn-secondary"
-                  />
-                </div>
-              </div>
-            </div>
-            <ToastContainer
-              position="top-right"
-              autoClose={5000}
-              hideProgressBar={false}
-              newestOnTop={false}
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-            />
-            <ToastContainer />
-          </div>
-        )}
-          {(this.state.PageMode === "docView") && (
-          <div>
-            <div>
-              <div className="modal-content">
-                <div className="modal-body">
-                  <h3>Document Images</h3>
-                <div className="row">
-                  <div className="col-sm-6">
-                      <div className="form-group">
-                        {/* <img src={this.state.showImagefile} alt="Image" width="100" height="100" /> */}
-                        <img src={`data:image/jpeg;base64,${this.state.showDocfile}`} style={{"height":"400px","width":"400px"}} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="modal-footer">
-                  <Button
-                    Id="btnCancel"
-                    Text="Close"
-                    Action={this.handleCancelAddUpload}
-                    ClassName="btn btn-secondary"
-                  />
-                </div>
-              </div>
-            </div>
-            <ToastContainer
-              position="top-right"
-              autoClose={5000}
-              hideProgressBar={false}
-              newestOnTop={false}
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-            />
-            <ToastContainer />
-          </div>
-        )}
+          </label>
+        </div>
       </div>
     );
-  }
-}
-
-function mapStoreToprops(state, props) {
-  return {
-    PropertyId: state.Commonreducer.puidn,
   };
-}
 
-function mapDispatchToProps(dispatch) {
-  const actions = bindActionCreators(departmentAction, dispatch);
-  return { actions };
-}
-export default connect(mapStoreToprops, mapDispatchToProps)(FacilityMember);
+  return (
+    <PrimeReactProvider>
+      <div className="content-wrapper">
+        <section className="content">
+          <div className="container-fluid">
+            <Toast ref={toast} />
+
+            <div className="card">
+              <div className="p-3">
+                <div className="d-flex gap-4 mb-3">
+
+                  {/* Select Client */}
+                  <div>
+                    <label>Select Client:</label>
+                    <select
+                      value={selectedUnitId || ""}
+                      onChange={(e) => {
+                        setSelectedUnitId(Number(e.target.value));
+                        setSelectedPropertyId([]);
+                      }}
+                    >
+                      <option value="">-- Select Client --</option>
+                      {unitList.map((u) => (
+                        <option key={u.ClientID} value={u.ClientID}>
+                          {u.ClientName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Select Unit */}
+                  <div>
+                    <label>Select Unit:</label>
+                    <select
+                      value={selectedPropertyId[0] || ""}
+                      onChange={(e) => {
+                        setSelectedPropertyId([Number(e.target.value)]);
+                      }}
+                    >
+                      <option value="">-- Select Unit --</option>
+                      {propertyList.map((p) => (
+                        <option key={p.PropertyId} value={p.PropertyId}>
+                          {p.PropertyName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                </div>
+                <DataTable
+                  value={staff}
+                  dataKey="FacilityMember.FacilityMemberId"
+                  header={header}
+                  paginator
+                  rows={10}
+                  loading={loading}
+                  responsiveLayout="scroll"
+                  emptyMessage="No staff found."
+                  selection={selectedRow}
+                  onSelectionChange={handleRowSelection}
+                  globalFilter={globalFilterValue}
+                  globalFilterFields={[
+                    "Profile.EmployeeName",
+                    "Profile.Gender",
+                    "Profile.PhoneNumber",
+                    "FacilityMember.AccessCode"
+                  ]}
+                >
+                  <Column selectionMode="single" headerStyle={{ width: '3em' }} />
+                  <Column header="Employee Code" body={(row) => row.Profile?.EmployeeCode || "-"} />
+                  <Column header="Name" body={(row) => row.Profile?.EmployeeName || "-"} />
+                  <Column header="Department" body={(row) => row.Profile?.Department || "-"} />
+                  <Column header="Designation" body={(row) => row.Profile?.Designation || "-"} />
+                  <Column header="Gender" body={(row) => row.Profile?.Gender || "-"} />
+                  <Column header="Contact" body={(row) => row.Profile?.PhoneNumber || "-"} />
+                  <Column header="Approved" body={(row) => row.FacilityMember?.IsApproved ? "Yes" : "No"} />
+                </DataTable>
+              </div>
+
+              {showSalaryGroupView && (
+                <SalaryGroupView
+                  propertyId={propertyId}
+                  facilityMemberId={String(selectedFacilityMemberId)}
+                  employeeName={selectedFacilityMemberName}
+                  onClose={closeSalaryGroupView}
+                />
+              )}
+
+              {showLoanAdvanceDialog && (
+                <LoanAdvanceDialog
+                  show={showLoanAdvanceDialog}
+                  onClose={closeLoanAdvanceDialog}
+                  facilityMemberId={selectedLoanAdvanceId}
+                />
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* Add/Edit Dialog */}
+        <Dialog
+          header={isEditMode ? "Edit Facility Member" : "Add Facility Member"}
+          visible={dialogVisible}
+          style={{ width: "800px" }}
+          modal
+          onHide={() => {
+            setDialogVisible(false);
+            resetForm();
+          }}
+          footer={
+            <div className="d-flex justify-content-end gap-2">
+              <Button
+                label="Cancel"
+                className="p-button-text"
+                onClick={() => {
+                  setDialogVisible(false);
+                  resetForm();
+                }}
+              />
+              <Button
+                label={isEditMode ? "Update" : "Save"}
+                icon="pi pi-check"
+                onClick={saveStaff}
+              />
+            </div>
+          }
+        >
+          <TabView>
+            {/* Personal Details */}
+            <TabPanel header="Personal Details">
+              <div className="p-fluid">
+                <label>Branch Name</label>
+                <InputText
+                  value={branchName}
+                  readOnly
+                  className="mb-3"
+                />
+                <label>Client Name</label>
+                <InputText
+                  value={clientName}
+                  readOnly
+                  className="mb-3"
+                />
+                <label>Employee Code *</label>
+                <InputText
+                  placeholder="Employee Code"
+                  value={employeeCode}
+                  onChange={(e) => setEmployeeCode(e.target.value)}
+                  className="mb-3"
+                />
+
+                <label>Employee Name *</label>
+                <InputText
+                  placeholder="Employee Name"
+                  value={employeeName}
+                  onChange={(e) => setEmployeeName(e.target.value)}
+                  className="mb-3"
+                />
+
+                <label>Employment Type</label>
+                <Dropdown
+                  placeholder="Select Employment Type"
+                  value={employmentType}
+                  options={employmentTypes}
+                  onChange={(e) => setEmploymentType(e.value)}
+                  className="mb-3"
+                />
+
+                <label>Email</label>
+                <InputText
+                  placeholder="Email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mb-3"
+                />
+
+                <label>Mobile *</label>
+                <InputText
+                  placeholder="Mobile"
+                  value={mobile}
+                  onChange={(e) => setMobile(e.target.value)}
+                  className="mb-3"
+                />
+
+                <label>Department</label>
+                <Dropdown
+                  placeholder={isLoadingDepartments ? "Loading..." : "Select Department"}
+                  value={department}
+                  options={departments || []}
+                  onChange={(e) => setDepartment(e.value)}
+                  className="mb-3"
+                  disabled={isLoadingDepartments}
+                  emptyMessage="No departments available"
+                />
+
+                {department === "OTHER" && (
+                  <InputText
+                    placeholder="Enter Custom Department"
+                    value={customDepartment}
+                    onChange={(e) => setCustomDepartment(e.target.value)}
+                    className="mb-3"
+                  />
+                )}
+
+                <label>Designation</label>
+                <Dropdown
+                  placeholder={isLoadingDesignations ? "Loading..." : "Select Designation"}
+                  value={designation}
+                  options={designations || []}
+                  onChange={(e) => {
+                    setDesignation(e.value);
+                    fetchSalaryGroups(e.value);
+                  }}
+                  className="mb-3"
+                  disabled={isLoadingDesignations}
+                  emptyMessage="No designations available"
+                />
+
+                {designation === "OTHER" && (
+                  <InputText
+                    placeholder="Enter Custom Designation"
+                    value={customDesignation}
+                    onChange={(e) => setCustomDesignation(e.target.value)}
+                    className="mb-3"
+                  />
+                )}
+
+                {salaryGroups.length > 0 && (
+                  <>
+                    <label>Salary Group</label>
+                    <Dropdown
+                      placeholder={isLoadingSalaryGroups ? "Loading..." : "Select Salary Group"}
+                      value={selectedSalaryGroup}
+                      options={salaryGroups}
+                      onChange={(e) => {
+                        setSelectedSalaryGroup(e.value);
+
+                        const selected = salaryGroups.find(
+                          sg => sg.value === e.value
+                        );
+
+                        if (selected) {
+                          setSalaryGroupDetails(selected.data);
+                          setShowSalaryGroupPopup(true);
+                        }
+                      }}
+                      className="mb-3"
+                      disabled={isLoadingSalaryGroups}
+                    />
+                  </>
+                )}
+                {salaryGroupMessage && (
+                  <small style={{ color: "red" }}>
+                    {salaryGroupMessage}
+                  </small>
+                )}
+                <label>Reporting Managers</label>
+                <MultiSelect
+                  value={selectedManagers}
+                  options={managerOptions}
+                  onChange={(e) => setSelectedManagers(e.value)}
+                  placeholder="Select Managers"
+                  className="mb-3 w-full"
+                  display="chip"
+                  filter
+                />
+
+                <label>Gender *</label>
+                <Dropdown
+                  placeholder="Select Gender"
+                  value={gender}
+                  options={genders}
+                  onChange={(e) => setGender(e.value)}
+                  className="mb-3"
+                />
+
+                <label>Date of Birth</label>
+                <InputText
+                  type="date"
+                  value={dateOfBirth}
+                  onChange={(e) => setDateOfBirth(e.target.value)}
+                  className="mb-3"
+                />
+
+                <label>Father's Name</label>
+                <InputText
+                  placeholder="Father's Name"
+                  value={family}
+                  onChange={(e) => setFamily(e.target.value)}
+                  className="mb-3"
+                />
+
+                <label>Pan Card</label>
+                <InputText
+                  placeholder="Pan Card"
+                  value={panCard}
+                  onChange={(e) => setPanCard(e.target.value)}
+                  className="mb-3"
+                />
+
+                <label>Aadhar Card</label>
+                <InputText
+                  placeholder="Aadhar Card"
+                  value={aadharCard}
+                  onChange={(e) => setAadharCard(e.target.value)}
+                  className="mb-3"
+                />
+
+                <label>Address Line 1</label>
+                <InputText
+                  placeholder="Address Line 1"
+                  value={addressLine1}
+                  onChange={(e) => setAddressLine1(e.target.value)}
+                  className="mb-3"
+                />
+
+                <label>Address Line 2</label>
+                <InputText
+                  placeholder="Address Line 2"
+                  value={addressLine2}
+                  onChange={(e) => setAddressLine2(e.target.value)}
+                  className="mb-3"
+                />
+
+                <label>City</label>
+                <InputText
+                  placeholder="City"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="mb-3"
+                />
+
+                <label>State</label>
+                <InputText
+                  placeholder="State"
+                  value={stateName}
+                  onChange={(e) => setStateName(e.target.value)}
+                  className="mb-3"
+                />
+              </div>
+            </TabPanel>
+
+            {/* Bank Details */}
+            <TabPanel header="Bank Details">
+              <div className="p-fluid">
+                <label>Bank Account Number</label>
+                <InputText
+                  placeholder="Bank Account Number"
+                  value={bankAccountNumber}
+                  onChange={(e) => setBankAccountNumber(e.target.value)}
+                  className="mb-3"
+                />
+
+                <label>Bank IFSC Code</label>
+                <InputText
+                  placeholder="Bank IFSC Code"
+                  value={bankIFSCCode}
+                  onChange={(e) => setBankIFSCCode(e.target.value)}
+                  className="mb-3"
+                />
+
+                <label>Bank Name</label>
+                <InputText
+                  placeholder="Bank Name"
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  className="mb-3"
+                />
+
+                <label>UAN Number</label>
+                <InputText
+                  placeholder="UAN Number"
+                  value={uanNumber}
+                  onChange={(e) => setUanNumber(e.target.value)}
+                  className="mb-3"
+                />
+
+                <label>PAN Number</label>
+                <InputText
+                  placeholder="PAN Number"
+                  value={panNumber}
+                  onChange={(e) => setPanNumber(e.target.value)}
+                  className="mb-3"
+                />
+
+                <label>PF Number</label>
+                <InputText
+                  placeholder="PF Number"
+                  value={pfNumber}
+                  onChange={(e) => setPfNumber(e.target.value)}
+                  className="mb-3"
+                />
+
+                <label>ESI Number</label>
+                <InputText
+                  placeholder="ESI Number"
+                  value={esiNumber}
+                  onChange={(e) => setEsiNumber(e.target.value)}
+                  className="mb-3"
+                />
+              </div>
+            </TabPanel>
+
+            {/* Work History */}
+            <TabPanel header="Work History">
+              <div className="p-fluid">
+                {workHistories.map((history, index) => (
+                  <div key={index} className="border rounded p-3 mb-3 shadow-sm bg-light">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <h6 className="m-0">Work History #{index + 1}</h6>
+                      {workHistories.length > 1 && (
+                        <Button
+                          icon="pi pi-times"
+                          className="p-button-text p-button-danger"
+                          onClick={() => removeWorkHistory(index)}
+                          tooltip="Remove this record"
+                        />
+                      )}
+                    </div>
+
+                    <label>Company Name</label>
+                    <InputText
+                      placeholder="Company Name"
+                      value={history.CompanyName}
+                      onChange={(e) =>
+                        handleWorkHistoryChange(index, "CompanyName", e.target.value)
+                      }
+                      className="mb-3"
+                    />
+
+                    <label>Role</label>
+                    <InputText
+                      placeholder="Role"
+                      value={history.Role}
+                      onChange={(e) =>
+                        handleWorkHistoryChange(index, "Role", e.target.value)
+                      }
+                      className="mb-3"
+                    />
+
+                    <label>Start Date</label>
+                    <Calendar
+                      placeholder="Start Date"
+                      value={history.StartDate}
+                      onChange={(e) =>
+                        handleWorkHistoryChange(index, "StartDate", e.value)
+                      }
+                      className="mb-3 w-full"
+                      dateFormat="dd-mm-yy"
+                      showIcon
+                    />
+
+                    <label>End Date</label>
+                    <Calendar
+                      placeholder="End Date"
+                      value={history.EndDate}
+                      onChange={(e) =>
+                        handleWorkHistoryChange(index, "EndDate", e.value)
+                      }
+                      className="mb-3 w-full"
+                      dateFormat="dd-mm-yy"
+                      showIcon
+                    />
+
+                    <div className="flex align-items-center mb-3">
+                      <Checkbox
+                        inputId={`tpv-${index}`}
+                        checked={history.ThirdPartyVerification}
+                        onChange={(e) =>
+                          handleWorkHistoryChange(index, "ThirdPartyVerification", e.checked)
+                        }
+                      />
+                      <label htmlFor={`tpv-${index}`} className="ml-2">
+                        Third Party Verification
+                      </label>
+                    </div>
+
+                    <div className="mb-2">
+                      <label className="block mb-1">Upload Resume</label>
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx"
+                        onChange={(e) =>
+                          handleWorkHistoryChange(index, "UploadResume", e.target.files[0])
+                        }
+                        className="form-control"
+                      />
+                      {history.ResumeUrl && (
+                        <small className="text-success d-block mt-1">
+                          Previously uploaded: {history.ResumeUrl.split('/').pop()}
+                        </small>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                <Button
+                  label="Add Another Company"
+                  icon="pi pi-plus"
+                  className="p-button-text p-button-success mt-2"
+                  onClick={addWorkHistory}
+                />
+              </div>
+            </TabPanel>
+            <TabPanel header="Upload Documents">
+              <div className="p-fluid">
+
+                <div className="border rounded p-3 mb-4 shadow-sm bg-light">
+                  <h6>Profile Image</h6>
+
+                  {profileImage && (
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <span>{profileImage.name}</span>
+                      <Button
+                        icon="pi pi-trash"
+                        className="p-button-text p-button-danger"
+                        onClick={() => setProfileImage(null)}
+                      />
+                    </div>
+                  )}
+
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setProfileImage(e.target.files[0])}
+                    className="form-control"
+                  />
+                </div>
+                {renderDocumentSection("Aadhaar Card", "aadhaar", "image/*,.pdf")}
+                {renderDocumentSection("Pan Card", "pan", "image/*,.pdf")}
+                {renderDocumentSection("Bank Passbook", "bankPassbook", "image/*,.pdf")}
+                {renderDocumentSection("Others", "others", "*")}
+
+              </div>
+            </TabPanel>
+          </TabView>
+        </Dialog>
+
+        {/* View Dialog */}
+        <Dialog
+          header="View Facility Member"
+          visible={viewDialogVisible}
+          style={{ width: "800px" }}
+          modal
+          onHide={() => setViewDialogVisible(false)}
+        >
+          {viewData && (
+            <TabView>
+              <TabPanel header="Personal Details">
+                <div className="p-fluid">
+                  <label>Branch Name</label>
+                  <InputText
+                    value={branchName}
+                    readOnly
+                    className="mb-3"
+                  />
+                  <label>Client Name</label>
+                  <InputText
+                    value={clientName}
+                    readOnly
+                    className="mb-3"
+                  />
+                  <label>Employee Code</label>
+                  <InputText
+                    value={viewData.Profile?.EmployeeCode || ""}
+                    readOnly
+                    className="mb-3"
+                  />
+
+                  <label>Employee Name</label>
+                  <InputText
+                    value={viewData.Profile?.EmployeeName || ""}
+                    readOnly
+                    className="mb-3"
+                  />
+
+                  <label>Employment Type</label>
+                  <InputText
+                    value={viewData.Profile?.EmploymentType || ""}
+                    readOnly
+                    className="mb-3"
+                  />
+
+                  <label>Email</label>
+                  <InputText
+                    value={viewData.Profile?.Email || ""}
+                    readOnly
+                    className="mb-3"
+                  />
+
+                  <label>Mobile</label>
+                  <InputText
+                    value={viewData.Profile?.PhoneNumber || ""}
+                    readOnly
+                    className="mb-3"
+                  />
+
+                  <label>Department</label>
+                  <InputText
+                    value={viewData.Profile?.Department || ""}
+                    readOnly
+                    className="mb-3"
+                  />
+
+                  <label>Designation</label>
+                  <InputText
+                    value={viewData.Profile?.Designation || ""}
+                    readOnly
+                    className="mb-3"
+                  />
+
+                  <label>Reporting Managers</label>
+                  <InputText
+                    value={
+                      getManagerNames(viewData?.FacilityMember?.ManagerIdList).join(", ")
+                    }
+                    readOnly
+                    className="mb-3"
+                  />
+
+                  <label>Gender</label>
+                  <InputText
+                    value={viewData.Profile?.Gender || ""}
+                    readOnly
+                    className="mb-3"
+                  />
+
+                  <label>Date of Birth</label>
+                  <InputText
+                    value={viewData.Profile?.DateOfBirth ? viewData.Profile.DateOfBirth.slice(0, 10) : ""}
+                    readOnly
+                    className="mb-3"
+                  />
+
+                  <label>Father's Name</label>
+                  <InputText
+                    value={viewData.EmployeeList?.FatherName || ""}
+                    readOnly
+                    className="mb-3"
+                  />
+
+                  <label>Pan Card</label>
+                  <InputText
+                    value={viewData.Profile?.PanCard || ""}
+                    readOnly
+                    className="mb-3"
+                  />
+
+                  <label>Aadhar Card</label>
+                  <InputText
+                    value={viewData.Profile?.AadharCard || ""}
+                    readOnly
+                    className="mb-3"
+                  />
+
+                  <label>Address Line 1</label>
+                  <InputText
+                    value={viewData.Profile?.AddressLine1 || ""}
+                    readOnly
+                    className="mb-3"
+                  />
+
+                  <label>Address Line 2</label>
+                  <InputText
+                    value={viewData.Profile?.AddressLine2 || ""}
+                    readOnly
+                    className="mb-3"
+                  />
+
+                  <label>City</label>
+                  <InputText
+                    value={viewData.Profile?.City || ""}
+                    readOnly
+                    className="mb-3"
+                  />
+
+                  <label>State</label>
+                  <InputText
+                    value={viewData.Profile?.State || ""}
+                    readOnly
+                    className="mb-3"
+                  />
+                </div>
+              </TabPanel>
+
+              <TabPanel header="Bank Details">
+                <div className="p-fluid">
+                  <label>Bank Account Number</label>
+                  <InputText
+                    value={viewData?.FinancialInfo?.BankAccountNumber || ""}
+                    readOnly
+                    className="mb-3"
+                  />
+
+                  <label>Bank IFSC Code</label>
+                  <InputText
+                    value={viewData?.FinancialInfo?.BankIFSCCode || ""}
+                    readOnly
+                    className="mb-3"
+                  />
+
+                  <label>Bank Name</label>
+                  <InputText
+                    value={viewData?.FinancialInfo?.BankName || ""}
+                    readOnly
+                    className="mb-3"
+                  />
+
+                  <label>UAN Number</label>
+                  <InputText
+                    value={viewData?.FinancialInfo?.UANNumber || ""}
+                    readOnly
+                    className="mb-3"
+                  />
+
+                  <label>PAN Number</label>
+                  <InputText
+                    value={viewData?.FinancialInfo?.PANNumber || ""}
+                    readOnly
+                    className="mb-3"
+                  />
+
+                  <label>PF Number</label>
+                  <InputText
+                    value={viewData?.FinancialInfo?.PFNumber || ""}
+                    readOnly
+                    className="mb-3"
+                  />
+
+                  <label>ESI Number</label>
+                  <InputText
+                    value={viewData?.FinancialInfo?.ESINumber || ""}
+                    readOnly
+                    className="mb-3"
+                  />
+                </div>
+              </TabPanel>
+
+
+              <TabPanel header="Work History">
+                <div className="p-fluid">
+                  {(() => {
+                    // detect multiple or single history
+                    const histories = Array.isArray(viewData?.WorkHistories)
+                      ? viewData.WorkHistories
+                      : viewData?.WorkHistory
+                        ? [viewData.WorkHistory]
+                        : [];
+
+                    return histories.length > 0 ? (
+                      histories.map((wh, index) => (
+                        <div key={index} className="border rounded p-3 mb-3 bg-light">
+                          <h6>Work History #{index + 1}</h6>
+
+                          <label>Company Name</label>
+                          <InputText value={wh.CompanyName || ""} readOnly className="mb-3" />
+
+                          <label>Role</label>
+                          <InputText value={wh.Role || ""} readOnly className="mb-3" />
+
+                          <label>Start Date</label>
+                          <InputText
+                            value={wh.StartDate ? wh.StartDate.slice(0, 10) : ""}
+                            readOnly
+                            className="mb-3"
+                          />
+
+                          <label>End Date</label>
+                          <InputText
+                            value={wh.EndDate ? wh.EndDate.slice(0, 10) : ""}
+                            readOnly
+                            className="mb-3"
+                          />
+
+                          <div className="mb-3">
+                            <Checkbox checked={!!wh.ThirdPartyVerification} readOnly disabled />
+                            <span className="ml-2">Third Party Verification</span>
+                          </div>
+
+                          {wh.UploadResume && (
+                            <div className="mb-2">
+                              <label>Resume</label>
+                              <div>
+                                <a href={wh.UploadResume} target="_blank" rel="noopener noreferrer">
+                                  View Resume
+                                </a>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-muted">No work history available</p>
+                    );
+                  })()}
+                </div>
+              </TabPanel>
+              <TabPanel header="Upload Documents">
+                <div className="p-fluid">
+                  {["profileImage", "aadhaar", "pan", "bankPassbook", "others"].map(type => (
+                    <div key={type} className="mb-3">
+                      <h6>{type}</h6>
+                      <p className="text-muted">Document preview will appear after backend integration.</p>
+                    </div>
+                  ))}
+                </div>
+              </TabPanel>
+            </TabView>
+          )}
+        </Dialog>
+        {/* Salary Group Details Popup */}
+        <Dialog
+          header={`Salary Group → ${salaryGroupDetails?.SalaryGroup || 'Details'}`}
+          visible={showSalaryGroupPopup}
+          style={{ width: "900px" }}
+          modal
+          onHide={() => {
+            setShowSalaryGroupPopup(false);
+            setSalaryGroupDetails(null);
+          }}
+          footer={
+            <Button
+              label="Close"
+              icon="pi pi-times"
+              onClick={() => {
+                setShowSalaryGroupPopup(false);
+                setSalaryGroupDetails(null);
+              }}
+              className="p-button-primary"
+            />
+          }
+        >
+          {salaryGroupDetails && (
+            <div className="row">
+              {/* Allowances Section */}
+              <div className="col-md-6">
+                <div className="p-3 mb-3" style={{ backgroundColor: '#d4edda', borderRadius: '8px' }}>
+                  <h5 className="text-center mb-3">Allowance</h5>
+                  <table className="table table-borderless">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th className="text-end">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Base Salary</td>
+                        <td className="text-end">₹{salaryGroupDetails.BaseSalary?.toLocaleString()}</td>
+                      </tr>
+                      {salaryGroupDetails.AllowancesDeductions
+                        ?.filter(ad => ad.Type === 'A')
+                        .map((allowance, idx) => (
+                          <tr key={idx}>
+                            <td>{allowance.Name}</td>
+                            <td className="text-end">₹{allowance.FixedAmount?.toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      <tr className="border-top border-dark">
+                        <td><strong>Total Allowance:</strong></td>
+                        <td className="text-end">
+                          <strong>
+                            ₹{(
+                              salaryGroupDetails.BaseSalary +
+                              (salaryGroupDetails.AllowancesDeductions
+                                ?.filter(ad => ad.Type === 'A')
+                                .reduce((sum, ad) => sum + (ad.FixedAmount || 0), 0) || 0)
+                            ).toLocaleString()}
+                          </strong>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Deductions Section */}
+              <div className="col-md-6">
+                <div className="p-3 mb-3" style={{ backgroundColor: '#f8d7da', borderRadius: '8px' }}>
+                  <h5 className="text-center mb-3">Deduction</h5>
+                  <table className="table table-borderless">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th className="text-end">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {salaryGroupDetails.AllowancesDeductions
+                        ?.filter(ad => ad.Type === 'D')
+                        .map((deduction, idx) => (
+                          <tr key={idx}>
+                            <td>{deduction.Name}</td>
+                            <td className="text-end">₹{deduction.CalculatedAmount?.toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      <tr className="border-top border-dark">
+                        <td><strong>Total Deduction:</strong></td>
+                        <td className="text-end">
+                          <strong>
+                            ₹{salaryGroupDetails.AllowancesDeductions
+                              ?.filter(ad => ad.Type === 'D')
+                              .reduce((sum, ad) => sum + (ad.CalculatedAmount || 0), 0)
+                              .toLocaleString()}
+                          </strong>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+        </Dialog>
+      </div>
+    </PrimeReactProvider>
+  );
+};
+
+export default StaffPage;

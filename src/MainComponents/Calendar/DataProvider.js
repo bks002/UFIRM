@@ -55,51 +55,59 @@ class DataProvider {
     }
 
     manageTask(model, type) {
-        let url = '';
-        switch (type) {
-            case 'C':
-                url = `CreateTask`;
-                return srv.CallPostNewService(url, model[0]);
-            case 'U':
-                url = `Calendar/Category/Save`;
-                return srv.CallPostService(url, model[0]);
-            case 'D':
-                url = `DeleteTask?taskID=${model[0].TaskId}`;
-                return srv.CallDeleteNewService(url,model[0]);
-            case 'R':
-                url = `TaskDetails?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}&dteFr=${model[0].DteFr}&dteTo=${model[0].DteTo}&taskstatus=${model[0].TaskStatus}&propID=${model[0].PropertyId}&taskPriorityId=${model[0].TaskPriority}`;
-                return srv.getComplaint(url);
-            case 'SR':
-                url = `TaskDetailsWithQuestion?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}&dteFr=${model[0].DteFr}&dteTo=${model[0].DteTo}`;
-                return srv.getComplaint(url);
-                case 'T':
-                url = `TaskDetails?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}`;
-                return srv.getComplaint(url);
-            case 'TaskWithQuestionName':
-                    url = `TaskDetailsWithQuestion?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}`;
-                    return srv.getComplaint(url);
-            case 'GetAllTaskWiseSummary':
-                // url = `GetAllTaskWiseSummary?categoryId=${model[0].CategoryId}&subCategoryId=${model[0].SubCategoryId}&occurrence=${model[0].Occurrence}&dateFrom=${model[0].DteFr}&dateTo=${model[0].DteTo}&status=${model[0].TaskStatus}&priorityId=${model[0].TaskPriority}`;
-                let url = 'GetAllTaskWiseSummary?';
+    let url = ''; // declare only once at the top
 
-                for (let key in model[0]) {
-                    if (model[0].hasOwnProperty(key)) {
-                        url += `${key}=${model[0][key]}&`;
-                    }
+    switch (type) {
+        case 'C':
+            url = `CreateTask`;
+            return srv.CallPostNewService(url, model[0]);
+
+        case 'U':
+            url = `Calendar/Category/Save`;
+            return srv.CallPostService(url, model[0]);
+
+        case 'D':
+            url = `DeleteTask?taskID=${model[0].TaskId}`;
+            return srv.CallDeleteNewService(url, model[0]);
+
+        case 'R':
+            url = `TaskDetails?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}&dteFr=${model[0].DteFr}&dteTo=${model[0].DteTo}&taskstatus=${model[0].TaskStatus}&propID=${model[0].PropertyId}&taskPriorityId=${model[0].TaskPriority}`;
+            return srv.getComplaint(url);
+
+        case 'SR':
+            url = `TaskDetailsWithQuestion?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}&dteFr=${model[0].DteFr}&dteTo=${model[0].DteTo}`;
+            return srv.getComplaint(url);
+
+        case 'T':
+            url = `TaskDetails?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}`;
+            return srv.getComplaint(url);
+
+        case 'TaskWithQuestionName':
+            url = `TaskDetailsWithQuestion?catID=${model[0].CategoryId}&subCatID=${model[0].SubCategoryId}&assingedtoID=${model[0].AssignedTo}&occurrence=${model[0].Occurrence}`;
+            return srv.getComplaint(url);
+
+        case 'GetAllTaskWiseSummary':
+            // ✅ Fix: don't redeclare "let url"
+            url = 'GetAllTaskWiseSummary?';
+            for (let key in model[0]) {
+                if (model[0].hasOwnProperty(key)) {
+                    url += `${key}=${model[0][key]}&`;
                 }
-                
-                // Remove the trailing '&' if it's present
-                if (url.endsWith('&')) {
-                    url = url.slice(0, -1);
-                }
-                return srv.getComplaint(url);
-                break;
-            case 'GetAllTaskWiseStatusFinalDash':
-                url = `GetAllTaskWiseStatusFinalDash?categoryId=${model[0].catId}&occurance=${model[0].occurance}&dateFrom=${model[0].dateFrom}&dateTo=${model[0].dateTo}&propId=${model[0].propId}`
-                return srv.getComplaint(url);
-            default:
-        }
+            }
+            if (url.endsWith('&')) {
+                url = url.slice(0, -1);
+            }
+            return srv.getComplaint(url);
+
+        case 'GetAllTaskWiseStatusFinalDash':
+            url = `GetAllTaskWiseStatusFinalDash?categoryId=${model[0].catId}&occurance=${model[0].occurance}&dateFrom=${model[0].dateFrom}&dateTo=${model[0].dateTo}&propId=${model[0].propId}`;
+            return srv.getComplaint(url);
+
+        default:
+            break;
     }
+}
+
 
     manageAssetTracking(model, type) {
         let url = '';
