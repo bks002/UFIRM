@@ -52,3 +52,46 @@ export const fetchAttendanceReport = async ({
 
   return await response.json();
 };
+
+// ================= DEVICE LIST =================
+export const fetchDevices = async () => {
+  const response = await fetch(
+    "https://api.urest.in:8096/api/device/GetDevice",
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch devices");
+  }
+
+  return await response.json();
+};
+
+// ================= DEVICE LOGS =================
+export const fetchDeviceLogs = async (deviceId, date) => {
+  const query = new URLSearchParams({
+    deviceId,
+    date,
+  }).toString();
+
+  const response = await fetch(
+    `https://api.urest.in:8096/api/device/GetDeviceLogs?${query}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch device logs");
+  }
+
+  return await response.json();
+};

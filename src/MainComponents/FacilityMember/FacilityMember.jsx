@@ -19,18 +19,19 @@ import { useSelector } from "react-redux";
 import { getAllDesignations } from "../../Services/DesignationService";
 import { MultiSelect } from "primereact/multiselect";
 
-import FacilityService, {
+import {
   // getEmployeesByOffice,
   createEmployee,
   updateEmployee,
   deleteEmployee,
 } from "../../Services/FacilityService";
-import { getEmployeesByOffices } from "../../Services/PayrollService";
+import { getEmployeesByOffices, getSalaryGroupsByDesignation } from "../../Services/PayrollService";
 
 import {
   getAllClients,
   getClientByPropertyId,
   getPropertiesByClientId,
+  getAllDepartments
 } from "../../Services/ClientService";
 
 import { getPropertyById } from "../../Services/PropertyService";
@@ -39,16 +40,6 @@ import { getBranchById } from "../../Services/BranchMaster";
 // Import existing components from old project
 import SalaryGroupView from "../../ReactComponents/DataGrid/SalaryGroupView.jsx";
 import LoanAdvanceDialog from "../../ReactComponents/DataGrid/LoanAdvances.jsx";
-const getSalaryGroupsByDesignation = async (propertyId, designation) => {
-  const encodedDesignation = encodeURIComponent(designation);
-  const response = await fetch(
-    `https://api.urest.in:8096/api/salaryallowances/byDesignationFull/${propertyId}/${encodedDesignation}`
-  );
-  if (!response.ok) {
-    throw new Error(`HTTP error! Status: ${response.status}`);
-  }
-  return await response.json();
-};
 
 const StaffPage = () => {
   const toast = useRef(null);
@@ -66,14 +57,19 @@ const StaffPage = () => {
 
   const [branchName, setBranchName] = useState("");
   const [clientName, setClientName] = useState("");
+  const [customDepartment, setCustomDepartment] = useState("");
   const [customDesignation, setCustomDesignation] = useState("");
+  const [employmentType, setEmploymentType] = useState("");
+  const [departments, setDepartments] = useState([]);
+  const [isLoadingDepartments, setIsLoadingDepartments] = useState(false);
   const [designations, setDesignations] = useState([]);
-  const [isLoadingDesignations, setIsLoadingDesignations] = useState(false);
   const [salaryGroups, setSalaryGroups] = useState([]);
+  const [salaryGroupMessage, setSalaryGroupMessage] = useState("");
   const [selectedSalaryGroup, setSelectedSalaryGroup] = useState(null);
-  const [isLoadingSalaryGroups, setIsLoadingSalaryGroups] = useState(false);
   const [showSalaryGroupPopup, setShowSalaryGroupPopup] = useState(false);
   const [salaryGroupDetails, setSalaryGroupDetails] = useState(null);
+  const [isLoadingSalaryGroups, setIsLoadingSalaryGroups] = useState(false);
+  const [isLoadingDesignations, setIsLoadingDesignations] = useState(false);
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [globalFilterValue, setGlobalFilterValue] = useState("");
@@ -146,38 +142,6 @@ const StaffPage = () => {
     { label: "Contractual", value: "Contractual" }
   ];
 
-  // ADD THIS FUNCTION
-  const fetchSalaryGroups = async (designation) => {
-    if (!designation || !propertyId || designation === "OTHER") {
-      setSalaryGroups([]);
-      setSelectedSalaryGroup(null);
-      return;
-    }
-
-    setIsLoadingSalaryGroups(true);
-    try {
-      const data = await getSalaryGroupsByDesignation(propertyId, designation);
-      const formatted = Array.isArray(data)
-        ? data.map(sg => ({
-          label: sg.SalaryGroup,
-          value: sg.SalaryGroup_ID,
-          data: sg
-        }))
-        : [];
-      setSalaryGroups(formatted);
-    } catch (err) {
-      console.error("[SALARY_GROUP_FETCH_ERR]", err);
-      toast.current?.show({
-        severity: "warn",
-        summary: "Warning",
-        detail: "Failed to load salary groups"
-      });
-      setSalaryGroups([]);
-    } finally {
-      setIsLoadingSalaryGroups(false);
-    }
-  };
-
   useEffect(() => {
     const loadUnits = async () => {
       try {
@@ -235,44 +199,65 @@ const StaffPage = () => {
     loadProperties();
   }, [selectedUnitId, reduxPropertyId]);
 
-  // Load staff
   useEffect(() => {
-    const loadInitialData = async () => {
-      // Fetch designations
-      setIsLoadingDesignations(true);
+    const loadDepartments = async () => {
+      setIsLoadingDepartments(true);
       try {
-        const designationsData = await getAllDesignations();
-        const formatted = Array.isArray(designationsData)
-          ? designationsData.map(d => ({
-            label: d.DesignationName || d.Designation || d,
-            value: d.DesignationName || d.Designation || d
+        const data = await getAllDepartments();
+
+        const formatted = Array.isArray(data)
+          ? data.map(d => ({
+            label: d.Name,
+            value: d.Name
           }))
           : [];
 
-        // Always include OTHER option
+        // Add OTHER option
+        formatted.push({ label: "OTHER", value: "OTHER" });
+
+        setDepartments(formatted);
+      } catch (err) {
+        console.error("Department load failed", err);
+        toast.current?.show({
+          severity: "warn",
+          summary: "Warning",
+          detail: "Failed to load departments"
+        });
+      } finally {
+        setIsLoadingDepartments(false);
+      }
+    };
+
+    loadDepartments();
+  }, []);
+
+  useEffect(() => {
+    const loadDesignations = async () => {
+      setIsLoadingDesignations(true);
+      try {
+        const data = await getAllDesignations();
+
+        const formatted = Array.isArray(data)
+          ? data
+            .filter(d => d.IsActive) // optional but smart
+            .map(d => ({
+              label: d.DesignationName,
+              value: d.DesignationName
+            }))
+          : [];
+
         formatted.push({ label: "OTHER", value: "OTHER" });
 
         setDesignations(formatted);
       } catch (err) {
-        console.error("[DESIGNATION_FETCH_ERR]", err);
-        toast.current?.show({
-          severity: "warn",
-          summary: "Warning",
-          detail: "Using default designations"
-        });
-        // Fallback to hardcoded options
-        setDesignations([
-          { label: "H.K. SUPERVISOR", value: "H.K. SUPERVISOR" },
-          { label: "TECHNICAL SUPERVISOR", value: "TECHNICAL SUPERVISOR" },
-          { label: "OTHER", value: "OTHER" },
-        ]);
+        console.error("Designation load failed", err);
+        setDesignations([]);
       } finally {
         setIsLoadingDesignations(false);
       }
-
     };
 
-    loadInitialData();
+    loadDesignations();
   }, []);
 
   useEffect(() => {
@@ -478,7 +463,7 @@ const StaffPage = () => {
     setEditEmployeeId(null);
     setSalaryGroups([]);
     setSelectedSalaryGroup(null);
-    setSalaryGroupDetails(null);
+    setSalaryGroupMessage("");
     setDocuments({
       profileImage: [],
       aadhaar: [],
@@ -496,10 +481,11 @@ const StaffPage = () => {
     const profile = row?.Profile || {};
     setEmployeeCode(profile.EmployeeCode || "");
     setEmployeeName(profile.EmployeeName || "");
-    setDesignation(profile.EmploymentType || "");
+    setDesignation(profile.Designation || "");
     setEmail(profile.Email || "");
     setMobile(profile.PhoneNumber || "");
-    setDepartment(profile.Department || profile.Designation || "");
+    setDepartment(profile.Department || "");
+    setEmploymentType(profile.EmploymentType || "");
     setGender(profile.Gender || "");
     setDateOfBirth(profile.DateOfBirth ? profile.DateOfBirth.slice(0, 10) : "");
     setPanCard(profile.PanCard || "");
@@ -512,6 +498,12 @@ const StaffPage = () => {
     setSelectedManagers(
       row?.FacilityMember?.ManagerIdList || []
     );
+    if (profile.Designation) {
+      fetchSalaryGroups(profile.Designation);
+    }
+    const existingSG = row?.FacilityMember?.SG_Link_ID || null;
+
+    setSelectedSalaryGroup(existingSG);
     // Work History - Handle both single and array
     if (row?.WorkHistories && Array.isArray(row.WorkHistories) && row.WorkHistories.length > 0) {
       setWorkHistories(
@@ -708,10 +700,10 @@ const StaffPage = () => {
       IsActive: true,
     }));
 
-    // Determine Facility Master ID based on department
+    // Determine Facility Master ID based on designation
     let facilityMasterId = 0;
-    if (department === "H.K. SUPERVISOR") facilityMasterId = 19;
-    else if (department === "TECHNICAL SUPERVISOR") facilityMasterId = 34;
+    if (designation === "H.K. SUPERVISOR") facilityMasterId = 19;
+    else if (designation === "TECHNICAL SUPERVISOR") facilityMasterId = 34;
 
     // Build Payload matching backend structure
     const dobValue = dateOfBirth
@@ -723,14 +715,16 @@ const StaffPage = () => {
         OfficeId: propertyId,
         EmployeeCode: employeeCode,
         EmployeeName: employeeName,
-        EmploymentType: designation,
+        EmploymentType: employmentType,
         CreatedOn: now,
         UpdatedOn: now,
         IsActive: true,
         Email: email || "",
         PhoneNumber: mobile,
-        Designation: department === "OTHER" ? customDesignation : department,
-        Department: department === "OTHER" ? customDesignation : department,
+        Designation:
+          designation === "OTHER" ? customDesignation : designation,
+        Department:
+          department === "OTHER" ? customDepartment : department,
         Gender: gender,
         DateOfBirth: dobValue,
         PanCard: panCard || "",
@@ -778,7 +772,7 @@ const StaffPage = () => {
         UpdatedBy: 1,
         UpdatedOn: now,
         oldID: "0",
-        SG_Link_ID: "0",
+        SG_Link_ID: selectedSalaryGroup || "0",
         tax_amount: 0,
         ManagerIdList: selectedManagers
       },
@@ -787,7 +781,8 @@ const StaffPage = () => {
         FatherName: family || "",
         IsDeleted: false,
         Approved: true,
-        Designation: department === "OTHER" ? customDesignation : department
+        Designation:
+          designation === "OTHER" ? customDesignation : designation,
       },
     };
 
@@ -917,6 +912,54 @@ const StaffPage = () => {
     }
   };
 
+  const fetchSalaryGroups = async (designationValue) => {
+    // Clear previous selection first
+    setSelectedSalaryGroup(null);
+    setSalaryGroupDetails(null);
+    setSalaryGroupMessage("");
+    if (!designationValue || designationValue === "OTHER" || !propertyId) {
+      setSalaryGroups([]);
+      setSalaryGroupMessage("");
+      return;
+    }
+
+    setIsLoadingSalaryGroups(true);
+
+    try {
+      const data = await getSalaryGroupsByDesignation(propertyId, designationValue);
+
+      const formatted = Array.isArray(data)
+        ? data.map(sg => ({
+          label: sg.SalaryGroup,
+          value: sg.SalaryGroup_ID,
+          data: sg
+        }))
+        : [];
+
+      setSalaryGroups(formatted);
+      if (formatted.length === 0) {
+        setSalaryGroupMessage(
+          "No Salary Group available for this designation. You can still create employee without assigning it."
+        );
+      } else {
+        setSalaryGroupMessage("");
+      }
+
+      // 🔥 AUTO SELECT IF ONLY ONE
+      if (formatted.length === 1) {
+        setSelectedSalaryGroup(formatted[0].value);
+        setSalaryGroupDetails(formatted[0].data);
+        setShowSalaryGroupPopup(true);
+      }
+
+    } catch (err) {
+      console.error("Salary group fetch failed", err);
+      setSalaryGroups([]);
+    } finally {
+      setIsLoadingSalaryGroups(false);
+    }
+  };
+
   const renderDocumentSection = (label, type, accept) => {
     return (
       <div className="border rounded p-3 mb-4 shadow-sm bg-light">
@@ -1025,6 +1068,7 @@ const StaffPage = () => {
                   <Column header="Employee Code" body={(row) => row.Profile?.EmployeeCode || "-"} />
                   <Column header="Name" body={(row) => row.Profile?.EmployeeName || "-"} />
                   <Column header="Department" body={(row) => row.Profile?.Department || "-"} />
+                  <Column header="Designation" body={(row) => row.Profile?.Designation || "-"} />
                   <Column header="Gender" body={(row) => row.Profile?.Gender || "-"} />
                   <Column header="Contact" body={(row) => row.Profile?.PhoneNumber || "-"} />
                   <Column header="Approved" body={(row) => row.FacilityMember?.IsApproved ? "Yes" : "No"} />
@@ -1114,9 +1158,9 @@ const StaffPage = () => {
                 <label>Employment Type</label>
                 <Dropdown
                   placeholder="Select Employment Type"
-                  value={designation}
+                  value={employmentType}
                   options={employmentTypes}
-                  onChange={(e) => setDesignation(e.value)}
+                  onChange={(e) => setEmploymentType(e.value)}
                   className="mb-3"
                 />
 
@@ -1137,48 +1181,77 @@ const StaffPage = () => {
                   className="mb-3"
                 />
 
-                <label>Department/Designation</label>
-                <div className="d-flex gap-2 mb-3">
-                  <Dropdown
-                    placeholder={isLoadingDesignations ? "Loading..." : "Select Department"}
-                    value={department}
-                    options={designations}
-                    onChange={(e) => {
-                      setDepartment(e.value);
-                      fetchSalaryGroups(e.value);
-                    }}
-                    style={{ flex: 1 }}
-                    disabled={isLoadingDesignations}
-                    emptyMessage="No designations available"
-                  />
+                <label>Department</label>
+                <Dropdown
+                  placeholder={isLoadingDepartments ? "Loading..." : "Select Department"}
+                  value={department}
+                  options={departments || []}
+                  onChange={(e) => setDepartment(e.value)}
+                  className="mb-3"
+                  disabled={isLoadingDepartments}
+                  emptyMessage="No departments available"
+                />
 
-                  {salaryGroups.length > 0 && (
+                {department === "OTHER" && (
+                  <InputText
+                    placeholder="Enter Custom Department"
+                    value={customDepartment}
+                    onChange={(e) => setCustomDepartment(e.target.value)}
+                    className="mb-3"
+                  />
+                )}
+
+                <label>Designation</label>
+                <Dropdown
+                  placeholder={isLoadingDesignations ? "Loading..." : "Select Designation"}
+                  value={designation}
+                  options={designations || []}
+                  onChange={(e) => {
+                    setDesignation(e.value);
+                    fetchSalaryGroups(e.value);
+                  }}
+                  className="mb-3"
+                  disabled={isLoadingDesignations}
+                  emptyMessage="No designations available"
+                />
+
+                {designation === "OTHER" && (
+                  <InputText
+                    placeholder="Enter Custom Designation"
+                    value={customDesignation}
+                    onChange={(e) => setCustomDesignation(e.target.value)}
+                    className="mb-3"
+                  />
+                )}
+
+                {salaryGroups.length > 0 && (
+                  <>
+                    <label>Salary Group</label>
                     <Dropdown
                       placeholder={isLoadingSalaryGroups ? "Loading..." : "Select Salary Group"}
                       value={selectedSalaryGroup}
                       options={salaryGroups}
                       onChange={(e) => {
                         setSelectedSalaryGroup(e.value);
-                        const selected = salaryGroups.find(sg => sg.value === e.value);
+
+                        const selected = salaryGroups.find(
+                          sg => sg.value === e.value
+                        );
+
                         if (selected) {
                           setSalaryGroupDetails(selected.data);
                           setShowSalaryGroupPopup(true);
                         }
                       }}
-                      style={{ flex: 1 }}
+                      className="mb-3"
                       disabled={isLoadingSalaryGroups}
-                      emptyMessage="No salary groups available"
                     />
-                  )}
-                </div>
-
-                {department === "OTHER" && (
-                  <InputText
-                    placeholder="Enter Custom Department / Designation"
-                    value={customDesignation}
-                    onChange={(e) => setCustomDesignation(e.target.value)}
-                    className="mb-3"
-                  />
+                  </>
+                )}
+                {salaryGroupMessage && (
+                  <small style={{ color: "red" }}>
+                    {salaryGroupMessage}
+                  </small>
                 )}
                 <label>Reporting Managers</label>
                 <MultiSelect

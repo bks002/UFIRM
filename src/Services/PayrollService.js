@@ -226,6 +226,34 @@ export async function assignSalaryGroupToFacilityMember(model) {
   }
 }
 
+// --------------------------------------------------
+// GET SALARY GROUPS BY DESIGNATION (Property Based)
+// --------------------------------------------------
+export async function getSalaryGroupsByDesignation(propertyId, designation) {
+  try {
+    const encodedDesignation = encodeURIComponent(designation);
+
+    const response = await fetch(
+      `https://api.urest.in:8096/api/salaryallowances/byDesignationFull/${propertyId}/${encodedDesignation}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Failed to fetch salary groups by designation:", error);
+    throw error;
+  }
+}
+
 export async function addLoanAdvance(loanAdvanceData) {
   try {
     const response = await fetch(
