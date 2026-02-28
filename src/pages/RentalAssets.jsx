@@ -9,32 +9,28 @@ import {
   getAssetRentOutReturnHistoryByAssetId,
 } from "../Services/RentalAssets";
 
-/* ================= IMAGE HELPERS ================= */
-const isValidImageBase64 = (b64) =>
-  b64?.startsWith("/9j/") ||
-  b64?.startsWith("iVBOR") ||
-  b64?.startsWith("UklGR") ||
-  b64?.startsWith("data:image");
+/* ✅ IMAGE RENDER HELPER (URL BASED) */
+const renderImage = (url) => {
+  if (!url) return <span>No Image</span>;
 
-const renderBase64Image = (base64) => {
-  if (!base64 || !isValidImageBase64(base64)) return <span>No Image</span>;
-
-  const src = base64.startsWith("data:image")
-    ? base64
-    : `data:image/*;base64,${base64}`;
-
-  return <img src={src} width={180} alt="Asset" />;
+  return (
+    <img
+      src={url}
+      width={180}
+      alt="Asset"
+      style={{ borderRadius: "6px", border: "1px solid #ddd" }}
+      onError={(e) => (e.target.style.display = "none")}
+    />
+  );
 };
 
 const RentAssetPage = (actions) => {
   const [rentalAssets, setRentalAssets] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  /* pagination */
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 10;
 
-  /* modals */
   const [viewModal, setViewModal] = useState(false);
   const [currentAsset, setCurrentAsset] = useState(null);
   const [actionType, setActionType] = useState("");
@@ -148,38 +144,33 @@ const RentAssetPage = (actions) => {
                     <td>{asset.Manufacturer}</td>
                     <td>{asset.Description}</td>
 
-                    {/* 🔥 PRIME ICONS */}
                     <td className="text-center">
-  {(asset.RentedOutDate === null || asset.ReturnDate) ? (
-    /* ✅ CHECK-OUT (GREEN ICON – SAME AS IMAGE) */
-    <button
-      className="btn btn-success btn-sm me-2"
-      title="Check Out"
-      onClick={() => handleRentOut(asset)}
-    >
-      <i className="pi pi-sign-out"></i>
-    </button>
-  ) : (
-    /* 🔄 RETURN */
-    <button
-      className="btn btn-warning btn-sm me-2"
-      title="Return"
-      onClick={() => handleReturn(asset)}
-    >
-      <i className="pi pi-sign-in"></i>
-    </button>
-  )}
+                      {(asset.RentedOutDate === null || asset.ReturnDate) ? (
+                        <button
+                          className="btn btn-success btn-sm me-2"
+                          title="Check Out"
+                          onClick={() => handleRentOut(asset)}
+                        >
+                          <i className="pi pi-sign-out"></i>
+                        </button>
+                      ) : (
+                        <button
+                          className="btn btn-warning btn-sm me-2"
+                          title="Return"
+                          onClick={() => handleReturn(asset)}
+                        >
+                          <i className="pi pi-sign-in"></i>
+                        </button>
+                      )}
 
-  {/* 👁️ VIEW */}
-  <button
-    className="btn btn-info btn-sm"
-    title="View"
-    onClick={() => handleView(asset)}
-  >
-    <i className="pi pi-eye"></i>
-  </button>
-</td>
-
+                      <button
+                        className="btn btn-info btn-sm"
+                        title="View"
+                        onClick={() => handleView(asset)}
+                      >
+                        <i className="pi pi-eye"></i>
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -269,12 +260,22 @@ const RentAssetPage = (actions) => {
                         <div className="col-md-6">
                           <h6 className="text-primary">Rent Out</h6>
                           <p>{item.RentOut?.AssigneeName}</p>
-                          {renderBase64Image(item.RentOut?.ImageOut)}
+                          <p>{item.RentOut?.RentedOutDate}</p>
+                          <p>{item.RentOut?.TentativeDate}</p>
+                          <p>{item.RentOut?.RentedTo}</p>
+                          <p>{item.RentOut?.OutFrom}</p>
+                          <p>{item.RentOut?.MonthlyRent}</p>
+                          <p>{item.RentOut?.ApprovedBy}</p>
+                          
+                          {renderImage(item.RentOut?.ImageOut)}
                         </div>
                         <div className="col-md-6">
                           <h6 className="text-success">Return</h6>
                           <p>{item.Return?.ReturnedBy}</p>
-                          {renderBase64Image(item.Return?.ImageIn)}
+                          <p>{item.Return?.ReturnDate}</p>
+                          <p>{item.Return?.ReturnFrom}</p>
+                          
+                          {renderImage(item.Return?.ImageIn)}
                         </div>
                       </div>
                     ))
