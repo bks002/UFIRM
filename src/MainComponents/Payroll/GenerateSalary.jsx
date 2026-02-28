@@ -93,7 +93,6 @@ export default function GenerateSalary() {
   // const officeId = useSelector((state) => state.Commonreducer.puidn);
 
   // UI state
-  const [selectedOption, setSelectedOption] = useState("All");
   const [selectedDesignation, setSelectedDesignation] = useState("");
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
@@ -125,6 +124,8 @@ export default function GenerateSalary() {
   const itemsPerPage = 10;
 
   const [unitDropdownOpen, setUnitDropdownOpen] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [departments, setDepartments] = useState([]);
 
   // years/months arrays
   const years = [];
@@ -265,6 +266,15 @@ export default function GenerateSalary() {
       )
         .then((data) => {
           setAllEmployees(data || []);
+          const uniqueDepartments = [
+            ...new Set(
+              (data || [])
+                .map((emp) => emp.Department)
+                .filter(Boolean)
+            ),
+          ].sort();
+
+          setDepartments(uniqueDepartments);
           const uniqueDesignations = [
             ...new Set(
               (data || [])
@@ -283,7 +293,7 @@ export default function GenerateSalary() {
 
   useEffect(() => {
     filterEmployees();
-  }, [selectedOption, selectedDesignation, allEmployees, searchText]);
+  }, [selectedDepartment, selectedDesignation, allEmployees, searchText]);
 
   useEffect(() => {
     if (selectedPropertyId.length && selectedMonth && selectedYear) {
@@ -329,12 +339,32 @@ export default function GenerateSalary() {
 
   const filterEmployees = () => {
     let filtered = [...allEmployees];
-    if (selectedOption === "Designation" && selectedDesignation) {
-      filtered = filtered.filter((emp) => emp.Designation === selectedDesignation);
+
+    // Filter by Department (if selected)
+    if (selectedDepartment) {
+      filtered = filtered.filter(
+        (emp) => emp.Department === selectedDepartment
+      );
     }
+
+    // Filter by Designation (if selected)
+    if (selectedDesignation) {
+      filtered = filtered.filter(
+        (emp) => emp.Designation === selectedDesignation
+      );
+    }
+
+    // Search filter
     if (searchText.trim()) {
-      filtered = filtered.filter((emp) => emp.EmployeeName && emp.EmployeeName.toLowerCase().includes(searchText.toLowerCase()));
+      filtered = filtered.filter(
+        (emp) =>
+          emp.EmployeeName &&
+          emp.EmployeeName
+            .toLowerCase()
+            .includes(searchText.toLowerCase())
+      );
     }
+
     setFilteredEmployees(filtered);
   };
 
@@ -1129,26 +1159,69 @@ export default function GenerateSalary() {
 
         {/* Controls */}
         <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 30 }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 500 }}>
-            <input type="radio" name="salaryOption" value="All" checked={selectedOption === "All"} onChange={() => { setSelectedOption("All"); setSelectedDesignation(""); }} style={{ accentColor: "#2563eb" }} /> All
-          </label>
 
-          <label style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 500 }}>
-            <input type="radio" name="salaryOption" value="Designation" checked={selectedOption === "Designation"} onChange={() => setSelectedOption("Designation")} style={{ accentColor: "#2563eb" }} /> Designation
-          </label>
+          {/* Department */}
+          <select
+            value={selectedDepartment}
+            onChange={(e) => setSelectedDepartment(e.target.value)}
+            className="form-select"
+            style={{ width: 220, fontWeight: 500 }}
+          >
+            <option value="">-- Select Department --</option>
+            {departments.map((dept, i) => (
+              <option key={i} value={dept}>
+                {dept}
+              </option>
+            ))}
+          </select>
 
-          <select value={selectedDesignation} onChange={(e) => setSelectedDesignation(e.target.value)} disabled={selectedOption !== "Designation"} className="form-select" style={{ width: 220, fontWeight: 500 }}>
+          {/* Designation */}
+          <select
+            value={selectedDesignation}
+            onChange={(e) => setSelectedDesignation(e.target.value)}
+            className="form-select"
+            style={{ width: 220, fontWeight: 500 }}
+          >
             <option value="">-- Select Designation --</option>
-            {designations.map((desig, i) => <option key={i} value={desig}>{desig}</option>)}
+            {designations.map((desig, i) => (
+              <option key={i} value={desig}>
+                {desig}
+              </option>
+            ))}
           </select>
 
-          <select value={selectedMonth || ""} onChange={(e) => setSelectedMonth(e.target.value ? Number(e.target.value) : null)} className="form-select" style={{ width: 150 }}>
+          {/* Month */}
+          <select
+            value={selectedMonth || ""}
+            onChange={(e) =>
+              setSelectedMonth(e.target.value ? Number(e.target.value) : null)
+            }
+            className="form-select"
+            style={{ width: 150 }}
+          >
             <option value="">-- Whole Year --</option>
-            {months.map((m) => <option key={m} value={m}>{monthNames[m - 1]}</option>)}
+            {months.map((m) => (
+              <option key={m} value={m}>
+                {monthNames[m - 1]}
+              </option>
+            ))}
           </select>
 
-          <select value={selectedYear} onChange={(e) => { const newYear = Number(e.target.value); setSelectedYear(newYear); if (newYear === currentYear && selectedMonth > currentMonth) setSelectedMonth(currentMonth); }} className="form-select" style={{ width: 120 }}>
-            {years.map((y) => <option key={y} value={y}>{y}</option>)}
+          {/* Year */}
+          <select
+            value={selectedYear}
+            onChange={(e) => {
+              const newYear = Number(e.target.value);
+              setSelectedYear(newYear);
+            }}
+            className="form-select"
+            style={{ width: 120 }}
+          >
+            {years.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
           </select>
         </div>
 

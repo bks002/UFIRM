@@ -18,6 +18,7 @@ import EditTask from "./EditTask";
 import { downloadExcel } from "react-export-table-to-excel";
 import { CSVLink } from "react-csv";
 import LayoutDataProvider from "../../../Routing/LayoutDataProvider";
+import { getFrequencyList } from "../../../Services/masterService";
 
 const $ = window.$;
 
@@ -245,6 +246,7 @@ class TaskList extends Component {
       actionableTasks: 0,
       assignedProperty: [],
       exporting: false,
+      frequencyData: [],
     };
     this.ApiProvider = new ApiProvider();
     this.comdbprovider = new LayoutDataProvider();
@@ -535,18 +537,11 @@ class TaskList extends Component {
   };
 
   modifyOccurence = (Occurrence) => {
-    if (Occurrence === "W") {
-      return "Weekly";
-    }
-    if (Occurrence === "Y") {
-      return "Yearly";
-    }
-    if (Occurrence === "D") {
-      return "Daily";
-    }
-    if (Occurrence === "M") {
-      return "Monthly";
-    }
+    const match = this.state.frequencyData.find(
+      (f) => f.Occurence === Occurrence
+    );
+
+    return match ? match.Name : Occurrence;
   };
   manageSubCategory = (model, type, categoryId) => {
     this.ApiProvider.manageSubCategory(model, type, categoryId).then((resp) => {
@@ -746,6 +741,7 @@ class TaskList extends Component {
     const subCatId = parseInt(this.props.subCatId);
     const initialDate = this.props.dashDates;
     const today = moment();
+    this.getAllFrequency();
     this.setState(
       {
         filterFromDate:
@@ -917,7 +913,7 @@ class TaskList extends Component {
       }
     }
   }
-  onCategorySelected = (val) => {};
+  onCategorySelected = (val) => { };
 
   // TaskStatusConfig() {
   //   let _this = this;
@@ -948,6 +944,14 @@ class TaskList extends Component {
     });
   };
 
+  getAllFrequency = async () => {
+    try {
+      const data = await getFrequencyList();
+      this.setState({ frequencyData: data });
+    } catch (error) {
+      console.error("Error fetching frequency:", error);
+    }
+  };
   render() {
     return (
       <div>
@@ -1089,12 +1093,12 @@ class TaskList extends Component {
                               <option value={0}>Select Category</option>
                               {this.state.CategoryData
                                 ? this.state.CategoryData.map((e, key) => {
-                                    return (
-                                      <option key={key} value={e.Id}>
-                                        {e.Name}
-                                      </option>
-                                    );
-                                  })
+                                  return (
+                                    <option key={key} value={e.Id}>
+                                      {e.Name}
+                                    </option>
+                                  );
+                                })
                                 : null}
                             </select>
                           </div>
@@ -1134,11 +1138,12 @@ class TaskList extends Component {
                               disabled={this.state.filtered}
                               value={this.state.occurance}
                             >
-                              <option value="N">Repeat</option>
-                              <option value="D">Daily</option>
-                              <option value="W">Weekly</option>
-                              <option value="M">Monthly</option>
-                              <option value="Y">Yearly</option>
+                              <option value="">Repeat</option>
+                              {this.state.frequencyData.map((e, key) => (
+                                <option key={key} value={e.Occurence}>
+                                  {e.Name}
+                                </option>
+                              ))}
                             </select>
                           </div>
                           <div className="nav-item mr-2">

@@ -110,6 +110,7 @@ import DMRReport from "../MainComponents/Reports/DMRReport.jsx";
 import AttendanceReportPage from "../MainComponents/Reports/AttendanceReport.jsx";
 import Report from "../MainComponents/Payroll/Report.jsx";
 import BranchMaster from "../MainComponents/FacilityMember/BranchMaster.jsx";
+import AttendanceBiometricReport from "../MainComponents/Reports/AttendanceBiometricReport.jsx";
 
 var currentpropertyid;
 var currentclientid;
@@ -1082,6 +1083,12 @@ class MainNav extends React.Component {
                             <p>Attendance Report</p>
                           </Link>
                         </li>
+                        <li className="nav-item">
+                          <Link to="/Account/App/AttendanceBiometricReport" className="nav-link">
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Attendance Biometric Report</p>
+                          </Link>
+                        </li>
                       </ul>
                     </li>
                   ) : null}
@@ -1784,6 +1791,7 @@ class MainNav extends React.Component {
               component={FacilityLatlongPage}
             />
             <Route path="/Account/App/DMRReport" component={DMRReport} />
+            <Route path="/Account/App/AttendanceBiometricReport" component={AttendanceBiometricReport} />
             <Route
               path="/Account/App/EmployeeLeave"
               component={EmployeeLeave}

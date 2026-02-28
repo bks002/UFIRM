@@ -1,8 +1,8 @@
 // Report.jsx
 import React, { useState } from "react";
 import OTReport from "../../ReactComponents/Reports/OTReport.jsx";
-// import PFReport from "./PFReport";
-// import ESIReport from "./ESIReport";
+import PFReport from "../../ReactComponents/Reports/PFReport.jsx";
+import ESIReport from "../../ReactComponents/Reports/ESIReport.jsx";
 
 export default function Report() {
   const [selectedReport, setSelectedReport] = useState("");
@@ -11,10 +11,10 @@ export default function Report() {
     switch (selectedReport) {
       case "OT":
         return <OTReport />;
-      // case "PF":
-      //   return <PFReport />;
-      // case "ESI":
-      //   return <ESIReport />;
+      case "PF":
+        return <PFReport />;
+      case "ESI":
+        return <ESIReport />;
       default:
         return null;
     }
@@ -22,7 +22,7 @@ export default function Report() {
 
   return (
     <div className="content-wrapper" style={{ padding: 30 }}>
-      
+
       {/* Page Header */}
       <div style={{ marginBottom: 25 }}>
         <h2 style={{ fontWeight: "bold", marginBottom: 15 }}>

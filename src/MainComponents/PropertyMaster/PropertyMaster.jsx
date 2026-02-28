@@ -44,6 +44,7 @@ export default function PropertyMaster() {
   const [services, setServices] = useState([]);
   const [propertyTypes, setPropertyTypes] = useState([]);
   const [cities, setCities] = useState([]);
+  const [overlayOpen, setOverlayOpen] = useState(false);
 
   const [form, setForm] = useState({
     PropertyId: 0,
@@ -369,11 +370,23 @@ export default function PropertyMaster() {
       <Button
         label="Cancel"
         className="p-button-text me-2"
-        onClick={() => setDialogVisible(false)}
+        onClick={() => setShowForm(false)}
       />
       <Button label="Save" className="p-button-primary" onClick={handleSave} />
     </div>
   );
+
+  useEffect(() => {
+    if (showForm) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [showForm]);
 
   return (
     <div className="content-wrapper" style={{ padding: 30 }}>
@@ -454,7 +467,10 @@ export default function PropertyMaster() {
           visible={showForm}
           modal
           style={{ width: "95vw" }}
-          maximizable
+          contentStyle={{
+            maxHeight: "80vh",
+            overflowY: overlayOpen ? "hidden" : "auto"
+          }}
           onHide={() => setShowForm(false)}
         >
           <div className="row g-4">
@@ -467,6 +483,8 @@ export default function PropertyMaster() {
                 <Dropdown
                   value={form.PropertyTypeId}
                   options={propertyTypes}
+                  onShow={() => setOverlayOpen(true)}
+                  onHide={() => setOverlayOpen(false)}
                   className="w-100 mb-2"
                   onChange={(e) =>
                     setForm({ ...form, PropertyTypeId: e.value })
@@ -503,6 +521,8 @@ export default function PropertyMaster() {
                   value={form.CityId}
                   options={cities}
                   filter
+                  onShow={() => setOverlayOpen(true)}
+                  onHide={() => setOverlayOpen(false)}
                   className="w-100 mb-2"
                   onChange={(e) => setForm({ ...form, CityId: e.value })}
                 />
@@ -553,6 +573,8 @@ export default function PropertyMaster() {
                   className="w-100 mb-2"
                   value={form.ClientID}
                   options={clients}
+                  onShow={() => setOverlayOpen(true)}
+                  onHide={() => setOverlayOpen(false)}
                   onChange={(e) => setForm({ ...form, ClientID: e.value })}
                 />
 
@@ -561,6 +583,8 @@ export default function PropertyMaster() {
                   className="w-100 mb-2"
                   value={form.BranchCode}
                   options={branches}
+                  onShow={() => setOverlayOpen(true)}
+                  onHide={() => setOverlayOpen(false)}
                   placeholder="Select Branch"
                   onChange={(e) =>
                     setForm({ ...form, BranchCode: e.value })
@@ -574,6 +598,8 @@ export default function PropertyMaster() {
                   options={services}
                   filter
                   display="chip"
+                  onShow={() => setOverlayOpen(true)}
+                  onHide={() => setOverlayOpen(false)}
                   onChange={(e) => setForm({ ...form, ServiceIds: e.value })}
                 />
 
