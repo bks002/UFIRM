@@ -823,6 +823,16 @@ class MainNav extends React.Component {
                           </Link>
                         </li>
 
+                        <li className="nav-item">
+                          <Link
+                            to="/Account/App/BranchMaster"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Branch Master</p>
+                          </Link>
+                        </li>
+
                         {this.state.userRoles &&
                           this.state.userRoles.includes("Admin") ? (
                           <li className="nav-item">
