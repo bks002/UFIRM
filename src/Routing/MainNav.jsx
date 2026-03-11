@@ -15,7 +15,6 @@ import PropertyMember from "../pages/PropertyMember";
 import UserProfile from "../pages/UserProfilePage";
 import ChangePassword from "../MainComponents/ChangePassword/ChangePassword";
 import DropDownList from "../ReactComponents/SelectBox/DropdownList";
-import MultiSelect from "../ReactComponents/MultiSelect/MultiSelect";
 import ComplainManagement from "../pages/ComplainManagement";
 import PropertyMaster from "../MainComponents/PropertyMaster/PropertyMaster.jsx";
 import PropertyDetailsPage from "../pages/PropertyDetailsPage";
@@ -31,6 +30,9 @@ import EmergencyContactPage from "../pages/EmergencyContactPage";
 import LayoutDataProvider from "./LayoutDataProvider.js";
 import * as appCommon from "../Common/AppCommon.js";
 import Notification from "../MainComponents/Notification Center/Notification.jsx";
+import LeaveDashboard  from "../MainComponents/Attendance/EmployeeLeaveRemaining.jsx";
+import ApiService from "../apiService";
+import { getConfig } from "../utility/apiConfig";
 //redux
 import departmentActions from "../redux/department/action";
 import { connect } from "react-redux";
@@ -126,16 +128,60 @@ class MainNav extends React.Component {
       selectedPropertyOptions: [],
       selectedClientId: 0,
       clientData: [],
-      userRoles: null,
+      userRoles: [],
     };
     this.comdbprovider = new LayoutDataProvider();
   }
+
+  normalizeRoles = (rawRoles) => {
+    const collected = [];
+    const collect = (value) => {
+      if (!value) return;
+      if (Array.isArray(value)) {
+        value.forEach(collect);
+        return;
+      }
+      if (typeof value === "string") {
+        value
+          .split(",")
+          .map((role) => role.trim())
+          .filter(Boolean)
+          .forEach((role) => collected.push(role));
+        return;
+      }
+      if (typeof value === "object") {
+        const roleName =
+          value.UserRoleName ||
+          value.RoleName ||
+          value.Name ||
+          value.role ||
+          value.userRole;
+        if (roleName) {
+          collect(roleName);
+          return;
+        }
+        const roleId = value.UserRoleId || value.RoleId;
+        if (Number(roleId) === 10) {
+          collected.push("HR");
+        }
+      }
+    };
+
+    collect(rawRoles);
+    return Array.from(new Set(collected));
+  };
+
   loaduserRole() {
     this.comdbprovider.getUserRoles().then((resp) => {
       if (resp && resp.ok && resp.status === 200) {
         resp.json().then((rData) => {
           this.onUpdateUserRole(rData);
-          this.setState({ userRoles: rData }, () => {
+          const normalizedRoles = this.normalizeRoles(rData);
+          const appElement = document.getElementById("app");
+          if (appElement && normalizedRoles.length > 0) {
+            appElement.setAttribute("userrole", normalizedRoles.join(","));
+          }
+          this.setState({ userRoles: normalizedRoles }, () => {
             if (this.isHrRole()) {
               this.loadClient();
             } else {
@@ -146,6 +192,35 @@ class MainNav extends React.Component {
       }
     });
   }
+
+  loadCurrentUserInfo = async () => {
+    try {
+      const config = getConfig("common.fetchUserById");
+      if (!config) return;
+      config.pathVariables = { UserId: 0 };
+      const api = new ApiService(config);
+      const res = await api.call();
+      const data = res?.data;
+      if (!data) return;
+
+      const fullName = `${data.firstName || ""} ${data.lastName || ""}`.trim();
+      const appElement = document.getElementById("app");
+      if (appElement) {
+        if (fullName) appElement.setAttribute("username", fullName);
+        if (data.userId != null) appElement.setAttribute("userid", String(data.userId));
+        if (data.profileImageUrl) appElement.setAttribute("profileimg", data.profileImageUrl);
+      }
+
+      if (fullName) {
+        this.setState({ UserName: fullName });
+      }
+      if (data.profileImageUrl) {
+        this.setState({ UserProfileImg: data.profileImageUrl });
+      }
+    } catch (error) {
+      console.error("Failed to load current user info:", error);
+    }
+  };
 
   loadClient = async () => {
     try {
@@ -202,7 +277,7 @@ class MainNav extends React.Component {
   componentDidMount() {
 
 
-    var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJUYW55YSIsImxhc3RuYW1lIjoiTWlzaHJhIiwiaW5mb190IjoiM2lFZXgrUWMwMXFGTElJdTdQRFVMbms0dFllNXdkNHc0ZU5saW44bHQwaTNRRHNZdkF5THBTMHBIRWkxTTFDenN5eVRLL3h5U0dUUW5NT0VtYmRkZWc3ZVVYeFUwTFZsRE00dVAwRElGb0UyTEIwMjAyeGw0WkhlS1JuT2VtK3VsZDhFZ2JMTC9GSjU4MFBMVFgveDI0Ly9GWWt3dzlwbWszK21MVXZicGNUaGh1THJLQWxpbU9qSjlQMklOUVVRSE9zTU9rOWZKcnZaQ0VnUExPblNqWjVtZ1MzNklZUGVzcTQrMDNPZzVhY2oyem1QN0R4clloTmVYNGtNMVJHZ3VWdWtPTmZUejQ4aENNOFpJcWRVMUE9PSIsIm5iZiI6MTY4NDczNjYzOSwiZXhwIjoxNzE2MzU5MDM5LCJpYXQiOjE2ODQ3MzY2Mzl9.JJwXBDngk7dfbs1kMqxbotgHj7uN0AN32m2Qe57RtAA";
+    var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaXJzdG5hbWUiOiJBZG1pbiIsImxhc3RuYW1lIjoiQWRtaW4iLCJpbmZvX3QiOiJoZ0NycCtRcUF1cVlzRmxqaGVkMk1IKzhRekN2REZxRmRHVUVsbUw0NCtVcTNTVFJEYWxyNDJBNE0xL3dWRGhJcXNsMlBDTlp6QTZvTFVqUlFua1BXMkEzcEhSclJ5L2EvWWtIM0l1YzZ6alRPdXNFemFSUVpKTWRleTRHRG9OOUJIUCthM3U4dXFZTnZ3bFRDeUdVUDZXWlh6Zkc0VjhlM2pRMTdCdC9jTDA5OVZtUktsN3NKK3ZGdFB2blE0Nk40SFFjNGd2OEJuQ2VlNlVEdW15ejZ5S3p1K0F1bE9DSzhzZ3VPOWdLU3lEeVllZVZFMGZ2ZUVoQ1ZWQ2w3dUVuIiwibmJmIjoxNzczMDM3NjQ5LCJleHAiOjE4MDQ1NzM2NDksImlhdCI6MTc3MzAzNzY0OX0.3HXQ0J4Dpwf55U3mHWfu2lr0zTxc4VUXI4F3mGCDgqM";
 
     //var token = window.sessionStorage.getItem("userinfo_key")
 
@@ -212,6 +287,7 @@ class MainNav extends React.Component {
         this.componentDidMount();
       }, 1000);
     } else {
+      this.loadCurrentUserInfo();
       this.loaduserRole();
 
       if (document.getElementById("app").getAttribute("profileimg") != null) {
@@ -230,15 +306,8 @@ class MainNav extends React.Component {
     }
   }
   isHrRole = () => {
-    const userRoles = this.state.userRoles;
-    if (!Array.isArray(userRoles)) return false;
-
-    return userRoles.some((role) => {
-      if (typeof role === "string") {
-        return role.toLowerCase() === "hr";
-      }
-      return role && (Number(role.UserRoleId) === 10 || role.UserRoleName === "HR");
-    });
+    const roles = this.normalizeRoles(this.state.userRoles);
+    return roles.some((role) => role.toLowerCase() === "hr");
   };
 
   onClientChanged = async (value) => {
@@ -250,7 +319,7 @@ class MainNav extends React.Component {
       PropertyMultiData: [],
     });
     this.props.actions.updateclient({ CompanyId: clientId });
-    currentclientid = value;
+    currentclientid = clientId;
 
     if (clientId > 0) {
       await this.loadPropertyByClient(clientId);
@@ -321,10 +390,11 @@ class MainNav extends React.Component {
                   </div>
                   {this.state.selectedClientId > 0 && (
                     <div className="input-group input-group-sm" style={{ minWidth: "260px" }}>
-                      <MultiSelect
-                        options={this.state.PropertyMultiData}
-                        value={this.state.selectedPropertyOptions}
-                        onChange={this.onPropertyMultiChanged}
+                      <DropDownList
+                        Id="ddlProperty"
+                        Name="Property"
+                        onSelected={this.onPropertyChanged.bind(this)}
+                        Options={this.state.PropertyData}
                       />
                     </div>
                   )}
@@ -823,16 +893,6 @@ class MainNav extends React.Component {
                           </Link>
                         </li>
 
-                        <li className="nav-item">
-                          <Link
-                            to="/Account/App/BranchMaster"
-                            className="nav-link"
-                          >
-                            <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Branch Master</p>
-                          </Link>
-                        </li>
-
                         {this.state.userRoles &&
                           this.state.userRoles.includes("Admin") ? (
                           <li className="nav-item">
@@ -872,6 +932,16 @@ class MainNav extends React.Component {
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
                             <p>Employee Leave </p>
+                          </Link>
+                        </li>
+
+                          <li className="nav-item">
+                          <Link
+                            to="/Account/App/EmployeeLeaveRemaining"
+                            className="nav-link"
+                          >
+                            <i className=" fas fa-caret-right nav-icon"></i>
+                            <p>Employee Leave Remaining </p>
                           </Link>
                         </li>
                         <li className="nav-item">
@@ -1390,7 +1460,7 @@ class MainNav extends React.Component {
                             className="nav-link"
                           >
                             <i className=" fas fa-caret-right nav-icon"></i>
-                            <p>Complaints</p>
+                            <p>Complains</p>
                           </Link>
                         </li>
                         <li className="nav-item">
@@ -1802,6 +1872,7 @@ class MainNav extends React.Component {
               path="/Account/App/EmployeeLeave"
               component={EmployeeLeave}
             />
+            <Route path="/Account/App/EmployeeLeaveRemaining" component={LeaveDashboard} />
             <Route path="/Account/App/ItemSpecification">
               <ItemSpecificationPage />
             </Route>

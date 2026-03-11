@@ -32,11 +32,27 @@ const Leaves = () => {
     const [createDialogVisible, setCreateDialogVisible] = useState(false);
 
     const propertyId = useSelector((state) => state.Commonreducer.puidn);
+    const userId = useSelector((state) => state.Commonreducer.userId);
+    const userName = useSelector((state) => state.Commonreducer.userName);
+    const userRole = useSelector((state) => state.Commonreducer.entrolval);
     const toast = useRef(null);
 
     const [filters, setFilters] = useState({
         global: { value: null, matchMode: FilterMatchMode.CONTAINS },
     });
+
+    useEffect(() => {
+        const appElement = document.getElementById("app");
+        const appUserName = appElement?.getAttribute("username") || userName;
+        const appUserId = appElement?.getAttribute("userid") || userId;
+        const appUserRole = appElement?.getAttribute("userrole") || userRole;
+
+        console.log("Leaves user info", {
+            userName: appUserName,
+            userId: appUserId,
+            userRole: appUserRole
+        });
+    }, [userName, userId, userRole]);
 
     // form states
     const [employeeName, setEmployeeName] = useState("");

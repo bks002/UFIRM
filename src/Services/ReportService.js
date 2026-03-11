@@ -95,3 +95,27 @@ export const fetchDeviceLogs = async (deviceId, date) => {
 
   return await response.json();
 };
+
+export const fetchDeviceLogsinBetween = async (deviceId, fromDate, toDate) => {
+  const query = new URLSearchParams({
+    deviceId,
+    dateFrom: fromDate,
+    dateTo: toDate,
+  }).toString();
+
+  const response = await fetch(
+    `https://api.urest.in:8096/api/device/GetDeviceLogsInBetween?${query}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch device logs");
+  }
+
+  return await response.json();
+};

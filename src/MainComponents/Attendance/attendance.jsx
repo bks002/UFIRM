@@ -21,7 +21,12 @@ export default function AttendanceMaster() {
     const [selectedDayAttendance, setSelectedDayAttendance] = useState([]);
     const [selectedDay, setSelectedDay] = useState(null);
     const propertyId = useSelector((state) => state.Commonreducer.puidn);
+    const propertyIds = useSelector((state) => state.Commonreducer.puidnlist);
     const userId = useSelector((state) => state.Commonreducer.userId);
+    const userName = useSelector((state) => state.Commonreducer.userName);
+    const userEmail = useSelector((state) => state.Commonreducer.userEmail);
+    const userRole = useSelector((state) => state.Commonreducer.entrolval);
+    const companyId = useSelector((state) => state.Commonreducer.companyid);
     const [submittedData, setSubmittedData] = useState([]);
 
     // ✅ New States for Pending and Approved/Rejected dialogs
@@ -38,6 +43,24 @@ export default function AttendanceMaster() {
     const attendanceType = selectedClient === "CLIENT" ? "CLIENT" : "PROPERTY";
     const [locations, setLocations] = useState([]);
     const [employeeList, setEmployeeList] = useState([]);
+
+    useEffect(() => {
+        const appElement = document.getElementById("app");
+        const appUserName = appElement?.getAttribute("username") || userName;
+        const appUserId = appElement?.getAttribute("userid") || userId;
+        const appUserRole = appElement?.getAttribute("userrole") || userRole;
+
+        console.log("Attendance user info", {
+            app,
+            userName: appUserName,
+            userId: appUserId,
+            userRole: appUserRole,
+            userEmail,
+            companyId,
+            propertyId,
+            propertyIds
+        });
+    }, [userRole, userId, userName, userEmail, companyId, propertyId, propertyIds]);
 
     useEffect(() => {
         // Fetch client list for dropdown
@@ -512,8 +535,6 @@ export default function AttendanceMaster() {
         const newYear = parseInt(e.target.value, 10);
         setCurrentDate(new Date(newYear, currentDate.getMonth(), 1));
     };
-
-
     return (
         <div style={{ padding: '20px', paddingLeft: '80px', fontFamily: 'Arial, sans-serif' }}>
             {/* Header */}

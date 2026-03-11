@@ -10,13 +10,14 @@ import { ProgressSpinner } from "primereact/progressspinner";
 import { Card } from "primereact/card";
 import * as XLSX from "xlsx";
 
-import { fetchDevices, fetchDeviceLogs } from "../../Services/ReportService";
+import { fetchDevices, fetchDeviceLogs, fetchDeviceLogsinBetween } from "../../Services/ReportService";
 
 const AttendanceBiometricReport = () => {
     const [devices, setDevices] = useState([]);
     const [selectedDevice, setSelectedDevice] = useState(null);
     const [selectedDeviceName, setSelectedDeviceName] = useState("");
-    const [selectedDate, setSelectedDate] = useState(null);
+    const [fromDate, setFromDate] = useState(null);
+    const [toDate, setToDate] = useState(null);
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -53,14 +54,15 @@ const AttendanceBiometricReport = () => {
 
     // ================= LOAD LOGS =================
     const handleSearch = async () => {
-        if (!selectedDevice || !selectedDate) return;
+        if (!selectedDevice || !fromDate || !toDate) return;
 
         try {
             setLoading(true);
 
-            const data = await fetchDeviceLogs(
+            const data = await fetchDeviceLogsinBetween(
                 selectedDevice,
-                formatDate(selectedDate)
+                formatDate(fromDate),
+                formatDate(toDate)
             );
 
             // Add DeviceName in each row
@@ -87,7 +89,7 @@ const AttendanceBiometricReport = () => {
 
         XLSX.writeFile(
             workbook,
-            `Device_${selectedDeviceName}_${formatDate(selectedDate)}.xlsx`
+            `Device_${selectedDeviceName}_${formatDate(fromDate)}_${formatDate(toDate)}.xlsx`
         );
     };
 
@@ -130,16 +132,26 @@ const AttendanceBiometricReport = () => {
                             </div>
 
                             <div className="col-md-4">
-                                <label>Date</label>
+                                <label>From Date</label>
                                 <Calendar
-                                    value={selectedDate}
-                                    onChange={(e) => setSelectedDate(e.value)}
+                                    value={fromDate}
+                                    onChange={(e) => setFromDate(e.value)}
                                     dateFormat="yy-mm-dd"
                                     showIcon
                                     className="w-100"
                                 />
                             </div>
 
+<div className="col-md-4">
+                                <label>To Date</label>
+                                <Calendar
+                                    value={toDate}
+                                    onChange={(e) => setToDate(e.value)}
+                                    dateFormat="yy-mm-dd"
+                                    showIcon
+                                    className="w-100"
+                                />
+                            </div>
                             <div className="col-md-4">
                                 <Button
                                     label="Search"

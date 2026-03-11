@@ -104,30 +104,34 @@ const EmployeeLeave = () => {
 
   // ✅ GET Leaves for table
   const loadLeaves = async () => {
-    setLoading(true);
-    try {
-      const data = await EmployeeLeaveService.getLeaves(propertyId);
-      setLeaveData(
-        data.map((item) => ({
-          id: item.Id,
-          employeeId: item.EmployeeId,
-          leaveTypeId: item.LeaveTypeId,
-          leaveCount: item.LeaveCount,
-          balance: item.Balance,
-          financialYear: item.FinancialYear,
-        }))
-      );
-    } catch (error) {
-      console.error(error);
-      toast.current.show({
-        severity: "error",
-        summary: "Error",
-        detail: "Failed to fetch employee leaves",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  setLoading(true);
+  try {
+    const data = await EmployeeLeaveService.getLeaves(propertyId);
+
+    const finalData = data.map((item) => ({
+      id: item.Id,
+      employeeId: item.EmployeeId,
+      employeeName:
+        employees.find((e) => e.value === item.EmployeeId)?.label || "—",
+      leaveTypeId: item.LeaveTypeId,
+      leaveTypeName:
+        LeaveType.find((l) => l.value === item.LeaveTypeId)?.label || "—",
+      balance: item.Balance,
+      financialYear: item.FinancialYear,
+    }));
+
+    setLeaveData(finalData);
+  } catch (error) {
+    console.error(error);
+    toast.current.show({
+      severity: "error",
+      summary: "Error",
+      detail: "Failed to fetch employee leaves",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   // ✅ GET Employees for dropdown
   // const loadEmployees = async () => {
@@ -199,13 +203,12 @@ const EmployeeLeave = () => {
   // ✅ POST API
   const saveLeave = async () => {
     if (!validate()) return;
-
     const record = {
-      EmployeeId: Number(selectedEmployee),   // ensure number
+      EmployeeId: Number(selectedEmployee),   
       LeaveTypeId: Number(selectedLeaveType),
       Balance: Number(leaveBalance),
-      FinancialYear: financialYear,  // try "2025-2026" instead of just "2025"
-      PropertyId: Number(propertyId), // convert to number
+      FinancialYear: financialYear, 
+      PropertyId: Number(propertyId), 
       CreatedOn: 1,
       CreatedBy: 1,
       UpdatedOn: 1,
